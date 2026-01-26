@@ -198,7 +198,7 @@ func Init(cfgFile string) error {
 // Get returns the current configuration.
 func Get() *Config {
 	if cfg == nil {
-		Init("")
+		_ = Init("")
 	}
 	return cfg
 }
