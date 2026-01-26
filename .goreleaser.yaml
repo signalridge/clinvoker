@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+project_name: clinvoker
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: clinvoker
+    main: ./cmd/clinvoker
+    binary: clinvoker
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/signalridge/clinvoker/internal/app.version={{.Version}}
+      - -X github.com/signalridge/clinvoker/internal/app.commit={{.ShortCommit}}
+      - -X github.com/signalridge/clinvoker/internal/app.date={{.Date}}
+archives:
+  - id: clinvoker
+    formats:
+      - tar.gz
+      - zip
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+release:
+  github:
+    owner: signalridge
+    name: clinvoker
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
+brews:
+  - name: clinvoker
+    repository:
+      owner: signalridge
+      name: homebrew-tap
+    homepage: "https://github.com/signalridge/clinvoker"
+    description: "Unified AI CLI wrapper for multiple backends"
+    license: "MIT"
+    skip_upload: auto
+    install: |
+      bin.install "clinvoker"
+    test: |
+      system "#{bin}/clinvoker", "--version"
+scoops:
+  - name: clinvoker
+    repository:
+      owner: signalridge
+      name: scoop-bucket
+    homepage: "https://github.com/signalridge/clinvoker"
+    description: "Unified AI CLI wrapper for multiple backends"
+    license: MIT
+    skip_upload: auto
+nfpms:
+  - id: clinvoker
+    package_name: clinvoker
+    vendor: SignalRidge
+    homepage: "https://github.com/signalridge/clinvoker"
+    maintainer: "SignalRidge <support@signalridge.com>"
+    description: "Unified AI CLI wrapper for multiple backends"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+    section: utils
+    priority: optional
+aurs:
+  - name: clinvoker-bin
+    homepage: "https://github.com/signalridge/clinvoker"
+    description: "Unified AI CLI wrapper for multiple backends"
+    maintainers:
+      - "SignalRidge <support@signalridge.com>"
+    license: MIT
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/clinvoker-bin.git"
+    skip_upload: auto
+    package: |-
+      install -Dm755 "./clinvoker" "${pkgdir}/usr/bin/clinvoker"
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/clinvoker/LICENSE"
+      install -Dm644 "./README.md" "${pkgdir}/usr/share/doc/clinvoker/README.md"

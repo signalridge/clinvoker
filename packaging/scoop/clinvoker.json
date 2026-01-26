@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "description": "Unified AI CLI wrapper for multiple backends (Claude Code, Codex, Gemini)",
+  "homepage": "https://github.com/signalridge/clinvoker",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/signalridge/clinvoker/releases/download/v0.1.0/clinvoker_0.1.0_windows_amd64.zip",
+      "hash": ""
+    },
+    "arm64": {
+      "url": "https://github.com/signalridge/clinvoker/releases/download/v0.1.0/clinvoker_0.1.0_windows_arm64.zip",
+      "hash": ""
+    }
+  },
+  "bin": "clinvoker.exe",
+  "checkver": "github",
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/signalridge/clinvoker/releases/download/v$version/clinvoker_$version_windows_amd64.zip"
+      },
+      "arm64": {
+        "url": "https://github.com/signalridge/clinvoker/releases/download/v$version/clinvoker_$version_windows_arm64.zip"
+      }
+    }
+  }
+}
