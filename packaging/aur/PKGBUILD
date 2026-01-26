@@ -1,0 +1,32 @@
+# Maintainer: SignalRidge <support@signalridge.com>
+pkgname=clinvoker
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Unified AI CLI wrapper for multiple backends (Claude Code, Codex, Gemini)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/signalridge/clinvoker"
+license=('MIT')
+depends=()
+makedepends=('go>=1.24')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/signalridge/clinvoker/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    export CGO_ENABLED=0
+    export GOFLAGS="-buildmode=pie -trimpath -mod=readonly -modcacherw"
+    go build -ldflags "-s -w -X github.com/signalridge/clinvoker/internal/app.version=$pkgver" \
+        -o clinvoker ./cmd/clinvoker
+}
+
+check() {
+    cd "$pkgname-$pkgver"
+    go test ./...
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    install -Dm755 clinvoker "$pkgdir/usr/bin/clinvoker"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
