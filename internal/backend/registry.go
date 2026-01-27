@@ -22,7 +22,7 @@ func Register(b Backend) {
 }
 
 // Get returns a backend by name.
-// Returns an error if the backend is not found in the registry.
+// Returns an error if a backend is not found in the registry.
 // This function is thread-safe and can be called from multiple goroutines.
 func Get(name string) (Backend, error) {
 	mu.RLock()
@@ -64,12 +64,6 @@ func Available() []Backend {
 		}
 	}
 	return backends
-}
-
-// register is an internal function used during testing to add backends.
-// For normal use, backends are registered in init().
-func register(b Backend) {
-	Register(b)
 }
 
 // unregisterAll removes all backends from the registry.

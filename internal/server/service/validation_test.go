@@ -20,6 +20,12 @@ func TestValidateWorkDir(t *testing.T) {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
 
+	// Create a subdirectory for testing path resolution
+	subDir := filepath.Join(tmpDir, "subdir")
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdirectory: %v", err)
+	}
+
 	tests := []struct {
 		name    string
 		workDir string
@@ -37,12 +43,12 @@ func TestValidateWorkDir(t *testing.T) {
 		},
 		{
 			name:    "path with .. resolving to valid directory is allowed",
-			workDir: "/tmp/../tmp",
+			workDir: filepath.Join(subDir, ".."), // resolves to tmpDir
 			wantErr: false,
 		},
 		{
 			name:    "path with .. resolving to non-existent is rejected",
-			workDir: "/tmp/../nonexistent_path_xyz",
+			workDir: filepath.Join(subDir, "nonexistent_path_xyz"), // doesn't exist
 			wantErr: true,
 		},
 		{
