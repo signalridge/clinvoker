@@ -66,9 +66,9 @@ func Available() []Backend {
 	return backends
 }
 
-// unregisterAll removes all backends from the registry.
+// UnregisterAll removes all backends from the registry.
 // This is primarily used for testing to reset the registry state.
-func unregisterAll() {
+func UnregisterAll() {
 	mu.Lock()
 	defer mu.Unlock()
 	registry = make(map[string]Backend)
