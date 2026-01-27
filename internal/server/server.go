@@ -47,13 +47,15 @@ func New(cfg Config, logger *slog.Logger) *Server {
 	router.Use(chiMiddleware.Recoverer)
 	router.Use(chiMiddleware.Timeout(5 * time.Minute))
 
-	// Add CORS
+	// Add CORS - configured for local development
+	// Note: AllowCredentials removed to work safely with permissive origins
+	// For production with credentials, specify explicit allowed origins
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"http://localhost:*", "http://127.0.0.1:*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Api-Key", "anthropic-version"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 		MaxAge:           300,
 	}))
 

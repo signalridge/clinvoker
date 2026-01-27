@@ -235,14 +235,15 @@ func SessionsDir() string {
 // EnsureConfigDir creates the configuration directory if it doesn't exist.
 func EnsureConfigDir() error {
 	dir := ConfigDir()
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	// Use 0700 for security - only owner can access config and session data
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	return os.MkdirAll(SessionsDir(), 0755)
+	return os.MkdirAll(SessionsDir(), 0700)
 }
 
 // Set sets a configuration value.
-func Set(key string, value interface{}) error {
+func Set(key string, value any) error {
 	viper.Set(key, value)
 	return WriteConfig()
 }

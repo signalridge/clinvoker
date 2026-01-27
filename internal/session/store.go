@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -13,10 +14,29 @@ import (
 	"github.com/signalridge/clinvoker/internal/config"
 )
 
+// sessionIDPattern validates session IDs (hex string, 16 characters).
+var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16}$`)
+
 // Store handles session persistence.
 type Store struct {
-	mu  sync.Mutex
+	mu  sync.RWMutex
 	dir string
+}
+
+// validateSessionID checks if the session ID is valid and safe.
+func validateSessionID(id string) error {
+	if id == "" {
+		return fmt.Errorf("session ID cannot be empty")
+	}
+	// Check for path traversal attempts
+	if strings.Contains(id, "/") || strings.Contains(id, "\\") || strings.Contains(id, "..") {
+		return fmt.Errorf("invalid session ID: contains path characters")
+	}
+	// For full session IDs, validate format
+	if len(id) == 16 && !sessionIDPattern.MatchString(id) {
+		return fmt.Errorf("invalid session ID format")
+	}
+	return nil
 }
 
 // NewStore creates a new session store.
@@ -77,8 +97,12 @@ func (s *Store) saveLocked(sess *Session) error {
 
 // Get retrieves a session by ID.
 func (s *Store) Get(id string) (*Session, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	if err := validateSessionID(id); err != nil {
+		return nil, err
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	return s.getLocked(id)
 }
@@ -104,6 +128,10 @@ func (s *Store) getLocked(id string) (*Session, error) {
 
 // Delete removes a session.
 func (s *Store) Delete(id string) error {
+	if err := validateSessionID(id); err != nil {
+		return err
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -129,8 +157,8 @@ func (s *Store) deleteLocked(id string) error {
 
 // List returns all sessions, sorted by last used (most recent first).
 func (s *Store) List() ([]*Session, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	return s.listLocked()
 }
@@ -442,5 +470,6 @@ func (s *Store) ensureStoreDirLocked() error {
 	if s.dir == "" {
 		s.dir = config.SessionsDir()
 	}
-	return os.MkdirAll(s.dir, 0755)
+	// Use 0700 for security - only owner can access session data
+	return os.MkdirAll(s.dir, 0700)
 }

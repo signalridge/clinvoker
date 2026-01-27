@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +17,38 @@ import (
 	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
 )
+
+// validateWorkDir validates that the working directory is safe and exists.
+func validateWorkDir(workDir string) error {
+	if workDir == "" {
+		return nil // Empty workDir is allowed, will use current directory
+	}
+
+	// Check for path traversal attempts
+	if strings.Contains(workDir, "..") {
+		return fmt.Errorf("invalid work directory: path traversal not allowed")
+	}
+
+	// Must be absolute path
+	if !filepath.IsAbs(workDir) {
+		return fmt.Errorf("invalid work directory: must be an absolute path")
+	}
+
+	// Check if directory exists
+	info, err := os.Stat(workDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("work directory does not exist: %s", workDir)
+		}
+		return fmt.Errorf("cannot access work directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("work directory is not a directory: %s", workDir)
+	}
+
+	return nil
+}
 
 // Executor handles the execution of AI backend commands.
 type Executor struct {
@@ -62,6 +96,22 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 	start := time.Now()
 	result := &PromptResult{
 		Backend: req.Backend,
+	}
+
+	// Validate work directory
+	if err := validateWorkDir(req.WorkDir); err != nil {
+		result.Error = err.Error()
+		result.ExitCode = 1
+		result.DurationMS = time.Since(start).Milliseconds()
+		return result, nil
+	}
+
+	// Validate extra flags
+	if err := backend.ValidateExtraFlags(req.Extra); err != nil {
+		result.Error = err.Error()
+		result.ExitCode = 1
+		result.DurationMS = time.Since(start).Milliseconds()
+		return result, nil
 	}
 
 	// Get backend
