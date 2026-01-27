@@ -332,14 +332,15 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 
 	rawOutput := stdoutBuf.String()
 
-	// Parse JSON response to get content and session ID
+	// Parse JSON response to get content and
+	session ID
 	resp, parseErr := b.ParseJSONResponse(rawOutput)
 	if parseErr == nil && resp != nil {
 		sessionID = resp.SessionID
 		// Print content as plain text
 		if resp.Content != "" {
 			fmt.Print(resp.Content)
-			if len(resp.Content) > 0 && resp.Content[len(resp.Content)-1] != '\n' {
+			if resp.Content[len(resp.Content)-1] != '\n' {
 				fmt.Println()
 			}
 		}
