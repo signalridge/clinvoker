@@ -18,7 +18,6 @@ import (
 // Executor handles the execution of AI backend commands.
 type Executor struct {
 	store *session.Store
-	mu    sync.Mutex
 }
 
 // NewExecutor creates a new executor.
@@ -153,7 +152,7 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 		} else {
 			sess.SetError(result.Error)
 		}
-		e.store.Save(sess)
+		_ = e.store.Save(sess)
 	}
 
 	return result, nil
@@ -556,12 +555,12 @@ func sessionToInfo(s *session.Session) SessionInfo {
 	}
 }
 
-func replacePlaceholder(s, old, new string) string {
+func replacePlaceholder(s, old, replacement string) string {
 	result := s
 	for i := 0; i < len(result); i++ {
 		if i+len(old) <= len(result) && result[i:i+len(old)] == old {
-			result = result[:i] + new + result[i+len(old):]
-			i += len(new) - 1
+			result = result[:i] + replacement + result[i+len(old):]
+			i += len(replacement) - 1
 		}
 	}
 	return result

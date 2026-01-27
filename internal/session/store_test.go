@@ -318,7 +318,7 @@ func TestStore_ConcurrentCreate(t *testing.T) {
 
 	for i := 0; i < goroutines; i++ {
 		wg.Add(1)
-		go func(i int) {
+		go func() {
 			defer wg.Done()
 			sess, err := store.Create("claude", "/tmp")
 			if err != nil {
@@ -326,7 +326,7 @@ func TestStore_ConcurrentCreate(t *testing.T) {
 				return
 			}
 			sessions <- sess
-		}(i)
+		}()
 	}
 
 	wg.Wait()

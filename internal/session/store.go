@@ -437,13 +437,6 @@ func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
 }
 
-func (s *Store) ensureStoreDir() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	return s.ensureStoreDirLocked()
-}
-
 // ensureStoreDirLocked creates the store directory. Caller must hold s.mu.
 func (s *Store) ensureStoreDirLocked() error {
 	if s.dir == "" {

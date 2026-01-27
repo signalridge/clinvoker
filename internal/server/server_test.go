@@ -48,7 +48,7 @@ func TestHealthEndpoint(t *testing.T) {
 	customHandlers := handlers.NewCustomHandlers(srv.Executor())
 	customHandlers.Register(srv.API())
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 	w := httptest.NewRecorder()
 
 	srv.Router().ServeHTTP(w, req)
@@ -78,7 +78,7 @@ func TestBackendsEndpoint(t *testing.T) {
 	customHandlers := handlers.NewCustomHandlers(srv.Executor())
 	customHandlers.Register(srv.API())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/backends", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/backends", http.NoBody)
 	w := httptest.NewRecorder()
 
 	srv.Router().ServeHTTP(w, req)
@@ -114,7 +114,7 @@ func TestOpenAIModelsEndpoint(t *testing.T) {
 	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor())
 	openaiHandlers.Register(srv.API())
 
-	req := httptest.NewRequest(http.MethodGet, "/openai/v1/models", nil)
+	req := httptest.NewRequest(http.MethodGet, "/openai/v1/models", http.NoBody)
 	w := httptest.NewRecorder()
 
 	srv.Router().ServeHTTP(w, req)
