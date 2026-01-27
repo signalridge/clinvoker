@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"log/slog"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -16,15 +18,84 @@ import (
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
+// Default values for executor configuration.
+const (
+	// DefaultMaxParallelWorkers is the default number of parallel workers when not configured.
+	DefaultMaxParallelWorkers = 3
+)
+
+// validateWorkDir validates that the working directory is safe and exists.
+func validateWorkDir(workDir string) error {
+	if workDir == "" {
+		return nil // Empty workDir is allowed, will use current directory
+	}
+
+	// Must be absolute path
+	if !filepath.IsAbs(workDir) {
+		return fmt.Errorf("invalid work directory: must be an absolute path")
+	}
+
+	// Clean the path to resolve any ".." or "." components
+	cleanPath := filepath.Clean(workDir)
+
+	// Verify the cleaned path is still absolute (sanity check)
+	if !filepath.IsAbs(cleanPath) {
+		return fmt.Errorf("invalid work directory: path traversal not allowed")
+	}
+
+	// Resolve symbolic links to get the real path
+	realPath, err := filepath.EvalSymlinks(cleanPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("work directory does not exist: %s", workDir)
+		}
+		return fmt.Errorf("cannot resolve work directory: %w", err)
+	}
+
+	// Verify the resolved path matches expectations (no symlink escape)
+	// The real path must also be absolute
+	if !filepath.IsAbs(realPath) {
+		return fmt.Errorf("invalid work directory: resolved path is not absolute")
+	}
+
+	// Check if directory exists and is actually a directory
+	info, err := os.Stat(realPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("work directory does not exist: %s", workDir)
+		}
+		return fmt.Errorf("cannot access work directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("work directory is not a directory: %s", workDir)
+	}
+
+	return nil
+}
+
 // Executor handles the execution of AI backend commands.
 type Executor struct {
-	store *session.Store
+	store  *session.Store
+	logger *slog.Logger
 }
 
 // NewExecutor creates a new executor.
 func NewExecutor() *Executor {
 	return &Executor{
-		store: session.NewStore(),
+		store:  session.NewStore(),
+		logger: slog.Default(),
+	}
+}
+
+// NewExecutorWithLogger creates a new executor with a custom logger.
+func NewExecutorWithLogger(logger *slog.Logger) *Executor {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Executor{
+		store:  session.NewStore(),
+		logger: logger,
 	}
 }
 
@@ -62,6 +133,22 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 	start := time.Now()
 	result := &PromptResult{
 		Backend: req.Backend,
+	}
+
+	// Validate work directory
+	if err := validateWorkDir(req.WorkDir); err != nil {
+		result.Error = err.Error()
+		result.ExitCode = 1
+		result.DurationMS = time.Since(start).Milliseconds()
+		return result, nil
+	}
+
+	// Validate extra flags
+	if err := backend.ValidateExtraFlags(req.Extra); err != nil {
+		result.Error = err.Error()
+		result.ExitCode = 1
+		result.DurationMS = time.Since(start).Milliseconds()
+		return result, nil
 	}
 
 	// Get backend
@@ -130,11 +217,17 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 	}
 
 	// Execute with output capture
-	var outputBuf bytes.Buffer
+	var stdoutBuf, stderrBuf bytes.Buffer
 	exec := executor.New()
 	exec.Stdin = nil
-	exec.Stdout = &outputBuf
-	exec.Stderr = &outputBuf
+	exec.Stdout = &stdoutBuf
+
+	// Separate stderr if backend needs it (e.g., to filter credential messages)
+	if b.SeparateStderr() {
+		exec.Stderr = &stderrBuf
+	} else {
+		exec.Stderr = &stdoutBuf
+	}
 
 	exitCode, execErr := exec.RunSimple(execCmd)
 	if execErr != nil {
@@ -142,7 +235,8 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 	}
 
 	result.ExitCode = exitCode
-	result.Output = outputBuf.String()
+	// Parse output through backend's parser for normalized output
+	result.Output = b.ParseOutput(stdoutBuf.String())
 	result.DurationMS = time.Since(start).Milliseconds()
 
 	// Update session
@@ -153,7 +247,9 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 		} else {
 			sess.SetError(result.Error)
 		}
-		_ = e.store.Save(sess)
+		if err := e.store.Save(sess); err != nil {
+			e.logger.Warn("failed to save session", "session_id", sess.ID, "error", err)
+		}
 	}
 
 	return result, nil
@@ -186,7 +282,7 @@ func (e *Executor) ExecuteParallel(ctx context.Context, req *ParallelRequest) (*
 		if cfg.Parallel.MaxWorkers > 0 {
 			maxP = cfg.Parallel.MaxWorkers
 		} else {
-			maxP = 3
+			maxP = DefaultMaxParallelWorkers
 		}
 	}
 
@@ -207,6 +303,7 @@ func (e *Executor) ExecuteParallel(ctx context.Context, req *ParallelRequest) (*
 		go func(idx int, t PromptRequest) {
 			defer wg.Done()
 
+			// Acquire semaphore with context cancellation support
 			select {
 			case <-ctx.Done():
 				mu.Lock()
@@ -217,10 +314,9 @@ func (e *Executor) ExecuteParallel(ctx context.Context, req *ParallelRequest) (*
 				}
 				mu.Unlock()
 				return
-			default:
+			case sem <- struct{}{}:
+				// Acquired semaphore
 			}
-
-			sem <- struct{}{}
 			defer func() { <-sem }()
 
 			// Apply request-level DryRun to each task
@@ -478,6 +574,22 @@ type SessionInfo struct {
 	Title         string              `json:"title,omitempty"`
 }
 
+// SessionListOptions contains options for listing sessions.
+type SessionListOptions struct {
+	Backend string
+	Status  string
+	Limit   int
+	Offset  int
+}
+
+// SessionListResult contains paginated session results.
+type SessionListResult struct {
+	Sessions []SessionInfo `json:"sessions"`
+	Total    int           `json:"total"`
+	Limit    int           `json:"limit"`
+	Offset   int           `json:"offset"`
+}
+
 // ListSessions returns all sessions.
 func (e *Executor) ListSessions(ctx context.Context) ([]SessionInfo, error) {
 	sessions, err := e.store.List()
@@ -491,6 +603,37 @@ func (e *Executor) ListSessions(ctx context.Context) ([]SessionInfo, error) {
 	}
 
 	return result, nil
+}
+
+// ListSessionsPaginated returns sessions with pagination support.
+func (e *Executor) ListSessionsPaginated(ctx context.Context, opts *SessionListOptions) (*SessionListResult, error) {
+	if opts == nil {
+		opts = &SessionListOptions{}
+	}
+
+	filter := &session.ListFilter{
+		Backend: opts.Backend,
+		Status:  session.SessionStatus(opts.Status),
+		Limit:   opts.Limit,
+		Offset:  opts.Offset,
+	}
+
+	listResult, err := e.store.ListPaginated(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	sessions := make([]SessionInfo, len(listResult.Sessions))
+	for i, s := range listResult.Sessions {
+		sessions[i] = sessionToInfo(s)
+	}
+
+	return &SessionListResult{
+		Sessions: sessions,
+		Total:    listResult.Total,
+		Limit:    listResult.Limit,
+		Offset:   listResult.Offset,
+	}, nil
 }
 
 // GetSession returns a session by ID.
@@ -559,6 +702,3 @@ func sessionToInfo(s *session.Session) SessionInfo {
 func replacePlaceholder(s, old, replacement string) string {
 	return strings.ReplaceAll(s, old, replacement)
 }
-
-// Ensure io.Writer is used to avoid import errors
-var _ io.Writer = (*bytes.Buffer)(nil)

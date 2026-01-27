@@ -14,6 +14,7 @@ import (
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
@@ -45,15 +46,24 @@ func New(cfg Config, logger *slog.Logger) *Server {
 	router.Use(chiMiddleware.RequestID)
 	router.Use(chiMiddleware.RealIP)
 	router.Use(chiMiddleware.Recoverer)
-	router.Use(chiMiddleware.Timeout(5 * time.Minute))
 
-	// Add CORS
+	// Get timeout from config, with fallback to 5 minutes
+	appCfg := config.Get()
+	requestTimeout := time.Duration(appCfg.Server.RequestTimeoutSecs) * time.Second
+	if requestTimeout <= 0 {
+		requestTimeout = 5 * time.Minute
+	}
+	router.Use(chiMiddleware.Timeout(requestTimeout))
+
+	// Add CORS - configured for local development
+	// Note: AllowCredentials removed to work safely with permissive origins
+	// For production with credentials, specify explicit allowed origins
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"http://localhost:*", "http://127.0.0.1:*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Api-Key", "anthropic-version"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 		MaxAge:           300,
 	}))
 
@@ -95,13 +105,28 @@ func (s *Server) Logger() *slog.Logger {
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
 
+	// Get timeouts from config with sensible defaults
+	cfg := config.Get()
+	readTimeout := time.Duration(cfg.Server.ReadTimeoutSecs) * time.Second
+	if readTimeout <= 0 {
+		readTimeout = 30 * time.Second
+	}
+	writeTimeout := time.Duration(cfg.Server.WriteTimeoutSecs) * time.Second
+	if writeTimeout <= 0 {
+		writeTimeout = 5 * time.Minute
+	}
+	idleTimeout := time.Duration(cfg.Server.IdleTimeoutSecs) * time.Second
+	if idleTimeout <= 0 {
+		idleTimeout = 120 * time.Second
+	}
+
 	s.server = &http.Server{
 		Addr:              addr,
 		Handler:           s.router,
-		ReadTimeout:       30 * time.Second,
-		ReadHeaderTimeout: 10 * time.Second,
-		WriteTimeout:      5 * time.Minute,
-		IdleTimeout:       120 * time.Second,
+		ReadTimeout:       readTimeout,
+		ReadHeaderTimeout: 10 * time.Second, // Keep header timeout fixed for security
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	s.logger.Info("Starting server", "addr", addr)

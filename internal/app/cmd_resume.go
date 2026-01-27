@@ -10,7 +10,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -105,15 +104,23 @@ func runResume(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("backend error: %w", err)
 	}
 
-	if !b.IsAvailable() {
+	if !dryRun && !b.IsAvailable() {
 		return fmt.Errorf("backend %q is not available", sess.Backend)
 	}
 
-	// Build options
+	// Determine internal output format (use JSON internally for text to capture session ID)
+	userOutputFormat := backend.OutputFormat(outputFormat)
+	internalOutputFormat := userOutputFormat
+	if userOutputFormat == backend.OutputText || userOutputFormat == backend.OutputDefault || userOutputFormat == "" {
+		internalOutputFormat = backend.OutputJSON
+	}
+
+	// Build unified options
 	cfg := config.Get()
-	opts := &backend.Options{
-		WorkDir: sess.WorkingDir,
-		Model:   modelName,
+	opts := &backend.UnifiedOptions{
+		WorkDir:      sess.WorkingDir,
+		Model:        modelName,
+		OutputFormat: internalOutputFormat,
 	}
 
 	if bcfg, ok := cfg.Backends[sess.Backend]; ok {
@@ -123,14 +130,15 @@ func runResume(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build resume command
-	sessionID := sess.BackendSessionID
-	if sessionID == "" {
-		sessionID = sess.ID
+	backendSessionID := sess.BackendSessionID
+	if backendSessionID == "" {
+		backendSessionID = sess.ID
 	}
-	execCmd := b.ResumeCommand(sessionID, prompt, opts)
+	execCmd := b.ResumeCommandUnified(backendSessionID, prompt, opts)
 
 	if dryRun {
-		fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
+		fmt.Printf("Would resume session %s (%s)\n", sess.ID[:8], sess.Backend)
+		fmt.Printf("Command: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
 	}
 
@@ -140,9 +148,18 @@ func runResume(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
 	}
 
-	// Execute
-	exec := executor.New()
-	exitCode, err := exec.Run(execCmd)
+	// Execute based on output format
+	var exitCode int
+	switch userOutputFormat {
+	case backend.OutputJSON:
+		exitCode, _, err = executeWithJSONOutputAndCapture(b, execCmd, sess)
+	case backend.OutputStreamJSON:
+		exitCode, err = executeWithStreamOutput(b, execCmd)
+	default:
+		// Text output: use JSON internally, extract content for display
+		exitCode, _, err = executeTextViaJSON(b, execCmd)
+	}
+
 	if err != nil {
 		return err
 	}

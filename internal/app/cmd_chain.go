@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -77,6 +75,7 @@ type ChainStepResult struct {
 	Backend   string    `json:"backend"`
 	ExitCode  int       `json:"exit_code"`
 	Error     string    `json:"error,omitempty"`
+	Output    string    `json:"output,omitempty"`
 	SessionID string    `json:"session_id,omitempty"`
 	Duration  float64   `json:"duration_seconds"`
 	StartTime time.Time `json:"start_time"`
@@ -94,39 +93,18 @@ type ChainResults struct {
 	EndTime        time.Time         `json:"end_time"`
 }
 
+// chainContext holds state that's passed between chain steps.
+type chainContext struct {
+	previousSessionID string
+	previousWorkDir   string
+	store             *session.Store
+	cfg               *config.Config
+}
+
 func runChain(cmd *cobra.Command, args []string) error {
-	var input []byte
-	var err error
-
-	if chainFile != "" {
-		input, err = os.ReadFile(chainFile)
-		if err != nil {
-			return fmt.Errorf("failed to read file: %w", err)
-		}
-	} else {
-		// Check if stdin has data
-		stat, _ := os.Stdin.Stat()
-		if (stat.Mode() & os.ModeCharDevice) != 0 {
-			return fmt.Errorf("no input provided (use --file or pipe JSON to stdin)")
-		}
-		input, err = io.ReadAll(os.Stdin)
-		if err != nil {
-			return fmt.Errorf("failed to read stdin: %w", err)
-		}
-	}
-
-	var chain ChainDefinition
-	if err := json.Unmarshal(input, &chain); err != nil {
-		return fmt.Errorf("failed to parse chain definition: %w", err)
-	}
-
-	if len(chain.Steps) == 0 {
-		return fmt.Errorf("no steps defined in chain")
-	}
-
-	// Default to stop on failure
-	if !chain.StopOnFailure {
-		chain.StopOnFailure = true
+	chain, err := parseChainDefinition()
+	if err != nil {
+		return err
 	}
 
 	if !chainJSONFlag {
@@ -134,250 +112,254 @@ func runChain(cmd *cobra.Command, args []string) error {
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
 	}
 
-	store := session.NewStore()
-	cfg := config.Get()
+	results := executeChain(chain)
+	outputChainResults(results, chain)
 
+	if results.FailedStep > 0 {
+		return fmt.Errorf("chain failed at step %d", results.FailedStep)
+	}
+	return nil
+}
+
+// parseChainDefinition reads and parses the chain definition from file or stdin.
+func parseChainDefinition() (*ChainDefinition, error) {
+	input, err := readInputFromFileOrStdin(chainFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var chain ChainDefinition
+	if err := json.Unmarshal(input, &chain); err != nil {
+		return nil, fmt.Errorf("failed to parse chain definition: %w", err)
+	}
+
+	if len(chain.Steps) == 0 {
+		return nil, fmt.Errorf("no steps defined in chain")
+	}
+
+	// Default to stop on failure
+	if !chain.StopOnFailure {
+		chain.StopOnFailure = true
+	}
+
+	return &chain, nil
+}
+
+// executeChain runs all steps in the chain and returns the results.
+func executeChain(chain *ChainDefinition) *ChainResults {
 	results := &ChainResults{
 		TotalSteps: len(chain.Steps),
 		Results:    make([]ChainStepResult, 0, len(chain.Steps)),
 		StartTime:  time.Now(),
 	}
 
-	var previousSessionID string
-	var previousWorkDir string
+	ctx := &chainContext{
+		store: session.NewStore(),
+		cfg:   config.Get(),
+	}
 
-	for i, step := range chain.Steps {
-		startTime := time.Now()
-		stepResult := ChainStepResult{
-			Step:      i + 1,
-			Name:      step.Name,
-			Backend:   step.Backend,
-			StartTime: startTime,
-		}
-
-		if !chainJSONFlag {
-			stepName := step.Name
-			if stepName == "" {
-				stepName = fmt.Sprintf("Step %d", i+1)
-			}
-			fmt.Printf("\n[%d/%d] %s (%s)\n", i+1, len(chain.Steps), stepName, step.Backend)
-			fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-		}
-
-		// Get backend
-		b, err := backend.Get(step.Backend)
-		if err != nil {
-			stepResult.Error = err.Error()
-			stepResult.ExitCode = 1
-			stepResult.EndTime = time.Now()
-			stepResult.Duration = stepResult.EndTime.Sub(startTime).Seconds()
-			results.Results = append(results.Results, stepResult)
-			results.FailedStep = i + 1
-
-			if chain.StopOnFailure {
-				break
-			}
-			continue
-		}
-
-		if !b.IsAvailable() {
-			stepResult.Error = fmt.Sprintf("backend %q not available", step.Backend)
-			stepResult.ExitCode = 1
-			stepResult.EndTime = time.Now()
-			stepResult.Duration = stepResult.EndTime.Sub(startTime).Seconds()
-			results.Results = append(results.Results, stepResult)
-			results.FailedStep = i + 1
-
-			if chain.StopOnFailure {
-				break
-			}
-			continue
-		}
-
-		// Process prompt with placeholders
-		prompt := step.Prompt
-		if previousSessionID != "" {
-			prompt = strings.ReplaceAll(prompt, "{{previous}}", previousSessionID)
-			prompt = strings.ReplaceAll(prompt, "{{session}}", previousSessionID)
-		}
-
-		// Determine working directory
-		stepWorkDir := step.WorkDir
-		if stepWorkDir == "" && chain.PassWorkingDir && previousWorkDir != "" {
-			stepWorkDir = previousWorkDir
-		}
-
-		// Get model
-		model := step.Model
-		if model == "" && modelName != "" {
-			model = modelName
-		}
-		if model == "" {
-			if bcfg, ok := cfg.Backends[step.Backend]; ok {
-				model = bcfg.Model
-			}
-		}
-
-		// Build unified options
-		opts := &backend.UnifiedOptions{
-			WorkDir:      stepWorkDir,
-			Model:        model,
-			ApprovalMode: backend.ApprovalMode(step.ApprovalMode),
-			SandboxMode:  backend.SandboxMode(step.SandboxMode),
-			MaxTurns:     step.MaxTurns,
-			DryRun:       dryRun,
-		}
-
-		// Apply config defaults if not set
-		if opts.ApprovalMode == "" {
-			opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
-		}
-		if opts.SandboxMode == "" {
-			opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
-		}
-
-		// Create session for this step
-		sess, sessErr := session.NewSession(step.Backend, stepWorkDir)
-		if sessErr != nil {
-			if !chainJSONFlag {
-				fmt.Fprintf(os.Stderr, "Warning: failed to create session: %v\n", sessErr)
-			}
-		} else {
-			sess.SetModel(model)
-			sess.InitialPrompt = prompt
-			sess.SetStatus(session.StatusActive)
-			sess.AddTag("chain")
-			sess.AddTag(fmt.Sprintf("chain-step-%d", i+1))
-			if step.Name != "" {
-				sess.SetTitle(step.Name)
-			}
-			if previousSessionID != "" && chain.PassSessionID {
-				sess.ParentID = previousSessionID
-			}
-			if err := store.Save(sess); err != nil && !chainJSONFlag {
-				fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
-			}
-			stepResult.SessionID = sess.ID
-		}
-
-		// Build command
-		execCmd := b.BuildCommandUnified(prompt, opts)
-
-		if dryRun {
-			fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
-			stepResult.ExitCode = 0
-			stepResult.EndTime = time.Now()
-			stepResult.Duration = stepResult.EndTime.Sub(startTime).Seconds()
-			results.Results = append(results.Results, stepResult)
-			results.CompletedSteps++
-
-			if sess != nil {
-				previousSessionID = sess.ID
-			}
-			previousWorkDir = stepWorkDir
-			continue
-		}
-
-		// Execute
-		exec := executor.New()
-		exitCode, execErr := exec.Run(execCmd)
-		if execErr != nil {
-			stepResult.Error = execErr.Error()
-		}
-		stepResult.ExitCode = exitCode
-		stepResult.EndTime = time.Now()
-		stepResult.Duration = stepResult.EndTime.Sub(startTime).Seconds()
-
-		// Update session (if created successfully)
-		if sess != nil {
-			sess.IncrementTurn()
-			if exitCode == 0 {
-				sess.Complete()
-			} else {
-				sess.SetError(stepResult.Error)
-			}
-			if err := store.Save(sess); err != nil && !chainJSONFlag {
-				fmt.Fprintf(os.Stderr, "Warning: failed to update session: %v\n", err)
-			}
-		}
-
-		if exitCode == 0 {
-			results.CompletedSteps++
-		} else {
-			results.FailedStep = i + 1
-		}
-
+	for i := range chain.Steps {
+		stepResult := executeChainStep(i, &chain.Steps[i], chain, ctx)
 		results.Results = append(results.Results, stepResult)
 
-		// Store for next iteration
-		if sess != nil {
-			previousSessionID = sess.ID
-		}
-		previousWorkDir = stepWorkDir
-
-		if exitCode != 0 && chain.StopOnFailure {
-			break
+		if stepResult.ExitCode == 0 && stepResult.Error == "" {
+			results.CompletedSteps++
+		} else {
+			results.FailedStep = i + 1
+			if chain.StopOnFailure {
+				break
+			}
 		}
 	}
 
 	results.EndTime = time.Now()
 	results.TotalDuration = results.EndTime.Sub(results.StartTime).Seconds()
+	return results
+}
 
-	// Output results
+// executeChainStep executes a single step in the chain.
+func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *chainContext) ChainStepResult {
+	startTime := time.Now()
+	result := ChainStepResult{
+		Step:      index + 1,
+		Name:      step.Name,
+		Backend:   step.Backend,
+		StartTime: startTime,
+	}
+
+	if !chainJSONFlag {
+		printStepHeader(index, len(chain.Steps), step)
+	}
+
+	// Get and validate backend
+	b, err := getBackendOrError(step.Backend)
+	if err != nil {
+		failStepResult(&result, startTime, err.Error())
+		return result
+	}
+
+	// Prepare execution context
+	prompt := substitutePromptPlaceholders(step.Prompt, ctx.previousSessionID)
+	stepWorkDir := resolveStepWorkDir(step.WorkDir, chain.PassWorkingDir, ctx.previousWorkDir)
+	model := resolveModel(step.Model, step.Backend, modelName)
+
+	// Build unified options
+	opts := buildChainStepOptions(step, stepWorkDir, model, ctx.cfg)
+
+	// Create and save session
+	tags := []string{"chain", fmt.Sprintf("chain-step-%d", index+1)}
+	sess := createAndSaveSession(ctx.store, step.Backend, stepWorkDir, model, prompt, tags, step.Name, chainJSONFlag)
+	if sess != nil {
+		result.SessionID = sess.ID
+		if ctx.previousSessionID != "" && chain.PassSessionID {
+			sess.ParentID = ctx.previousSessionID
+			_ = ctx.store.Save(sess)
+		}
+	}
+
+	// Build and execute command
+	execCmd := b.BuildCommandUnified(prompt, opts)
+
+	if dryRun {
+		fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
+		result.ExitCode = 0
+		result.EndTime = time.Now()
+		result.Duration = result.EndTime.Sub(startTime).Seconds()
+		updateChainContext(ctx, sess, stepWorkDir)
+		return result
+	}
+
+	// Execute with output capture and parsing
+	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
+	if execErr != nil {
+		result.Error = execErr.Error()
+	}
+	result.ExitCode = exitCode
+	result.Output = output
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime).Seconds()
+
+	// Print output if not in JSON mode
+	if !chainJSONFlag && output != "" {
+		fmt.Println(output)
+	}
+
+	// Update session
+	updateSessionAfterExecution(ctx.store, sess, exitCode, result.Error, chainJSONFlag)
+	updateChainContext(ctx, sess, stepWorkDir)
+
+	return result
+}
+
+// failStepResult creates a failed step result.
+func failStepResult(result *ChainStepResult, startTime time.Time, errMsg string) {
+	result.Error = errMsg
+	result.ExitCode = 1
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime).Seconds()
+}
+
+// printStepHeader prints the header for a chain step.
+func printStepHeader(index, total int, step *ChainStep) {
+	stepName := step.Name
+	if stepName == "" {
+		stepName = fmt.Sprintf("Step %d", index+1)
+	}
+	fmt.Printf("\n[%d/%d] %s (%s)\n", index+1, total, stepName, step.Backend)
+	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+}
+
+// substitutePromptPlaceholders replaces placeholders in the prompt.
+func substitutePromptPlaceholders(prompt, previousSessionID string) string {
+	if previousSessionID == "" {
+		return prompt
+	}
+	prompt = strings.ReplaceAll(prompt, "{{previous}}", previousSessionID)
+	prompt = strings.ReplaceAll(prompt, "{{session}}", previousSessionID)
+	return prompt
+}
+
+// resolveStepWorkDir determines the working directory for a step.
+func resolveStepWorkDir(explicit string, passWorkDir bool, previousWorkDir string) string {
+	if explicit != "" {
+		return explicit
+	}
+	if passWorkDir && previousWorkDir != "" {
+		return previousWorkDir
+	}
+	return ""
+}
+
+// buildChainStepOptions builds unified options for a chain step.
+func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.Config) *backend.UnifiedOptions {
+	opts := &backend.UnifiedOptions{
+		WorkDir:      workDir,
+		Model:        model,
+		ApprovalMode: backend.ApprovalMode(step.ApprovalMode),
+		SandboxMode:  backend.SandboxMode(step.SandboxMode),
+		MaxTurns:     step.MaxTurns,
+		DryRun:       dryRun,
+	}
+
+	// Apply config defaults if not set
+	if opts.ApprovalMode == "" {
+		opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
+	}
+	if opts.SandboxMode == "" {
+		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
+	}
+
+	return opts
+}
+
+// updateChainContext updates the context for the next step.
+func updateChainContext(ctx *chainContext, sess *session.Session, workDir string) {
+	if sess != nil {
+		ctx.previousSessionID = sess.ID
+	}
+	ctx.previousWorkDir = workDir
+}
+
+// outputChainResults outputs the chain results in the appropriate format.
+func outputChainResults(results *ChainResults, _ *ChainDefinition) {
 	if chainJSONFlag {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		if err := enc.Encode(results); err != nil {
-			return fmt.Errorf("failed to encode JSON output: %w", err)
-		}
-	} else {
-		fmt.Println()
-		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
-		fmt.Println("CHAIN EXECUTION SUMMARY")
-		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
-		fmt.Printf("%-6s %-12s %-8s %-10s %-10s %s\n", "STEP", "BACKEND", "STATUS", "DURATION", "SESSION", "NAME")
-		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-
-		for _, r := range results.Results {
-			status := "OK"
-			if r.ExitCode != 0 || r.Error != "" {
-				status = "FAILED"
-			}
-
-			sessionID := "-"
-			if r.SessionID != "" {
-				sessionID = r.SessionID[:8]
-			}
-
-			name := r.Name
-			if name == "" {
-				name = "-"
-			}
-
-			fmt.Printf("%-6d %-12s %-8s %-10.2fs %-10s %s\n",
-				r.Step,
-				r.Backend,
-				status,
-				r.Duration,
-				sessionID,
-				name,
-			)
-			if r.Error != "" {
-				fmt.Printf("       Error: %s\n", r.Error)
-			}
-		}
-
-		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-		fmt.Printf("Total: %d/%d steps completed (%.2fs)\n",
-			results.CompletedSteps,
-			results.TotalSteps,
-			results.TotalDuration,
-		)
+		_ = enc.Encode(results)
+		return
 	}
 
-	if results.FailedStep > 0 {
-		return fmt.Errorf("chain failed at step %d", results.FailedStep)
+	fmt.Println()
+	fmt.Println(strings.Repeat("=", tableSeparatorWidth))
+	fmt.Println("CHAIN EXECUTION SUMMARY")
+	fmt.Println(strings.Repeat("=", tableSeparatorWidth))
+	fmt.Printf("%-6s %-12s %-8s %-10s %-10s %s\n", "STEP", "BACKEND", "STATUS", "DURATION", "SESSION", "NAME")
+	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+
+	for _, r := range results.Results {
+		status := "OK"
+		if r.ExitCode != 0 || r.Error != "" {
+			status = "FAILED"
+		}
+
+		sessionID := "-"
+		if r.SessionID != "" {
+			sessionID = r.SessionID[:8]
+		}
+
+		name := r.Name
+		if name == "" {
+			name = "-"
+		}
+
+		fmt.Printf("%-6d %-12s %-8s %-10.2fs %-10s %s\n",
+			r.Step, r.Backend, status, r.Duration, sessionID, name)
+		if r.Error != "" {
+			fmt.Printf("       Error: %s\n", r.Error)
+		}
 	}
 
-	return nil
+	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+	fmt.Printf("Total: %d/%d steps completed (%.2fs)\n",
+		results.CompletedSteps, results.TotalSteps, results.TotalDuration)
 }

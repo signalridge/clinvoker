@@ -1,6 +1,40 @@
 package backend
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+// dangerousFlags contains flags that could bypass security controls.
+var dangerousFlags = map[string]bool{
+	"--dangerously-skip-permissions": true,
+	"--no-verify":                    true,
+	"--skip-hooks":                   true,
+	"--force":                        true,
+	"-f":                             true,
+}
+
+// ValidateExtraFlags validates that extra flags don't contain dangerous options.
+func ValidateExtraFlags(flags []string) error {
+	for _, flag := range flags {
+		// Normalize flag (handle --flag=value format)
+		normalizedFlag := flag
+		if idx := strings.Index(flag, "="); idx != -1 {
+			normalizedFlag = flag[:idx]
+		}
+
+		// Check for dangerous flags
+		if dangerousFlags[normalizedFlag] {
+			return fmt.Errorf("dangerous flag not allowed: %s", flag)
+		}
+
+		// Flags must start with - or --
+		if !strings.HasPrefix(flag, "-") {
+			return fmt.Errorf("invalid flag format: %s (must start with - or --)", flag)
+		}
+	}
+	return nil
+}
 
 // UnifiedOptions provides a backend-agnostic way to configure AI CLI commands.
 // These options are automatically mapped to backend-specific flags.
@@ -299,7 +333,8 @@ func (m *flagMapper) mapOutputFormat(format OutputFormat) []string {
 		case OutputJSON:
 			return []string{"--output-format", "json"}
 		case OutputStreamJSON:
-			return []string{"--output-format", "stream-json"}
+			// Claude requires --verbose for stream-json output
+			return []string{"--output-format", "stream-json", "--verbose"}
 		}
 
 	case "gemini":
