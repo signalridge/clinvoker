@@ -50,13 +50,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&workDir, "workdir", "w", "", "working directory for the AI backend")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "print command without executing")
 
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(versionCommand)
 	rootCmd.AddCommand(resumeCmd)
 	rootCmd.AddCommand(sessionsCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(parallelCmd)
 	rootCmd.AddCommand(compareCmd)
-	rootCmd.AddCommand(chainCmd)
+	rootCmd.AddCommand(chainCommand)
 }
 
 func initConfig() {

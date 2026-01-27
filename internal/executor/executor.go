@@ -2,6 +2,7 @@
 package executor
 
 import (
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -51,11 +52,18 @@ func (e *Executor) Run(cmd *exec.Cmd) (int, error) {
 
 	// Copy stdin to PTY in a goroutine
 	go func() {
-		io.Copy(ptmx, e.Stdin)
+		_, err := io.Copy(ptmx, e.Stdin)
+		// Ignore EOF and ErrClosedPipe as they're expected when PTY closes
+		if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, os.ErrClosed) {
+			// Non-critical: stdin copy failure doesn't affect command execution
+		}
 	}()
 
 	// Copy PTY output to stdout
-	io.Copy(e.Stdout, ptmx)
+	// Ignore EOF errors as they're expected when the command exits
+	if _, err := io.Copy(e.Stdout, ptmx); err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, os.ErrClosed) {
+		// Non-critical: we still want to wait for the command
+	}
 
 	// Wait for the command to finish
 	err = cmd.Wait()
