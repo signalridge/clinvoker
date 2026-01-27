@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"os/exec"
 )
 
@@ -76,4 +77,50 @@ func (c *Claude) BuildCommandUnified(prompt string, opts *UnifiedOptions) *exec.
 // ResumeCommandUnified creates a resume exec.Cmd using unified options.
 func (c *Claude) ResumeCommandUnified(sessionID, prompt string, opts *UnifiedOptions) *exec.Cmd {
 	return c.ResumeCommand(sessionID, prompt, MapFromUnified(c.Name(), opts))
+}
+
+// ParseOutput returns the output as-is since Claude with --print already produces clean output.
+func (c *Claude) ParseOutput(rawOutput string) string {
+	return rawOutput
+}
+
+// claudeJSONResponse represents Claude's JSON output format.
+type claudeJSONResponse struct {
+	Type       string `json:"type"`
+	Result     string `json:"result"`
+	SessionID  string `json:"session_id"`
+	DurationMs int64  `json:"duration_ms"`
+	Usage      struct {
+		InputTokens  int `json:"input_tokens"`
+		OutputTokens int `json:"output_tokens"`
+	} `json:"usage"`
+}
+
+// ParseJSONResponse parses Claude's JSON output into a unified response.
+func (c *Claude) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
+	var resp claudeJSONResponse
+	if err := json.Unmarshal([]byte(rawOutput), &resp); err != nil {
+		return nil, err
+	}
+
+	// Store raw response
+	var raw map[string]any
+	_ = json.Unmarshal([]byte(rawOutput), &raw)
+
+	return &UnifiedResponse{
+		Content:    resp.Result,
+		SessionID:  resp.SessionID,
+		DurationMs: resp.DurationMs,
+		Usage: &TokenUsage{
+			InputTokens:  resp.Usage.InputTokens,
+			OutputTokens: resp.Usage.OutputTokens,
+			TotalTokens:  resp.Usage.InputTokens + resp.Usage.OutputTokens,
+		},
+		Raw: raw,
+	}, nil
+}
+
+// SeparateStderr returns false since Claude's stderr doesn't need filtering.
+func (c *Claude) SeparateStderr() bool {
+	return false
 }

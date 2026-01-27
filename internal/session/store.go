@@ -453,11 +453,30 @@ type ListFilter struct {
 	Model   string
 	WorkDir string
 	Limit   int
+	Offset  int // Number of sessions to skip (for pagination)
+}
+
+// ListResult contains paginated session results.
+type ListResult struct {
+	Sessions []*Session
+	Total    int // Total number of matching sessions (before pagination)
+	Limit    int // Limit used
+	Offset   int // Offset used
 }
 
 // ListWithFilter returns sessions matching the filter criteria.
 // This uses the index for efficient filtering when possible.
 func (s *Store) ListWithFilter(filter *ListFilter) ([]*Session, error) {
+	result, err := s.ListPaginated(filter)
+	if err != nil {
+		return nil, err
+	}
+	return result.Sessions, nil
+}
+
+// ListPaginated returns sessions with pagination metadata.
+// This is the recommended method for paginated queries.
+func (s *Store) ListPaginated(filter *ListFilter) (*ListResult, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -466,7 +485,16 @@ func (s *Store) ListWithFilter(filter *ListFilter) ([]*Session, error) {
 	}
 
 	if filter == nil {
-		return s.listLocked()
+		sessions, err := s.listLocked()
+		if err != nil {
+			return nil, err
+		}
+		return &ListResult{
+			Sessions: sessions,
+			Total:    len(sessions),
+			Limit:    0,
+			Offset:   0,
+		}, nil
 	}
 
 	// First filter using index metadata
@@ -483,6 +511,17 @@ func (s *Store) ListWithFilter(filter *ListFilter) ([]*Session, error) {
 		return s.index[matchingIDs[i]].LastUsed.After(s.index[matchingIDs[j]].LastUsed)
 	})
 
+	total := len(matchingIDs)
+
+	// Apply offset
+	if filter.Offset > 0 {
+		if filter.Offset >= len(matchingIDs) {
+			matchingIDs = nil
+		} else {
+			matchingIDs = matchingIDs[filter.Offset:]
+		}
+	}
+
 	// Apply limit
 	if filter.Limit > 0 && len(matchingIDs) > filter.Limit {
 		matchingIDs = matchingIDs[:filter.Limit]
@@ -498,7 +537,12 @@ func (s *Store) ListWithFilter(filter *ListFilter) ([]*Session, error) {
 		sessions = append(sessions, sess)
 	}
 
-	return sessions, nil
+	return &ListResult{
+		Sessions: sessions,
+		Total:    total,
+		Limit:    filter.Limit,
+		Offset:   filter.Offset,
+	}, nil
 }
 
 // metaMatchesFilter checks if metadata matches the filter criteria.

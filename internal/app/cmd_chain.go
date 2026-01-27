@@ -11,7 +11,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -76,6 +75,7 @@ type ChainStepResult struct {
 	Backend   string    `json:"backend"`
 	ExitCode  int       `json:"exit_code"`
 	Error     string    `json:"error,omitempty"`
+	Output    string    `json:"output,omitempty"`
 	SessionID string    `json:"session_id,omitempty"`
 	Duration  float64   `json:"duration_seconds"`
 	StartTime time.Time `json:"start_time"`
@@ -229,15 +229,20 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 		return result
 	}
 
-	// Execute command
-	exec := executor.New()
-	exitCode, execErr := exec.Run(execCmd)
+	// Execute with output capture and parsing
+	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
 	if execErr != nil {
 		result.Error = execErr.Error()
 	}
 	result.ExitCode = exitCode
+	result.Output = output
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
+
+	// Print output if not in JSON mode
+	if !chainJSONFlag && output != "" {
+		fmt.Println(output)
+	}
 
 	// Update session
 	updateSessionAfterExecution(ctx.store, sess, exitCode, result.Error, chainJSONFlag)

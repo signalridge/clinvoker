@@ -333,7 +333,8 @@ func (m *flagMapper) mapOutputFormat(format OutputFormat) []string {
 		case OutputJSON:
 			return []string{"--output-format", "json"}
 		case OutputStreamJSON:
-			return []string{"--output-format", "stream-json"}
+			// Claude requires --verbose for stream-json output
+			return []string{"--output-format", "stream-json", "--verbose"}
 		}
 
 	case "gemini":

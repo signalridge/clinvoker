@@ -36,8 +36,13 @@ func TestValidateWorkDir(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "path traversal with ..",
-			workDir: "/tmp/../etc",
+			name:    "path with .. resolving to valid directory is allowed",
+			workDir: "/tmp/../tmp",
+			wantErr: false,
+		},
+		{
+			name:    "path with .. resolving to non-existent is rejected",
+			workDir: "/tmp/../nonexistent_path_xyz",
 			wantErr: true,
 		},
 		{

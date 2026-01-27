@@ -335,17 +335,29 @@ func (h *CustomHandlers) HandleBackends(ctx context.Context, _ *BackendsInput) (
 }
 
 // SessionsInput is the input for the sessions handler.
-type SessionsInput struct{}
+type SessionsInput struct {
+	Backend string `query:"backend" doc:"Filter by backend name"`
+	Status  string `query:"status" doc:"Filter by status (active, completed, error)"`
+	Limit   int    `query:"limit" doc:"Maximum number of sessions to return (default: 100)"`
+	Offset  int    `query:"offset" doc:"Number of sessions to skip for pagination"`
+}
 
 // HandleSessions handles session listing requests.
-func (h *CustomHandlers) HandleSessions(ctx context.Context, _ *SessionsInput) (*SessionsResponse, error) {
-	sessions, err := h.executor.ListSessions(ctx)
+func (h *CustomHandlers) HandleSessions(ctx context.Context, input *SessionsInput) (*SessionsResponse, error) {
+	opts := &service.SessionListOptions{
+		Backend: input.Backend,
+		Status:  input.Status,
+		Limit:   input.Limit,
+		Offset:  input.Offset,
+	}
+
+	result, err := h.executor.ListSessionsPaginated(ctx, opts)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("failed to list sessions", err)
 	}
 
-	infos := make([]SessionInfo, len(sessions))
-	for i, s := range sessions {
+	infos := make([]SessionInfo, len(result.Sessions))
+	for i, s := range result.Sessions {
 		infos[i] = SessionInfo{
 			ID:            s.ID,
 			Backend:       s.Backend,
@@ -365,6 +377,9 @@ func (h *CustomHandlers) HandleSessions(ctx context.Context, _ *SessionsInput) (
 	return &SessionsResponse{
 		Body: SessionsResponseBody{
 			Sessions: infos,
+			Total:    result.Total,
+			Limit:    result.Limit,
+			Offset:   result.Offset,
 		},
 	}, nil
 }

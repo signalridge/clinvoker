@@ -285,7 +285,7 @@ func TestMapOutputFormat_Claude(t *testing.T) {
 		{"", nil},
 		{OutputText, []string{"--output-format", "text"}},
 		{OutputJSON, []string{"--output-format", "json"}},
-		{OutputStreamJSON, []string{"--output-format", "stream-json"}},
+		{OutputStreamJSON, []string{"--output-format", "stream-json", "--verbose"}}, // Claude requires --verbose for stream-json
 	}
 
 	for _, tt := range tests {
