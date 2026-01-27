@@ -196,10 +196,11 @@ func Init(cfgFile string) error {
 }
 
 // Get returns the current configuration.
+// This is safe to call from multiple goroutines concurrently.
 func Get() *Config {
-	if cfg == nil {
-		_ = Init("")
-	}
+	// Always call Init to ensure initialization happens via sync.Once
+	// This avoids race conditions from checking cfg == nil directly
+	_ = Init("")
 	return cfg
 }
 

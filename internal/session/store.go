@@ -26,8 +26,8 @@ func NewStore() *Store {
 
 // Create creates a new session and saves it.
 func (s *Store) Create(backend, workDir string) (*Session, error) {
-	if err := config.EnsureConfigDir(); err != nil {
-		return nil, fmt.Errorf("failed to create config dir: %w", err)
+	if err := s.ensureStoreDir(); err != nil {
+		return nil, fmt.Errorf("failed to create sessions dir: %w", err)
 	}
 
 	sess, err := NewSession(backend, workDir)
@@ -44,8 +44,8 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 
 // Save persists a session to disk.
 func (s *Store) Save(sess *Session) error {
-	if err := config.EnsureConfigDir(); err != nil {
-		return fmt.Errorf("failed to create config dir: %w", err)
+	if err := s.ensureStoreDir(); err != nil {
+		return fmt.Errorf("failed to create sessions dir: %w", err)
 	}
 
 	data, err := json.MarshalIndent(sess, "", "  ")
@@ -54,7 +54,8 @@ func (s *Store) Save(sess *Session) error {
 	}
 
 	path := s.sessionPath(sess.ID)
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	// Use 0600 to protect potentially sensitive prompt data
+	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write session file: %w", err)
 	}
 
@@ -99,7 +100,7 @@ func (s *Store) Delete(id string) error {
 
 // List returns all sessions, sorted by last used (most recent first).
 func (s *Store) List() ([]*Session, error) {
-	if err := config.EnsureConfigDir(); err != nil {
+	if err := s.ensureStoreDir(); err != nil {
 		return nil, err
 	}
 
@@ -334,8 +335,8 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 
 // CreateWithOptions creates a new session with options and saves it.
 func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions) (*Session, error) {
-	if err := config.EnsureConfigDir(); err != nil {
-		return nil, fmt.Errorf("failed to create config dir: %w", err)
+	if err := s.ensureStoreDir(); err != nil {
+		return nil, fmt.Errorf("failed to create sessions dir: %w", err)
 	}
 
 	sess, err := NewSessionWithOptions(backend, workDir, opts)
@@ -388,4 +389,11 @@ type StoreStats struct {
 
 func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
+}
+
+func (s *Store) ensureStoreDir() error {
+	if s.dir == "" {
+		s.dir = config.SessionsDir()
+	}
+	return os.MkdirAll(s.dir, 0755)
 }
