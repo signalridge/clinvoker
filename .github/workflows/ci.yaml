@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run actionlint
-        uses: rhysd/actionlint@v1
+        uses: raven-actions/actionlint@v2
   lint-go:
     name: Lint Go
     runs-on: ubuntu-latest
@@ -55,6 +55,7 @@ jobs:
       - name: Download dependencies
         run: go mod download
       - name: Run tests
+        shell: bash
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage
         uses: codecov/codecov-action@v4

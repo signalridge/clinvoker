@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
-	"github.com/spf13/cobra"
 )
 
 // versionCmd prints the version information.
@@ -212,7 +213,7 @@ func interactiveSessionPicker(store *session.Store, filter *session.ListFilter) 
 	fmt.Scanln(&input)
 
 	if input == "q" || input == "" {
-		return nil, fmt.Errorf("cancelled")
+		return nil, fmt.Errorf("canceled")
 	}
 
 	var idx int
@@ -693,7 +694,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 	var mu sync.Mutex
 
 	// Cancel context for fail-fast
-	cancelled := false
+	canceled := false
 	var cancelMu sync.Mutex
 
 	for i, task := range tasks.Tasks {
@@ -701,9 +702,9 @@ func runParallel(cmd *cobra.Command, args []string) error {
 		go func(idx int, t ParallelTask) {
 			defer wg.Done()
 
-			// Check if cancelled (fail-fast)
+			// Check if canceled (fail-fast)
 			cancelMu.Lock()
-			if cancelled {
+			if canceled {
 				cancelMu.Unlock()
 				mu.Lock()
 				aggregated.Results[idx] = TaskResult{
@@ -712,7 +713,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 					TaskName: t.Name,
 					Backend:  t.Backend,
 					ExitCode: -1,
-					Error:    "cancelled (fail-fast)",
+					Error:    "canceled (fail-fast)",
 				}
 				mu.Unlock()
 				return
@@ -744,7 +745,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 				mu.Unlock()
 				if failFast {
 					cancelMu.Lock()
-					cancelled = true
+					canceled = true
 					cancelMu.Unlock()
 				}
 				return
@@ -761,7 +762,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 				mu.Unlock()
 				if failFast {
 					cancelMu.Lock()
-					cancelled = true
+					canceled = true
 					cancelMu.Unlock()
 				}
 				return
@@ -863,7 +864,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 
 			if failFast && exitCode != 0 {
 				cancelMu.Lock()
-				cancelled = true
+				canceled = true
 				cancelMu.Unlock()
 			}
 		}(i, task)
@@ -894,7 +895,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 				status = "FAILED"
 			}
 			if r.ExitCode == -1 {
-				status = "CANCELLED"
+				status = "CANCELED"
 			}
 
 			taskName := r.TaskName
@@ -918,7 +919,7 @@ func runParallel(cmd *cobra.Command, args []string) error {
 				sessionID,
 				taskName,
 			)
-			if r.Error != "" && r.Error != "cancelled (fail-fast)" {
+			if r.Error != "" && r.Error != "canceled (fail-fast)" {
 				fmt.Printf("     Error: %s\n", r.Error)
 			}
 		}
