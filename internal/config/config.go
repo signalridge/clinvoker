@@ -17,6 +17,16 @@ type Config struct {
 	Session        SessionConfig            `mapstructure:"session"`
 	Output         OutputConfig             `mapstructure:"output"`
 	Parallel       ParallelConfig           `mapstructure:"parallel"`
+	Server         ServerConfig             `mapstructure:"server"`
+}
+
+// ServerConfig contains HTTP server settings.
+type ServerConfig struct {
+	// Host is the address to bind to (e.g., "127.0.0.1", "0.0.0.0").
+	Host string `mapstructure:"host"`
+
+	// Port is the port to listen on.
+	Port int `mapstructure:"port"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -151,6 +161,10 @@ func Init(cfgFile string) error {
 				FailFast:        false,
 				AggregateOutput: true,
 			},
+			Server: ServerConfig{
+				Host: "127.0.0.1",
+				Port: 8080,
+			},
 		}
 
 		if cfgFile != "" {
@@ -162,21 +176,21 @@ func Init(cfgFile string) error {
 				return
 			}
 
-			configDir := filepath.Join(home, ".clinvoker")
+			configDir := filepath.Join(home, ".clinvk")
 			viper.AddConfigPath(configDir)
 			viper.SetConfigName("config")
 			viper.SetConfigType("yaml")
 		}
 
 		// Environment variables
-		viper.SetEnvPrefix("CLINVOKER")
+		viper.SetEnvPrefix("CLINVK")
 		viper.AutomaticEnv()
 
 		// Bind environment variables
-		viper.BindEnv("default_backend", "CLINVOKER_BACKEND")
-		viper.BindEnv("backends.claude.model", "CLINVOKER_CLAUDE_MODEL")
-		viper.BindEnv("backends.codex.model", "CLINVOKER_CODEX_MODEL")
-		viper.BindEnv("backends.gemini.model", "CLINVOKER_GEMINI_MODEL")
+		viper.BindEnv("default_backend", "CLINVK_BACKEND")
+		viper.BindEnv("backends.claude.model", "CLINVK_CLAUDE_MODEL")
+		viper.BindEnv("backends.codex.model", "CLINVK_CODEX_MODEL")
+		viper.BindEnv("backends.gemini.model", "CLINVK_GEMINI_MODEL")
 
 		// Read config file (ignore if not found)
 		if err := viper.ReadInConfig(); err != nil {
@@ -208,9 +222,9 @@ func Get() *Config {
 func ConfigDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return ".clinvoker"
+		return ".clinvk"
 	}
-	return filepath.Join(home, ".clinvoker")
+	return filepath.Join(home, ".clinvk")
 }
 
 // SessionsDir returns the sessions directory path.

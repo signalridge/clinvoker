@@ -20,14 +20,14 @@
       in
       {
         packages = {
-          clinvoker = pkgs.buildGoModule {
-            pname = "clinvoker";
+          clinvk = pkgs.buildGoModule {
+            pname = "clinvk";
             inherit version;
             src = ./.;
 
-            subPackages = [ "cmd/clinvoker" ];
+            subPackages = [ "cmd/clinvk" ];
 
-            vendorHash = "sha256-GT9lkHVG0Q3AO9IzI840Oyt1u5OUgQAaBncuCFosF+Y=";
+            vendorHash = "sha256-mVSH+lVn6NavaScayx2DEgnKbRV1nC5LansdCwABV/k=";
 
             ldflags = [
               "-s"
@@ -42,18 +42,23 @@
               homepage = "https://github.com/signalridge/clinvoker";
               license = licenses.mit;
               maintainers = [ ];
-              mainProgram = "clinvoker";
+              mainProgram = "clinvk";
             };
           };
 
-          default = self.packages.${system}.clinvoker;
+          # Alias for backwards compatibility
+          clinvoker = self.packages.${system}.clinvk;
+
+          default = self.packages.${system}.clinvk;
         };
 
         apps = {
-          clinvoker = flake-utils.lib.mkApp {
-            drv = self.packages.${system}.clinvoker;
+          clinvk = flake-utils.lib.mkApp {
+            drv = self.packages.${system}.clinvk;
           };
-          default = self.apps.${system}.clinvoker;
+          # Alias for backwards compatibility
+          clinvoker = self.apps.${system}.clinvk;
+          default = self.apps.${system}.clinvk;
         };
 
         devShells.default = pkgs.mkShell {
@@ -73,7 +78,9 @@
     )
     // {
       overlays.default = final: prev: {
-        clinvoker = self.packages.${prev.system}.clinvoker;
+        clinvk = self.packages.${prev.system}.clinvk;
+        # Alias for backwards compatibility
+        clinvoker = self.packages.${prev.system}.clinvk;
       };
     };
 }

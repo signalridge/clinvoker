@@ -43,11 +43,11 @@ jobs:
           use-flakehub: false
           use-gha-cache: true
       - name: Build package
-        run: nix build .#clinvoker
+        run: nix build .#clinvk
       - name: Test binary
         run: |
-          ./result/bin/clinvoker version
-          ./result/bin/clinvoker --help
+          ./result/bin/clinvk version
+          ./result/bin/clinvk --help
   devshell:
     name: Dev Shell
     runs-on: ubuntu-latest

@@ -21,11 +21,11 @@ var resumeCmd = &cobra.Command{
 	Long: `Resume a previous AI CLI session.
 
 Examples:
-  clinvoker resume abc123 "continue working"
-  clinvoker resume --last "follow up"
-  clinvoker resume --last
-  clinvoker resume --backend claude
-  clinvoker resume (interactive picker)`,
+  clinvk resume abc123 "continue working"
+  clinvk resume --last "follow up"
+  clinvk resume --last
+  clinvk resume --backend claude
+  clinvk resume (interactive picker)`,
 	Args: cobra.MaximumNArgs(2),
 	RunE: runResume,
 }

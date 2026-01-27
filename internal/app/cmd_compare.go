@@ -23,9 +23,9 @@ var compareCmd = &cobra.Command{
 	Long: `Compare AI outputs by running the same prompt across multiple backends.
 
 Examples:
-  clinvoker compare "explain quicksort" --backends claude,gemini,codex
-  clinvoker compare "review this code" --backends claude,gemini --model opus
-  clinvoker compare "fix the bug" --all-backends`,
+  clinvk compare "explain quicksort" --backends claude,gemini,codex
+  clinvk compare "review this code" --backends claude,gemini --model opus
+  clinvk compare "fix the bug" --all-backends`,
 	Args: cobra.ExactArgs(1),
 	RunE: runCompare,
 }

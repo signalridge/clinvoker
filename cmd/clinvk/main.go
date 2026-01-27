@@ -1,4 +1,4 @@
-// Package main is the entry point for clinvoker CLI.
+// Package main is the entry point for clinvk CLI.
 package main
 
 import (
