@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -17,10 +18,25 @@ import (
 // sessionIDPattern validates session IDs (hex string, 16 characters).
 var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16}$`)
 
-// Store handles session persistence.
+// SessionMeta holds lightweight metadata for indexing without loading full session.
+type SessionMeta struct {
+	ID        string
+	Backend   string
+	Status    SessionStatus
+	LastUsed  time.Time
+	Model     string
+	WorkDir   string
+	Title     string
+	Tags      []string
+	CreatedAt time.Time
+}
+
+// Store handles session persistence with in-memory index for performance.
 type Store struct {
-	mu  sync.RWMutex
-	dir string
+	mu    sync.RWMutex
+	dir   string
+	index map[string]*SessionMeta // Lightweight metadata cache
+	dirty bool                    // True if index needs refresh from disk
 }
 
 // validateSessionID checks if the session ID is valid and safe.
@@ -42,8 +58,132 @@ func validateSessionID(id string) error {
 // NewStore creates a new session store.
 func NewStore() *Store {
 	return &Store{
-		dir: config.SessionsDir(),
+		dir:   config.SessionsDir(),
+		index: make(map[string]*SessionMeta),
+		dirty: true, // Index needs to be loaded on first use
 	}
+}
+
+// NewStoreWithDir creates a new session store with a custom directory.
+func NewStoreWithDir(dir string) *Store {
+	return &Store{
+		dir:   dir,
+		index: make(map[string]*SessionMeta),
+		dirty: true,
+	}
+}
+
+// updateIndex updates the index entry for a session.
+func (s *Store) updateIndex(sess *Session) {
+	s.index[sess.ID] = &SessionMeta{
+		ID:        sess.ID,
+		Backend:   sess.Backend,
+		Status:    sess.Status,
+		LastUsed:  sess.LastUsed,
+		Model:     sess.Model,
+		WorkDir:   sess.WorkingDir,
+		Title:     sess.Title,
+		Tags:      sess.Tags,
+		CreatedAt: sess.CreatedAt,
+	}
+}
+
+// removeFromIndex removes a session from the index.
+func (s *Store) removeFromIndex(id string) {
+	delete(s.index, id)
+}
+
+// ensureIndexLoaded loads the index from disk if needed.
+// NOTE: This must be called with at least a read lock held.
+// If the index needs rebuilding, caller must upgrade to write lock first.
+func (s *Store) ensureIndexLoaded() error {
+	// Fast path: index is already loaded
+	if !s.dirty {
+		return nil
+	}
+	// Slow path: index needs to be rebuilt
+	// This should only be called when write lock is held
+	return s.rebuildIndex()
+}
+
+// ensureIndexLoadedForRead prepares the index for read operations.
+// It releases the read lock, takes a write lock to rebuild if needed,
+// then returns with the read lock held again.
+func (s *Store) ensureIndexLoadedForRead() error {
+	// Check if dirty while holding read lock
+	if !s.dirty {
+		return nil
+	}
+
+	// Need to rebuild - must upgrade to write lock
+	s.mu.RUnlock()
+	s.mu.Lock()
+
+	// Double-check after acquiring write lock
+	var err error
+	if s.dirty {
+		err = s.rebuildIndex()
+	}
+
+	// Downgrade back to read lock
+	s.mu.Unlock()
+	s.mu.RLock()
+
+	return err
+}
+
+// rebuildIndex rebuilds the in-memory index from disk.
+func (s *Store) rebuildIndex() error {
+	if err := s.ensureStoreDirLocked(); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(s.dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			s.index = make(map[string]*SessionMeta)
+			s.dirty = false
+			return nil
+		}
+		return fmt.Errorf("failed to read sessions dir: %w", err)
+	}
+
+	newIndex := make(map[string]*SessionMeta, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+
+		id := entry.Name()[:len(entry.Name())-5] // remove .json
+		sess, err := s.getLocked(id)
+		if err != nil {
+			continue
+		}
+
+		newIndex[id] = &SessionMeta{
+			ID:        sess.ID,
+			Backend:   sess.Backend,
+			Status:    sess.Status,
+			LastUsed:  sess.LastUsed,
+			Model:     sess.Model,
+			WorkDir:   sess.WorkingDir,
+			Title:     sess.Title,
+			Tags:      sess.Tags,
+			CreatedAt: sess.CreatedAt,
+		}
+	}
+
+	s.index = newIndex
+	s.dirty = false
+	return nil
+}
+
+// InvalidateIndex marks the index as needing refresh.
+// Call this if files are modified externally.
+func (s *Store) InvalidateIndex() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dirty = true
 }
 
 // Create creates a new session and saves it.
@@ -64,6 +204,7 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 		return nil, err
 	}
 
+	s.updateIndex(sess)
 	return sess, nil
 }
 
@@ -72,7 +213,12 @@ func (s *Store) Save(sess *Session) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return s.saveLocked(sess)
+	if err := s.saveLocked(sess); err != nil {
+		return err
+	}
+
+	s.updateIndex(sess)
+	return nil
 }
 
 // saveLocked persists a session to disk. Caller must hold s.mu.
@@ -135,7 +281,12 @@ func (s *Store) Delete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	return s.deleteLocked(id)
+	if err := s.deleteLocked(id); err != nil {
+		return err
+	}
+
+	s.removeFromIndex(id)
+	return nil
 }
 
 // deleteLocked removes a session. Caller must hold s.mu.
@@ -163,30 +314,15 @@ func (s *Store) List() ([]*Session, error) {
 	return s.listLocked()
 }
 
-// listLocked returns all sessions. Caller must hold s.mu.
+// listLocked returns all sessions. Caller must hold s.mu (read lock).
 func (s *Store) listLocked() ([]*Session, error) {
-	if err := s.ensureStoreDirLocked(); err != nil {
+	if err := s.ensureIndexLoadedForRead(); err != nil {
 		return nil, err
 	}
 
-	entries, err := os.ReadDir(s.dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to read sessions dir: %w", err)
-	}
-
-	var sessions []*Session
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-
-		id := entry.Name()[:len(entry.Name())-5] // remove .json
+	// Load full sessions from index
+	sessions := make([]*Session, 0, len(s.index))
+	for id := range s.index {
 		sess, err := s.getLocked(id)
 		if err != nil {
 			continue
@@ -202,32 +338,77 @@ func (s *Store) listLocked() ([]*Session, error) {
 	return sessions, nil
 }
 
-// Last returns the most recently used session.
-func (s *Store) Last() (*Session, error) {
-	sessions, err := s.List()
-	if err != nil {
+// ListMeta returns lightweight metadata for all sessions (faster than List).
+// Use this when you don't need the full session data.
+func (s *Store) ListMeta() ([]*SessionMeta, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
 		return nil, err
 	}
-	if len(sessions) == 0 {
+
+	metas := make([]*SessionMeta, 0, len(s.index))
+	for _, meta := range s.index {
+		metas = append(metas, meta)
+	}
+
+	// Sort by last used, most recent first
+	sort.Slice(metas, func(i, j int) bool {
+		return metas[i].LastUsed.After(metas[j].LastUsed)
+	})
+
+	return metas, nil
+}
+
+// Last returns the most recently used session.
+func (s *Store) Last() (*Session, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
+		return nil, err
+	}
+
+	if len(s.index) == 0 {
 		return nil, fmt.Errorf("no sessions found")
 	}
-	return sessions[0], nil
+
+	// Find most recent from index
+	var latest *SessionMeta
+	for _, meta := range s.index {
+		if latest == nil || meta.LastUsed.After(latest.LastUsed) {
+			latest = meta
+		}
+	}
+
+	return s.getLocked(latest.ID)
 }
 
 // LastForBackend returns the most recently used session for a backend.
 func (s *Store) LastForBackend(backend string) (*Session, error) {
-	sessions, err := s.List()
-	if err != nil {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
 		return nil, err
 	}
 
-	for _, sess := range sessions {
-		if sess.Backend == backend {
-			return sess, nil
+	// Find most recent for backend from index
+	var latest *SessionMeta
+	for _, meta := range s.index {
+		if meta.Backend == backend {
+			if latest == nil || meta.LastUsed.After(latest.LastUsed) {
+				latest = meta
+			}
 		}
 	}
 
-	return nil, fmt.Errorf("no sessions found for backend: %s", backend)
+	if latest == nil {
+		return nil, fmt.Errorf("no sessions found for backend: %s", backend)
+	}
+
+	return s.getLocked(latest.ID)
 }
 
 // Clean removes sessions older than the specified duration.
@@ -235,17 +416,24 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	sessions, err := s.listLocked()
-	if err != nil {
+	if err := s.ensureIndexLoaded(); err != nil {
 		return 0, err
 	}
 
+	cutoff := time.Now().Add(-maxAge)
 	var deleted int
-	for _, sess := range sessions {
-		if sess.IdleDuration() > maxAge {
-			if err := s.deleteLocked(sess.ID); err == nil {
-				deleted++
-			}
+	var toDelete []string
+
+	for id, meta := range s.index {
+		if meta.LastUsed.Before(cutoff) {
+			toDelete = append(toDelete, id)
+		}
+	}
+
+	for _, id := range toDelete {
+		if err := s.deleteLocked(id); err == nil {
+			s.removeFromIndex(id)
+			deleted++
 		}
 	}
 
@@ -268,42 +456,69 @@ type ListFilter struct {
 }
 
 // ListWithFilter returns sessions matching the filter criteria.
+// This uses the index for efficient filtering when possible.
 func (s *Store) ListWithFilter(filter *ListFilter) ([]*Session, error) {
-	sessions, err := s.List()
-	if err != nil {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
 		return nil, err
 	}
 
 	if filter == nil {
-		return sessions, nil
+		return s.listLocked()
 	}
 
-	var filtered []*Session
-	for _, sess := range sessions {
-		if filter.Backend != "" && sess.Backend != filter.Backend {
+	// First filter using index metadata
+	var matchingIDs []string
+	for id, meta := range s.index {
+		if !s.metaMatchesFilter(meta, filter) {
 			continue
 		}
-		if filter.Status != "" && sess.Status != filter.Status {
-			continue
-		}
-		if filter.Tag != "" && !sess.HasTag(filter.Tag) {
-			continue
-		}
-		if filter.Model != "" && sess.Model != filter.Model {
-			continue
-		}
-		if filter.WorkDir != "" && sess.WorkingDir != filter.WorkDir {
-			continue
-		}
-
-		filtered = append(filtered, sess)
-
-		if filter.Limit > 0 && len(filtered) >= filter.Limit {
-			break
-		}
+		matchingIDs = append(matchingIDs, id)
 	}
 
-	return filtered, nil
+	// Sort IDs by last used (from index)
+	sort.Slice(matchingIDs, func(i, j int) bool {
+		return s.index[matchingIDs[i]].LastUsed.After(s.index[matchingIDs[j]].LastUsed)
+	})
+
+	// Apply limit
+	if filter.Limit > 0 && len(matchingIDs) > filter.Limit {
+		matchingIDs = matchingIDs[:filter.Limit]
+	}
+
+	// Load full sessions only for matches
+	sessions := make([]*Session, 0, len(matchingIDs))
+	for _, id := range matchingIDs {
+		sess, err := s.getLocked(id)
+		if err != nil {
+			continue
+		}
+		sessions = append(sessions, sess)
+	}
+
+	return sessions, nil
+}
+
+// metaMatchesFilter checks if metadata matches the filter criteria.
+func (s *Store) metaMatchesFilter(meta *SessionMeta, filter *ListFilter) bool {
+	if filter.Backend != "" && meta.Backend != filter.Backend {
+		return false
+	}
+	if filter.Status != "" && meta.Status != filter.Status {
+		return false
+	}
+	if filter.Model != "" && meta.Model != filter.Model {
+		return false
+	}
+	if filter.WorkDir != "" && meta.WorkDir != filter.WorkDir {
+		return false
+	}
+	if filter.Tag != "" && !slices.Contains(meta.Tags, filter.Tag) {
+		return false
+	}
+	return true
 }
 
 // ListByBackend returns all sessions for a specific backend.
@@ -333,42 +548,76 @@ func (s *Store) ListForWorkDir(workDir string) ([]*Session, error) {
 
 // Search searches sessions by ID prefix, title, or initial prompt.
 func (s *Store) Search(query string) ([]*Session, error) {
-	sessions, err := s.List()
-	if err != nil {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
 		return nil, err
 	}
 
 	query = strings.ToLower(query)
-	var matches []*Session
-	for _, sess := range sessions {
-		if strings.HasPrefix(strings.ToLower(sess.ID), query) {
-			matches = append(matches, sess)
+	var matchingIDs []string
+
+	// First pass: filter using index (ID prefix and title)
+	for id, meta := range s.index {
+		if strings.HasPrefix(strings.ToLower(id), query) {
+			matchingIDs = append(matchingIDs, id)
 			continue
 		}
-		if sess.Title != "" && strings.Contains(strings.ToLower(sess.Title), query) {
-			matches = append(matches, sess)
-			continue
-		}
-		if sess.InitialPrompt != "" && strings.Contains(strings.ToLower(sess.InitialPrompt), query) {
-			matches = append(matches, sess)
+		if meta.Title != "" && strings.Contains(strings.ToLower(meta.Title), query) {
+			matchingIDs = append(matchingIDs, id)
 			continue
 		}
 	}
 
-	return matches, nil
+	// Load sessions and also check initial prompt (not in index)
+	sessions := make([]*Session, 0, len(matchingIDs))
+	checkedIDs := make(map[string]bool)
+
+	for _, id := range matchingIDs {
+		sess, err := s.getLocked(id)
+		if err != nil {
+			continue
+		}
+		sessions = append(sessions, sess)
+		checkedIDs[id] = true
+	}
+
+	// Check remaining sessions for prompt match
+	for id := range s.index {
+		if checkedIDs[id] {
+			continue
+		}
+		sess, err := s.getLocked(id)
+		if err != nil {
+			continue
+		}
+		if sess.InitialPrompt != "" && strings.Contains(strings.ToLower(sess.InitialPrompt), query) {
+			sessions = append(sessions, sess)
+		}
+	}
+
+	// Sort by last used
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].LastUsed.After(sessions[j].LastUsed)
+	})
+
+	return sessions, nil
 }
 
 // GetByPrefix returns a session by ID prefix (for short ID lookup).
 func (s *Store) GetByPrefix(prefix string) (*Session, error) {
-	sessions, err := s.List()
-	if err != nil {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
 		return nil, err
 	}
 
-	var matches []*Session
-	for _, sess := range sessions {
-		if strings.HasPrefix(sess.ID, prefix) {
-			matches = append(matches, sess)
+	var matches []string
+	for id := range s.index {
+		if strings.HasPrefix(id, prefix) {
+			matches = append(matches, id)
 		}
 	}
 
@@ -376,7 +625,7 @@ func (s *Store) GetByPrefix(prefix string) (*Session, error) {
 	case 0:
 		return nil, fmt.Errorf("no session found with prefix: %s", prefix)
 	case 1:
-		return matches[0], nil
+		return s.getLocked(matches[0])
 	default:
 		return nil, fmt.Errorf("ambiguous prefix %s: matches %d sessions", prefix, len(matches))
 	}
@@ -401,6 +650,7 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 		return nil, err
 	}
 
+	s.updateIndex(forked)
 	return forked, nil
 }
 
@@ -422,11 +672,43 @@ func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions)
 		return nil, err
 	}
 
+	s.updateIndex(sess)
 	return sess, nil
 }
 
 // Stats returns statistics about all sessions.
+// Uses the index for efficient calculation without loading full sessions.
 func (s *Store) Stats() (*StoreStats, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
+		return nil, err
+	}
+
+	stats := &StoreStats{
+		TotalSessions:     len(s.index),
+		SessionsByBackend: make(map[string]int),
+		SessionsByStatus:  make(map[SessionStatus]int),
+	}
+
+	for _, meta := range s.index {
+		stats.SessionsByBackend[meta.Backend]++
+		if meta.Status != "" {
+			stats.SessionsByStatus[meta.Status]++
+		}
+	}
+
+	// Token usage requires loading full sessions (expensive)
+	// Only calculate if needed - for now we skip it in the fast path
+	// Callers can use List() + iterate if they need token stats
+
+	return stats, nil
+}
+
+// StatsWithTokens returns full statistics including token usage.
+// This is slower as it loads all sessions.
+func (s *Store) StatsWithTokens() (*StoreStats, error) {
 	sessions, err := s.List()
 	if err != nil {
 		return nil, err
@@ -459,6 +741,19 @@ type StoreStats struct {
 	SessionsByStatus  map[SessionStatus]int
 	TotalInputTokens  int64
 	TotalOutputTokens int64
+}
+
+// Count returns the number of sessions in the store.
+// This is very fast as it only checks the index size.
+func (s *Store) Count() (int, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if err := s.ensureIndexLoadedForRead(); err != nil {
+		return 0, err
+	}
+
+	return len(s.index), nil
 }
 
 func (s *Store) sessionPath(id string) string {

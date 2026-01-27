@@ -16,7 +16,7 @@ func setupTestStore(t *testing.T) (*Store, func()) {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
-	store := &Store{dir: tmpDir}
+	store := NewStoreWithDir(tmpDir)
 
 	cleanup := func() {
 		os.RemoveAll(tmpDir)
