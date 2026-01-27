@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -556,14 +557,7 @@ func sessionToInfo(s *session.Session) SessionInfo {
 }
 
 func replacePlaceholder(s, old, replacement string) string {
-	result := s
-	for i := 0; i < len(result); i++ {
-		if i+len(old) <= len(result) && result[i:i+len(old)] == old {
-			result = result[:i] + replacement + result[i+len(old):]
-			i += len(replacement) - 1
-		}
-	}
-	return result
+	return strings.ReplaceAll(s, old, replacement)
 }
 
 // Ensure io.Writer is used to avoid import errors

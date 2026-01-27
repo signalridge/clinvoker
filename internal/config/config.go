@@ -183,14 +183,14 @@ func Init(cfgFile string) error {
 		}
 
 		// Environment variables
-		viper.SetEnvPrefix("CLINVOKER")
+		viper.SetEnvPrefix("CLINVK")
 		viper.AutomaticEnv()
 
 		// Bind environment variables
-		viper.BindEnv("default_backend", "CLINVOKER_BACKEND")
-		viper.BindEnv("backends.claude.model", "CLINVOKER_CLAUDE_MODEL")
-		viper.BindEnv("backends.codex.model", "CLINVOKER_CODEX_MODEL")
-		viper.BindEnv("backends.gemini.model", "CLINVOKER_GEMINI_MODEL")
+		viper.BindEnv("default_backend", "CLINVK_BACKEND")
+		viper.BindEnv("backends.claude.model", "CLINVK_CLAUDE_MODEL")
+		viper.BindEnv("backends.codex.model", "CLINVK_CODEX_MODEL")
+		viper.BindEnv("backends.gemini.model", "CLINVK_GEMINI_MODEL")
 
 		// Read config file (ignore if not found)
 		if err := viper.ReadInConfig(); err != nil {

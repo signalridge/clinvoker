@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -254,23 +255,14 @@ func mapModelToBackend(model string) string {
 
 	// Map OpenAI-style model names to backends
 	switch {
-	case contains(model, "claude"):
+	case strings.Contains(model, "claude"):
 		return "claude"
-	case contains(model, "gpt"):
+	case strings.Contains(model, "gpt"):
 		return "codex"
-	case contains(model, "gemini"):
+	case strings.Contains(model, "gemini"):
 		return "gemini"
 	default:
 		// Default to claude
 		return "claude"
 	}
-}
-
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

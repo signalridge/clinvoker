@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -190,7 +191,7 @@ func mapAnthropicModelToBackend(model string) string {
 	}
 
 	// Map Anthropic-style model names to backends
-	if contains(model, "claude") {
+	if strings.Contains(model, "claude") {
 		return "claude"
 	}
 
