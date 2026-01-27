@@ -9,6 +9,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
+	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
@@ -186,15 +187,15 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 func mapAnthropicModelToBackend(model string) string {
 	// If the model is already a backend name, use it
 	switch model {
-	case "claude", "codex", "gemini":
+	case backend.BackendClaude, backend.BackendCodex, backend.BackendGemini:
 		return model
 	}
 
 	// Map Anthropic-style model names to backends
 	if strings.Contains(model, "claude") {
-		return "claude"
+		return backend.BackendClaude
 	}
 
 	// Default to claude for Anthropic API
-	return "claude"
+	return backend.BackendClaude
 }

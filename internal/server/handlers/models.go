@@ -197,6 +197,9 @@ type SessionsResponse struct {
 // SessionsResponseBody is the body of a sessions response.
 type SessionsResponseBody struct {
 	Sessions []SessionInfo `json:"sessions" doc:"List of sessions"`
+	Total    int           `json:"total" doc:"Total number of sessions matching the filter"`
+	Limit    int           `json:"limit" doc:"Maximum number of sessions returned"`
+	Offset   int           `json:"offset" doc:"Number of sessions skipped"`
 }
 
 // SessionResponse is the API response for getting a single session.

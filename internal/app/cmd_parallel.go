@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"sync"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -118,6 +116,7 @@ type TaskResult struct {
 	Backend   string    `json:"backend"`
 	ExitCode  int       `json:"exit_code"`
 	Error     string    `json:"error,omitempty"`
+	Output    string    `json:"output,omitempty"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 	Duration  float64   `json:"duration_seconds"`
@@ -135,43 +134,63 @@ type ParallelResults struct {
 	EndTime       time.Time    `json:"end_time"`
 }
 
-func runParallel(cmd *cobra.Command, args []string) error {
-	var input []byte
-	var err error
+// parallelContext holds shared state for parallel execution.
+type parallelContext struct {
+	store    *session.Store
+	cfg      *config.Config
+	failFast bool
+	quiet    bool
+}
 
-	if parallelFile != "" {
-		input, err = os.ReadFile(parallelFile)
-		if err != nil {
-			return fmt.Errorf("failed to read file: %w", err)
-		}
-	} else {
-		// Check if stdin has data
-		stat, _ := os.Stdin.Stat()
-		if (stat.Mode() & os.ModeCharDevice) != 0 {
-			return fmt.Errorf("no input provided (use --file or pipe JSON to stdin)")
-		}
-		input, err = io.ReadAll(os.Stdin)
-		if err != nil {
-			return fmt.Errorf("failed to read stdin: %w", err)
-		}
+func runParallel(cmd *cobra.Command, args []string) error {
+	tasks, err := parseParallelTasks()
+	if err != nil {
+		return err
+	}
+
+	maxP, failFast := resolveParallelConfig(tasks)
+
+	if !parallelQuiet && !parallelJSON {
+		printParallelHeader(len(tasks.Tasks), maxP, failFast)
+	}
+
+	results := executeParallelTasks(tasks, maxP, failFast)
+	outputParallelResults(results, tasks)
+
+	if results.Failed > 0 {
+		return fmt.Errorf("%d task(s) failed", results.Failed)
+	}
+	return nil
+}
+
+// parseParallelTasks reads and parses the parallel tasks definition.
+func parseParallelTasks() (*ParallelTasks, error) {
+	input, err := readInputFromFileOrStdin(parallelFile)
+	if err != nil {
+		return nil, err
 	}
 
 	var tasks ParallelTasks
 	if err := json.Unmarshal(input, &tasks); err != nil {
-		return fmt.Errorf("failed to parse tasks: %w", err)
+		return nil, fmt.Errorf("failed to parse tasks: %w", err)
 	}
 
 	if len(tasks.Tasks) == 0 {
-		return fmt.Errorf("no tasks provided")
+		return nil, fmt.Errorf("no tasks provided")
 	}
 
-	// Determine max parallel from CLI flag or JSON config
+	return &tasks, nil
+}
+
+// resolveParallelConfig determines max parallel and fail-fast settings.
+func resolveParallelConfig(tasks *ParallelTasks) (int, bool) {
+	cfg := config.Get()
+
+	// Determine max parallel
 	maxP := maxParallel
 	if tasks.MaxParallel > 0 {
 		maxP = tasks.MaxParallel
 	}
-	// Use config default if not specified
-	cfg := config.Get()
 	if maxP == 0 && cfg.Parallel.MaxWorkers > 0 {
 		maxP = cfg.Parallel.MaxWorkers
 	}
@@ -179,269 +198,246 @@ func runParallel(cmd *cobra.Command, args []string) error {
 		maxP = defaultMaxParallel
 	}
 
-	// Determine fail-fast from CLI flag or JSON config
+	// Determine fail-fast
 	failFast := parallelFailFast || tasks.FailFast || cfg.Parallel.FailFast
 
-	if !parallelQuiet && !parallelJSON {
-		fmt.Printf("Running %d tasks (max %d parallel", len(tasks.Tasks), maxP)
-		if failFast {
-			fmt.Print(", fail-fast")
-		}
-		fmt.Println(")...")
-		fmt.Println()
+	return maxP, failFast
+}
+
+// printParallelHeader prints the parallel execution header.
+func printParallelHeader(taskCount, maxP int, failFast bool) {
+	fmt.Printf("Running %d tasks (max %d parallel", taskCount, maxP)
+	if failFast {
+		fmt.Print(", fail-fast")
 	}
+	fmt.Println(")...")
+	fmt.Println()
+}
 
-	// Create session store for tracking
-	store := session.NewStore()
-
-	// Aggregate results
-	aggregated := &ParallelResults{
+// executeParallelTasks executes all tasks in parallel.
+func executeParallelTasks(tasks *ParallelTasks, maxP int, failFast bool) *ParallelResults {
+	results := &ParallelResults{
 		TotalTasks: len(tasks.Tasks),
 		Results:    make([]TaskResult, len(tasks.Tasks)),
 		StartTime:  time.Now(),
 	}
 
-	// Semaphore for limiting parallelism
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	pCtx := &parallelContext{
+		store:    session.NewStore(),
+		cfg:      config.Get(),
+		failFast: failFast,
+		quiet:    parallelQuiet,
+	}
+
 	sem := make(chan struct{}, maxP)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	// Context for fail-fast cancellation
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	for i, task := range tasks.Tasks {
+	for i := range tasks.Tasks {
 		wg.Add(1)
-		go func(idx int, t ParallelTask) {
+		go func(idx int, t *ParallelTask) {
 			defer wg.Done()
 
-			// Check if canceled (fail-fast)
+			// Acquire semaphore first, then check context
+			// This ensures we don't start work if canceled
+			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			case <-ctx.Done():
+				mu.Lock()
+				results.Results[idx] = createCanceledResult(idx, t)
+				mu.Unlock()
+				return
+			}
+
+			// Check again after acquiring semaphore
 			select {
 			case <-ctx.Done():
 				mu.Lock()
-				aggregated.Results[idx] = TaskResult{
-					Index:    idx,
-					TaskID:   t.ID,
-					TaskName: t.Name,
-					Backend:  t.Backend,
-					ExitCode: -1,
-					Error:    "canceled (fail-fast)",
-				}
+				results.Results[idx] = createCanceledResult(idx, t)
 				mu.Unlock()
 				return
 			default:
 			}
 
-			sem <- struct{}{}        // acquire
-			defer func() { <-sem }() // release
-
-			startTime := time.Now()
-			result := TaskResult{
-				Index:     idx,
-				TaskID:    t.ID,
-				TaskName:  t.Name,
-				Backend:   t.Backend,
-				StartTime: startTime,
-			}
-
-			// Get backend
-			b, err := backend.Get(t.Backend)
-			if err != nil {
-				result.Error = err.Error()
-				result.ExitCode = 1
-				result.EndTime = time.Now()
-				result.Duration = result.EndTime.Sub(startTime).Seconds()
-				mu.Lock()
-				aggregated.Results[idx] = result
-				aggregated.Failed++
-				mu.Unlock()
-				if failFast {
-					cancel()
-				}
-				return
-			}
-
-			if !b.IsAvailable() {
-				result.Error = fmt.Sprintf("backend %q not available", t.Backend)
-				result.ExitCode = 1
-				result.EndTime = time.Now()
-				result.Duration = result.EndTime.Sub(startTime).Seconds()
-				mu.Lock()
-				aggregated.Results[idx] = result
-				aggregated.Failed++
-				mu.Unlock()
-				if failFast {
-					cancel()
-				}
-				return
-			}
-
-			// Build unified options from task config
-			unifiedOpts := &backend.UnifiedOptions{
-				WorkDir:      t.WorkDir,
-				Model:        t.Model,
-				ApprovalMode: backend.ApprovalMode(t.ApprovalMode),
-				SandboxMode:  backend.SandboxMode(t.SandboxMode),
-				OutputFormat: backend.OutputFormat(t.OutputFormat),
-				MaxTokens:    t.MaxTokens,
-				MaxTurns:     t.MaxTurns,
-				SystemPrompt: t.SystemPrompt,
-				Verbose:      t.Verbose,
-				DryRun:       t.DryRun || dryRun, // inherit global dry-run
-				ExtraFlags:   t.Extra,
-			}
-
-			// Create session for this task
-			sess, sessErr := session.NewSession(t.Backend, t.WorkDir)
-			if sessErr != nil {
-				if !parallelQuiet {
-					fmt.Fprintf(os.Stderr, "Warning: failed to create session: %v\n", sessErr)
-				}
-			} else {
-				sess.SetModel(t.Model)
-				sess.InitialPrompt = t.Prompt
-				sess.SetStatus(session.StatusActive)
-				if len(t.Tags) > 0 {
-					for _, tag := range t.Tags {
-						sess.AddTag(tag)
-					}
-				}
-				sess.AddTag("parallel")
-				if t.Name != "" {
-					sess.SetTitle(t.Name)
-				}
-				if err := store.Save(sess); err != nil && !parallelQuiet {
-					fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
-				}
-				result.SessionID = sess.ID
-			}
-
-			// Build command using unified options
-			execCmd := b.BuildCommandUnified(t.Prompt, unifiedOpts)
-
-			if t.DryRun || dryRun {
-				if !parallelQuiet {
-					fmt.Printf("[%d] Would execute: %s %v\n", idx+1, execCmd.Path, execCmd.Args[1:])
-				}
-				result.ExitCode = 0
-				result.EndTime = time.Now()
-				result.Duration = result.EndTime.Sub(startTime).Seconds()
-				mu.Lock()
-				aggregated.Results[idx] = result
-				aggregated.Completed++
-				mu.Unlock()
-				return
-			}
-
-			// Execute
-			exec := executor.New()
-			exec.Stdin = nil // No stdin for parallel tasks
-			if parallelQuiet {
-				exec.Stdout = io.Discard
-				exec.Stderr = io.Discard
-			}
-			exitCode, execErr := exec.RunSimple(execCmd)
-			if execErr != nil {
-				result.Error = execErr.Error()
-			}
-			result.ExitCode = exitCode
-			result.EndTime = time.Now()
-			result.Duration = result.EndTime.Sub(startTime).Seconds()
-
-			// Update session (if created successfully)
-			if sess != nil {
-				sess.IncrementTurn()
-				if exitCode == 0 {
-					sess.Complete()
-				} else {
-					sess.SetError(result.Error)
-				}
-				if err := store.Save(sess); err != nil && !parallelQuiet {
-					fmt.Fprintf(os.Stderr, "Warning: failed to update session: %v\n", err)
-				}
-			}
+			result := executeParallelTask(idx, t, pCtx)
 
 			mu.Lock()
-			aggregated.Results[idx] = result
-			if exitCode == 0 {
-				aggregated.Completed++
+			results.Results[idx] = result
+			if result.ExitCode == 0 && result.Error == "" {
+				results.Completed++
 			} else {
-				aggregated.Failed++
+				results.Failed++
 			}
 			mu.Unlock()
 
-			if failFast && exitCode != 0 {
+			if failFast && result.ExitCode != 0 {
 				cancel()
 			}
-		}(i, task)
+		}(i, &tasks.Tasks[i])
 	}
 
 	wg.Wait()
+	results.EndTime = time.Now()
+	results.TotalDuration = results.EndTime.Sub(results.StartTime).Seconds()
 
-	aggregated.EndTime = time.Now()
-	aggregated.TotalDuration = aggregated.EndTime.Sub(aggregated.StartTime).Seconds()
+	return results
+}
 
-	// Output results
+// createCanceledResult creates a result for a canceled task.
+func createCanceledResult(idx int, t *ParallelTask) TaskResult {
+	return TaskResult{
+		Index:    idx,
+		TaskID:   t.ID,
+		TaskName: t.Name,
+		Backend:  t.Backend,
+		ExitCode: -1,
+		Error:    "canceled (fail-fast)",
+	}
+}
+
+// executeParallelTask executes a single parallel task.
+func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskResult {
+	startTime := time.Now()
+	result := TaskResult{
+		Index:     idx,
+		TaskID:    t.ID,
+		TaskName:  t.Name,
+		Backend:   t.Backend,
+		StartTime: startTime,
+	}
+
+	// Get and validate backend
+	b, err := getBackendOrError(t.Backend)
+	if err != nil {
+		failTaskResult(&result, startTime, err.Error())
+		return result
+	}
+
+	// Build unified options
+	opts := buildParallelTaskOptions(t)
+
+	// Create and save session
+	tags := append([]string{"parallel"}, t.Tags...)
+	sess := createAndSaveSession(pCtx.store, t.Backend, t.WorkDir, t.Model, t.Prompt, tags, t.Name, pCtx.quiet)
+	if sess != nil {
+		result.SessionID = sess.ID
+	}
+
+	// Build command
+	execCmd := b.BuildCommandUnified(t.Prompt, opts)
+
+	if t.DryRun || dryRun {
+		if !pCtx.quiet {
+			fmt.Printf("[%d] Would execute: %s %v\n", idx+1, execCmd.Path, execCmd.Args[1:])
+		}
+		result.ExitCode = 0
+		result.EndTime = time.Now()
+		result.Duration = result.EndTime.Sub(startTime).Seconds()
+		return result
+	}
+
+	// Execute with output capture and parsing
+	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
+	if execErr != nil {
+		result.Error = execErr.Error()
+	}
+	result.ExitCode = exitCode
+	result.Output = output
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime).Seconds()
+
+	// Print output if not in quiet mode
+	if !pCtx.quiet && output != "" {
+		fmt.Printf("[%d] %s\n", idx+1, output)
+	}
+
+	// Update session
+	updateSessionAfterExecution(pCtx.store, sess, exitCode, result.Error, pCtx.quiet)
+
+	return result
+}
+
+// failTaskResult populates a failed task result.
+func failTaskResult(result *TaskResult, startTime time.Time, errMsg string) {
+	result.Error = errMsg
+	result.ExitCode = 1
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime).Seconds()
+}
+
+// buildParallelTaskOptions builds unified options for a parallel task.
+func buildParallelTaskOptions(t *ParallelTask) *backend.UnifiedOptions {
+	return &backend.UnifiedOptions{
+		WorkDir:      t.WorkDir,
+		Model:        t.Model,
+		ApprovalMode: backend.ApprovalMode(t.ApprovalMode),
+		SandboxMode:  backend.SandboxMode(t.SandboxMode),
+		OutputFormat: backend.OutputFormat(t.OutputFormat),
+		MaxTokens:    t.MaxTokens,
+		MaxTurns:     t.MaxTurns,
+		SystemPrompt: t.SystemPrompt,
+		Verbose:      t.Verbose,
+		DryRun:       t.DryRun || dryRun,
+		ExtraFlags:   t.Extra,
+	}
+}
+
+// outputParallelResults outputs the parallel execution results.
+func outputParallelResults(results *ParallelResults, tasks *ParallelTasks) {
 	if parallelJSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		if err := enc.Encode(aggregated); err != nil {
-			return fmt.Errorf("failed to encode JSON output: %w", err)
-		}
-	} else {
-		// Print results
-		fmt.Println("\nResults:")
-		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-		fmt.Printf("%-4s %-12s %-8s %-10s %-10s %s\n", "#", "BACKEND", "STATUS", "DURATION", "SESSION", "TASK")
-		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-
-		for _, r := range aggregated.Results {
-			status := "OK"
-			if r.ExitCode != 0 || r.Error != "" {
-				status = "FAILED"
-			}
-			if r.ExitCode == -1 {
-				status = "CANCELED"
-			}
-
-			taskName := r.TaskName
-			if taskName == "" {
-				taskName = tasks.Tasks[r.Index].Prompt
-			}
-			if len(taskName) > maxTaskNameLen {
-				taskName = taskName[:maxTaskNameLen-3] + "..."
-			}
-
-			sessionID := "-"
-			if r.SessionID != "" {
-				sessionID = r.SessionID[:8]
-			}
-
-			fmt.Printf("%-4d %-12s %-8s %-10.2fs %-10s %s\n",
-				r.Index+1,
-				r.Backend,
-				status,
-				r.Duration,
-				sessionID,
-				taskName,
-			)
-			if r.Error != "" && r.Error != "canceled (fail-fast)" {
-				fmt.Printf("     Error: %s\n", r.Error)
-			}
-		}
-
-		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-		fmt.Printf("Total: %d tasks, %d completed, %d failed (%.2fs)\n",
-			aggregated.TotalTasks,
-			aggregated.Completed,
-			aggregated.Failed,
-			aggregated.TotalDuration,
-		)
+		_ = enc.Encode(results)
+		return
 	}
 
-	if aggregated.Failed > 0 {
-		return fmt.Errorf("%d task(s) failed", aggregated.Failed)
+	fmt.Println("\nResults:")
+	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+	fmt.Printf("%-4s %-12s %-8s %-10s %-10s %s\n", "#", "BACKEND", "STATUS", "DURATION", "SESSION", "TASK")
+	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+
+	for i := range results.Results {
+		r := &results.Results[i]
+		status := resolveTaskStatus(r)
+		taskName := resolveTaskDisplayName(r, tasks)
+		sessionID := "-"
+		if r.SessionID != "" {
+			sessionID = r.SessionID[:8]
+		}
+
+		fmt.Printf("%-4d %-12s %-8s %-10.2fs %-10s %s\n",
+			r.Index+1, r.Backend, status, r.Duration, sessionID, taskName)
+
+		if r.Error != "" && r.Error != "canceled (fail-fast)" {
+			fmt.Printf("     Error: %s\n", r.Error)
+		}
 	}
 
-	return nil
+	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+	fmt.Printf("Total: %d tasks, %d completed, %d failed (%.2fs)\n",
+		results.TotalTasks, results.Completed, results.Failed, results.TotalDuration)
+}
+
+// resolveTaskStatus determines the display status for a task result.
+func resolveTaskStatus(r *TaskResult) string {
+	if r.ExitCode == -1 {
+		return "CANCELED"
+	}
+	if r.ExitCode != 0 || r.Error != "" {
+		return "FAILED"
+	}
+	return "OK"
+}
+
+// resolveTaskDisplayName determines the display name for a task.
+func resolveTaskDisplayName(r *TaskResult, tasks *ParallelTasks) string {
+	name := r.TaskName
+	if name == "" {
+		name = tasks.Tasks[r.Index].Prompt
+	}
+	return truncateString(name, maxTaskNameLen)
 }

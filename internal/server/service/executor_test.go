@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/session"
 )
 
 func TestExecutor_ListBackends(t *testing.T) {
@@ -324,9 +326,42 @@ func TestReplacePlaceholder(t *testing.T) {
 }
 
 func TestSessionToInfo(t *testing.T) {
-	// This tests the conversion function
-	// Since we don't have direct access to session.Session here without
-	// importing it, we'll skip detailed testing
+	// Test the sessionToInfo conversion function
+	// Import the session package to create a test session
+	sess := &session.Session{
+		ID:            "test123456789ab",
+		Backend:       "claude",
+		CreatedAt:     time.Now().Add(-1 * time.Hour),
+		LastUsed:      time.Now(),
+		WorkingDir:    "/test/dir",
+		Model:         "claude-opus",
+		InitialPrompt: "test prompt",
+		Status:        session.StatusActive,
+		TurnCount:     5,
+		Tags:          []string{"test", "api"},
+		Title:         "Test Session",
+	}
+
+	info := sessionToInfo(sess)
+
+	if info.ID != sess.ID {
+		t.Errorf("ID mismatch: expected %q, got %q", sess.ID, info.ID)
+	}
+	if info.Backend != sess.Backend {
+		t.Errorf("Backend mismatch: expected %q, got %q", sess.Backend, info.Backend)
+	}
+	if info.Model != sess.Model {
+		t.Errorf("Model mismatch: expected %q, got %q", sess.Model, info.Model)
+	}
+	if info.Status != string(sess.Status) {
+		t.Errorf("Status mismatch: expected %q, got %q", sess.Status, info.Status)
+	}
+	if info.TurnCount != sess.TurnCount {
+		t.Errorf("TurnCount mismatch: expected %d, got %d", sess.TurnCount, info.TurnCount)
+	}
+	if len(info.Tags) != len(sess.Tags) {
+		t.Errorf("Tags length mismatch: expected %d, got %d", len(sess.Tags), len(info.Tags))
+	}
 }
 
 func TestExecutor_ContextCancellation(t *testing.T) {

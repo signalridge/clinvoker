@@ -27,6 +27,18 @@ type ServerConfig struct {
 
 	// Port is the port to listen on.
 	Port int `mapstructure:"port"`
+
+	// RequestTimeoutSecs is the maximum time in seconds to wait for processing a request.
+	RequestTimeoutSecs int `mapstructure:"request_timeout_secs"`
+
+	// ReadTimeoutSecs is the maximum time in seconds to read the entire request.
+	ReadTimeoutSecs int `mapstructure:"read_timeout_secs"`
+
+	// WriteTimeoutSecs is the maximum time in seconds to write the response.
+	WriteTimeoutSecs int `mapstructure:"write_timeout_secs"`
+
+	// IdleTimeoutSecs is the maximum time in seconds to wait for the next request.
+	IdleTimeoutSecs int `mapstructure:"idle_timeout_secs"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -162,8 +174,12 @@ func Init(cfgFile string) error {
 				AggregateOutput: true,
 			},
 			Server: ServerConfig{
-				Host: "127.0.0.1",
-				Port: 8080,
+				Host:               "127.0.0.1",
+				Port:               8080,
+				RequestTimeoutSecs: 300, // 5 minutes
+				ReadTimeoutSecs:    30,
+				WriteTimeoutSecs:   300, // 5 minutes
+				IdleTimeoutSecs:    120,
 			},
 		}
 
@@ -235,14 +251,15 @@ func SessionsDir() string {
 // EnsureConfigDir creates the configuration directory if it doesn't exist.
 func EnsureConfigDir() error {
 	dir := ConfigDir()
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	// Use 0700 for security - only owner can access config and session data
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	return os.MkdirAll(SessionsDir(), 0755)
+	return os.MkdirAll(SessionsDir(), 0700)
 }
 
 // Set sets a configuration value.
-func Set(key string, value interface{}) error {
+func Set(key string, value any) error {
 	viper.Set(key, value)
 	return WriteConfig()
 }

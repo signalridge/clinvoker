@@ -12,7 +12,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/executor"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -50,6 +49,7 @@ type CompareResult struct {
 	Model     string    `json:"model,omitempty"`
 	ExitCode  int       `json:"exit_code"`
 	Error     string    `json:"error,omitempty"`
+	Output    string    `json:"output,omitempty"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 	Duration  float64   `json:"duration_seconds"`
@@ -124,8 +124,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 			results.Results[i] = result
 
 			if !compareJSON {
-				fmt.Printf("\n[%s] %s (%.2fs)\n", name, statusText(result.ExitCode, result.Error), result.Duration)
-				fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+				fmt.Printf("[%s] %s\n", name, result.Output)
 			}
 		}
 	} else {
@@ -145,6 +144,13 @@ func runCompare(cmd *cobra.Command, args []string) error {
 		}
 
 		wg.Wait()
+
+		// Print outputs for parallel mode
+		if !compareJSON {
+			for _, r := range results.Results {
+				fmt.Printf("[%s] %s\n", r.Backend, r.Output)
+			}
+		}
 	}
 
 	results.EndTime = time.Now()
@@ -268,14 +274,13 @@ func runCompareTask(backendName, prompt string, cfg *config.Config, store *sessi
 		return result
 	}
 
-	// Execute
-	exec := executor.New()
-	exec.Stdin = nil
-	exitCode, execErr := exec.RunSimple(execCmd)
+	// Execute with output capture and parsing
+	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
 	if execErr != nil {
 		result.Error = execErr.Error()
 	}
 	result.ExitCode = exitCode
+	result.Output = output
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
 

@@ -249,20 +249,20 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 func mapModelToBackend(model string) string {
 	// If the model is already a backend name, use it
 	switch model {
-	case "claude", "codex", "gemini":
+	case backend.BackendClaude, backend.BackendCodex, backend.BackendGemini:
 		return model
 	}
 
 	// Map OpenAI-style model names to backends
 	switch {
 	case strings.Contains(model, "claude"):
-		return "claude"
+		return backend.BackendClaude
 	case strings.Contains(model, "gpt"):
-		return "codex"
+		return backend.BackendCodex
 	case strings.Contains(model, "gemini"):
-		return "gemini"
+		return backend.BackendGemini
 	default:
 		// Default to claude
-		return "claude"
+		return backend.BackendClaude
 	}
 }

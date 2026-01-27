@@ -16,7 +16,7 @@ func setupTestStore(t *testing.T) (*Store, func()) {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
-	store := &Store{dir: tmpDir}
+	store := NewStoreWithDir(tmpDir)
 
 	cleanup := func() {
 		os.RemoveAll(tmpDir)
@@ -64,15 +64,20 @@ func TestStore_Save(t *testing.T) {
 	store, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	sess, _ := store.Create("claude", "/tmp")
+	sess, err := store.Create("claude", "/tmp")
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
 	sess.SetMetadata("key", "value")
 
-	err := store.Save(sess)
-	if err != nil {
+	if err := store.Save(sess); err != nil {
 		t.Fatalf("failed to save session: %v", err)
 	}
 
-	retrieved, _ := store.Get(sess.ID)
+	retrieved, err := store.Get(sess.ID)
+	if err != nil {
+		t.Fatalf("failed to get session: %v", err)
+	}
 	if retrieved.Metadata["key"] != "value" {
 		t.Error("metadata not persisted")
 	}
@@ -82,10 +87,12 @@ func TestStore_Delete(t *testing.T) {
 	store, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	sess, _ := store.Create("claude", "/tmp")
-
-	err := store.Delete(sess.ID)
+	sess, err := store.Create("claude", "/tmp")
 	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	if err := store.Delete(sess.ID); err != nil {
 		t.Fatalf("failed to delete session: %v", err)
 	}
 
@@ -109,12 +116,35 @@ func TestStore_List(t *testing.T) {
 	store, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	// Create multiple sessions
-	sess1, _ := store.Create("claude", "/dir1")
-	time.Sleep(10 * time.Millisecond)
-	sess2, _ := store.Create("codex", "/dir2")
-	time.Sleep(10 * time.Millisecond)
-	sess3, _ := store.Create("gemini", "/dir3")
+	// Create multiple sessions with explicit timestamps for deterministic ordering
+	now := time.Now()
+
+	sess1, err := store.Create("claude", "/dir1")
+	if err != nil {
+		t.Fatalf("failed to create session 1: %v", err)
+	}
+	sess1.LastUsed = now.Add(-2 * time.Hour) // Oldest
+	if err := store.Save(sess1); err != nil {
+		t.Fatalf("failed to save session 1: %v", err)
+	}
+
+	sess2, err := store.Create("codex", "/dir2")
+	if err != nil {
+		t.Fatalf("failed to create session 2: %v", err)
+	}
+	sess2.LastUsed = now.Add(-1 * time.Hour) // Middle
+	if err := store.Save(sess2); err != nil {
+		t.Fatalf("failed to save session 2: %v", err)
+	}
+
+	sess3, err := store.Create("gemini", "/dir3")
+	if err != nil {
+		t.Fatalf("failed to create session 3: %v", err)
+	}
+	sess3.LastUsed = now // Most recent
+	if err := store.Save(sess3); err != nil {
+		t.Fatalf("failed to save session 3: %v", err)
+	}
 
 	sessions, err := store.List()
 	if err != nil {
@@ -127,13 +157,13 @@ func TestStore_List(t *testing.T) {
 
 	// Should be sorted by LastUsed, most recent first
 	if sessions[0].ID != sess3.ID {
-		t.Error("sessions not sorted by LastUsed")
+		t.Errorf("expected most recent session %s first, got %s", sess3.ID, sessions[0].ID)
 	}
 	if sessions[1].ID != sess2.ID {
-		t.Error("sessions not sorted by LastUsed")
+		t.Errorf("expected middle session %s second, got %s", sess2.ID, sessions[1].ID)
 	}
 	if sessions[2].ID != sess1.ID {
-		t.Error("sessions not sorted by LastUsed")
+		t.Errorf("expected oldest session %s last, got %s", sess1.ID, sessions[2].ID)
 	}
 }
 
@@ -141,9 +171,25 @@ func TestStore_Last(t *testing.T) {
 	store, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	store.Create("claude", "/dir1")
-	time.Sleep(10 * time.Millisecond)
-	sess2, _ := store.Create("codex", "/dir2")
+	now := time.Now()
+
+	sess1, err := store.Create("claude", "/dir1")
+	if err != nil {
+		t.Fatalf("failed to create session 1: %v", err)
+	}
+	sess1.LastUsed = now.Add(-1 * time.Hour) // Older
+	if err := store.Save(sess1); err != nil {
+		t.Fatalf("failed to save session 1: %v", err)
+	}
+
+	sess2, err := store.Create("codex", "/dir2")
+	if err != nil {
+		t.Fatalf("failed to create session 2: %v", err)
+	}
+	sess2.LastUsed = now // More recent
+	if err := store.Save(sess2); err != nil {
+		t.Fatalf("failed to save session 2: %v", err)
+	}
 
 	last, err := store.Last()
 	if err != nil {
@@ -169,11 +215,34 @@ func TestStore_LastForBackend(t *testing.T) {
 	store, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	store.Create("claude", "/dir1")
-	time.Sleep(10 * time.Millisecond)
-	store.Create("codex", "/dir2")
-	time.Sleep(10 * time.Millisecond)
-	sess3, _ := store.Create("claude", "/dir3")
+	now := time.Now()
+
+	sess1, err := store.Create("claude", "/dir1")
+	if err != nil {
+		t.Fatalf("failed to create session 1: %v", err)
+	}
+	sess1.LastUsed = now.Add(-2 * time.Hour) // Oldest claude
+	if err := store.Save(sess1); err != nil {
+		t.Fatalf("failed to save session 1: %v", err)
+	}
+
+	sess2, err := store.Create("codex", "/dir2")
+	if err != nil {
+		t.Fatalf("failed to create session 2: %v", err)
+	}
+	sess2.LastUsed = now.Add(-1 * time.Hour) // Codex (different backend)
+	if err := store.Save(sess2); err != nil {
+		t.Fatalf("failed to save session 2: %v", err)
+	}
+
+	sess3, err := store.Create("claude", "/dir3")
+	if err != nil {
+		t.Fatalf("failed to create session 3: %v", err)
+	}
+	sess3.LastUsed = now // Most recent claude
+	if err := store.Save(sess3); err != nil {
+		t.Fatalf("failed to save session 3: %v", err)
+	}
 
 	last, err := store.LastForBackend("claude")
 	if err != nil {
@@ -189,9 +258,12 @@ func TestStore_LastForBackendNotFound(t *testing.T) {
 	store, cleanup := setupTestStore(t)
 	defer cleanup()
 
-	store.Create("claude", "/tmp")
+	_, err := store.Create("claude", "/tmp")
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
 
-	_, err := store.LastForBackend("gemini")
+	_, err = store.LastForBackend("gemini")
 	if err == nil {
 		t.Error("expected error for backend with no sessions")
 	}
