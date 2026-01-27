@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"testing"
+
+	"github.com/signalridge/clinvoker/internal/backend"
 )
 
 func TestExecutor_ListBackends(t *testing.T) {
@@ -81,6 +83,12 @@ func TestExecutor_ExecutePrompt_InvalidBackend(t *testing.T) {
 }
 
 func TestExecutor_ExecutePrompt_DryRun(t *testing.T) {
+	// Skip if no backend available
+	b, _ := backend.Get("claude")
+	if b == nil || !b.IsAvailable() {
+		t.Skip("claude backend not available")
+	}
+
 	e := NewExecutor()
 	ctx := context.Background()
 
@@ -122,6 +130,13 @@ func TestExecutor_ExecuteParallel_EmptyTasks(t *testing.T) {
 }
 
 func TestExecutor_ExecuteParallel_DryRun(t *testing.T) {
+	// Skip if backends not available
+	b1, _ := backend.Get("claude")
+	b2, _ := backend.Get("gemini")
+	if b1 == nil || !b1.IsAvailable() || b2 == nil || !b2.IsAvailable() {
+		t.Skip("claude or gemini backend not available")
+	}
+
 	e := NewExecutor()
 	ctx := context.Background()
 
@@ -165,6 +180,13 @@ func TestExecutor_ExecuteChain_EmptySteps(t *testing.T) {
 }
 
 func TestExecutor_ExecuteChain_DryRun(t *testing.T) {
+	// Skip if backends not available
+	b1, _ := backend.Get("claude")
+	b2, _ := backend.Get("gemini")
+	if b1 == nil || !b1.IsAvailable() || b2 == nil || !b2.IsAvailable() {
+		t.Skip("claude or gemini backend not available")
+	}
+
 	e := NewExecutor()
 	ctx := context.Background()
 
@@ -213,6 +235,13 @@ func TestExecutor_ExecuteCompare_EmptyBackends(t *testing.T) {
 }
 
 func TestExecutor_ExecuteCompare_Sequential(t *testing.T) {
+	// Skip if backends not available
+	b1, _ := backend.Get("claude")
+	b2, _ := backend.Get("gemini")
+	if b1 == nil || !b1.IsAvailable() || b2 == nil || !b2.IsAvailable() {
+		t.Skip("claude or gemini backend not available")
+	}
+
 	e := NewExecutor()
 	ctx := context.Background()
 
@@ -238,6 +267,14 @@ func TestExecutor_ExecuteCompare_Sequential(t *testing.T) {
 }
 
 func TestExecutor_ExecuteCompare_Parallel_DryRun(t *testing.T) {
+	// Skip if backends not available
+	b1, _ := backend.Get("claude")
+	b2, _ := backend.Get("gemini")
+	b3, _ := backend.Get("codex")
+	if b1 == nil || !b1.IsAvailable() || b2 == nil || !b2.IsAvailable() || b3 == nil || !b3.IsAvailable() {
+		t.Skip("claude, gemini, or codex backend not available")
+	}
+
 	e := NewExecutor()
 	ctx := context.Background()
 
