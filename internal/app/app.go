@@ -349,7 +349,7 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 		output := b.ParseOutput(rawOutput)
 		if output != "" {
 			fmt.Print(output)
-			if len(output) > 0 && output[len(output)-1] != '\n' {
+			if output[len(output)-1] != '\n' {
 				fmt.Println()
 			}
 		}
