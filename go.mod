@@ -4,15 +4,15 @@ go 1.24.0
 
 require (
 	github.com/creack/pty v1.1.24
+	github.com/danielgtaylor/huma/v2 v2.35.0
+	github.com/go-chi/chi/v5 v5.2.4
+	github.com/go-chi/cors v1.2.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 )
 
 require (
-	github.com/danielgtaylor/huma/v2 v2.35.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/go-chi/chi/v5 v5.2.4 // indirect
-	github.com/go-chi/cors v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
