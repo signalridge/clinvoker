@@ -1,0 +1,20 @@
+{
+  "yaml.schemas": {
+    "": [
+      ".golangci.yaml",
+      ".golangci.yml"
+    ]
+  },
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": [
+    "--fast"
+  ],
+  "editor.formatOnSave": true,
+  "go.formatTool": "goimports",
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  }
+}

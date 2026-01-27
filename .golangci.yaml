@@ -92,7 +92,10 @@ issues:
     # Allow unchecked error returns for common patterns
     - linters:
         - errcheck
-      text: "Error return value of .*(BindEnv|SetContent|WriteEvent|ParseLine|Signal|Copy|Init|Scanln|Sscanf).*is not checked"
+      text: "Error return value of .*(BindEnv|SetContent|WriteEvent|ParseLine).*"
+    - linters:
+        - errcheck
+      text: "Error return value of .*(Signal|Copy|Init|Scanln|Sscanf).*"
     # Allow stuttering type names for clarity
     - linters:
         - revive
