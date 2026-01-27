@@ -1,3 +1,6 @@
+# yaml-language-server: $schema=
+# golangci-lint v1 format (v2 not yet released)
+
 run:
   timeout: 5m
 linters:
