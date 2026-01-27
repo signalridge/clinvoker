@@ -100,7 +100,8 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("backend error: %w", err)
 	}
 
-	if !b.IsAvailable() {
+	// Skip availability check in dry-run mode
+	if !dryRun && !b.IsAvailable() {
 		return fmt.Errorf("backend %q is not available (CLI not found in PATH)", bn)
 	}
 
