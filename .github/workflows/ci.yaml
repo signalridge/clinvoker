@@ -122,7 +122,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
-        run: go build -ldflags="-s -w" -o clinvoker-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/clinvoker
+        run: go build -ldflags="-s -w" -o clinvk-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/clinvk
   integration:
     name: Integration
     runs-on: ubuntu-latest
@@ -134,11 +134,11 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Build
-        run: go build -o clinvoker ./cmd/clinvoker
+        run: go build -o clinvk ./cmd/clinvk
       - name: Test CLI
         run: |
-          ./clinvoker version
-          ./clinvoker --help
-          ./clinvoker config show
-          ./clinvoker sessions list
-          ./clinvoker --dry-run "test"
+          ./clinvk version
+          ./clinvk --help
+          ./clinvk config show
+          ./clinvk sessions list
+          ./clinvk --dry-run "test"

@@ -1,6 +1,6 @@
 # Binaries
-/clinvoker
-/clinvoker.exe
+/clinvk
+/clinvk.exe
 *.exe
 *.dll
 *.so
@@ -22,9 +22,7 @@ go.work.sum
 
 # IDE
 .idea/
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 *.swp
 *.swo
 *~
@@ -34,7 +32,7 @@ go.work.sum
 Thumbs.db
 
 # Local config (for testing)
-.clinvoker/
+.clinvk/
 
 # Goreleaser
 /dist/

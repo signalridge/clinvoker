@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/signalridge/clinvoker/internal/config"
@@ -14,6 +15,7 @@ import (
 
 // Store handles session persistence.
 type Store struct {
+	mu  sync.Mutex
 	dir string
 }
 
@@ -26,7 +28,10 @@ func NewStore() *Store {
 
 // Create creates a new session and saves it.
 func (s *Store) Create(backend, workDir string) (*Session, error) {
-	if err := s.ensureStoreDir(); err != nil {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if err := s.ensureStoreDirLocked(); err != nil {
 		return nil, fmt.Errorf("failed to create sessions dir: %w", err)
 	}
 
@@ -35,7 +40,7 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	if err := s.Save(sess); err != nil {
+	if err := s.saveLocked(sess); err != nil {
 		return nil, err
 	}
 
@@ -44,7 +49,15 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 
 // Save persists a session to disk.
 func (s *Store) Save(sess *Session) error {
-	if err := s.ensureStoreDir(); err != nil {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.saveLocked(sess)
+}
+
+// saveLocked persists a session to disk. Caller must hold s.mu.
+func (s *Store) saveLocked(sess *Session) error {
+	if err := s.ensureStoreDirLocked(); err != nil {
 		return fmt.Errorf("failed to create sessions dir: %w", err)
 	}
 
@@ -64,6 +77,14 @@ func (s *Store) Save(sess *Session) error {
 
 // Get retrieves a session by ID.
 func (s *Store) Get(id string) (*Session, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.getLocked(id)
+}
+
+// getLocked retrieves a session by ID. Caller must hold s.mu.
+func (s *Store) getLocked(id string) (*Session, error) {
 	path := s.sessionPath(id)
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -83,6 +104,14 @@ func (s *Store) Get(id string) (*Session, error) {
 
 // Delete removes a session.
 func (s *Store) Delete(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.deleteLocked(id)
+}
+
+// deleteLocked removes a session. Caller must hold s.mu.
+func (s *Store) deleteLocked(id string) error {
 	path := s.sessionPath(id)
 	if err := os.Remove(path); err != nil {
 		if os.IsNotExist(err) {
@@ -100,7 +129,15 @@ func (s *Store) Delete(id string) error {
 
 // List returns all sessions, sorted by last used (most recent first).
 func (s *Store) List() ([]*Session, error) {
-	if err := s.ensureStoreDir(); err != nil {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.listLocked()
+}
+
+// listLocked returns all sessions. Caller must hold s.mu.
+func (s *Store) listLocked() ([]*Session, error) {
+	if err := s.ensureStoreDirLocked(); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +159,7 @@ func (s *Store) List() ([]*Session, error) {
 		}
 
 		id := entry.Name()[:len(entry.Name())-5] // remove .json
-		sess, err := s.Get(id)
+		sess, err := s.getLocked(id)
 		if err != nil {
 			continue
 		}
@@ -167,7 +204,10 @@ func (s *Store) LastForBackend(backend string) (*Session, error) {
 
 // Clean removes sessions older than the specified duration.
 func (s *Store) Clean(maxAge time.Duration) (int, error) {
-	sessions, err := s.List()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	sessions, err := s.listLocked()
 	if err != nil {
 		return 0, err
 	}
@@ -175,7 +215,7 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 	var deleted int
 	for _, sess := range sessions {
 		if sess.IdleDuration() > maxAge {
-			if err := s.Delete(sess.ID); err == nil {
+			if err := s.deleteLocked(sess.ID); err == nil {
 				deleted++
 			}
 		}
@@ -316,7 +356,10 @@ func (s *Store) GetByPrefix(prefix string) (*Session, error) {
 
 // Fork creates a new session based on an existing one.
 func (s *Store) Fork(sessionID string) (*Session, error) {
-	original, err := s.Get(sessionID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	original, err := s.getLocked(sessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +369,7 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 		return nil, err
 	}
 
-	if err := s.Save(forked); err != nil {
+	if err := s.saveLocked(forked); err != nil {
 		return nil, err
 	}
 
@@ -335,7 +378,10 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 
 // CreateWithOptions creates a new session with options and saves it.
 func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions) (*Session, error) {
-	if err := s.ensureStoreDir(); err != nil {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if err := s.ensureStoreDirLocked(); err != nil {
 		return nil, fmt.Errorf("failed to create sessions dir: %w", err)
 	}
 
@@ -344,7 +390,7 @@ func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions)
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	if err := s.Save(sess); err != nil {
+	if err := s.saveLocked(sess); err != nil {
 		return nil, err
 	}
 
@@ -391,7 +437,8 @@ func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
 }
 
-func (s *Store) ensureStoreDir() error {
+// ensureStoreDirLocked creates the store directory. Caller must hold s.mu.
+func (s *Store) ensureStoreDirLocked() error {
 	if s.dir == "" {
 		s.dir = config.SessionsDir()
 	}

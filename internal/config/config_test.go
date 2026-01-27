@@ -14,7 +14,7 @@ func TestConfigDir(t *testing.T) {
 		t.Skip("cannot get home dir")
 	}
 
-	expected := filepath.Join(home, ".clinvoker")
+	expected := filepath.Join(home, ".clinvk")
 	if dir != expected {
 		t.Errorf("expected %q, got %q", expected, dir)
 	}
@@ -28,7 +28,7 @@ func TestSessionsDir(t *testing.T) {
 		t.Skip("cannot get home dir")
 	}
 
-	expected := filepath.Join(home, ".clinvoker", "sessions")
+	expected := filepath.Join(home, ".clinvk", "sessions")
 	if dir != expected {
 		t.Errorf("expected %q, got %q", expected, dir)
 	}
@@ -66,7 +66,7 @@ func TestEnsureConfigDir(t *testing.T) {
 	// So we just verify the function exists and returns nil on success
 	err = EnsureConfigDir()
 	if err != nil {
-		// May fail if we can't create ~/.clinvoker, which is acceptable
+		// May fail if we can't create ~/.clinvk, which is acceptable
 		t.Logf("EnsureConfigDir returned: %v", err)
 	}
 }

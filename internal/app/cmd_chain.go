@@ -16,15 +16,15 @@ import (
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
-// chainCommand runs backends in sequence, passing context between them.
-var chainCommand = &cobra.Command{
+// chainCmd runs backends in sequence, passing context between them.
+var chainCmd = &cobra.Command{
 	Use:   "chain",
 	Short: "Chain multiple backends in sequence with context passing",
 	Long: `Run multiple AI backends in sequence, optionally passing output between steps.
 
 Read chain definition from stdin or a file:
-  clinvoker chain --file chain.json
-  cat chain.json | clinvoker chain
+  clinvk chain --file chain.json
+  cat chain.json | clinvk chain
 
 Chain format (JSON):
   {
@@ -46,8 +46,8 @@ var (
 )
 
 func init() {
-	chainCommand.Flags().StringVarP(&chainFile, "file", "f", "", "file containing chain definition")
-	chainCommand.Flags().BoolVar(&chainJSONFlag, "json", false, "output results as JSON")
+	chainCmd.Flags().StringVarP(&chainFile, "file", "f", "", "file containing chain definition")
+	chainCmd.Flags().BoolVar(&chainJSONFlag, "json", false, "output results as JSON")
 }
 
 // ChainDefinition represents a chain of backend steps.

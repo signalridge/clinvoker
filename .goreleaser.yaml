@@ -5,9 +5,9 @@ before:
   hooks:
     - go mod tidy
 builds:
-  - id: clinvoker
-    main: ./cmd/clinvoker
-    binary: clinvoker
+  - id: clinvk
+    main: ./cmd/clinvk
+    binary: clinvk
     env:
       - CGO_ENABLED=0
     goos:
@@ -23,7 +23,7 @@ builds:
       - -X github.com/signalridge/clinvoker/internal/app.commit={{.ShortCommit}}
       - -X github.com/signalridge/clinvoker/internal/app.date={{.Date}}
 archives:
-  - id: clinvoker
+  - id: clinvk
     formats:
       - tar.gz
       - zip
@@ -55,7 +55,7 @@ release:
   prerelease: auto
   name_template: "v{{.Version}}"
 brews:
-  - name: clinvoker
+  - name: clinvk
     repository:
       owner: signalridge
       name: homebrew-tap
@@ -64,11 +64,11 @@ brews:
     license: "MIT"
     skip_upload: auto
     install: |
-      bin.install "clinvoker"
+      bin.install "clinvk"
     test: |
-      system "#{bin}/clinvoker", "--version"
+      system "#{bin}/clinvk", "--version"
 scoops:
-  - name: clinvoker
+  - name: clinvk
     repository:
       owner: signalridge
       name: scoop-bucket
@@ -77,8 +77,8 @@ scoops:
     license: MIT
     skip_upload: auto
 nfpms:
-  - id: clinvoker
-    package_name: clinvoker
+  - id: clinvk
+    package_name: clinvk
     vendor: SignalRidge
     homepage: "https://github.com/signalridge/clinvoker"
     maintainer: "SignalRidge <support@signalridge.com>"
@@ -92,16 +92,16 @@ nfpms:
     section: utils
     priority: optional
 aurs:
-  - name: clinvoker-bin
+  - name: clinvk-bin
     homepage: "https://github.com/signalridge/clinvoker"
     description: "Unified AI CLI wrapper for multiple backends"
     maintainers:
       - "SignalRidge <support@signalridge.com>"
     license: MIT
     private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
-    git_url: "ssh://aur@aur.archlinux.org/clinvoker-bin.git"
+    git_url: "ssh://aur@aur.archlinux.org/clinvk-bin.git"
     skip_upload: auto
     package: |-
-      install -Dm755 "./clinvoker" "${pkgdir}/usr/bin/clinvoker"
-      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/clinvoker/LICENSE"
-      install -Dm644 "./README.md" "${pkgdir}/usr/share/doc/clinvoker/README.md"
+      install -Dm755 "./clinvk" "${pkgdir}/usr/bin/clinvk"
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/clinvk/LICENSE"
+      install -Dm644 "./README.md" "${pkgdir}/usr/share/doc/clinvk/README.md"
