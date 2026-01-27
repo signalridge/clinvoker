@@ -25,8 +25,8 @@ var parallelCmd = &cobra.Command{
 	Long: `Run multiple AI tasks in parallel across different backends.
 
 Read tasks from stdin or a file:
-  cat tasks.json | clinvoker parallel
-  clinvoker parallel --file tasks.json
+  cat tasks.json | clinvk parallel
+  clinvk parallel --file tasks.json
 
 Basic task format (JSON):
   {

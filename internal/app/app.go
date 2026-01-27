@@ -28,15 +28,15 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "clinvoker [prompt]",
+	Use:   "clinvk [prompt]",
 	Short: "Unified AI CLI wrapper for multiple backends",
-	Long: `clinvoker is a unified CLI wrapper that orchestrates multiple AI CLI backends
+	Long: `clinvk is a unified CLI wrapper that orchestrates multiple AI CLI backends
 (Claude Code, Codex CLI, Gemini CLI) with session persistence and parallel task execution.
 
 Examples:
-  clinvoker "fix the bug in auth.go"
-  clinvoker --backend codex "implement user registration"
-  clinvoker -b gemini "generate unit tests"`,
+  clinvk "fix the bug in auth.go"
+  clinvk --backend codex "implement user registration"
+  clinvk -b gemini "generate unit tests"`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runPrompt,
 }
@@ -44,7 +44,7 @@ Examples:
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.clinvoker/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.clinvk/config.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&backendName, "backend", "b", "", "AI backend to use (claude, codex, gemini)")
 	rootCmd.PersistentFlags().StringVarP(&modelName, "model", "m", "", "model to use for the backend")
 	rootCmd.PersistentFlags().StringVarP(&workDir, "workdir", "w", "", "working directory for the AI backend")

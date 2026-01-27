@@ -23,8 +23,8 @@ var chainCmd = &cobra.Command{
 	Long: `Run multiple AI backends in sequence, optionally passing output between steps.
 
 Read chain definition from stdin or a file:
-  clinvoker chain --file chain.json
-  cat chain.json | clinvoker chain
+  clinvk chain --file chain.json
+  cat chain.json | clinvk chain
 
 Chain format (JSON):
   {
