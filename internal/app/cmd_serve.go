@@ -107,11 +107,11 @@ func runServe(cmd *cobra.Command, args []string) error {
 	customHandlers.Register(srv.API())
 
 	// Register OpenAI compatible handlers (stateless)
-	openaiHandlers := handlers.NewOpenAIHandlers(service.NewStatelessRunner(srv.Logger()))
+	openaiHandlers := handlers.NewOpenAIHandlers(service.NewStatelessRunner(srv.Logger()), srv.Logger())
 	openaiHandlers.Register(srv.API())
 
 	// Register Anthropic compatible handlers (stateless)
-	anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(srv.Logger()))
+	anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(srv.Logger()), srv.Logger())
 	anthropicHandlers.Register(srv.API())
 
 	// Set up graceful shutdown

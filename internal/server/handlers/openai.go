@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 // OpenAIHandlers provides handlers for OpenAI-compatible API.
 type OpenAIHandlers struct {
 	runner service.PromptRunner
+	logger *slog.Logger
 }
 
 const (
@@ -26,8 +28,11 @@ const (
 )
 
 // NewOpenAIHandlers creates a new OpenAI handlers instance.
-func NewOpenAIHandlers(runner service.PromptRunner) *OpenAIHandlers {
-	return &OpenAIHandlers{runner: runner}
+func NewOpenAIHandlers(runner service.PromptRunner, logger *slog.Logger) *OpenAIHandlers {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &OpenAIHandlers{runner: runner, logger: logger}
 }
 
 // Register registers all OpenAI-compatible API routes.
@@ -289,7 +294,9 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 			Body: func(hctx huma.Context) {
 				hctx.SetStatus(http.StatusOK)
 				hctx.SetHeader("Content-Type", "application/json")
-				_ = json.NewEncoder(hctx.BodyWriter()).Encode(body)
+				if err := json.NewEncoder(hctx.BodyWriter()).Encode(body); err != nil {
+					h.logger.Debug("JSON encode error", "error", err)
+				}
 			},
 		}, nil
 	}
@@ -346,8 +353,12 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 			if streamErr != nil || streamResult == nil || streamResult.ExitCode != 0 || streamResult.Error != "" {
 				finishReason = openAIFinishReasonErr
 			}
-			_ = writeChunk(OpenAIChatCompletionDelta{}, &finishReason)
-			_ = writeSSE(hctx, []byte("data: [DONE]\n\n"))
+			if err := writeChunk(OpenAIChatCompletionDelta{}, &finishReason); err != nil {
+				h.logger.Debug("SSE write error on final chunk", "error", err)
+			}
+			if err := writeSSE(hctx, []byte("data: [DONE]\n\n")); err != nil {
+				h.logger.Debug("SSE write error on DONE", "error", err)
+			}
 		},
 	}, nil
 }

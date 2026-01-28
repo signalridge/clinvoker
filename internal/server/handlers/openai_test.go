@@ -10,7 +10,7 @@ import (
 
 func TestOpenAIHandlers_HandleModels(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewOpenAIHandlers(executor)
+	handlers := NewOpenAIHandlers(executor, nil)
 
 	resp, err := handlers.HandleModels(context.Background(), &OpenAIModelsInput{})
 	if err != nil {
@@ -44,7 +44,7 @@ func TestOpenAIHandlers_HandleModels(t *testing.T) {
 
 func TestOpenAIHandlers_HandleChatCompletions_Validation(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewOpenAIHandlers(executor)
+	handlers := NewOpenAIHandlers(executor, nil)
 
 	tests := []struct {
 		name    string

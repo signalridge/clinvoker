@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -26,11 +27,15 @@ const (
 // AnthropicHandlers provides handlers for Anthropic-compatible API.
 type AnthropicHandlers struct {
 	runner service.PromptRunner
+	logger *slog.Logger
 }
 
 // NewAnthropicHandlers creates a new Anthropic handlers instance.
-func NewAnthropicHandlers(runner service.PromptRunner) *AnthropicHandlers {
-	return &AnthropicHandlers{runner: runner}
+func NewAnthropicHandlers(runner service.PromptRunner, logger *slog.Logger) *AnthropicHandlers {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &AnthropicHandlers{runner: runner, logger: logger}
 }
 
 // Register registers all Anthropic-compatible API routes.
@@ -276,7 +281,9 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 			Body: func(hctx huma.Context) {
 				hctx.SetStatus(http.StatusOK)
 				hctx.SetHeader("Content-Type", "application/json")
-				_ = json.NewEncoder(hctx.BodyWriter()).Encode(body)
+				if err := json.NewEncoder(hctx.BodyWriter()).Encode(body); err != nil {
+					h.logger.Debug("JSON encode error", "error", err)
+				}
 			},
 		}, nil
 	}
@@ -288,7 +295,14 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 		Body: func(hctx huma.Context) {
 			setEventStreamHeaders(hctx)
 
-			_ = writeSSEEvent(hctx, "message_start", anthropicStreamMessageStart{
+			// Helper to log SSE write errors at debug level
+			logSSEErr := func(event string, err error) {
+				if err != nil {
+					h.logger.Debug("SSE write error", "event", event, "error", err)
+				}
+			}
+
+			logSSEErr("message_start", writeSSEEvent(hctx, "message_start", anthropicStreamMessageStart{
 				Type: "message_start",
 				Message: anthropicStreamMessage{
 					ID:      responseID,
@@ -301,16 +315,16 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 						OutputTokens: 0,
 					},
 				},
-			})
+			}))
 
-			_ = writeSSEEvent(hctx, "content_block_start", anthropicStreamContentBlockStart{
+			logSSEErr("content_block_start", writeSSEEvent(hctx, "content_block_start", anthropicStreamContentBlockStart{
 				Type:  "content_block_start",
 				Index: 0,
 				ContentBlock: anthropicStreamContentText{
 					Type: "text",
 					Text: "",
 				},
-			})
+			}))
 
 			streamReq := *req
 			streamCtx := hctx.Context()
@@ -336,10 +350,10 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 				})
 			})
 
-			_ = writeSSEEvent(hctx, "content_block_stop", anthropicStreamContentBlockStop{
+			logSSEErr("content_block_stop", writeSSEEvent(hctx, "content_block_stop", anthropicStreamContentBlockStop{
 				Type:  "content_block_stop",
 				Index: 0,
-			})
+			}))
 
 			stopReason := stopReasonEnd
 			if streamErr != nil || streamResult == nil || streamResult.ExitCode != 0 || streamResult.Error != "" {
@@ -352,27 +366,27 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 				usage.OutputTokens = int(streamResult.TokenUsage.OutputTokens)
 			}
 
-			_ = writeSSEEvent(hctx, "message_delta", anthropicStreamMessageDelta{
+			logSSEErr("message_delta", writeSSEEvent(hctx, "message_delta", anthropicStreamMessageDelta{
 				Type: "message_delta",
 				Delta: anthropicStreamMessageDeltaData{
 					StopReason: stopReason,
 				},
 				Usage: usage,
-			})
+			}))
 
 			if streamErr != nil {
-				_ = writeSSEEvent(hctx, "error", anthropicStreamError{
+				logSSEErr("error", writeSSEEvent(hctx, "error", anthropicStreamError{
 					Type: "error",
 					Error: anthropicStreamErrorDetails{
 						Type:    "stream_error",
 						Message: streamErr.Error(),
 					},
-				})
+				}))
 			}
 
-			_ = writeSSEEvent(hctx, "message_stop", anthropicStreamMessageStop{
+			logSSEErr("message_stop", writeSSEEvent(hctx, "message_stop", anthropicStreamMessageStop{
 				Type: "message_stop",
-			})
+			}))
 		},
 	}, nil
 }

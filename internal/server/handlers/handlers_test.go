@@ -26,7 +26,7 @@ func TestNewCustomHandlers(t *testing.T) {
 
 func TestNewOpenAIHandlers(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewOpenAIHandlers(executor)
+	handlers := NewOpenAIHandlers(executor, nil)
 
 	if handlers == nil {
 		t.Error("NewOpenAIHandlers returned nil")
@@ -34,11 +34,14 @@ func TestNewOpenAIHandlers(t *testing.T) {
 	if handlers.runner == nil {
 		t.Error("runner not set")
 	}
+	if handlers.logger == nil {
+		t.Error("logger not set (should default to slog.Default)")
+	}
 }
 
 func TestNewAnthropicHandlers(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewAnthropicHandlers(executor)
+	handlers := NewAnthropicHandlers(executor, nil)
 
 	if handlers == nil {
 		t.Error("NewAnthropicHandlers returned nil")
@@ -46,15 +49,18 @@ func TestNewAnthropicHandlers(t *testing.T) {
 	if handlers.runner == nil {
 		t.Error("runner not set")
 	}
+	if handlers.logger == nil {
+		t.Error("logger not set (should default to slog.Default)")
+	}
 }
 
 func TestOpenAPIStreamingResponses(t *testing.T) {
 	api := humachi.New(chi.NewRouter(), huma.DefaultConfig("test", "1.0"))
 
-	openaiHandlers := NewOpenAIHandlers(service.NewStatelessRunner(nil))
+	openaiHandlers := NewOpenAIHandlers(service.NewStatelessRunner(nil), nil)
 	openaiHandlers.Register(api)
 
-	anthropicHandlers := NewAnthropicHandlers(service.NewStatelessRunner(nil))
+	anthropicHandlers := NewAnthropicHandlers(service.NewStatelessRunner(nil), nil)
 	anthropicHandlers.Register(api)
 
 	openaiOp := api.OpenAPI().Paths["/openai/v1/chat/completions"].Post

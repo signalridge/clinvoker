@@ -12,10 +12,10 @@ func (s *Server) RegisterRoutes() {
 	customHandlers.Register(s.api)
 
 	// Register OpenAI-compatible API handlers
-	openaiHandlers := handlers.NewOpenAIHandlers(service.NewStatelessRunner(s.logger))
+	openaiHandlers := handlers.NewOpenAIHandlers(service.NewStatelessRunner(s.logger), s.logger)
 	openaiHandlers.Register(s.api)
 
 	// Register Anthropic-compatible API handlers
-	anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(s.logger))
+	anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(s.logger), s.logger)
 	anthropicHandlers.Register(s.api)
 }

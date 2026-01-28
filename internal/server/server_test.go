@@ -111,7 +111,7 @@ func TestOpenAIModelsEndpoint(t *testing.T) {
 	logger := slog.Default()
 
 	srv := New(cfg, logger)
-	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor())
+	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor(), logger)
 	openaiHandlers.Register(srv.API())
 
 	req := httptest.NewRequest(http.MethodGet, "/openai/v1/models", http.NoBody)
@@ -194,7 +194,7 @@ func TestChatCompletionsValidation(t *testing.T) {
 	logger := slog.Default()
 
 	srv := New(cfg, logger)
-	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor())
+	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor(), logger)
 	openaiHandlers.Register(srv.API())
 
 	tests := []struct {
@@ -238,7 +238,7 @@ func TestAnthropicMessagesValidation(t *testing.T) {
 	logger := slog.Default()
 
 	srv := New(cfg, logger)
-	anthropicHandlers := handlers.NewAnthropicHandlers(srv.Executor())
+	anthropicHandlers := handlers.NewAnthropicHandlers(srv.Executor(), logger)
 	anthropicHandlers.Register(srv.API())
 
 	tests := []struct {

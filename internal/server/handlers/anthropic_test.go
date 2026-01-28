@@ -10,7 +10,7 @@ import (
 
 func TestAnthropicHandlers_HandleMessages_Validation(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewAnthropicHandlers(executor)
+	handlers := NewAnthropicHandlers(executor, nil)
 
 	tests := []struct {
 		name    string
