@@ -9,7 +9,7 @@ import (
 func TestCommandWithContext(t *testing.T) {
 	t.Run("nil context returns original cmd", func(t *testing.T) {
 		cmd := exec.Command("echo", "test")
-		result := CommandWithContext(nil, cmd)
+		result := CommandWithContext(nil, cmd) //nolint:staticcheck // testing nil handling
 		if result != cmd {
 			t.Error("expected original cmd when ctx is nil")
 		}
@@ -58,7 +58,7 @@ func TestCommandWithContext(t *testing.T) {
 
 func TestCleanupContext(t *testing.T) {
 	t.Run("nil returns background context", func(t *testing.T) {
-		result := CleanupContext(nil)
+		result := CleanupContext(nil) //nolint:staticcheck // testing nil handling
 		if result == nil {
 			t.Error("expected non-nil context")
 		}

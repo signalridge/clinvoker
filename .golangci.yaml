@@ -150,6 +150,11 @@ linters:
         linters:
           - revive
         text: "exported.*should have comment"
+      # Allow util package name (common Go convention)
+      - path: internal/util/
+        linters:
+          - revive
+        text: "avoid meaningless package names"
 formatters:
   enable:
     - gofmt
