@@ -19,6 +19,8 @@ import (
 const (
 	roleUser      = "user"
 	roleAssistant = "assistant"
+	stopReasonEnd = "end_turn"
+	stopReasonErr = "error"
 )
 
 // AnthropicHandlers provides handlers for Anthropic-compatible API.
@@ -239,9 +241,9 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 			responseID = fmt.Sprintf("msg_%d", now)
 		}
 
-		stopReason := "end_turn"
+		stopReason := stopReasonEnd
 		if result.ExitCode != 0 {
-			stopReason = "error"
+			stopReason = stopReasonErr
 		}
 
 		// Token counts (use backend usage if available, fallback to rough estimate)
@@ -339,9 +341,9 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 				Index: 0,
 			})
 
-			stopReason := "end_turn"
+			stopReason := stopReasonEnd
 			if streamErr != nil || streamResult == nil || streamResult.ExitCode != 0 || streamResult.Error != "" {
-				stopReason = "error"
+				stopReason = stopReasonErr
 			}
 
 			usage := AnthropicUsage{}

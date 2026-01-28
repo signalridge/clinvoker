@@ -1,3 +1,4 @@
+// Package core provides core execution logic for server handlers.
 package core
 
 import (
