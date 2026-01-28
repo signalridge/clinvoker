@@ -256,18 +256,18 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 
 	// Execute with output capture
 	var stdoutBuf, stderrBuf bytes.Buffer
-	exec := executor.New()
-	exec.Stdin = nil
-	exec.Stdout = &stdoutBuf
+	runner := executor.New()
+	runner.Stdin = nil
+	runner.Stdout = &stdoutBuf
 
 	// Separate stderr if backend needs it (e.g., to filter credential messages)
 	if b.SeparateStderr() {
-		exec.Stderr = &stderrBuf
+		runner.Stderr = &stderrBuf
 	} else {
-		exec.Stderr = &stdoutBuf
+		runner.Stderr = &stdoutBuf
 	}
 
-	exitCode, execErr := exec.RunSimple(execCmd)
+	exitCode, execErr := runner.RunSimple(execCmd)
 	if execErr != nil {
 		result.Error = execErr.Error()
 	}
@@ -322,7 +322,7 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 	}
 
 	if req.Ephemeral {
-		cleanupBackendSession(req.Backend, backendSessionID)
+		cleanupBackendSession(ctx, req.Backend, backendSessionID)
 	}
 
 	return result, nil
@@ -853,19 +853,26 @@ func updateSessionFromResponse(sess *session.Session, exitCode int, errMsg strin
 }
 
 // cleanupBackendSession cleans up backend session for ephemeral requests.
-func cleanupBackendSession(backendName, sessionID string) {
+func cleanupBackendSession(ctx context.Context, backendName, sessionID string) {
 	switch backendName {
 	case "gemini":
 		if sessionID == "" {
 			return
 		}
-		_ = exec.Command("gemini", "--delete-session", sessionID).Run()
+		_ = exec.CommandContext(cleanupContext(ctx), "gemini", "--delete-session", sessionID).Run()
 	case "codex":
 		if sessionID == "" {
 			return
 		}
 		cleanupCodexSession(sessionID)
 	}
+}
+
+func cleanupContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }
 
 // cleanupCodexSession removes a Codex session file by thread ID.
