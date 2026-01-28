@@ -134,14 +134,32 @@ func shortSessionID(id string) string {
 	return id[:8]
 }
 
+// commandRunner is a function type for running commands, allowing mocking in tests.
+type commandRunner func(name string, args ...string) error
+
+// defaultCommandRunner executes a command using exec.Command.
+var defaultCommandRunner commandRunner = func(name string, args ...string) error {
+	return exec.Command(name, args...).Run()
+}
+
+// runCommand is the package-level command runner, can be replaced in tests.
+var runCommand = defaultCommandRunner
+
 // cleanupBackendSession cleans up the backend's session after execution in ephemeral mode.
 // This is needed for backends that don't support a native --no-session-persistence flag.
 func cleanupBackendSession(backendName, sessionID string) {
+	cleanupBackendSessionWithRunner(backendName, sessionID, runCommand)
+}
+
+// cleanupBackendSessionWithRunner is the testable version that accepts a command runner.
+func cleanupBackendSessionWithRunner(backendName, sessionID string, runner commandRunner) {
 	switch backendName {
 	case "gemini":
-		// Gemini: delete the most recent session (index 1)
-		cmd := exec.Command("gemini", "--delete-session", "1")
-		_ = cmd.Run() // Ignore errors silently
+		// Gemini: delete the session by UUID
+		if sessionID == "" {
+			return
+		}
+		_ = runner("gemini", "--delete-session", sessionID) // Ignore errors silently
 
 	case "codex":
 		// Codex: delete the session file from ~/.codex/sessions/
@@ -161,10 +179,13 @@ func cleanupCodexSession(threadID string) {
 	if err != nil {
 		return
 	}
+	cleanupCodexSessionInDir(threadID, home, time.Now())
+}
 
-	// Codex stores sessions in ~/.codex/sessions/YYYY/MM/DD/
-	now := time.Now()
-	sessionDir := filepath.Join(home, ".codex", "sessions",
+// cleanupCodexSessionInDir is the testable version that accepts base directory and time.
+func cleanupCodexSessionInDir(threadID, baseDir string, now time.Time) {
+	// Codex stores sessions in {baseDir}/.codex/sessions/YYYY/MM/DD/
+	sessionDir := filepath.Join(baseDir, ".codex", "sessions",
 		fmt.Sprintf("%d", now.Year()),
 		fmt.Sprintf("%02d", int(now.Month())),
 		fmt.Sprintf("%02d", now.Day()),
