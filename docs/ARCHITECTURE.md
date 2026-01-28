@@ -112,7 +112,8 @@ HTTP API server with multiple API styles:
 Components:
 - `server.go` - Server setup and routing
 - `handlers/` - Request handlers
-- `service/` - Business logic
+- `service/` - Business logic & orchestration
+- `core/` - Backend execution core (stateless)
 
 ### Session Layer (`internal/session/`)
 
@@ -256,7 +257,7 @@ Real-time output streaming via:
 
 ### Test Helpers
 
-Located in `internal/testutil/`:
+Located in `internal/mock/`:
 - Mock backends
 - Temporary directories
 - Test server utilities
@@ -311,7 +312,7 @@ clinvoker/
 │   │   ├── handlers/     # API handlers
 │   │   └── service/      # Business logic
 │   ├── session/          # Session management
-│   └── testutil/         # Test utilities
+│   └── mock/         # Test utilities
 ├── docs/                 # Documentation
 └── testdata/             # Test fixtures
 ```

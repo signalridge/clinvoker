@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // readInputFromFileOrStdin reads input from a file or stdin.
@@ -71,29 +68,9 @@ func resolveModel(explicit, backendName, globalModel string) string {
 }
 
 // applyUnifiedDefaults applies unified flag defaults from config to options.
+// This is a thin wrapper around util.ApplyUnifiedDefaults for package convenience.
 func applyUnifiedDefaults(opts *backend.UnifiedOptions, cfg *config.Config, effectiveDryRun bool) {
-	if opts == nil || cfg == nil {
-		return
-	}
-
-	if opts.ApprovalMode == "" && cfg.UnifiedFlags.ApprovalMode != "" {
-		opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
-	}
-	if opts.SandboxMode == "" && cfg.UnifiedFlags.SandboxMode != "" {
-		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
-	}
-	if opts.MaxTurns == 0 && cfg.UnifiedFlags.MaxTurns > 0 {
-		opts.MaxTurns = cfg.UnifiedFlags.MaxTurns
-	}
-	if opts.MaxTokens == 0 && cfg.UnifiedFlags.MaxTokens > 0 {
-		opts.MaxTokens = cfg.UnifiedFlags.MaxTokens
-	}
-	if !opts.Verbose && cfg.UnifiedFlags.Verbose {
-		opts.Verbose = true
-	}
-	if !opts.DryRun && effectiveDryRun {
-		opts.DryRun = true
-	}
+	util.ApplyUnifiedDefaults(opts, cfg, effectiveDryRun)
 }
 
 // createAndSaveSession creates a new session and saves it to the store.
@@ -127,36 +104,13 @@ func createAndSaveSession(store *session.Store, backendName, workDir, model, pro
 }
 
 // updateSessionFromResponse updates a session with execution results.
+// This is a thin wrapper around util.UpdateSessionFromResponse for package convenience.
 func updateSessionFromResponse(sess *session.Session, exitCode int, errMsg string, resp *backend.UnifiedResponse) {
-	if sess == nil {
-		return
-	}
-
-	sess.IncrementTurn()
-
-	if resp != nil && resp.Usage != nil {
-		sess.AddTokens(int64(resp.Usage.InputTokens), int64(resp.Usage.OutputTokens))
-	}
-
-	if resp != nil && resp.Error != "" {
-		sess.SetError(resp.Error)
-		return
-	}
-
-	if exitCode == 0 {
-		sess.Complete()
-		return
-	}
-
-	if errMsg != "" {
-		sess.SetError(errMsg)
-		return
-	}
-
-	sess.SetError("backend execution failed")
+	util.UpdateSessionFromResponse(sess, exitCode, errMsg, resp)
 }
 
 // updateSessionAfterExecution updates session status after command execution.
+// This variant also saves the session to the store.
 func updateSessionAfterExecution(store *session.Store, sess *session.Session, exitCode int, errorMsg string, quiet bool) {
 	if sess == nil {
 		return
@@ -193,85 +147,8 @@ func shortSessionID(id string) string {
 	return id[:8]
 }
 
-// commandRunner is a function type for running commands, allowing mocking in tests.
-type commandRunner func(name string, args ...string) error
-
-// defaultCommandRunner executes a command using exec.Command.
-var defaultCommandRunner commandRunner = func(name string, args ...string) error {
-	return exec.Command(name, args...).Run()
-}
-
-// runCommand is the package-level command runner, can be replaced in tests.
-var runCommand = defaultCommandRunner
-
 // cleanupBackendSession cleans up the backend's session after execution in ephemeral mode.
-// This is needed for backends that don't support a native --no-session-persistence flag.
+// This is a thin wrapper around util.CleanupBackendSession for package convenience.
 func cleanupBackendSession(backendName, sessionID string) {
-	cleanupBackendSessionWithRunner(backendName, sessionID, runCommand)
-}
-
-// cleanupBackendSessionWithRunner is the testable version that accepts a command runner.
-func cleanupBackendSessionWithRunner(backendName, sessionID string, runner commandRunner) {
-	switch backendName {
-	case "gemini":
-		// Gemini: delete the session by UUID
-		if sessionID == "" {
-			return
-		}
-		_ = runner("gemini", "--delete-session", sessionID) // Ignore errors silently
-
-	case "codex":
-		// Codex: delete the session file from ~/.codex/sessions/
-		if sessionID == "" {
-			return
-		}
-		cleanupCodexSession(sessionID)
-
-		// Claude uses --no-session-persistence flag, no cleanup needed
-	}
-}
-
-// cleanupCodexSession removes a Codex session file by thread ID.
-// Codex stores sessions as files named: rollout-YYYY-MM-DDTHH-MM-SS-UUID.jsonl
-func cleanupCodexSession(threadID string) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return
-	}
-	cleanupCodexSessionInDir(threadID, home, time.Now())
-}
-
-// cleanupCodexSessionInDir is the testable version that accepts base directory and time.
-func cleanupCodexSessionInDir(threadID, baseDir string, now time.Time) {
-	// Codex stores sessions in {baseDir}/.codex/sessions/YYYY/MM/DD/
-	sessionDir := filepath.Join(baseDir, ".codex", "sessions",
-		fmt.Sprintf("%d", now.Year()),
-		fmt.Sprintf("%02d", int(now.Month())),
-		fmt.Sprintf("%02d", now.Day()),
-	)
-
-	// Find and delete the session file containing the thread ID in its name
-	entries, err := os.ReadDir(sessionDir)
-	if err != nil {
-		return
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		// Session files contain UUID in name: rollout-...-UUID.jsonl
-		if containsThreadID(entry.Name(), threadID) {
-			sessionPath := filepath.Join(sessionDir, entry.Name())
-			_ = os.Remove(sessionPath)
-			return
-		}
-	}
-}
-
-// containsThreadID checks if a filename contains the thread ID.
-func containsThreadID(filename, threadID string) bool {
-	// Thread ID is a UUID like "019c0523-e080-7fb1-a8ea-0530361cbf0f"
-	// File name is like "rollout-2026-01-29T00-06-03-019c0523-e080-7fb1-a8ea-0530361cbf0f.jsonl"
-	return threadID != "" && strings.Contains(filename, threadID)
+	util.CleanupBackendSession(backendName, sessionID)
 }

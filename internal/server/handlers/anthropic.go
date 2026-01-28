@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
@@ -17,16 +20,22 @@ import (
 const (
 	roleUser      = "user"
 	roleAssistant = "assistant"
+	stopReasonEnd = "end_turn"
+	stopReasonErr = "error"
 )
 
 // AnthropicHandlers provides handlers for Anthropic-compatible API.
 type AnthropicHandlers struct {
-	executor *service.Executor
+	runner service.PromptRunner
+	logger *slog.Logger
 }
 
 // NewAnthropicHandlers creates a new Anthropic handlers instance.
-func NewAnthropicHandlers(executor *service.Executor) *AnthropicHandlers {
-	return &AnthropicHandlers{executor: executor}
+func NewAnthropicHandlers(runner service.PromptRunner, logger *slog.Logger) *AnthropicHandlers {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &AnthropicHandlers{runner: runner, logger: logger}
 }
 
 // Register registers all Anthropic-compatible API routes.
@@ -39,7 +48,21 @@ func (h *AnthropicHandlers) Register(api huma.API) {
 		Path:        "/anthropic/v1/messages",
 		Summary:     "Create a Message",
 		Description: "Send a structured list of input messages with text and/or image content, and the model will generate the next message in the conversation. Compatible with Anthropic POST /v1/messages.",
-		Tags:        []string{"Anthropic Compatible"},
+		Responses: map[string]*huma.Response{
+			"200": {
+				Description: "OK",
+				Content: map[string]*huma.MediaType{
+					"application/json": {},
+					"text/event-stream": {
+						Schema: &huma.Schema{
+							Type:        huma.TypeString,
+							Description: "Server-sent events stream of message deltas (when stream=true).",
+						},
+					},
+				},
+			},
+		},
+		Tags: []string{"Anthropic Compatible"},
 	}, h.HandleMessages)
 }
 
@@ -56,7 +79,7 @@ type AnthropicMessagesRequest struct {
 	Messages      []AnthropicMessage `json:"messages" doc:"Conversation messages"`
 	System        string             `json:"system,omitempty" doc:"System prompt"`
 	StopSequences []string           `json:"stop_sequences,omitempty" doc:"Stop sequences"`
-	Stream        bool               `json:"stream,omitempty" doc:"Stream responses (not supported)"`
+	Stream        bool               `json:"stream,omitempty" doc:"Stream responses"`
 	Temperature   float64            `json:"temperature,omitempty" doc:"Sampling temperature"`
 	TopP          float64            `json:"top_p,omitempty" doc:"Nucleus sampling parameter"`
 	TopK          int                `json:"top_k,omitempty" doc:"Top-k sampling parameter"`
@@ -92,13 +115,81 @@ type AnthropicMessagesResponseBody struct {
 	Usage        AnthropicUsage          `json:"usage"`
 }
 
+type anthropicStreamMessageStart struct {
+	Type    string                 `json:"type"`
+	Message anthropicStreamMessage `json:"message"`
+}
+
+type anthropicStreamMessage struct {
+	ID           string                  `json:"id"`
+	Type         string                  `json:"type"`
+	Role         string                  `json:"role"`
+	Content      []AnthropicContentBlock `json:"content"`
+	Model        string                  `json:"model"`
+	StopReason   string                  `json:"stop_reason,omitempty"`
+	StopSequence string                  `json:"stop_sequence,omitempty"`
+	Usage        AnthropicUsage          `json:"usage"`
+}
+
+type anthropicStreamContentBlockStart struct {
+	Type         string                     `json:"type"`
+	Index        int                        `json:"index"`
+	ContentBlock anthropicStreamContentText `json:"content_block"`
+}
+
+type anthropicStreamContentText struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type anthropicStreamContentBlockDelta struct {
+	Type  string                   `json:"type"`
+	Index int                      `json:"index"`
+	Delta anthropicStreamTextDelta `json:"delta"`
+}
+
+type anthropicStreamTextDelta struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type anthropicStreamContentBlockStop struct {
+	Type  string `json:"type"`
+	Index int    `json:"index"`
+}
+
+type anthropicStreamMessageDelta struct {
+	Type  string                          `json:"type"`
+	Delta anthropicStreamMessageDeltaData `json:"delta"`
+	Usage AnthropicUsage                  `json:"usage,omitempty"`
+}
+
+type anthropicStreamMessageDeltaData struct {
+	StopReason   string `json:"stop_reason,omitempty"`
+	StopSequence string `json:"stop_sequence,omitempty"`
+}
+
+type anthropicStreamMessageStop struct {
+	Type string `json:"type"`
+}
+
+type anthropicStreamError struct {
+	Type  string                      `json:"type"`
+	Error anthropicStreamErrorDetails `json:"error"`
+}
+
+type anthropicStreamErrorDetails struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
+}
+
 // AnthropicMessagesInput is the input for the messages handler.
 type AnthropicMessagesInput struct {
 	Body AnthropicMessagesRequest
 }
 
 // HandleMessages handles the POST /v1/messages endpoint.
-func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *AnthropicMessagesInput) (*AnthropicMessagesResponse, error) {
+func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *AnthropicMessagesInput) (*huma.StreamResponse, error) {
 	if input.Body.Model == "" {
 		return nil, huma.Error400BadRequest("model is required")
 	}
@@ -107,11 +198,6 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 	}
 	if input.Body.MaxTokens <= 0 {
 		return nil, huma.Error400BadRequest("max_tokens must be greater than 0")
-	}
-
-	// Streaming is not supported
-	if input.Body.Stream {
-		return nil, huma.Error400BadRequest("streaming is not supported")
 	}
 
 	// Extract prompt from messages
@@ -137,7 +223,7 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 	// Map model to backend
 	backendName := mapAnthropicModelToBackend(input.Body.Model)
 
-	// Execute prompt
+	// Execute prompt (non-streaming)
 	req := &service.PromptRequest{
 		Backend:      backendName,
 		Prompt:       prompt,
@@ -147,29 +233,33 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 		Metadata:     input.Body.Metadata,
 	}
 
-	result, err := h.executor.ExecutePrompt(ctx, req)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("execution failed", err)
-	}
+	if !input.Body.Stream {
+		result, err := h.runner.ExecutePrompt(ctx, req)
+		if err != nil {
+			return nil, huma.Error500InternalServerError("execution failed", err)
+		}
 
-	// Build response
-	now := time.Now().Unix()
-	responseID := fmt.Sprintf("msg_%s", result.SessionID)
-	if result.SessionID == "" {
-		responseID = fmt.Sprintf("msg_%d", now)
-	}
+		// Build response
+		now := time.Now().Unix()
+		responseID := fmt.Sprintf("msg_%s", result.SessionID)
+		if result.SessionID == "" {
+			responseID = fmt.Sprintf("msg_%d", now)
+		}
 
-	stopReason := "end_turn"
-	if result.ExitCode != 0 {
-		stopReason = "error"
-	}
+		stopReason := stopReasonEnd
+		if result.ExitCode != 0 {
+			stopReason = stopReasonErr
+		}
 
-	// Estimate token counts
-	inputTokens := len(prompt) / 4
-	outputTokens := len(result.Output) / 4
+		// Token counts (use backend usage if available, fallback to rough estimate)
+		inputTokens := len(prompt) / 4
+		outputTokens := len(result.Output) / 4
+		if result.TokenUsage != nil {
+			inputTokens = int(result.TokenUsage.InputTokens)
+			outputTokens = int(result.TokenUsage.OutputTokens)
+		}
 
-	return &AnthropicMessagesResponse{
-		Body: AnthropicMessagesResponseBody{
+		body := AnthropicMessagesResponseBody{
 			ID:   responseID,
 			Type: "message",
 			Role: roleAssistant,
@@ -185,6 +275,118 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 				InputTokens:  inputTokens,
 				OutputTokens: outputTokens,
 			},
+		}
+
+		return &huma.StreamResponse{
+			Body: func(hctx huma.Context) {
+				hctx.SetStatus(http.StatusOK)
+				hctx.SetHeader("Content-Type", "application/json")
+				if err := json.NewEncoder(hctx.BodyWriter()).Encode(body); err != nil {
+					h.logger.Debug("JSON encode error", "error", err)
+				}
+			},
+		}, nil
+	}
+
+	created := time.Now().Unix()
+	responseID := fmt.Sprintf("msg_%d", created)
+
+	return &huma.StreamResponse{
+		Body: func(hctx huma.Context) {
+			setEventStreamHeaders(hctx)
+
+			// Helper to log SSE write errors at debug level
+			logSSEErr := func(event string, err error) {
+				if err != nil {
+					h.logger.Debug("SSE write error", "event", event, "error", err)
+				}
+			}
+
+			logSSEErr("message_start", writeSSEEvent(hctx, "message_start", anthropicStreamMessageStart{
+				Type: "message_start",
+				Message: anthropicStreamMessage{
+					ID:      responseID,
+					Type:    "message",
+					Role:    roleAssistant,
+					Content: []AnthropicContentBlock{},
+					Model:   input.Body.Model,
+					Usage: AnthropicUsage{
+						InputTokens:  0,
+						OutputTokens: 0,
+					},
+				},
+			}))
+
+			logSSEErr("content_block_start", writeSSEEvent(hctx, "content_block_start", anthropicStreamContentBlockStart{
+				Type:  "content_block_start",
+				Index: 0,
+				ContentBlock: anthropicStreamContentText{
+					Type: "text",
+					Text: "",
+				},
+			}))
+
+			streamReq := *req
+			streamCtx := hctx.Context()
+
+			streamResult, streamErr := service.StreamPrompt(streamCtx, &streamReq, nil, true, func(event *output.UnifiedEvent) error {
+				if event.Type != output.EventMessage {
+					return nil
+				}
+				content, err := event.GetMessageContent()
+				if err != nil {
+					return err
+				}
+				if content.Text == "" {
+					return nil
+				}
+				return writeSSEEvent(hctx, "content_block_delta", anthropicStreamContentBlockDelta{
+					Type:  "content_block_delta",
+					Index: 0,
+					Delta: anthropicStreamTextDelta{
+						Type: "text_delta",
+						Text: content.Text,
+					},
+				})
+			})
+
+			logSSEErr("content_block_stop", writeSSEEvent(hctx, "content_block_stop", anthropicStreamContentBlockStop{
+				Type:  "content_block_stop",
+				Index: 0,
+			}))
+
+			stopReason := stopReasonEnd
+			if streamErr != nil || streamResult == nil || streamResult.ExitCode != 0 || streamResult.Error != "" {
+				stopReason = stopReasonErr
+			}
+
+			usage := AnthropicUsage{}
+			if streamResult != nil && streamResult.TokenUsage != nil {
+				usage.InputTokens = int(streamResult.TokenUsage.InputTokens)
+				usage.OutputTokens = int(streamResult.TokenUsage.OutputTokens)
+			}
+
+			logSSEErr("message_delta", writeSSEEvent(hctx, "message_delta", anthropicStreamMessageDelta{
+				Type: "message_delta",
+				Delta: anthropicStreamMessageDeltaData{
+					StopReason: stopReason,
+				},
+				Usage: usage,
+			}))
+
+			if streamErr != nil {
+				logSSEErr("error", writeSSEEvent(hctx, "error", anthropicStreamError{
+					Type: "error",
+					Error: anthropicStreamErrorDetails{
+						Type:    "stream_error",
+						Message: streamErr.Error(),
+					},
+				}))
+			}
+
+			logSSEErr("message_stop", writeSSEEvent(hctx, "message_stop", anthropicStreamMessageStop{
+				Type: "message_stop",
+			}))
 		},
 	}, nil
 }

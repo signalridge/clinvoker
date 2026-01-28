@@ -14,6 +14,7 @@ import (
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server"
 	"github.com/signalridge/clinvoker/internal/server/handlers"
+	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
 // serveCmd starts the HTTP server.
@@ -105,12 +106,12 @@ func runServe(cmd *cobra.Command, args []string) error {
 	customHandlers := handlers.NewCustomHandlers(srv.Executor())
 	customHandlers.Register(srv.API())
 
-	// Register OpenAI compatible handlers
-	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor())
+	// Register OpenAI compatible handlers (stateless)
+	openaiHandlers := handlers.NewOpenAIHandlers(service.NewStatelessRunner(srv.Logger()), srv.Logger())
 	openaiHandlers.Register(srv.API())
 
-	// Register Anthropic compatible handlers
-	anthropicHandlers := handlers.NewAnthropicHandlers(srv.Executor())
+	// Register Anthropic compatible handlers (stateless)
+	anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(srv.Logger()), srv.Logger())
 	anthropicHandlers.Register(srv.API())
 
 	// Set up graceful shutdown

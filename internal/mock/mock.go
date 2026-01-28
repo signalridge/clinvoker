@@ -1,5 +1,5 @@
-// Package testutil provides testing utilities for clinvoker tests.
-package testutil
+// Package mock provides mock implementations and testing utilities for clinvoker tests.
+package mock
 
 import (
 	"context"

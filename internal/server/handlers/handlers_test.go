@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
+	"github.com/go-chi/chi/v5"
+
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
@@ -22,25 +26,63 @@ func TestNewCustomHandlers(t *testing.T) {
 
 func TestNewOpenAIHandlers(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewOpenAIHandlers(executor)
+	handlers := NewOpenAIHandlers(executor, nil)
 
 	if handlers == nil {
 		t.Error("NewOpenAIHandlers returned nil")
 	}
-	if handlers.executor == nil {
-		t.Error("executor not set")
+	if handlers.runner == nil {
+		t.Error("runner not set")
+	}
+	if handlers.logger == nil {
+		t.Error("logger not set (should default to slog.Default)")
 	}
 }
 
 func TestNewAnthropicHandlers(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewAnthropicHandlers(executor)
+	handlers := NewAnthropicHandlers(executor, nil)
 
 	if handlers == nil {
 		t.Error("NewAnthropicHandlers returned nil")
 	}
-	if handlers.executor == nil {
-		t.Error("executor not set")
+	if handlers.runner == nil {
+		t.Error("runner not set")
+	}
+	if handlers.logger == nil {
+		t.Error("logger not set (should default to slog.Default)")
+	}
+}
+
+func TestOpenAPIStreamingResponses(t *testing.T) {
+	api := humachi.New(chi.NewRouter(), huma.DefaultConfig("test", "1.0"))
+
+	openaiHandlers := NewOpenAIHandlers(service.NewStatelessRunner(nil), nil)
+	openaiHandlers.Register(api)
+
+	anthropicHandlers := NewAnthropicHandlers(service.NewStatelessRunner(nil), nil)
+	anthropicHandlers.Register(api)
+
+	openaiOp := api.OpenAPI().Paths["/openai/v1/chat/completions"].Post
+	if openaiOp == nil || openaiOp.Responses == nil || openaiOp.Responses["200"] == nil {
+		t.Fatal("openai chat completions response schema missing")
+	}
+	if _, ok := openaiOp.Responses["200"].Content["text/event-stream"]; !ok {
+		t.Fatal("openai chat completions missing text/event-stream response")
+	}
+	if _, ok := openaiOp.Responses["200"].Content["application/json"]; !ok {
+		t.Fatal("openai chat completions missing application/json response")
+	}
+
+	anthropicOp := api.OpenAPI().Paths["/anthropic/v1/messages"].Post
+	if anthropicOp == nil || anthropicOp.Responses == nil || anthropicOp.Responses["200"] == nil {
+		t.Fatal("anthropic messages response schema missing")
+	}
+	if _, ok := anthropicOp.Responses["200"].Content["text/event-stream"]; !ok {
+		t.Fatal("anthropic messages missing text/event-stream response")
+	}
+	if _, ok := anthropicOp.Responses["200"].Content["application/json"]; !ok {
+		t.Fatal("anthropic messages missing application/json response")
 	}
 }
 
