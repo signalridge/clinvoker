@@ -289,7 +289,7 @@ func validateParallelConfig(parallel *ParallelConfig) []error {
 
 // isValidHostname checks if a string is a valid hostname.
 func isValidHostname(host string) bool {
-	if len(host) == 0 || len(host) > 253 {
+	if host == "" || len(host) > 253 {
 		return false
 	}
 

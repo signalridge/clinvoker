@@ -318,7 +318,7 @@ func TestOpenAIUsage_Structure(t *testing.T) {
 
 // containsString checks if s contains substr.
 func containsString(s, substr string) bool {
-	return len(substr) == 0 || (len(s) >= len(substr) && searchSubstr(s, substr))
+	return substr == "" || (len(s) >= len(substr) && searchSubstr(s, substr))
 }
 
 func searchSubstr(s, substr string) bool {

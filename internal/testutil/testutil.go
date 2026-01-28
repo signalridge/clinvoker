@@ -240,7 +240,7 @@ func AssertContains(t *testing.T, s, substr string) {
 }
 
 func contains(s, substr string) bool {
-	return len(substr) == 0 || (len(s) >= len(substr) && searchSubstring(s, substr))
+	return substr == "" || (len(s) >= len(substr) && searchSubstring(s, substr))
 }
 
 func searchSubstring(s, substr string) bool {

@@ -82,7 +82,7 @@ func WriteError(w http.ResponseWriter, err error) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(apiErr)
+	_ = json.NewEncoder(w).Encode(apiErr)
 }
 
 // ErrorHandler is a middleware that handles errors in a structured way.
