@@ -8,7 +8,4 @@ var (
 
 	// ErrUnknownBackend is returned when the backend is not recognized.
 	ErrUnknownBackend = errors.New("unknown backend")
-
-	// ErrParseError is returned when event parsing fails.
-	ErrParseError = errors.New("failed to parse event")
 )

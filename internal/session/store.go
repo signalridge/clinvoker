@@ -329,7 +329,7 @@ func (s *Store) deleteLocked(id string) error {
 
 	// Also remove session artifacts directory if it exists
 	artifactsDir := filepath.Join(s.dir, id)
-	os.RemoveAll(artifactsDir)
+	_ = os.RemoveAll(artifactsDir)
 
 	return nil
 }

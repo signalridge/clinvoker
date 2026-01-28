@@ -146,12 +146,12 @@ func TempDir(t *testing.T) (string, func()) {
 	// Resolve symlinks (macOS /tmp is symlinked to /private/tmp)
 	dir, err = filepath.EvalSymlinks(dir)
 	if err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		t.Fatalf("failed to resolve symlinks: %v", err)
 	}
 
 	cleanup := func() {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 	}
 
 	return dir, cleanup

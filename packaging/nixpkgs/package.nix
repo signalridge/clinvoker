@@ -1,5 +1,5 @@
 # This file can be submitted to nixpkgs as:
-# pkgs/by-name/ai/clinvoker/package.nix
+# pkgs/by-name/cl/clinvk/package.nix
 {
   lib,
   buildGoModule,
@@ -7,7 +7,7 @@
 }:
 
 buildGoModule rec {
-  pname = "clinvoker";
+  pname = "clinvk";
   version = "0.1.0"; # Update on release
 
   src = fetchFromGitHub {
@@ -19,7 +19,10 @@ buildGoModule rec {
 
   vendorHash = "sha256-2dK5503Vd5reKxpVEglSTU4HRZKm3jpnLCnDadZb6t0=";
 
-  subPackages = [ "cmd/clinvoker" ];
+  subPackages = [ "cmd/clinvk" ];
+
+  # Use -short to skip integration tests that require writable HOME
+  checkFlags = [ "-short" ];
 
   ldflags = [
     "-s"
@@ -32,6 +35,6 @@ buildGoModule rec {
     homepage = "https://github.com/signalridge/clinvoker";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ ]; # Add your nixpkgs maintainer name
-    mainProgram = "clinvoker";
+    mainProgram = "clinvk";
   };
 }
