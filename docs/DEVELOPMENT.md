@@ -42,7 +42,7 @@ clinvoker/
 │   │   ├── handlers/     # API handlers (custom, OpenAI, Anthropic)
 │   │   └── service/      # Business logic
 │   ├── session/          # Session persistence
-│   └── testutil/         # Test utilities
+│   └── mock/         # Test utilities
 ├── docs/                 # Documentation
 └── .github/              # CI/CD workflows
 ```
@@ -180,10 +180,10 @@ if err := config.ValidateConfig(); err != nil {
 
 ### Testing
 
-Use table-driven tests and the testutil package:
+Use table-driven tests and the mock package:
 
 ```go
-import "github.com/signalridge/clinvoker/internal/testutil"
+import "github.com/signalridge/clinvoker/internal/mock"
 
 func TestMyFunction(t *testing.T) {
     t.Parallel()
@@ -206,7 +206,7 @@ func TestMyFunction(t *testing.T) {
                 t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
                 return
             }
-            testutil.AssertEqual(t, got, tt.want)
+            mock.AssertEqual(t, got, tt.want)
         })
     }
 }
@@ -214,12 +214,12 @@ func TestMyFunction(t *testing.T) {
 
 ### Mock Backends
 
-Use `testutil.MockBackend` for testing:
+Use `mock.MockBackend` for testing:
 
 ```go
-mock := testutil.NewMockBackend("test",
-    testutil.WithParseOutput("mocked output"),
-    testutil.WithAvailable(true),
+mock := mock.NewMockBackend("test",
+    mock.WithParseOutput("mocked output"),
+    mock.WithAvailable(true),
 )
 ```
 

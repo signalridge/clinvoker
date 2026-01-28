@@ -257,7 +257,7 @@ Real-time output streaming via:
 
 ### Test Helpers
 
-Located in `internal/testutil/`:
+Located in `internal/mock/`:
 - Mock backends
 - Temporary directories
 - Test server utilities
@@ -312,7 +312,7 @@ clinvoker/
 │   │   ├── handlers/     # API handlers
 │   │   └── service/      # Business logic
 │   ├── session/          # Session management
-│   └── testutil/         # Test utilities
+│   └── mock/         # Test utilities
 ├── docs/                 # Documentation
 └── testdata/             # Test fixtures
 ```

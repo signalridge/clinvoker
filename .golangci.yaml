@@ -130,7 +130,7 @@ linters:
       - path: _test\.go
         linters:
           - noctx
-      - path: internal/testutil/
+      - path: internal/mock/
         linters:
           - noctx
       - path: internal/backend/
