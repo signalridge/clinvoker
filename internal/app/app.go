@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -300,21 +299,29 @@ func runContinueLastSession(prompt string) error {
 	return nil
 }
 
+// selectOutput determines which output stream to use based on exit code.
+// If exit code is non-zero and stderr has content, prefer stderr (likely error message).
+// Otherwise use stdout, falling back to stderr if stdout is empty.
+func selectOutput(stdout, stderr string, exitCode int) string {
+	if exitCode != 0 && stderr != "" {
+		return stderr
+	}
+	if stdout == "" {
+		return stderr
+	}
+	return stdout
+}
+
 // executeTextViaJSON executes a command with JSON output internally,
 // extracts the content for text display, and captures the session ID.
 func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, sessionID string, err error) {
 	var stdoutBuf bytes.Buffer
-	var stderrWriter io.Writer
-
-	if b.SeparateStderr() {
-		stderrWriter = io.Discard
-	} else {
-		stderrWriter = os.Stderr
-	}
+	var stderrBuf bytes.Buffer
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = &stdoutBuf
-	cmd.Stderr = stderrWriter
+	// Always capture stderr for JSON parsing (some backends output errors to stderr)
+	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
 		return 1, "", err
@@ -330,12 +337,22 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 		}
 	}
 
-	rawOutput := stdoutBuf.String()
+	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
 
 	// Parse JSON response to get content and session ID
 	resp, parseErr := b.ParseJSONResponse(rawOutput)
 	if parseErr == nil && resp != nil {
 		sessionID = resp.SessionID
+
+		// Check for errors first
+		if resp.Error != "" {
+			fmt.Fprintf(os.Stderr, "Error [%s]: %s\n", b.Name(), resp.Error)
+			if exitCode == 0 {
+				exitCode = 1
+			}
+			return exitCode, sessionID, nil
+		}
+
 		// Print content as plain text
 		if resp.Content != "" {
 			fmt.Print(resp.Content)
@@ -359,19 +376,15 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 
 // ExecuteAndCapture executes a command and returns the parsed output.
 // This is used by commands like compare, parallel, and chain that need to capture output.
+// Note: This function expects text output format, not JSON.
 func ExecuteAndCapture(b backend.Backend, cmd *exec.Cmd) (output string, exitCode int, err error) {
 	var stdoutBuf bytes.Buffer
-	var stderrWriter io.Writer
-
-	if b.SeparateStderr() {
-		stderrWriter = io.Discard
-	} else {
-		stderrWriter = os.Stderr
-	}
+	var stderrBuf bytes.Buffer
 
 	cmd.Stdin = nil
 	cmd.Stdout = &stdoutBuf
-	cmd.Stderr = stderrWriter
+	// Always capture stderr (some backends output errors to stderr)
+	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
 		return "", 1, err
@@ -387,7 +400,10 @@ func ExecuteAndCapture(b backend.Backend, cmd *exec.Cmd) (output string, exitCod
 		}
 	}
 
-	output = b.ParseOutput(stdoutBuf.String())
+	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
+
+	// Use text parsing (this function is for text output mode)
+	output = b.ParseOutput(rawOutput)
 	return output, exitCode, nil
 }
 
@@ -409,17 +425,12 @@ func executeWithJSONOutputAndCapture(b backend.Backend, cmd *exec.Cmd, sess *ses
 	startTime := time.Now()
 
 	var stdoutBuf bytes.Buffer
-	var stderrWriter io.Writer
-
-	if b.SeparateStderr() {
-		stderrWriter = io.Discard
-	} else {
-		stderrWriter = os.Stderr
-	}
+	var stderrBuf bytes.Buffer
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = &stdoutBuf
-	cmd.Stderr = stderrWriter
+	// Always capture stderr for JSON parsing (some backends output errors to stderr)
+	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
 		return 1, "", err
@@ -438,7 +449,7 @@ func executeWithJSONOutputAndCapture(b backend.Backend, cmd *exec.Cmd, sess *ses
 	}
 
 	duration := time.Since(startTime).Seconds()
-	rawOutput := stdoutBuf.String()
+	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
 
 	// Parse the backend's JSON response into unified format
 	resp, parseErr := b.ParseJSONResponse(rawOutput)
@@ -457,6 +468,10 @@ func executeWithJSONOutputAndCapture(b backend.Backend, cmd *exec.Cmd, sess *ses
 		result.Usage = resp.Usage
 		result.Raw = resp.Raw
 		sessionID = resp.SessionID
+		// Include backend error in result (prioritize over exec error)
+		if resp.Error != "" {
+			result.Error = resp.Error
+		}
 	} else {
 		// Fallback to text parsing if JSON parsing fails
 		result.Content = b.ParseOutput(rawOutput)
@@ -477,18 +492,11 @@ func executeWithJSONOutputAndCapture(b backend.Backend, cmd *exec.Cmd, sess *ses
 
 // executeWithStreamOutput executes a command and streams output directly.
 // For stream-json, we pass through the backend's native streaming format.
-func executeWithStreamOutput(b backend.Backend, cmd *exec.Cmd) (int, error) {
-	var stderrWriter io.Writer
-
-	if b.SeparateStderr() {
-		stderrWriter = io.Discard
-	} else {
-		stderrWriter = os.Stderr
-	}
-
+// Note: stderr is always shown to the user (not discarded) so errors are visible.
+func executeWithStreamOutput(_ backend.Backend, cmd *exec.Cmd) (int, error) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout // Direct pass-through for streaming
-	cmd.Stderr = stderrWriter
+	cmd.Stderr = os.Stderr // Always show stderr so errors are visible
 
 	if err := cmd.Start(); err != nil {
 		return 1, err
