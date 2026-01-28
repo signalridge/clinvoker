@@ -11,6 +11,7 @@ import (
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // StreamResult represents the result of a streaming prompt execution.
@@ -36,7 +37,7 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 	opts.OutputFormat = backend.OutputStreamJSON
 
 	cmd := prep.backend.BuildCommandUnified(req.Prompt, opts)
-	cmd = commandWithContext(ctx, cmd)
+	cmd = util.CommandWithContext(ctx, cmd)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -123,7 +124,7 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 	}
 
 	if opts.Ephemeral {
-		cleanupBackendSession(ctx, req.Backend, backendSessionID)
+		util.CleanupBackendSessionWithContext(ctx, req.Backend, backendSessionID)
 	}
 
 	result := &StreamResult{
@@ -142,21 +143,4 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 	}
 
 	return result, nil
-}
-
-func commandWithContext(ctx context.Context, cmd *exec.Cmd) *exec.Cmd {
-	if ctx == nil || cmd == nil {
-		return cmd
-	}
-
-	if len(cmd.Args) == 0 {
-		return exec.CommandContext(ctx, cmd.Path)
-	}
-
-	newCmd := exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
-	newCmd.Dir = cmd.Dir
-	newCmd.Env = cmd.Env
-	newCmd.SysProcAttr = cmd.SysProcAttr
-	newCmd.ExtraFiles = cmd.ExtraFiles
-	return newCmd
 }

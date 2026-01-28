@@ -2,18 +2,13 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
-	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server/core"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // PromptRunner executes a single prompt request.
@@ -116,7 +111,7 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 	result.Error = coreRes.Error
 	result.Output = coreRes.Output
 	result.DurationMS = time.Since(start).Milliseconds()
-	result.TokenUsage = tokenUsageFromBackend(coreRes.Usage)
+	result.TokenUsage = util.TokenUsageFromBackend(coreRes.Usage)
 
 	// Update session if needed
 	if sess != nil {
@@ -131,7 +126,7 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 
 	// Cleanup backend session for ephemeral requests
 	if opts.Ephemeral {
-		cleanupBackendSession(ctx, req.Backend, coreRes.BackendSessionID)
+		util.CleanupBackendSessionWithContext(ctx, req.Backend, coreRes.BackendSessionID)
 	}
 
 	if forceStateless {
@@ -139,40 +134,6 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 	}
 
 	return result, nil
-}
-
-func applyUnifiedDefaults(opts *backend.UnifiedOptions, cfg *config.Config) {
-	if opts == nil || cfg == nil {
-		return
-	}
-	if opts.ApprovalMode == "" && cfg.UnifiedFlags.ApprovalMode != "" {
-		opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
-	}
-	if opts.SandboxMode == "" && cfg.UnifiedFlags.SandboxMode != "" {
-		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
-	}
-	if opts.MaxTurns == 0 && cfg.UnifiedFlags.MaxTurns > 0 {
-		opts.MaxTurns = cfg.UnifiedFlags.MaxTurns
-	}
-	if opts.MaxTokens == 0 && cfg.UnifiedFlags.MaxTokens > 0 {
-		opts.MaxTokens = cfg.UnifiedFlags.MaxTokens
-	}
-	if !opts.Verbose && cfg.UnifiedFlags.Verbose {
-		opts.Verbose = true
-	}
-	if cfg.UnifiedFlags.DryRun {
-		opts.DryRun = true
-	}
-}
-
-func tokenUsageFromBackend(usage *backend.TokenUsage) *session.TokenUsage {
-	if usage == nil {
-		return nil
-	}
-	return &session.TokenUsage{
-		InputTokens:  int64(usage.InputTokens),
-		OutputTokens: int64(usage.OutputTokens),
-	}
 }
 
 func updateSessionFromExecResult(sess *session.Session, exitCode int, errMsg string, res *core.Result) {
@@ -197,63 +158,4 @@ func updateSessionFromExecResult(sess *session.Session, exitCode int, errMsg str
 	}
 
 	sess.SetError("backend execution failed")
-}
-
-// cleanupBackendSession cleans up backend session for ephemeral requests.
-func cleanupBackendSession(ctx context.Context, backendName, sessionID string) {
-	switch backendName {
-	case "gemini":
-		if sessionID == "" {
-			return
-		}
-		_ = execCommandContext(ctx, "gemini", "--delete-session", sessionID).Run()
-	case "codex":
-		if sessionID == "" {
-			return
-		}
-		cleanupCodexSession(sessionID)
-	}
-}
-
-func cleanupCodexSession(threadID string) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return
-	}
-	cleanupCodexSessionInDir(threadID, home, time.Now())
-}
-
-func cleanupCodexSessionInDir(threadID, baseDir string, now time.Time) {
-	sessionDir := filepath.Join(baseDir, ".codex", "sessions",
-		fmt.Sprintf("%d", now.Year()),
-		fmt.Sprintf("%02d", int(now.Month())),
-		fmt.Sprintf("%02d", now.Day()),
-	)
-
-	entries, err := os.ReadDir(sessionDir)
-	if err != nil {
-		return
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if containsThreadID(entry.Name(), threadID) {
-			sessionPath := filepath.Join(sessionDir, entry.Name())
-			_ = os.Remove(sessionPath)
-			return
-		}
-	}
-}
-
-func containsThreadID(filename, threadID string) bool {
-	return threadID != "" && strings.Contains(filename, threadID)
-}
-
-func execCommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	return exec.CommandContext(ctx, name, args...)
 }

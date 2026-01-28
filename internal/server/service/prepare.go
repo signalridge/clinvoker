@@ -5,6 +5,7 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 type preparedPrompt struct {
@@ -56,7 +57,7 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 		ExtraFlags:   req.Extra,
 	}
 
-	applyUnifiedDefaults(opts, cfg)
+	util.ApplyUnifiedDefaults(opts, cfg, cfg.UnifiedFlags.DryRun)
 
 	if forceStateless {
 		opts.Ephemeral = true
