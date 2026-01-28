@@ -68,64 +68,17 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 		Backend: req.Backend,
 	}
 
-	// Validate work directory
-	if err := validateWorkDir(req.WorkDir); err != nil {
-		result.Error = err.Error()
-		result.ExitCode = 1
-		result.DurationMS = time.Since(start).Milliseconds()
-		return result, nil
-	}
-
-	// Validate extra flags
-	if err := backend.ValidateExtraFlags(req.Extra); err != nil {
-		result.Error = err.Error()
-		result.ExitCode = 1
-		result.DurationMS = time.Since(start).Milliseconds()
-		return result, nil
-	}
-
-	// Get backend
-	b, err := backend.Get(req.Backend)
+	prep, err := preparePrompt(req, forceStateless)
 	if err != nil {
 		result.Error = err.Error()
 		result.ExitCode = 1
 		result.DurationMS = time.Since(start).Milliseconds()
 		return result, nil
 	}
-	if !b.IsAvailable() {
-		result.Error = fmt.Sprintf("backend %q is not available", req.Backend)
-		result.ExitCode = 1
-		result.DurationMS = time.Since(start).Milliseconds()
-		return result, nil
-	}
 
-	cfg := config.Get()
-	model := req.Model
-	if model == "" {
-		if bcfg, ok := cfg.Backends[req.Backend]; ok {
-			model = bcfg.Model
-		}
-	}
-
-	opts := &backend.UnifiedOptions{
-		WorkDir:      req.WorkDir,
-		Model:        model,
-		ApprovalMode: backend.ApprovalMode(req.ApprovalMode),
-		SandboxMode:  backend.SandboxMode(req.SandboxMode),
-		MaxTokens:    req.MaxTokens,
-		MaxTurns:     req.MaxTurns,
-		SystemPrompt: req.SystemPrompt,
-		Verbose:      req.Verbose,
-		DryRun:       req.DryRun,
-		Ephemeral:    req.Ephemeral,
-		ExtraFlags:   req.Extra,
-	}
-
-	applyUnifiedDefaults(opts, cfg)
-
-	if forceStateless {
-		opts.Ephemeral = true
-	}
+	b := prep.backend
+	model := prep.model
+	opts := prep.opts
 
 	// Create session (skip if ephemeral or no store)
 	var sess *session.Session

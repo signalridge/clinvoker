@@ -72,17 +72,6 @@ func TestOpenAIHandlers_HandleChatCompletions_Validation(t *testing.T) {
 			wantErr: "messages are required",
 		},
 		{
-			name: "streaming not supported",
-			input: &OpenAIChatCompletionInput{
-				Body: OpenAIChatCompletionRequest{
-					Model:    "claude",
-					Messages: []OpenAIMessage{{Role: "user", Content: "test"}},
-					Stream:   true,
-				},
-			},
-			wantErr: "streaming is not supported",
-		},
-		{
 			name: "no user messages",
 			input: &OpenAIChatCompletionInput{
 				Body: OpenAIChatCompletionRequest{

@@ -1,0 +1,162 @@
+package service
+
+import (
+	"bufio"
+	"context"
+	"errors"
+	"io"
+	"log/slog"
+	"os/exec"
+
+	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/output"
+	"github.com/signalridge/clinvoker/internal/session"
+)
+
+// StreamResult represents the result of a streaming prompt execution.
+type StreamResult struct {
+	ExitCode         int
+	Error            string
+	TokenUsage       *session.TokenUsage
+	BackendSessionID string
+}
+
+// StreamPrompt executes a prompt and emits unified events as they stream.
+func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, forceStateless bool, onEvent func(*output.UnifiedEvent) error) (*StreamResult, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	prep, err := preparePrompt(req, forceStateless)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := prep.opts
+	opts.OutputFormat = backend.OutputStreamJSON
+
+	cmd := prep.backend.BuildCommandUnified(req.Prompt, opts)
+	cmd = commandWithContext(ctx, cmd)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	if prep.backend.SeparateStderr() {
+		cmd.Stderr = io.Discard
+	} else {
+		cmd.Stderr = cmd.Stdout
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	parser := output.NewParser(prep.backend.Name(), "")
+	scanner := bufio.NewScanner(stdout)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
+
+	var backendSessionID string
+	var tokenUsage *session.TokenUsage
+	var handlerErr error
+	var streamErr error
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		event, parseErr := parser.ParseLine(line)
+		if parseErr != nil {
+			logger.Warn("failed to parse stream line", "backend", prep.backend.Name(), "error", parseErr)
+			continue
+		}
+		if event == nil {
+			continue
+		}
+
+		switch event.Type {
+		case output.EventInit:
+			if content, err := event.GetInitContent(); err == nil && content.BackendSessionID != "" {
+				backendSessionID = content.BackendSessionID
+			}
+		case output.EventDone:
+			if content, err := event.GetDoneContent(); err == nil && content.TokenUsage != nil {
+				tokenUsage = &session.TokenUsage{
+					InputTokens:  content.TokenUsage.InputTokens,
+					OutputTokens: content.TokenUsage.OutputTokens,
+				}
+			}
+		case output.EventError:
+			if content, err := event.GetErrorContent(); err == nil && content.Message != "" {
+				streamErr = errors.New(content.Message)
+			}
+		}
+
+		if onEvent != nil {
+			if err := onEvent(event); err != nil {
+				handlerErr = err
+				break
+			}
+		}
+	}
+
+	if scanErr := scanner.Err(); scanErr != nil && handlerErr == nil {
+		streamErr = scanErr
+	}
+
+	if handlerErr != nil && cmd.Process != nil {
+		_ = cmd.Process.Kill()
+	}
+
+	waitErr := cmd.Wait()
+	exitCode := 0
+	if waitErr != nil {
+		var exitErr *exec.ExitError
+		if errors.As(waitErr, &exitErr) {
+			exitCode = exitErr.ExitCode()
+		} else {
+			exitCode = 1
+			if streamErr == nil {
+				streamErr = waitErr
+			}
+		}
+	}
+
+	if opts.Ephemeral {
+		cleanupBackendSession(ctx, req.Backend, backendSessionID)
+	}
+
+	result := &StreamResult{
+		ExitCode:         exitCode,
+		TokenUsage:       tokenUsage,
+		BackendSessionID: backendSessionID,
+	}
+
+	if handlerErr != nil {
+		result.Error = handlerErr.Error()
+		return result, handlerErr
+	}
+
+	if streamErr != nil {
+		result.Error = streamErr.Error()
+	}
+
+	return result, nil
+}
+
+func commandWithContext(ctx context.Context, cmd *exec.Cmd) *exec.Cmd {
+	if ctx == nil || cmd == nil {
+		return cmd
+	}
+
+	if len(cmd.Args) == 0 {
+		return exec.CommandContext(ctx, cmd.Path)
+	}
+
+	newCmd := exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
+	newCmd.Dir = cmd.Dir
+	newCmd.Env = cmd.Env
+	newCmd.SysProcAttr = cmd.SysProcAttr
+	newCmd.ExtraFiles = cmd.ExtraFiles
+	return newCmd
+}

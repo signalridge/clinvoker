@@ -62,18 +62,6 @@ func TestAnthropicHandlers_HandleMessages_Validation(t *testing.T) {
 			wantErr: "max_tokens must be greater than 0",
 		},
 		{
-			name: "streaming not supported",
-			input: &AnthropicMessagesInput{
-				Body: AnthropicMessagesRequest{
-					Model:     "claude",
-					MaxTokens: 1000,
-					Messages:  []AnthropicMessage{{Role: "user", Content: "test"}},
-					Stream:    true,
-				},
-			},
-			wantErr: "streaming is not supported",
-		},
-		{
 			name: "no user messages",
 			input: &AnthropicMessagesInput{
 				Body: AnthropicMessagesRequest{

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
@@ -43,7 +45,21 @@ func (h *OpenAIHandlers) Register(api huma.API) {
 		Path:        "/openai/v1/chat/completions",
 		Summary:     "Create chat completion",
 		Description: "Creates a model response for the given chat conversation. Compatible with OpenAI POST /v1/chat/completions.",
-		Tags:        []string{"OpenAI Compatible"},
+		Responses: map[string]*huma.Response{
+			"200": {
+				Description: "OK",
+				Content: map[string]*huma.MediaType{
+					"application/json": {},
+					"text/event-stream": {
+						Schema: &huma.Schema{
+							Type:        huma.TypeString,
+							Description: "Server-sent events stream of chat completion chunks (when stream=true).",
+						},
+					},
+				},
+			},
+		},
+		Tags: []string{"OpenAI Compatible"},
 	}, h.HandleChatCompletions)
 }
 
@@ -106,7 +122,7 @@ type OpenAIChatCompletionRequest struct {
 	Temperature      float64         `json:"temperature,omitempty" doc:"Sampling temperature"`
 	TopP             float64         `json:"top_p,omitempty" doc:"Nucleus sampling parameter"`
 	N                int             `json:"n,omitempty" doc:"Number of completions"`
-	Stream           bool            `json:"stream,omitempty" doc:"Stream responses (not supported)"`
+	Stream           bool            `json:"stream,omitempty" doc:"Stream responses"`
 	Stop             []string        `json:"stop,omitempty" doc:"Stop sequences"`
 	PresencePenalty  float64         `json:"presence_penalty,omitempty" doc:"Presence penalty"`
 	FrequencyPenalty float64         `json:"frequency_penalty,omitempty" doc:"Frequency penalty"`
@@ -143,23 +159,40 @@ type OpenAIChatCompletionResponseBody struct {
 	SystemFingerprint string                       `json:"system_fingerprint,omitempty"`
 }
 
+// OpenAIChatCompletionChunk is a streaming chunk response.
+type OpenAIChatCompletionChunk struct {
+	ID      string                            `json:"id"`
+	Object  string                            `json:"object"`
+	Created int64                             `json:"created"`
+	Model   string                            `json:"model"`
+	Choices []OpenAIChatCompletionChunkChoice `json:"choices"`
+}
+
+// OpenAIChatCompletionChunkChoice represents a streaming chunk choice.
+type OpenAIChatCompletionChunkChoice struct {
+	Index        int                       `json:"index"`
+	Delta        OpenAIChatCompletionDelta `json:"delta"`
+	FinishReason *string                   `json:"finish_reason"`
+}
+
+// OpenAIChatCompletionDelta represents a streaming delta.
+type OpenAIChatCompletionDelta struct {
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
+}
+
 // OpenAIChatCompletionInput is the input for the chat completions handler.
 type OpenAIChatCompletionInput struct {
 	Body OpenAIChatCompletionRequest
 }
 
 // HandleChatCompletions handles the POST /v1/chat/completions endpoint.
-func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenAIChatCompletionInput) (*OpenAIChatCompletionResponse, error) {
+func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenAIChatCompletionInput) (*huma.StreamResponse, error) {
 	if input.Body.Model == "" {
 		return nil, huma.Error400BadRequest("model is required")
 	}
 	if len(input.Body.Messages) == 0 {
 		return nil, huma.Error400BadRequest("messages are required")
-	}
-
-	// Streaming is not supported
-	if input.Body.Stream {
-		return nil, huma.Error400BadRequest("streaming is not supported")
 	}
 
 	// Extract prompt from messages
@@ -190,7 +223,7 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 	// Map model to backend
 	backendName := mapModelToBackend(input.Body.Model)
 
-	// Execute prompt
+	// Execute prompt (non-streaming)
 	req := &service.PromptRequest{
 		Backend:      backendName,
 		Prompt:       prompt,
@@ -199,33 +232,33 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 		SystemPrompt: systemPrompt,
 	}
 
-	result, err := h.runner.ExecutePrompt(ctx, req)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("execution failed", err)
-	}
+	if !input.Body.Stream {
+		result, err := h.runner.ExecutePrompt(ctx, req)
+		if err != nil {
+			return nil, huma.Error500InternalServerError("execution failed", err)
+		}
 
-	// Build response
-	now := time.Now().Unix()
-	responseID := fmt.Sprintf("chatcmpl-%s", result.SessionID)
-	if result.SessionID == "" {
-		responseID = fmt.Sprintf("chatcmpl-%d", now)
-	}
+		// Build response
+		now := time.Now().Unix()
+		responseID := fmt.Sprintf("chatcmpl-%s", result.SessionID)
+		if result.SessionID == "" {
+			responseID = fmt.Sprintf("chatcmpl-%d", now)
+		}
 
-	finishReason := "stop"
-	if result.ExitCode != 0 {
-		finishReason = "error"
-	}
+		finishReason := "stop"
+		if result.ExitCode != 0 {
+			finishReason = "error"
+		}
 
-	// Token counts (use backend usage if available, fallback to rough estimate)
-	promptTokens := len(prompt) / 4
-	completionTokens := len(result.Output) / 4
-	if result.TokenUsage != nil {
-		promptTokens = int(result.TokenUsage.InputTokens)
-		completionTokens = int(result.TokenUsage.OutputTokens)
-	}
+		// Token counts (use backend usage if available, fallback to rough estimate)
+		promptTokens := len(prompt) / 4
+		completionTokens := len(result.Output) / 4
+		if result.TokenUsage != nil {
+			promptTokens = int(result.TokenUsage.InputTokens)
+			completionTokens = int(result.TokenUsage.OutputTokens)
+		}
 
-	return &OpenAIChatCompletionResponse{
-		Body: OpenAIChatCompletionResponseBody{
+		body := OpenAIChatCompletionResponseBody{
 			ID:      responseID,
 			Object:  "chat.completion",
 			Created: now,
@@ -245,6 +278,71 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 				CompletionTokens: completionTokens,
 				TotalTokens:      promptTokens + completionTokens,
 			},
+		}
+
+		return &huma.StreamResponse{
+			Body: func(hctx huma.Context) {
+				hctx.SetStatus(http.StatusOK)
+				hctx.SetHeader("Content-Type", "application/json")
+				_ = json.NewEncoder(hctx.BodyWriter()).Encode(body)
+			},
+		}, nil
+	}
+
+	created := time.Now().Unix()
+	responseID := fmt.Sprintf("chatcmpl-%d", created)
+
+	return &huma.StreamResponse{
+		Body: func(hctx huma.Context) {
+			setEventStreamHeaders(hctx)
+
+			writeChunk := func(delta OpenAIChatCompletionDelta, finish *string) error {
+				return writeSSEJSON(hctx, OpenAIChatCompletionChunk{
+					ID:      responseID,
+					Object:  "chat.completion.chunk",
+					Created: created,
+					Model:   input.Body.Model,
+					Choices: []OpenAIChatCompletionChunkChoice{
+						{
+							Index:        0,
+							Delta:        delta,
+							FinishReason: finish,
+						},
+					},
+				})
+			}
+
+			sentRole := false
+			streamReq := *req
+			streamCtx := hctx.Context()
+
+			streamResult, streamErr := service.StreamPrompt(streamCtx, &streamReq, nil, true, func(event *output.UnifiedEvent) error {
+				if event.Type != output.EventMessage {
+					return nil
+				}
+				content, err := event.GetMessageContent()
+				if err != nil {
+					return err
+				}
+				if content.Text == "" && sentRole {
+					return nil
+				}
+				delta := OpenAIChatCompletionDelta{
+					Content: content.Text,
+				}
+				if !sentRole {
+					delta.Role = roleAssistant
+					sentRole = true
+				}
+				return writeChunk(delta, nil)
+			})
+
+			finishReason := "stop"
+			if streamErr != nil || streamResult == nil || streamResult.ExitCode != 0 || streamResult.Error != "" {
+				finishReason = "error"
+			}
+			_ = writeChunk(OpenAIChatCompletionDelta{}, &finishReason)
+			_ = writeSSE(hctx, []byte("data: [DONE]\n\n"))
 		},
 	}, nil
 }

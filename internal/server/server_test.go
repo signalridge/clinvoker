@@ -212,11 +212,6 @@ func TestChatCompletionsValidation(t *testing.T) {
 			body:       map[string]interface{}{"model": "claude"},
 			wantStatus: http.StatusUnprocessableEntity, // huma returns 422 for schema validation
 		},
-		{
-			name:       "streaming not supported",
-			body:       map[string]interface{}{"model": "claude", "messages": []map[string]string{{"role": "user", "content": "test"}}, "stream": true},
-			wantStatus: http.StatusBadRequest, // explicit 400 from handler
-		},
 	}
 
 	for _, tt := range tests {
@@ -260,11 +255,6 @@ func TestAnthropicMessagesValidation(t *testing.T) {
 			name:       "missing max_tokens",
 			body:       map[string]interface{}{"model": "claude", "messages": []map[string]string{{"role": "user", "content": "test"}}},
 			wantStatus: http.StatusUnprocessableEntity, // huma returns 422 for schema validation
-		},
-		{
-			name:       "streaming not supported",
-			body:       map[string]interface{}{"model": "claude", "max_tokens": 100, "messages": []map[string]string{{"role": "user", "content": "test"}}, "stream": true},
-			wantStatus: http.StatusBadRequest, // explicit 400 from handler
 		},
 	}
 
