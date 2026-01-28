@@ -55,6 +55,25 @@ func validateSessionID(id string) error {
 	return nil
 }
 
+// validateSessionPrefix checks if a session ID prefix is valid and safe.
+// This is a relaxed validation for prefix lookups that allows shorter IDs.
+func validateSessionPrefix(prefix string) error {
+	if prefix == "" {
+		return fmt.Errorf("session prefix cannot be empty")
+	}
+	// Check for path traversal attempts
+	if strings.Contains(prefix, "/") || strings.Contains(prefix, "\\") || strings.Contains(prefix, "..") {
+		return fmt.Errorf("invalid session prefix: contains path characters")
+	}
+	// Prefix must only contain valid hex characters
+	for _, c := range prefix {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return fmt.Errorf("invalid session prefix: must contain only hex characters (0-9, a-f)")
+		}
+	}
+	return nil
+}
+
 // NewStore creates a new session store.
 func NewStore() *Store {
 	return &Store{
@@ -109,23 +128,32 @@ func (s *Store) ensureIndexLoaded() error {
 // ensureIndexLoadedForRead prepares the index for read operations.
 // It releases the read lock, takes a write lock to rebuild if needed,
 // then returns with the read lock held again.
+//
+// CONCURRENCY NOTE: There is a brief window between RUnlock and Lock where
+// another goroutine could modify state. This is safe because:
+// 1. Double-check pattern: we re-check dirty flag after acquiring write lock
+// 2. Index rebuild is idempotent: multiple rebuilds produce same result
+// 3. Write operations (Save, Delete, Create) hold write lock and update index directly
+// 4. The index is only marked dirty on initialization or explicit InvalidateIndex()
 func (s *Store) ensureIndexLoadedForRead() error {
-	// Check if dirty while holding read lock
+	// Fast path: index is already loaded (most common case)
 	if !s.dirty {
 		return nil
 	}
 
-	// Need to rebuild - must upgrade to write lock
+	// Slow path: need to rebuild index
+	// Release read lock and acquire write lock for rebuild
 	s.mu.RUnlock()
 	s.mu.Lock()
 
-	// Double-check after acquiring write lock
+	// Double-check after acquiring write lock - another goroutine may have
+	// already rebuilt the index while we were waiting for the lock
 	var err error
 	if s.dirty {
 		err = s.rebuildIndex()
 	}
 
-	// Downgrade back to read lock
+	// Downgrade back to read lock for caller's read operation
 	s.mu.Unlock()
 	s.mu.RLock()
 
@@ -301,7 +329,7 @@ func (s *Store) deleteLocked(id string) error {
 
 	// Also remove session artifacts directory if it exists
 	artifactsDir := filepath.Join(s.dir, id)
-	os.RemoveAll(artifactsDir)
+	_ = os.RemoveAll(artifactsDir)
 
 	return nil
 }
@@ -651,6 +679,11 @@ func (s *Store) Search(query string) ([]*Session, error) {
 
 // GetByPrefix returns a session by ID prefix (for short ID lookup).
 func (s *Store) GetByPrefix(prefix string) (*Session, error) {
+	// Validate prefix before any locking
+	if err := validateSessionPrefix(prefix); err != nil {
+		return nil, err
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

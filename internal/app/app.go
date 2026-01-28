@@ -265,7 +265,7 @@ func runContinueLastSession(prompt string) error {
 	execCmd := b.ResumeCommandUnified(backendSessionID, prompt, opts)
 
 	if dryRun {
-		fmt.Printf("Would continue session %s (%s)\n", sess.ID[:8], sess.Backend)
+		fmt.Printf("Would continue session %s (%s)\n", shortSessionID(sess.ID), sess.Backend)
 		fmt.Printf("Command: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
 	}

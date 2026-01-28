@@ -100,28 +100,6 @@ func TestStatusText(t *testing.T) {
 	}
 }
 
-// ==================== TruncatePrompt Tests ====================
-
-func TestTruncatePrompt(t *testing.T) {
-	tests := []struct {
-		input  string
-		maxLen int
-		want   string
-	}{
-		{"hello", 10, "hello"},
-		{"hello world", 10, "hello w..."},
-		{"hi", 10, "hi"},
-		{"this is a very long prompt that should be truncated", 20, "this is a very lo..."},
-	}
-
-	for _, tt := range tests {
-		got := truncatePrompt(tt.input, tt.maxLen)
-		if got != tt.want {
-			t.Errorf("truncatePrompt(%q, %d) = %q, want %q", tt.input, tt.maxLen, got, tt.want)
-		}
-	}
-}
-
 // ==================== ParallelTask Tests ====================
 
 func TestParallelTask_Structure(t *testing.T) {

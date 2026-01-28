@@ -6,12 +6,36 @@ import (
 )
 
 // dangerousFlags contains flags that could bypass security controls.
+// This list covers common dangerous patterns across multiple CLI tools.
 var dangerousFlags = map[string]bool{
+	// Permission/verification bypasses
 	"--dangerously-skip-permissions": true,
 	"--no-verify":                    true,
 	"--skip-hooks":                   true,
-	"--force":                        true,
-	"-f":                             true,
+	"--skip-verification":            true,
+	"--no-check":                     true,
+	"--unsafe":                       true,
+	"--insecure":                     true,
+
+	// Force operations
+	"--force":           true,
+	"-f":                true,
+	"--force-yes":       true,
+	"--yes":             true, // Auto-confirm dangerous operations
+	"-y":                true,
+	"--assume-yes":      true,
+	"--no-confirm":      true,
+	"--non-interactive": true, // May bypass safety prompts
+
+	// Sandbox/security bypasses
+	"--no-sandbox":         true,
+	"--disable-sandbox":    true,
+	"--dangerous":          true,
+	"--danger-full-access": true,
+
+	// Root/privilege escalation hints
+	"--run-as-root": true,
+	"--privileged":  true,
 }
 
 // ValidateExtraFlags validates that extra flags don't contain dangerous options.

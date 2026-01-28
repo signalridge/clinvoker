@@ -1,0 +1,107 @@
+# clinvk Configuration Example
+# Copy this file to ~/.clinvk/config.yaml and customize as needed.
+
+# Default backend to use when none is specified.
+# Valid values: claude, codex, gemini
+default_backend: claude
+# Unified flags apply to all backends unless overridden.
+unified_flags:
+  # Approval mode for tool/action execution.
+  # Values: default (backend decides), auto (approve automatically),
+  #         none (never approve), always (always ask)
+  approval_mode: default
+  # Sandbox mode for file/network access.
+  # Values: default (backend decides), read-only (read only),
+  #         workspace (project only), full (full access)
+  sandbox_mode: default
+  # Output format for responses.
+  # Values: default, text, json, stream-json
+  output_format: default
+  # Enable verbose output.
+  verbose: false
+  # Dry run mode - show command without executing.
+  dry_run: false
+  # Maximum number of agentic turns (0 = unlimited).
+  max_turns: 0
+  # Maximum response tokens (0 = backend default).
+  max_tokens: 0
+# Backend-specific configuration.
+# Each backend can override unified settings and specify custom options.
+backends:
+  claude:
+    # Default model for Claude Code.
+    model: claude-opus-4-5-20251101
+    # Allowed tools (all = all tools, or comma-separated list).
+    allowed_tools: all
+    # Override approval mode for this backend only.
+    # approval_mode: auto
+
+    # Override sandbox mode for this backend only.
+    # sandbox_mode: workspace
+
+    # Enable/disable this backend (default: true).
+    enabled: true
+    # Default system prompt for this backend.
+    # system_prompt: "You are a helpful coding assistant."
+
+    # Extra flags to pass to the backend CLI.
+    # extra_flags: ["--add-dir", "./docs"]
+  codex:
+    # Default model for Codex CLI.
+    model: o3
+    enabled: true
+  gemini:
+    # Default model for Gemini CLI.
+    model: gemini-2.5-pro
+    enabled: true
+# Session management settings.
+session:
+  # Automatically resume the last session in the same directory.
+  auto_resume: true
+  # Number of days to keep sessions (0 = keep forever).
+  retention_days: 30
+  # Store token usage in session metadata.
+  store_token_usage: true
+  # Tags automatically added to new sessions.
+  default_tags: []
+# Output settings.
+output:
+  # Default output format (text, json, stream-json).
+  format: text
+  # Show token usage after each response.
+  show_tokens: false
+  # Show execution timing.
+  show_timing: false
+  # Enable colored output.
+  color: true
+# HTTP server settings (for `clinvk serve` command).
+server:
+  # Host to bind to.
+  # Use 127.0.0.1 for local-only, 0.0.0.0 for all interfaces.
+  host: "127.0.0.1"
+  # Port to listen on.
+  port: 8080
+  # Maximum time in seconds for processing a request.
+  request_timeout_secs: 300
+  # Maximum time in seconds to read the entire request.
+  read_timeout_secs: 30
+  # Maximum time in seconds to write the response.
+  write_timeout_secs: 300
+  # Maximum time in seconds to wait for the next request.
+  idle_timeout_secs: 120
+# Parallel execution settings (for `clinvk parallel` command).
+parallel:
+  # Maximum number of parallel workers.
+  max_workers: 3
+  # Stop all tasks on first failure.
+  fail_fast: false
+  # Combine output from all tasks.
+  aggregate_output: true
+# Environment variables can also be used:
+#
+# CLINVK_BACKEND         - Default backend
+# CLINVK_CLAUDE_MODEL    - Claude model
+# CLINVK_CODEX_MODEL     - Codex model
+# CLINVK_GEMINI_MODEL    - Gemini model
+#
+# Priority: CLI flags > Environment variables > Config file > Defaults

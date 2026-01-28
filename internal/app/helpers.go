@@ -121,3 +121,11 @@ func truncateString(s string, maxLen int) string {
 	}
 	return s[:maxLen-3] + "..."
 }
+
+// shortSessionID returns the first 8 characters of a session ID, or the full ID if shorter.
+func shortSessionID(id string) string {
+	if len(id) <= 8 {
+		return id
+	}
+	return id[:8]
+}

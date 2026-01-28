@@ -67,7 +67,7 @@ var sessionsListCmd = &cobra.Command{
 			}
 
 			fmt.Printf("%-8s %-8s %-10s %-15s %-12s %s\n",
-				s.ID[:8],
+				shortSessionID(s.ID),
 				s.Backend,
 				status,
 				formatTimeAgo(s.LastUsed),

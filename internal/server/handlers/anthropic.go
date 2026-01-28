@@ -13,6 +13,12 @@ import (
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
+// Message role constants.
+const (
+	roleUser      = "user"
+	roleAssistant = "assistant"
+)
+
 // AnthropicHandlers provides handlers for Anthropic-compatible API.
 type AnthropicHandlers struct {
 	executor *service.Executor
@@ -111,12 +117,12 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 	// Extract prompt from messages
 	var prompt string
 	for _, msg := range input.Body.Messages {
-		if msg.Role == "user" {
+		if msg.Role == roleUser {
 			if prompt != "" {
 				prompt += "\n"
 			}
 			prompt += msg.Content
-		} else if msg.Role == "assistant" {
+		} else if msg.Role == roleAssistant {
 			// Include assistant context for continuations
 			if prompt != "" {
 				prompt += "\n[Previous response: " + msg.Content + "]\n"
@@ -166,7 +172,7 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 		Body: AnthropicMessagesResponseBody{
 			ID:   responseID,
 			Type: "message",
-			Role: "assistant",
+			Role: roleAssistant,
 			Content: []AnthropicContentBlock{
 				{
 					Type: "text",

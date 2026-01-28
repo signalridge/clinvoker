@@ -102,7 +102,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 
 	if !compareJSON {
 		fmt.Printf("Comparing %d backends: %s\n", len(availableBackends), strings.Join(availableBackends, ", "))
-		fmt.Printf("Prompt: %s\n", truncatePrompt(prompt, 60))
+		fmt.Printf("Prompt: %s\n", truncateString(prompt, 60))
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
 	}
 
@@ -176,7 +176,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 			status := statusText(r.ExitCode, r.Error)
 			sessionID := "-"
 			if r.SessionID != "" {
-				sessionID = r.SessionID[:8]
+				sessionID = shortSessionID(r.SessionID)
 			}
 			model := r.Model
 			if model == "" {
@@ -305,11 +305,4 @@ func statusText(exitCode int, err string) string {
 		return "OK"
 	}
 	return "FAILED"
-}
-
-func truncatePrompt(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
 }

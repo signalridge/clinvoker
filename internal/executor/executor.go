@@ -38,7 +38,7 @@ func (e *Executor) Run(cmd *exec.Cmd) (int, error) {
 		// Fallback to non-PTY execution if PTY fails
 		return e.runWithoutPTY(cmd)
 	}
-	defer ptmx.Close()
+	defer func() { _ = ptmx.Close() }()
 
 	// Set up signal handling
 	sigHandler := NewSignalHandler(cmd.Process, ptmx)

@@ -137,7 +137,7 @@ func runResume(cmd *cobra.Command, args []string) error {
 	execCmd := b.ResumeCommandUnified(backendSessionID, prompt, opts)
 
 	if dryRun {
-		fmt.Printf("Would resume session %s (%s)\n", sess.ID[:8], sess.Backend)
+		fmt.Printf("Would resume session %s (%s)\n", shortSessionID(sess.ID), sess.Backend)
 		fmt.Printf("Command: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
 	}
@@ -202,7 +202,7 @@ func interactiveSessionPicker(store *session.Store, filter *session.ListFilter) 
 
 		fmt.Printf("  %-3d %-8s %-8s %-20s %s\n",
 			i+1,
-			s.ID[:8],
+			shortSessionID(s.ID),
 			s.Backend,
 			formatTimeAgo(s.LastUsed),
 			title,
