@@ -5,8 +5,8 @@ Unified AI CLI wrapper for orchestrating multiple AI CLI backends (Claude Code, 
 ## Features
 
 - **Multi-Backend Support**: Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI
-- **Unified Flags**: Common flags (`--approval`, `--sandbox`, `--output`) work across all backends
-- **Session Persistence**: Automatic session tracking with resume, fork, and tagging
+- **Unified Options**: Consistent configuration options work across all backends via config file or task definitions
+- **Session Persistence**: Automatic session tracking with resume capability
 - **Parallel Execution**: Run multiple AI tasks concurrently with fail-fast support
 - **Backend Comparison**: Compare responses from multiple backends side-by-side
 - **Chain Execution**: Pipeline prompts through multiple backends sequentially
@@ -129,31 +129,45 @@ clinvk --dry-run "your prompt"
 clinvk version
 ```
 
-### Unified Flags
+### Global Flags
 
-These flags work consistently across all backends:
-
-| Flag | Description | Values |
-|------|-------------|--------|
-| `--approval` | Approval mode | `default`, `auto`, `none`, `always` |
-| `--sandbox` | Sandbox mode | `default`, `read-only`, `workspace`, `full` |
-| `--output` | Output format | `default`, `text`, `json`, `stream-json` |
-| `--verbose` | Verbose output | boolean |
-| `--max-turns` | Max agentic turns | integer |
-| `--max-tokens` | Max response tokens | integer |
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--backend` | `-b` | AI backend to use | `claude` |
+| `--model` | `-m` | Model to use | (backend default) |
+| `--workdir` | `-w` | Working directory | (current dir) |
+| `--output-format` | `-o` | Output format: `text`, `json`, `stream-json` | `text` |
+| `--continue` | `-c` | Continue the last session | `false` |
+| `--dry-run` | | Print command without executing | `false` |
 
 Example:
 
 ```bash
-# Auto-approve all tool calls with JSON output
-clinvk --approval auto --output json "refactor auth module"
+# JSON output format
+clinvk --output-format json "refactor auth module"
+
+# Continue last session
+clinvk -c "follow up on previous task"
 ```
+
+### Unified Options (Config/Tasks)
+
+These options can be set in the config file (`unified_flags` section) or per-task in parallel/chain definitions:
+
+| Option | Description | Values |
+|--------|-------------|--------|
+| `approval_mode` | Approval mode | `default`, `auto`, `none`, `always` |
+| `sandbox_mode` | Sandbox mode | `default`, `read-only`, `workspace`, `full` |
+| `output_format` | Output format | `text`, `json`, `stream-json` |
+| `max_turns` | Max agentic turns | integer |
+| `max_tokens` | Max response tokens | integer |
 
 ### Session Management
 
 ```bash
 # List all sessions
 clinvk sessions list
+clinvk sessions list --backend claude --limit 10
 
 # Show session details
 clinvk sessions show <session-id>
@@ -161,14 +175,14 @@ clinvk sessions show <session-id>
 # Resume last session
 clinvk resume --last
 
+# Resume with interactive picker
+clinvk resume --interactive
+
 # Resume specific session
 clinvk resume <session-id> "follow up prompt"
 
-# Fork a session (create a branch)
-clinvk sessions fork <session-id>
-
-# Tag a session
-clinvk sessions tag <session-id> important
+# Resume sessions from current directory only
+clinvk resume --here
 
 # Delete a session
 clinvk sessions delete <session-id>
@@ -211,6 +225,9 @@ clinvk parallel --file tasks.json
 
 # From stdin
 cat tasks.json | clinvk parallel
+
+# Limit parallel workers
+clinvk parallel --file tasks.json --max-parallel 2
 
 # With fail-fast (stop on first failure)
 clinvk parallel --file tasks.json --fail-fast

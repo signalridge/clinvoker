@@ -16,9 +16,16 @@ clinvk [command]
 | `--backend` | `-b` | string | `claude` | AI backend to use (claude, codex, gemini) |
 | `--model` | `-m` | string | | Model to use for the backend |
 | `--workdir` | `-w` | string | | Working directory for the AI backend |
+| `--output-format` | `-o` | string | `text` | Output format: text, json, stream-json |
 | `--config` | | string | | Config file (default: ~/.clinvk/config.yaml) |
 | `--dry-run` | | bool | `false` | Print command without executing |
 | `--help` | `-h` | | | Help for clinvk |
+
+### Root Command Flags
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--continue` | `-c` | bool | `false` | Continue the last session |
 
 ## Commands
 
@@ -62,7 +69,10 @@ clinvk resume [session-id] [prompt] [flags]
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--last` | `-l` | bool | `false` | Resume the most recent session |
+| `--last` | | bool | `false` | Resume the most recent session |
+| `--interactive` | `-i` | bool | `false` | Show interactive session picker |
+| `--here` | | bool | `false` | Filter sessions by current working directory |
+| `--backend` | `-b` | string | | Filter sessions by backend |
 
 **Examples:**
 
@@ -72,6 +82,15 @@ clinvk resume --last
 
 # Resume last session with a follow-up prompt
 clinvk resume --last "continue from where we left off"
+
+# Interactive session picker
+clinvk resume --interactive
+
+# Resume sessions from current directory only
+clinvk resume --here
+
+# Filter by backend
+clinvk resume --backend claude
 
 # Resume specific session
 clinvk resume abc123
@@ -90,16 +109,28 @@ Manage sessions.
 
 List all sessions.
 
+**Flags:**
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--backend` | `-b` | string | | Filter by backend |
+| `--status` | | string | | Filter by status (active, completed, error) |
+| `--limit` | `-n` | int | | Limit number of sessions shown |
+
+**Examples:**
+
 ```bash
 clinvk sessions list
+clinvk sessions list --backend claude
+clinvk sessions list --status active --limit 10
 ```
 
 Output:
 
 ```
-ID        Backend   Created              Last Used            Status     WorkDir
-abc123    claude    2025-01-27 10:00:00  2025-01-27 11:30:00  active     /projects/myapp
-def456    codex     2025-01-26 15:00:00  2025-01-26 16:00:00  completed  /projects/api
+ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
+abc123    claude    active     5 minutes ago   1,234        fix the bug in auth.go
+def456    codex     completed  2 hours ago     5,678        implement user registration
 ```
 
 #### clinvk sessions show
@@ -113,16 +144,18 @@ clinvk sessions show <session-id>
 Output:
 
 ```
-Session: abc123
-  Backend:      claude
-  Created:      2025-01-27 10:00:00
-  Last Used:    2025-01-27 11:30:00
-  Status:       active
-  Working Dir:  /projects/myapp
-  Tags:         important, feature
-  Token Usage:
-    Input:      1,234
-    Output:     5,678
+ID:                abc123
+Backend:           claude
+Model:             claude-opus-4-5-20251101
+Status:            active
+Created:           2025-01-27T10:00:00Z
+Last Used:         2025-01-27T11:30:00Z (30 minutes ago)
+Working Directory: /projects/myapp
+Token Usage:
+  Input:           1,234
+  Output:          5,678
+  Cached:          500
+  Total:           6,912
 ```
 
 #### clinvk sessions delete
@@ -141,8 +174,9 @@ Remove old sessions.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--older-than` | duration | | Delete sessions older than this (e.g., 30d, 7d, 24h) |
-| `--status` | string | | Delete sessions with this status (completed, failed) |
+| `--older-than` | string | | Delete sessions older than this (e.g., 30d, 7d) |
+
+If `--older-than` is not specified, uses the `session.retention_days` config value.
 
 **Examples:**
 
@@ -150,8 +184,8 @@ Remove old sessions.
 # Delete sessions older than 30 days
 clinvk sessions clean --older-than 30d
 
-# Delete completed sessions older than 7 days
-clinvk sessions clean --older-than 7d --status completed
+# Use config default retention
+clinvk sessions clean
 ```
 
 ### clinvk config
@@ -197,9 +231,10 @@ clinvk parallel [flags]
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--file` | `-f` | string | | JSON file containing task definitions |
+| `--max-parallel` | | int | 3 | Maximum number of parallel tasks |
 | `--fail-fast` | | bool | `false` | Stop all tasks on first failure |
 | `--json` | | bool | `false` | Output results as JSON |
-| `--quiet` | `-q` | bool | `false` | Minimal output |
+| `--quiet` | `-q` | bool | `false` | Suppress task output (show only results) |
 
 **Task File Format:**
 
@@ -210,12 +245,14 @@ clinvk parallel [flags]
       "backend": "claude",
       "prompt": "task prompt",
       "model": "optional-model",
-      "work_dir": "/optional/path",
+      "workdir": "/optional/path",
       "approval_mode": "auto",
-      "sandbox_mode": "workspace"
+      "sandbox_mode": "workspace",
+      "max_turns": 10
     }
   ],
-  "max_parallel": 3
+  "max_parallel": 3,
+  "fail_fast": true
 }
 ```
 
@@ -226,9 +263,13 @@ clinvk parallel [flags]
 | `backend` | string | Yes | Backend to use (claude, codex, gemini) |
 | `prompt` | string | Yes | The prompt to execute |
 | `model` | string | No | Model override |
-| `work_dir` | string | No | Working directory |
+| `workdir` | string | No | Working directory |
 | `approval_mode` | string | No | Approval mode (default, auto, none, always) |
 | `sandbox_mode` | string | No | Sandbox mode (default, read-only, workspace, full) |
+| `output_format` | string | No | Output format (text, json, stream-json) |
+| `max_tokens` | int | No | Max response tokens |
+| `max_turns` | int | No | Max agentic turns |
+| `system_prompt` | string | No | System prompt override |
 
 **Examples:**
 
@@ -238,6 +279,9 @@ clinvk parallel --file tasks.json
 
 # From stdin
 cat tasks.json | clinvk parallel
+
+# Limit parallel workers
+clinvk parallel --file tasks.json --max-parallel 2
 
 # With fail-fast
 clinvk parallel --file tasks.json --fail-fast
@@ -348,8 +392,14 @@ clinvk chain [flags]
 |-------|------|----------|-------------|
 | `name` | string | Yes | Step identifier |
 | `backend` | string | Yes | Backend to use |
-| `prompt` | string | Yes | The prompt (use `{{previous}}` for previous output) |
+| `prompt` | string | Yes | The prompt (use `{{previous}}` or `{{session}}` for previous session ID) |
 | `model` | string | No | Model override |
+| `workdir` | string | No | Working directory |
+| `approval_mode` | string | No | Approval mode |
+| `sandbox_mode` | string | No | Sandbox mode |
+| `max_turns` | int | No | Max agentic turns |
+
+**Note:** The `{{previous}}` placeholder is replaced with the session ID from the previous step, allowing the backend to resume context from that session.
 
 **Examples:**
 
