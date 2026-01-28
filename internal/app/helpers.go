@@ -27,7 +27,10 @@ func readInputFromFileOrStdin(filePath string) ([]byte, error) {
 	}
 
 	// Check if stdin has data
-	stat, _ := os.Stdin.Stat()
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat stdin: %w", err)
+	}
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
 		return nil, fmt.Errorf("no input provided (use --file or pipe JSON to stdin)")
 	}
@@ -67,6 +70,32 @@ func resolveModel(explicit, backendName, globalModel string) string {
 	return ""
 }
 
+// applyUnifiedDefaults applies unified flag defaults from config to options.
+func applyUnifiedDefaults(opts *backend.UnifiedOptions, cfg *config.Config, effectiveDryRun bool) {
+	if opts == nil || cfg == nil {
+		return
+	}
+
+	if opts.ApprovalMode == "" && cfg.UnifiedFlags.ApprovalMode != "" {
+		opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
+	}
+	if opts.SandboxMode == "" && cfg.UnifiedFlags.SandboxMode != "" {
+		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
+	}
+	if opts.MaxTurns == 0 && cfg.UnifiedFlags.MaxTurns > 0 {
+		opts.MaxTurns = cfg.UnifiedFlags.MaxTurns
+	}
+	if opts.MaxTokens == 0 && cfg.UnifiedFlags.MaxTokens > 0 {
+		opts.MaxTokens = cfg.UnifiedFlags.MaxTokens
+	}
+	if !opts.Verbose && cfg.UnifiedFlags.Verbose {
+		opts.Verbose = true
+	}
+	if !opts.DryRun && effectiveDryRun {
+		opts.DryRun = true
+	}
+}
+
 // createAndSaveSession creates a new session and saves it to the store.
 // Returns the session (may be nil if creation failed) and logs warnings if quiet is false.
 func createAndSaveSession(store *session.Store, backendName, workDir, model, prompt string, tags []string, title string, quiet bool) *session.Session {
@@ -95,6 +124,36 @@ func createAndSaveSession(store *session.Store, backendName, workDir, model, pro
 	}
 
 	return sess
+}
+
+// updateSessionFromResponse updates a session with execution results.
+func updateSessionFromResponse(sess *session.Session, exitCode int, errMsg string, resp *backend.UnifiedResponse) {
+	if sess == nil {
+		return
+	}
+
+	sess.IncrementTurn()
+
+	if resp != nil && resp.Usage != nil {
+		sess.AddTokens(int64(resp.Usage.InputTokens), int64(resp.Usage.OutputTokens))
+	}
+
+	if resp != nil && resp.Error != "" {
+		sess.SetError(resp.Error)
+		return
+	}
+
+	if exitCode == 0 {
+		sess.Complete()
+		return
+	}
+
+	if errMsg != "" {
+		sess.SetError(errMsg)
+		return
+	}
+
+	sess.SetError("backend execution failed")
 }
 
 // updateSessionAfterExecution updates session status after command execution.

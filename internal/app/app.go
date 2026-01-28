@@ -97,6 +97,15 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		prompt = args[0]
 	}
 
+	cfg := config.Get()
+
+	// Apply config default output format if flag not explicitly set
+	if !cmd.Flags().Changed("output-format") {
+		if cfg.UnifiedFlags.OutputFormat != "" && cfg.UnifiedFlags.OutputFormat != string(backend.OutputDefault) {
+			outputFormat = cfg.UnifiedFlags.OutputFormat
+		}
+	}
+
 	// Normalize and validate output format
 	outputFormat = strings.ToLower(outputFormat)
 	switch backend.OutputFormat(outputFormat) {
@@ -106,13 +115,17 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid output format %q: must be one of: text, json, stream-json", outputFormat)
 	}
 
+	effectiveDryRun := dryRun
+	if !cmd.Flags().Changed("dry-run") && cfg.UnifiedFlags.DryRun {
+		effectiveDryRun = true
+	}
+
 	// If --continue flag is set, resume the last session
 	if continueLastSession {
-		return runContinueLastSession(prompt)
+		return runContinueLastSession(prompt, effectiveDryRun)
 	}
 
 	// Determine backend
-	cfg := config.Get()
 	bn := backendName
 	if bn == "" {
 		bn = cfg.DefaultBackend
@@ -128,7 +141,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 	}
 
 	// Skip availability check in dry-run mode
-	if !dryRun && !b.IsAvailable() {
+	if !effectiveDryRun && !b.IsAvailable() {
 		return fmt.Errorf("backend %q is not available (CLI not found in PATH)", bn)
 	}
 
@@ -147,6 +160,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		OutputFormat: internalOutputFormat,
 		Ephemeral:    ephemeralMode,
 	}
+	applyUnifiedDefaults(opts, cfg, effectiveDryRun)
 
 	// Get backend-specific config
 	if bcfg, ok := cfg.Backends[bn]; ok {
@@ -158,7 +172,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 	// Build command
 	execCmd := b.BuildCommandUnified(prompt, opts)
 
-	if dryRun {
+	if effectiveDryRun {
 		fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
 	}
@@ -184,7 +198,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		exitCode, err = executeWithStreamOutput(b, execCmd)
 	default:
 		// Text output: use JSON internally, extract content for display
-		exitCode, backendSessionID, err = executeTextViaJSON(b, execCmd)
+		exitCode, backendSessionID, err = executeTextViaJSON(b, execCmd, sess)
 	}
 
 	// Update session with backend session ID (skip if ephemeral mode)
@@ -215,7 +229,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 }
 
 // runContinueLastSession continues the most recent session.
-func runContinueLastSession(prompt string) error {
+func runContinueLastSession(prompt string, effectiveDryRun bool) error {
 	store := session.NewStore()
 
 	// Build filter based on flags
@@ -241,7 +255,9 @@ func runContinueLastSession(prompt string) error {
 		return fmt.Errorf("backend error: %w", err)
 	}
 
-	if !dryRun && !b.IsAvailable() {
+	cfg := config.Get()
+
+	if !effectiveDryRun && !b.IsAvailable() {
 		return fmt.Errorf("backend %q is not available", sess.Backend)
 	}
 
@@ -258,9 +274,9 @@ func runContinueLastSession(prompt string) error {
 		Model:        modelName,
 		OutputFormat: internalOutputFormat,
 	}
+	applyUnifiedDefaults(opts, cfg, effectiveDryRun)
 
 	// Get backend-specific config
-	cfg := config.Get()
 	if bcfg, ok := cfg.Backends[sess.Backend]; ok {
 		if opts.Model == "" {
 			opts.Model = bcfg.Model
@@ -276,7 +292,7 @@ func runContinueLastSession(prompt string) error {
 	// Build resume command
 	execCmd := b.ResumeCommandUnified(backendSessionID, prompt, opts)
 
-	if dryRun {
+	if effectiveDryRun {
 		fmt.Printf("Would continue session %s (%s)\n", shortSessionID(sess.ID), sess.Backend)
 		fmt.Printf("Command: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
@@ -297,7 +313,7 @@ func runContinueLastSession(prompt string) error {
 		exitCode, err = executeWithStreamOutput(b, execCmd)
 	default:
 		// Text output: use JSON internally, extract content for display
-		exitCode, _, err = executeTextViaJSON(b, execCmd)
+		exitCode, _, err = executeTextViaJSON(b, execCmd, sess)
 	}
 
 	if err != nil {
@@ -326,7 +342,7 @@ func selectOutput(stdout, stderr string, exitCode int) string {
 
 // executeTextViaJSON executes a command with JSON output internally,
 // extracts the content for text display, and captures the session ID.
-func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, sessionID string, err error) {
+func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd, sess *session.Session) (exitCode int, sessionID string, err error) {
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 
@@ -341,9 +357,11 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 
 	waitErr := cmd.Wait()
 	exitCode = 0
+	var errMsg string
 	if waitErr != nil {
 		if exitErr, ok := waitErr.(*exec.ExitError); ok {
 			exitCode = exitErr.ExitCode()
+			errMsg = exitErr.Error()
 		} else {
 			return 1, "", waitErr
 		}
@@ -362,7 +380,6 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 			if exitCode == 0 {
 				exitCode = 1
 			}
-			return exitCode, sessionID, nil
 		}
 
 		// Print content as plain text
@@ -381,6 +398,11 @@ func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd) (exitCode int, session
 				fmt.Println()
 			}
 		}
+	}
+
+	// Update session metadata if available
+	if sess != nil {
+		updateSessionFromResponse(sess, exitCode, errMsg, resp)
 	}
 
 	return exitCode, sessionID, nil
@@ -490,6 +512,11 @@ func executeWithJSONOutputAndCapture(b backend.Backend, cmd *exec.Cmd, sess *ses
 		if sess != nil {
 			result.SessionID = sess.ID
 		}
+	}
+
+	// Update session metadata if available
+	if sess != nil {
+		updateSessionFromResponse(sess, exitCode, errMsg, resp)
 	}
 
 	// Output unified JSON

@@ -1,12 +1,29 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
+
+var (
+	buildOnce     sync.Once
+	buildErr      error
+	testBinary    string
+	testBinaryDir string
+)
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if testBinaryDir != "" {
+		_ = os.RemoveAll(testBinaryDir)
+	}
+	os.Exit(code)
+}
 
 // TestMain_Help tests the --help flag.
 func TestMain_Help(t *testing.T) {
@@ -264,34 +281,44 @@ func TestMain_OutputFormat(t *testing.T) {
 func buildTestBinary(t *testing.T) string {
 	t.Helper()
 
-	tmpDir, err := os.MkdirTemp("", "clinvk-test-*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	t.Cleanup(func() {
-		os.RemoveAll(tmpDir)
+	buildOnce.Do(func() {
+		tmpDir, err := os.MkdirTemp("", "clinvk-test-*")
+		if err != nil {
+			buildErr = err
+			return
+		}
+
+		binary := filepath.Join(tmpDir, "clinvk")
+		if os.PathSeparator == '\\' {
+			binary += ".exe"
+		}
+
+		// Get the project root (two levels up from cmd/clinvk)
+		wd, err := os.Getwd()
+		if err != nil {
+			buildErr = err
+			return
+		}
+		projectRoot := filepath.Dir(filepath.Dir(wd))
+
+		// Build the binary
+		cmd := exec.Command("go", "build", "-o", binary, "./cmd/clinvk")
+		cmd.Dir = projectRoot
+
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			buildErr = fmt.Errorf("failed to build binary: %v\nOutput: %s", err, output)
+			_ = os.RemoveAll(tmpDir)
+			return
+		}
+
+		testBinary = binary
+		testBinaryDir = tmpDir
 	})
 
-	binary := filepath.Join(tmpDir, "clinvk")
-	if os.PathSeparator == '\\' {
-		binary += ".exe"
+	if buildErr != nil {
+		t.Fatalf("failed to build binary: %v", buildErr)
 	}
 
-	// Get the project root (two levels up from cmd/clinvk)
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("failed to get working directory: %v", err)
-	}
-	projectRoot := filepath.Dir(filepath.Dir(wd))
-
-	// Build the binary
-	cmd := exec.Command("go", "build", "-o", binary, "./cmd/clinvk")
-	cmd.Dir = projectRoot
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("failed to build binary: %v\nOutput: %s", err, output)
-	}
-
-	return binary
+	return testBinary
 }

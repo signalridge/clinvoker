@@ -54,14 +54,15 @@ Implements CLI commands and orchestrates other modules:
 
 | File | Purpose |
 |------|---------|
-| `root.go` | Root command, global flags |
-| `execute.go` | Single prompt execution |
-| `parallel.go` | Concurrent multi-task execution |
-| `chain.go` | Sequential pipeline execution |
-| `compare.go` | Multi-backend comparison |
-| `serve.go` | HTTP server startup |
-| `session.go` | Session management commands |
-| `config.go` | Configuration commands |
+| `app.go` | Root command, global flags, prompt execution |
+| `cmd_parallel.go` | Concurrent multi-task execution |
+| `cmd_chain.go` | Sequential pipeline execution |
+| `cmd_compare.go` | Multi-backend comparison |
+| `cmd_serve.go` | HTTP server startup |
+| `cmd_sessions.go` | Session management commands |
+| `cmd_config.go` | Configuration commands |
+| `cmd_version.go` | Version command |
+| `helpers.go` | Shared helpers |
 
 ### Backend Layer (`internal/backend/`)
 
@@ -70,9 +71,14 @@ Provides a unified interface for different AI CLI tools:
 ```go
 type Backend interface {
     Name() string
-    Available() bool
-    BuildCommand(ctx context.Context, opts *Options) (*exec.Cmd, error)
-    ParseOutput(output []byte) (*Result, error)
+    IsAvailable() bool
+    BuildCommand(prompt string, opts *Options) *exec.Cmd
+    ResumeCommand(sessionID, prompt string, opts *Options) *exec.Cmd
+    BuildCommandUnified(prompt string, opts *UnifiedOptions) *exec.Cmd
+    ResumeCommandUnified(sessionID, prompt string, opts *UnifiedOptions) *exec.Cmd
+    ParseOutput(rawOutput string) string
+    ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
+    SeparateStderr() bool
 }
 ```
 
@@ -88,10 +94,10 @@ Handles actual execution of backend commands:
 
 | File | Purpose |
 |------|---------|
-| `executor.go` | Single execution with streaming |
-| `parallel.go` | Concurrent execution with worker pool |
-| `chain.go` | Sequential pipeline with output passing |
-| `compare.go` | Multi-backend parallel execution |
+| `executor.go` | Command execution with PTY support |
+| `signal.go` | Signal forwarding |
+| `signal_unix.go` | Unix signal handling |
+| `signal_windows.go` | Windows signal handling |
 
 ### Server Layer (`internal/server/`)
 
@@ -212,8 +218,7 @@ Multiple API styles for integration:
 
 Real-time output streaming via:
 - Subprocess stdout/stderr pipes
-- Chunk-based parsing
-- SSE for HTTP endpoints
+- Chunk-based parsing utilities in `internal/output/`
 
 ## Security Considerations
 
