@@ -2,9 +2,9 @@ package service
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"os/exec"
 
@@ -44,8 +44,10 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 		return nil, err
 	}
 
+	// Capture stderr instead of discarding - errors may appear there
+	var stderrBuf bytes.Buffer
 	if prep.backend.SeparateStderr() {
-		cmd.Stderr = io.Discard
+		cmd.Stderr = &stderrBuf
 	} else {
 		cmd.Stderr = cmd.Stdout
 	}
@@ -140,6 +142,9 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 
 	if streamErr != nil {
 		result.Error = streamErr.Error()
+	} else if exitCode != 0 && stderrBuf.Len() > 0 {
+		// Use stderr as fallback error message when exit code is non-zero
+		result.Error = stderrBuf.String()
 	}
 
 	return result, nil

@@ -5,10 +5,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os/exec"
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/executor"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // Request is the execution input for the core executor.
@@ -29,7 +29,7 @@ type Result struct {
 }
 
 // Execute runs a prompt with the given backend and options.
-// It always uses JSON internally to normalize output and extract session/usage.
+// It uses JSON internally (unless stream-json is requested) to normalize output and extract session/usage.
 func Execute(ctx context.Context, req *Request) (*Result, error) {
 	if req == nil || req.Backend == nil {
 		return nil, fmt.Errorf("invalid execution request")
@@ -40,12 +40,13 @@ func Execute(ctx context.Context, req *Request) (*Result, error) {
 		opts = &backend.UnifiedOptions{}
 	}
 
-	// Always use JSON internally for parsing/normalization
-	opts.OutputFormat = backend.OutputJSON
+	// Use InternalOutputFormat to determine actual format
+	// This respects stream-json while converting text/default to JSON for parsing
+	opts.OutputFormat = util.InternalOutputFormat(req.RequestedFormat)
 
-	// Build command with context
+	// Build command with context using shared util
 	execCmd := req.Backend.BuildCommandUnified(req.Prompt, opts)
-	execCmd = commandWithContext(ctx, execCmd)
+	execCmd = util.CommandWithContext(ctx, execCmd)
 
 	if opts.DryRun {
 		return &Result{
@@ -72,7 +73,8 @@ func Execute(ctx context.Context, req *Request) (*Result, error) {
 		errMsg = execErr.Error()
 	}
 
-	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
+	// Use shared util for output selection
+	rawOutput := util.SelectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
 
 	result := &Result{
 		ExitCode: exitCode,
@@ -95,32 +97,4 @@ func Execute(ctx context.Context, req *Request) (*Result, error) {
 	}
 
 	return result, nil
-}
-
-// selectOutput chooses stdout or stderr based on exit code and content.
-func selectOutput(stdout, stderr string, exitCode int) string {
-	if exitCode != 0 && stderr != "" {
-		return stderr
-	}
-	if stdout == "" {
-		return stderr
-	}
-	return stdout
-}
-
-func commandWithContext(ctx context.Context, cmd *exec.Cmd) *exec.Cmd {
-	if ctx == nil || cmd == nil {
-		return cmd
-	}
-
-	if len(cmd.Args) == 0 {
-		return exec.CommandContext(ctx, cmd.Path)
-	}
-
-	newCmd := exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
-	newCmd.Dir = cmd.Dir
-	newCmd.Env = cmd.Env
-	newCmd.SysProcAttr = cmd.SysProcAttr
-	newCmd.ExtraFiles = cmd.ExtraFiles
-	return newCmd
 }
