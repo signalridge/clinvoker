@@ -105,3 +105,75 @@ aurs:
       install -Dm755 "./clinvk" "${pkgdir}/usr/bin/clinvk"
       install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/clinvk/LICENSE"
       install -Dm644 "./README.md" "${pkgdir}/usr/share/doc/clinvk/README.md"
+# Docker images
+dockers:
+  - id: clinvk-amd64
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/signalridge/clinvk:{{ .Version }}-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--build-arg=VERSION={{ .Version }}"
+      - "--build-arg=COMMIT={{ .ShortCommit }}"
+      - "--build-arg=DATE={{ .Date }}"
+  - id: clinvk-arm64
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "ghcr.io/signalridge/clinvk:{{ .Version }}-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--build-arg=VERSION={{ .Version }}"
+      - "--build-arg=COMMIT={{ .ShortCommit }}"
+      - "--build-arg=DATE={{ .Date }}"
+# Multi-arch manifest
+docker_manifests:
+  - name_template: "ghcr.io/signalridge/clinvk:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/signalridge/clinvk:{{ .Version }}-amd64"
+      - "ghcr.io/signalridge/clinvk:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/signalridge/clinvk:latest"
+    image_templates:
+      - "ghcr.io/signalridge/clinvk:{{ .Version }}-amd64"
+      - "ghcr.io/signalridge/clinvk:{{ .Version }}-arm64"
+# SBOM generation
+sboms:
+  - artifacts: archive
+    documents:
+      - "${artifact}.sbom.spdx.json"
+# Sign artifacts with cosign
+signs:
+  - cmd: cosign
+    env:
+      - COSIGN_EXPERIMENTAL=1
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+# Sign container images
+docker_signs:
+  - cmd: cosign
+    env:
+      - COSIGN_EXPERIMENTAL=1
+    artifacts: manifests
+    output: true
+    args:
+      - sign
+      - "${artifact}@${digest}"
+      - "--yes"

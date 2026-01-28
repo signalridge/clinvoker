@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Build artifacts
+dist/
+*.exe
+clinvk
+clinvk-*
+
+# Test files
+*_test.go
+testdata/
+coverage.txt
+coverage.html
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs/
+
+# Development files
+.pre-commit-config.yaml
+.golangci.yaml
+.goreleaser.yaml
+.yamllint.yaml
+Makefile
+justfile
+
+# CI/CD
+.github/
+
+# Nix
+*.nix
+flake.lock
+result
+
+# Config examples
+config.example.yaml
+
+# Temporary files
+tmp/
+*.tmp
+*.log
