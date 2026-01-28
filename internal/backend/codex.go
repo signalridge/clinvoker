@@ -117,11 +117,15 @@ func (c *Codex) ResumeCommandUnified(sessionID, prompt string, opts *UnifiedOpti
 type codexEvent struct {
 	Type     string `json:"type"`
 	ThreadID string `json:"thread_id,omitempty"`
+	Message  string `json:"message,omitempty"` // For error events
 	Item     struct {
 		ID   string `json:"id,omitempty"`
 		Type string `json:"type"`
 		Text string `json:"text"`
 	} `json:"item,omitempty"`
+	Error struct {
+		Message string `json:"message,omitempty"`
+	} `json:"error,omitempty"` // For turn.failed events
 	Usage struct {
 		InputTokens       int `json:"input_tokens"`
 		CachedInputTokens int `json:"cached_input_tokens"`
@@ -161,6 +165,7 @@ func (c *Codex) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
 	var sessionID string
 	var usage TokenUsage
 	var rawEvents []map[string]any
+	var lastError string
 
 	lines := strings.Split(rawOutput, "\n")
 	for _, line := range lines {
@@ -190,6 +195,16 @@ func (c *Codex) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
 			usage.InputTokens = event.Usage.InputTokens + event.Usage.CachedInputTokens
 			usage.OutputTokens = event.Usage.OutputTokens
 			usage.TotalTokens = usage.InputTokens + usage.OutputTokens
+		case "error":
+			// Capture error messages (e.g., "401 Unauthorized")
+			if event.Message != "" {
+				lastError = event.Message
+			}
+		case "turn.failed":
+			// Capture final error from turn.failed event
+			if event.Error.Message != "" {
+				lastError = event.Error.Message
+			}
 		}
 	}
 
@@ -197,6 +212,7 @@ func (c *Codex) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
 		Content:   strings.Join(messages, "\n"),
 		SessionID: sessionID,
 		Usage:     &usage,
+		Error:     lastError,
 		Raw:       map[string]any{"events": rawEvents},
 	}, nil
 }

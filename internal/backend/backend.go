@@ -62,6 +62,9 @@ type UnifiedResponse struct {
 	// Usage contains token usage information.
 	Usage *TokenUsage `json:"usage,omitempty"`
 
+	// Error contains error message if the backend request failed.
+	Error string `json:"error,omitempty"`
+
 	// Raw contains the original backend response (for debugging).
 	Raw map[string]any `json:"raw,omitempty"`
 }
