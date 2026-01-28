@@ -20,6 +20,11 @@ type OpenAIHandlers struct {
 	runner service.PromptRunner
 }
 
+const (
+	openAIFinishReasonStop = "stop"
+	openAIFinishReasonErr  = "error"
+)
+
 // NewOpenAIHandlers creates a new OpenAI handlers instance.
 func NewOpenAIHandlers(runner service.PromptRunner) *OpenAIHandlers {
 	return &OpenAIHandlers{runner: runner}
@@ -245,9 +250,9 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 			responseID = fmt.Sprintf("chatcmpl-%d", now)
 		}
 
-		finishReason := "stop"
+		finishReason := openAIFinishReasonStop
 		if result.ExitCode != 0 {
-			finishReason = "error"
+			finishReason = openAIFinishReasonErr
 		}
 
 		// Token counts (use backend usage if available, fallback to rough estimate)
@@ -337,9 +342,9 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 				return writeChunk(delta, nil)
 			})
 
-			finishReason := "stop"
+			finishReason := openAIFinishReasonStop
 			if streamErr != nil || streamResult == nil || streamResult.ExitCode != 0 || streamResult.Error != "" {
-				finishReason = "error"
+				finishReason = openAIFinishReasonErr
 			}
 			_ = writeChunk(OpenAIChatCompletionDelta{}, &finishReason)
 			_ = writeSSE(hctx, []byte("data: [DONE]\n\n"))
