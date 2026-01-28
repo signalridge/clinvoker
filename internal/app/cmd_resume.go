@@ -157,7 +157,7 @@ func runResume(cmd *cobra.Command, args []string) error {
 		exitCode, err = executeWithStreamOutput(b, execCmd)
 	default:
 		// Text output: use JSON internally, extract content for display
-		exitCode, _, err = executeTextViaJSON(b, execCmd)
+		exitCode, _, err = executeTextViaJSON(b, execCmd, sess)
 	}
 
 	if err != nil {

@@ -318,11 +318,11 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 	}
 
 	// Build unified options
-	opts := buildParallelTaskOptions(t)
+	opts := buildParallelTaskOptions(t, pCtx.cfg)
 
 	// Create and save session
 	tags := append([]string{"parallel"}, t.Tags...)
-	sess := createAndSaveSession(pCtx.store, t.Backend, t.WorkDir, t.Model, t.Prompt, tags, t.Name, pCtx.quiet)
+	sess := createAndSaveSession(pCtx.store, t.Backend, t.WorkDir, opts.Model, t.Prompt, tags, t.Name, pCtx.quiet)
 	if sess != nil {
 		result.SessionID = sess.ID
 	}
@@ -330,7 +330,7 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 	// Build command
 	execCmd := b.BuildCommandUnified(t.Prompt, opts)
 
-	if t.DryRun || dryRun {
+	if opts.DryRun {
 		if !pCtx.quiet {
 			fmt.Printf("[%d] Would execute: %s %v\n", idx+1, execCmd.Path, execCmd.Args[1:])
 		}
@@ -370,10 +370,17 @@ func failTaskResult(result *TaskResult, startTime time.Time, errMsg string) {
 }
 
 // buildParallelTaskOptions builds unified options for a parallel task.
-func buildParallelTaskOptions(t *ParallelTask) *backend.UnifiedOptions {
-	return &backend.UnifiedOptions{
+func buildParallelTaskOptions(t *ParallelTask, cfg *config.Config) *backend.UnifiedOptions {
+	model := t.Model
+	if model == "" && cfg != nil {
+		if bcfg, ok := cfg.Backends[t.Backend]; ok {
+			model = bcfg.Model
+		}
+	}
+
+	opts := &backend.UnifiedOptions{
 		WorkDir:      t.WorkDir,
-		Model:        t.Model,
+		Model:        model,
 		ApprovalMode: backend.ApprovalMode(t.ApprovalMode),
 		SandboxMode:  backend.SandboxMode(t.SandboxMode),
 		OutputFormat: backend.OutputFormat(t.OutputFormat),
@@ -384,6 +391,34 @@ func buildParallelTaskOptions(t *ParallelTask) *backend.UnifiedOptions {
 		DryRun:       t.DryRun || dryRun,
 		ExtraFlags:   t.Extra,
 	}
+
+	if cfg != nil {
+		if opts.ApprovalMode == "" && cfg.UnifiedFlags.ApprovalMode != "" {
+			opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
+		}
+		if opts.SandboxMode == "" && cfg.UnifiedFlags.SandboxMode != "" {
+			opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
+		}
+		if opts.OutputFormat == "" || opts.OutputFormat == backend.OutputDefault {
+			if cfg.UnifiedFlags.OutputFormat != "" && cfg.UnifiedFlags.OutputFormat != string(backend.OutputDefault) {
+				opts.OutputFormat = backend.OutputFormat(cfg.UnifiedFlags.OutputFormat)
+			}
+		}
+		if opts.MaxTurns == 0 && cfg.UnifiedFlags.MaxTurns > 0 {
+			opts.MaxTurns = cfg.UnifiedFlags.MaxTurns
+		}
+		if opts.MaxTokens == 0 && cfg.UnifiedFlags.MaxTokens > 0 {
+			opts.MaxTokens = cfg.UnifiedFlags.MaxTokens
+		}
+		if !opts.Verbose && cfg.UnifiedFlags.Verbose {
+			opts.Verbose = true
+		}
+		if cfg.UnifiedFlags.DryRun {
+			opts.DryRun = true
+		}
+	}
+
+	return opts
 }
 
 // outputParallelResults outputs the parallel execution results.
