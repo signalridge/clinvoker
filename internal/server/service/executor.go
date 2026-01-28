@@ -324,7 +324,10 @@ func (e *Executor) ExecuteParallel(ctx context.Context, req *ParallelRequest) (*
 				t.DryRun = true
 			}
 
-			res, _ := e.ExecutePrompt(ctx, &t)
+			res, err := e.ExecutePrompt(ctx, &t)
+			if err != nil {
+				e.logger.Warn("prompt execution returned error", "task_index", idx, "backend", t.Backend, "error", err)
+			}
 
 			mu.Lock()
 			result.Results[idx] = *res
@@ -440,7 +443,10 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 			DryRun:       req.DryRun,
 		}
 
-		res, _ := e.ExecutePrompt(ctx, promptReq)
+		res, err := e.ExecutePrompt(ctx, promptReq)
+		if err != nil {
+			e.logger.Warn("chain step execution returned error", "step", i+1, "name", step.Name, "backend", step.Backend, "error", err)
+		}
 
 		stepResult.ExitCode = res.ExitCode
 		stepResult.Error = res.Error
@@ -547,7 +553,10 @@ func (e *Executor) runCompareBackend(ctx context.Context, backendName string, re
 		DryRun:  req.DryRun,
 	}
 
-	res, _ := e.ExecutePrompt(ctx, promptReq)
+	res, err := e.ExecutePrompt(ctx, promptReq)
+	if err != nil {
+		e.logger.Warn("compare backend execution returned error", "backend", backendName, "error", err)
+	}
 
 	result.ExitCode = res.ExitCode
 	result.Error = res.Error
