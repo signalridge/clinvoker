@@ -325,7 +325,7 @@ func TestBackendNameValidation(t *testing.T) {
 	invalidBackends := []string{"gpt", "openai", "anthropic", ""}
 
 	for _, name := range validBackends {
-		_, err := getBackendIfAvailable(name)
+		err := getBackendIfAvailable(name)
 		// Note: might fail if backend CLI not installed, but shouldn't return "unknown backend"
 		if err != nil && strings.Contains(err.Error(), "unknown backend") {
 			t.Errorf("backend %q should be known", name)
@@ -333,7 +333,7 @@ func TestBackendNameValidation(t *testing.T) {
 	}
 
 	for _, name := range invalidBackends {
-		_, err := getBackendIfAvailable(name)
+		err := getBackendIfAvailable(name)
 		if err == nil {
 			t.Errorf("backend %q should fail validation", name)
 		}
@@ -393,9 +393,9 @@ func TestPreviousPlaceholderReplacement(t *testing.T) {
 }
 
 // Helper function for testing (mirrors the actual implementation)
-func getBackendIfAvailable(name string) (interface{}, error) {
+func getBackendIfAvailable(name string) error {
 	if name == "" {
-		return nil, os.ErrInvalid
+		return os.ErrInvalid
 	}
 
 	validBackends := map[string]bool{
@@ -405,8 +405,8 @@ func getBackendIfAvailable(name string) (interface{}, error) {
 	}
 
 	if !validBackends[name] {
-		return nil, os.ErrNotExist
+		return os.ErrNotExist
 	}
 
-	return struct{}{}, nil
+	return nil
 }

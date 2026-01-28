@@ -141,7 +141,7 @@ type geminiErrorResponse struct {
 }
 
 // geminiCredentialPrefix is the message Gemini CLI outputs when using cached credentials.
-const geminiCredentialPrefix = "Loaded cached credentials."
+const geminiCredentialPrefix = "Loaded cached credentials." //nolint:gosec // Not a credential, just a UI message prefix
 
 // ParseJSONResponse parses Gemini's JSON output into a unified response.
 func (g *Gemini) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
