@@ -35,20 +35,21 @@ func Execute(ctx context.Context, req *Request) (*Result, error) {
 		return nil, fmt.Errorf("invalid execution request")
 	}
 
-	opts := req.Options
-	if opts == nil {
-		opts = &backend.UnifiedOptions{}
+	// Copy options to avoid mutating caller's struct
+	var effectiveOpts backend.UnifiedOptions
+	if req.Options != nil {
+		effectiveOpts = *req.Options
 	}
 
 	// Use InternalOutputFormat to determine actual format
 	// This respects stream-json while converting text/default to JSON for parsing
-	opts.OutputFormat = util.InternalOutputFormat(req.RequestedFormat)
+	effectiveOpts.OutputFormat = util.InternalOutputFormat(req.RequestedFormat)
 
 	// Build command with context using shared util
-	execCmd := req.Backend.BuildCommandUnified(req.Prompt, opts)
+	execCmd := req.Backend.BuildCommandUnified(req.Prompt, &effectiveOpts)
 	execCmd = util.CommandWithContext(ctx, execCmd)
 
-	if opts.DryRun {
+	if effectiveOpts.DryRun {
 		return &Result{
 			Output:   fmt.Sprintf("Would execute: %s %v", execCmd.Path, execCmd.Args[1:]),
 			ExitCode: 0,

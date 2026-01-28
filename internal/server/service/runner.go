@@ -118,7 +118,15 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 		if coreRes.BackendSessionID != "" {
 			sess.BackendSessionID = coreRes.BackendSessionID
 		}
-		updateSessionFromExecResult(sess, result.ExitCode, result.Error, coreRes)
+		// Convert core.Result to backend.UnifiedResponse for util function
+		var resp *backend.UnifiedResponse
+		if coreRes != nil {
+			resp = &backend.UnifiedResponse{
+				Usage: coreRes.Usage,
+				Error: coreRes.Error,
+			}
+		}
+		util.UpdateSessionFromResponse(sess, result.ExitCode, result.Error, resp)
 		if err := store.Save(sess); err != nil && logger != nil {
 			logger.Warn("failed to save session", "session_id", sess.ID, "error", err)
 		}
@@ -134,28 +142,4 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 	}
 
 	return result, nil
-}
-
-func updateSessionFromExecResult(sess *session.Session, exitCode int, errMsg string, res *core.Result) {
-	if sess == nil {
-		return
-	}
-
-	sess.IncrementTurn()
-
-	if res != nil && res.Usage != nil {
-		sess.AddTokens(int64(res.Usage.InputTokens), int64(res.Usage.OutputTokens))
-	}
-
-	if errMsg != "" {
-		sess.SetError(errMsg)
-		return
-	}
-
-	if exitCode == 0 {
-		sess.Complete()
-		return
-	}
-
-	sess.SetError("backend execution failed")
 }

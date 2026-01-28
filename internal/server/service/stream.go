@@ -33,10 +33,11 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 		return nil, err
 	}
 
-	opts := prep.opts
+	// Copy options to avoid mutating caller's struct
+	opts := *prep.opts
 	opts.OutputFormat = backend.OutputStreamJSON
 
-	cmd := prep.backend.BuildCommandUnified(req.Prompt, opts)
+	cmd := prep.backend.BuildCommandUnified(req.Prompt, &opts)
 	cmd = util.CommandWithContext(ctx, cmd)
 
 	stdout, err := cmd.StdoutPipe()
