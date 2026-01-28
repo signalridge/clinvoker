@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
@@ -128,4 +132,66 @@ func shortSessionID(id string) string {
 		return id
 	}
 	return id[:8]
+}
+
+// cleanupBackendSession cleans up the backend's session after execution in ephemeral mode.
+// This is needed for backends that don't support a native --no-session-persistence flag.
+func cleanupBackendSession(backendName, sessionID string) {
+	switch backendName {
+	case "gemini":
+		// Gemini: delete the most recent session (index 1)
+		cmd := exec.Command("gemini", "--delete-session", "1")
+		_ = cmd.Run() // Ignore errors silently
+
+	case "codex":
+		// Codex: delete the session file from ~/.codex/sessions/
+		if sessionID == "" {
+			return
+		}
+		cleanupCodexSession(sessionID)
+
+		// Claude uses --no-session-persistence flag, no cleanup needed
+	}
+}
+
+// cleanupCodexSession removes a Codex session file by thread ID.
+// Codex stores sessions as files named: rollout-YYYY-MM-DDTHH-MM-SS-UUID.jsonl
+func cleanupCodexSession(threadID string) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	// Codex stores sessions in ~/.codex/sessions/YYYY/MM/DD/
+	now := time.Now()
+	sessionDir := filepath.Join(home, ".codex", "sessions",
+		fmt.Sprintf("%d", now.Year()),
+		fmt.Sprintf("%02d", int(now.Month())),
+		fmt.Sprintf("%02d", now.Day()),
+	)
+
+	// Find and delete the session file containing the thread ID in its name
+	entries, err := os.ReadDir(sessionDir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		// Session files contain UUID in name: rollout-...-UUID.jsonl
+		if containsThreadID(entry.Name(), threadID) {
+			sessionPath := filepath.Join(sessionDir, entry.Name())
+			_ = os.Remove(sessionPath)
+			return
+		}
+	}
+}
+
+// containsThreadID checks if a filename contains the thread ID.
+func containsThreadID(filename, threadID string) bool {
+	// Thread ID is a UUID like "019c0523-e080-7fb1-a8ea-0530361cbf0f"
+	// File name is like "rollout-2026-01-29T00-06-03-019c0523-e080-7fb1-a8ea-0530361cbf0f.jsonl"
+	return threadID != "" && strings.Contains(filename, threadID)
 }

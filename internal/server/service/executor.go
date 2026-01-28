@@ -113,6 +113,7 @@ type PromptRequest struct {
 	SystemPrompt string            `json:"system_prompt,omitempty"`
 	Verbose      bool              `json:"verbose,omitempty"`
 	DryRun       bool              `json:"dry_run,omitempty"`
+	Ephemeral    bool              `json:"ephemeral,omitempty"`
 	Extra        []string          `json:"extra,omitempty"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
 }
@@ -191,18 +192,22 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 		ExtraFlags:   req.Extra,
 	}
 
-	// Create session
-	sess, sessErr := session.NewSession(req.Backend, req.WorkDir)
-	if sessErr == nil {
-		sess.SetModel(model)
-		sess.InitialPrompt = req.Prompt
-		sess.SetStatus(session.StatusActive)
-		sess.AddTag("api")
-		for k, v := range req.Metadata {
-			sess.SetMetadata(k, v)
-		}
-		if err := e.store.Save(sess); err == nil {
-			result.SessionID = sess.ID
+	// Create session (skip if ephemeral mode - stateless like standard LLM APIs)
+	var sess *session.Session
+	if !req.Ephemeral {
+		var sessErr error
+		sess, sessErr = session.NewSession(req.Backend, req.WorkDir)
+		if sessErr == nil {
+			sess.SetModel(model)
+			sess.InitialPrompt = req.Prompt
+			sess.SetStatus(session.StatusActive)
+			sess.AddTag("api")
+			for k, v := range req.Metadata {
+				sess.SetMetadata(k, v)
+			}
+			if err := e.store.Save(sess); err == nil {
+				result.SessionID = sess.ID
+			}
 		}
 	}
 

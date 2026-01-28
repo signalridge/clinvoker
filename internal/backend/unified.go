@@ -101,6 +101,9 @@ type UnifiedOptions struct {
 
 	// ExtraFlags contains additional backend-specific flags.
 	ExtraFlags []string
+
+	// Ephemeral disables session persistence on the backend (stateless mode).
+	Ephemeral bool
 }
 
 // ApprovalMode controls how the backend asks for user approval.
@@ -205,6 +208,10 @@ func (m *flagMapper) MapToOptions(unified *UnifiedOptions) *Options {
 
 	if unified.SystemPrompt != "" {
 		opts.ExtraFlags = append(opts.ExtraFlags, m.mapSystemPrompt(unified.SystemPrompt)...)
+	}
+
+	if unified.Ephemeral {
+		opts.ExtraFlags = append(opts.ExtraFlags, m.mapEphemeral()...)
 	}
 
 	// Add any extra flags from user
@@ -427,6 +434,17 @@ func (m *flagMapper) mapSystemPrompt(prompt string) []string {
 	switch m.backend {
 	case "claude":
 		return []string{"--system-prompt", prompt}
+	}
+	return nil
+}
+
+// mapEphemeral returns backend-specific flags to disable session persistence.
+func (m *flagMapper) mapEphemeral() []string {
+	switch m.backend {
+	case "claude":
+		// Claude Code supports --no-session-persistence to disable session saving
+		return []string{"--no-session-persistence"}
+		// Note: codex and gemini don't have equivalent flags
 	}
 	return nil
 }
