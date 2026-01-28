@@ -31,6 +31,7 @@ var (
 	dryRun              bool
 	outputFormat        string // text, json, stream-json
 	continueLastSession bool   // continue last session
+	ephemeralMode       bool   // stateless mode, no session persisted
 )
 
 var rootCmd = &cobra.Command{
@@ -56,6 +57,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&workDir, "workdir", "w", "", "working directory for the AI backend")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "print command without executing")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output-format", "o", "text", "output format: text, json, stream-json")
+	rootCmd.PersistentFlags().BoolVar(&ephemeralMode, "ephemeral", false, "stateless mode: don't persist session (like standard LLM APIs)")
 	rootCmd.Flags().BoolVarP(&continueLastSession, "continue", "c", false, "continue the last session")
 
 	rootCmd.AddCommand(versionCmd)
@@ -143,6 +145,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		WorkDir:      workDir,
 		Model:        modelName,
 		OutputFormat: internalOutputFormat,
+		Ephemeral:    ephemeralMode,
 	}
 
 	// Get backend-specific config
@@ -160,11 +163,15 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Create session
-	store := session.NewStore()
-	sess, err := store.Create(bn, workDir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to create session: %v\n", err)
+	// Create session (skip if ephemeral mode)
+	var store *session.Store
+	var sess *session.Session
+	if !ephemeralMode {
+		store = session.NewStore()
+		sess, err = store.Create(bn, workDir)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to create session: %v\n", err)
+		}
 	}
 
 	// Execute based on output format and capture backend session ID
@@ -180,8 +187,8 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		exitCode, backendSessionID, err = executeTextViaJSON(b, execCmd)
 	}
 
-	// Update session with backend session ID
-	if sess != nil {
+	// Update session with backend session ID (skip if ephemeral mode)
+	if sess != nil && store != nil {
 		sess.MarkUsed()
 		if backendSessionID != "" {
 			sess.BackendSessionID = backendSessionID
@@ -189,6 +196,11 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		if err := store.Save(sess); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
 		}
+	}
+
+	// Clean up backend session if ephemeral mode (for backends that don't support --no-session-persistence)
+	if ephemeralMode {
+		cleanupBackendSession(bn, backendSessionID)
 	}
 
 	if err != nil {
