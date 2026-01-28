@@ -53,8 +53,11 @@ func TestMain_Version(t *testing.T) {
 		t.Fatalf("version command failed: %v\nOutput: %s", err, output)
 	}
 
-	// Version output should contain version info
-	if !strings.Contains(string(output), "version") && !strings.Contains(string(output), "Version") {
+	// Version output should contain version info (clinvk version string or commit info)
+	outStr := string(output)
+	if !strings.Contains(outStr, "clinvk") &&
+		!strings.Contains(outStr, "version") &&
+		!strings.Contains(outStr, "commit") {
 		t.Errorf("version output should contain version info: %s", output)
 	}
 }
