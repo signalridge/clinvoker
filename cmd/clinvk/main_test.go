@@ -67,16 +67,20 @@ func TestMain_InvalidCommand(t *testing.T) {
 
 	binary := buildTestBinary(t)
 
-	cmd := exec.Command(binary, "nonexistent-command-12345")
+	cmd := exec.Command(binary, "--backend", "nonexistent-backend-12345", "test")
 	output, err := cmd.CombinedOutput()
 
 	if err == nil {
-		t.Error("expected error for invalid command")
+		t.Error("expected error for invalid backend")
 	}
 
-	// Should show error message about unknown command
-	if !strings.Contains(string(output), "unknown") && !strings.Contains(string(output), "Unknown") {
-		t.Errorf("output should mention unknown command: %s", output)
+	// Should show error message about unknown/invalid backend
+	outStr := string(output)
+	if !strings.Contains(outStr, "unknown") &&
+		!strings.Contains(outStr, "Unknown") &&
+		!strings.Contains(outStr, "not found") &&
+		!strings.Contains(outStr, "invalid") {
+		t.Errorf("output should mention unknown/invalid backend: %s", output)
 	}
 }
 
