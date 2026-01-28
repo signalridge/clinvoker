@@ -1,12 +1,12 @@
-# clinvoker CLI Reference
+# clinvk CLI Reference
 
-Complete command reference for clinvoker.
+Complete command reference for clinvk.
 
 ## Synopsis
 
 ```
-clinvoker [flags] [prompt]
-clinvoker [command]
+clinvk [flags] [prompt]
+clinvk [command]
 ```
 
 ## Global Flags
@@ -16,46 +16,46 @@ clinvoker [command]
 | `--backend` | `-b` | string | `claude` | AI backend to use (claude, codex, gemini) |
 | `--model` | `-m` | string | | Model to use for the backend |
 | `--workdir` | `-w` | string | | Working directory for the AI backend |
-| `--config` | | string | | Config file (default: ~/.clinvoker/config.yaml) |
+| `--config` | | string | | Config file (default: ~/.clinvk/config.yaml) |
 | `--dry-run` | | bool | `false` | Print command without executing |
-| `--help` | `-h` | | | Help for clinvoker |
+| `--help` | `-h` | | | Help for clinvk |
 
 ## Commands
 
-### clinvoker [prompt]
+### clinvk [prompt]
 
 Run a prompt with the default or specified backend.
 
 ```bash
-clinvoker "fix the bug in auth.go"
-clinvoker --backend codex "implement feature X"
-clinvoker -b gemini -m gemini-2.5-pro "explain this code"
+clinvk "fix the bug in auth.go"
+clinvk --backend codex "implement feature X"
+clinvk -b gemini -m gemini-2.5-pro "explain this code"
 ```
 
-### clinvoker version
+### clinvk version
 
 Display version information.
 
 ```bash
-clinvoker version
+clinvk version
 ```
 
 Output:
 
 ```
-clinvoker version v0.1.0
+clinvk version v0.1.0
   commit: abc1234
   built:  2025-01-27T00:00:00Z
 ```
 
-### clinvoker resume
+### clinvk resume
 
 Resume a previous session.
 
 **Usage:**
 
 ```
-clinvoker resume [session-id] [prompt] [flags]
+clinvk resume [session-id] [prompt] [flags]
 ```
 
 **Flags:**
@@ -68,30 +68,30 @@ clinvoker resume [session-id] [prompt] [flags]
 
 ```bash
 # Resume last session
-clinvoker resume --last
+clinvk resume --last
 
 # Resume last session with a follow-up prompt
-clinvoker resume --last "continue from where we left off"
+clinvk resume --last "continue from where we left off"
 
 # Resume specific session
-clinvoker resume abc123
+clinvk resume abc123
 
 # Resume specific session with prompt
-clinvoker resume abc123 "now add tests"
+clinvk resume abc123 "now add tests"
 ```
 
-### clinvoker sessions
+### clinvk sessions
 
 Manage sessions.
 
 **Subcommands:**
 
-#### clinvoker sessions list
+#### clinvk sessions list
 
 List all sessions.
 
 ```bash
-clinvoker sessions list
+clinvk sessions list
 ```
 
 Output:
@@ -102,12 +102,12 @@ abc123    claude    2025-01-27 10:00:00  2025-01-27 11:30:00  active     /projec
 def456    codex     2025-01-26 15:00:00  2025-01-26 16:00:00  completed  /projects/api
 ```
 
-#### clinvoker sessions show
+#### clinvk sessions show
 
 Show details of a specific session.
 
 ```bash
-clinvoker sessions show <session-id>
+clinvk sessions show <session-id>
 ```
 
 Output:
@@ -125,15 +125,15 @@ Session: abc123
     Output:     5,678
 ```
 
-#### clinvoker sessions delete
+#### clinvk sessions delete
 
 Delete a session.
 
 ```bash
-clinvoker sessions delete <session-id>
+clinvk sessions delete <session-id>
 ```
 
-#### clinvoker sessions clean
+#### clinvk sessions clean
 
 Remove old sessions.
 
@@ -148,48 +148,48 @@ Remove old sessions.
 
 ```bash
 # Delete sessions older than 30 days
-clinvoker sessions clean --older-than 30d
+clinvk sessions clean --older-than 30d
 
 # Delete completed sessions older than 7 days
-clinvoker sessions clean --older-than 7d --status completed
+clinvk sessions clean --older-than 7d --status completed
 ```
 
-### clinvoker config
+### clinvk config
 
 Manage configuration.
 
-#### clinvoker config show
+#### clinvk config show
 
 Display current configuration.
 
 ```bash
-clinvoker config show
+clinvk config show
 ```
 
-#### clinvoker config set
+#### clinvk config set
 
 Set a configuration value.
 
 ```bash
-clinvoker config set <key> <value>
+clinvk config set <key> <value>
 ```
 
 **Examples:**
 
 ```bash
-clinvoker config set default_backend gemini
-clinvoker config set backends.claude.model claude-opus-4-5-20251101
-clinvoker config set session.retention_days 60
+clinvk config set default_backend gemini
+clinvk config set backends.claude.model claude-opus-4-5-20251101
+clinvk config set session.retention_days 60
 ```
 
-### clinvoker parallel
+### clinvk parallel
 
 Execute multiple tasks in parallel.
 
 **Usage:**
 
 ```
-clinvoker parallel [flags]
+clinvk parallel [flags]
 ```
 
 **Flags:**
@@ -234,26 +234,26 @@ clinvoker parallel [flags]
 
 ```bash
 # From file
-clinvoker parallel --file tasks.json
+clinvk parallel --file tasks.json
 
 # From stdin
-cat tasks.json | clinvoker parallel
+cat tasks.json | clinvk parallel
 
 # With fail-fast
-clinvoker parallel --file tasks.json --fail-fast
+clinvk parallel --file tasks.json --fail-fast
 
 # JSON output
-clinvoker parallel --file tasks.json --json
+clinvk parallel --file tasks.json --json
 ```
 
-### clinvoker compare
+### clinvk compare
 
 Compare responses from multiple backends.
 
 **Usage:**
 
 ```
-clinvoker compare [prompt] [flags]
+clinvk compare [prompt] [flags]
 ```
 
 **Flags:**
@@ -269,16 +269,16 @@ clinvoker compare [prompt] [flags]
 
 ```bash
 # Compare specific backends
-clinvoker compare --backends claude,codex "explain this code"
+clinvk compare --backends claude,codex "explain this code"
 
 # Compare all backends
-clinvoker compare --all-backends "what does this function do"
+clinvk compare --all-backends "what does this function do"
 
 # Sequential execution
-clinvoker compare --all-backends --sequential "review this PR"
+clinvk compare --all-backends --sequential "review this PR"
 
 # JSON output
-clinvoker compare --all-backends --json "analyze performance"
+clinvk compare --all-backends --json "analyze performance"
 ```
 
 **Output Format (JSON):**
@@ -305,14 +305,14 @@ clinvoker compare --all-backends --json "analyze performance"
 }
 ```
 
-### clinvoker chain
+### clinvk chain
 
 Execute a pipeline of prompts through multiple backends.
 
 **Usage:**
 
 ```
-clinvoker chain [flags]
+clinvk chain [flags]
 ```
 
 **Flags:**
@@ -355,10 +355,10 @@ clinvoker chain [flags]
 
 ```bash
 # Execute chain
-clinvoker chain --file pipeline.json
+clinvk chain --file pipeline.json
 
 # JSON output
-clinvoker chain --file pipeline.json --json
+clinvk chain --file pipeline.json --json
 ```
 
 **Output Format (JSON):**
@@ -387,6 +387,114 @@ clinvoker chain --file pipeline.json --json
 }
 ```
 
+### clinvk serve
+
+Start the HTTP API server.
+
+**Usage:**
+
+```
+clinvk serve [flags]
+```
+
+**Flags:**
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--host` | | string | `127.0.0.1` | Host to bind to |
+| `--port` | `-p` | int | `8080` | Port to listen on |
+
+**Examples:**
+
+```bash
+# Start with defaults
+clinvk serve
+
+# Custom port
+clinvk serve --port 3000
+
+# Bind to all interfaces
+clinvk serve --host 0.0.0.0 --port 8080
+```
+
+**API Endpoints:**
+
+The server provides three distinct API styles:
+
+**Custom RESTful API (`/api/v1/`):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/prompt` | Execute single prompt |
+| POST | `/api/v1/parallel` | Execute multiple prompts in parallel |
+| POST | `/api/v1/chain` | Execute prompts in sequence |
+| POST | `/api/v1/compare` | Compare responses across backends |
+| GET | `/api/v1/backends` | List available backends |
+| GET | `/api/v1/sessions` | List sessions |
+| GET | `/api/v1/sessions/{id}` | Get session details |
+| DELETE | `/api/v1/sessions/{id}` | Delete session |
+
+**OpenAI Compatible API (`/openai/v1/`):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/openai/v1/models` | List available models |
+| POST | `/openai/v1/chat/completions` | Create chat completion |
+
+**Anthropic Compatible API (`/anthropic/v1/`):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/anthropic/v1/messages` | Create message |
+
+**Meta Endpoints:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/openapi.json` | OpenAPI specification |
+
+**Example API Requests:**
+
+```bash
+# Execute a prompt
+curl -X POST http://localhost:8080/api/v1/prompt \
+  -H "Content-Type: application/json" \
+  -d '{"backend": "claude", "prompt": "explain this code"}'
+
+# List backends
+curl http://localhost:8080/api/v1/backends
+
+# OpenAI-compatible chat completion
+curl -X POST http://localhost:8080/openai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+
+# Anthropic-compatible message
+curl -X POST http://localhost:8080/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+**Server Configuration:**
+
+In `~/.clinvk/config.yaml`:
+
+```yaml
+server:
+  host: "127.0.0.1"
+  port: 8080
+  request_timeout_secs: 300
+```
+
 ## Exit Codes
 
 | Code | Description |
@@ -401,14 +509,14 @@ clinvoker chain --file pipeline.json --json
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `CLINVOKER_BACKEND` | Default backend | `claude` |
-| `CLINVOKER_CLAUDE_MODEL` | Claude model | |
-| `CLINVOKER_CODEX_MODEL` | Codex model | |
-| `CLINVOKER_GEMINI_MODEL` | Gemini model | |
+| `CLINVK_BACKEND` | Default backend | `claude` |
+| `CLINVK_CLAUDE_MODEL` | Claude model | |
+| `CLINVK_CODEX_MODEL` | Codex model | |
+| `CLINVK_GEMINI_MODEL` | Gemini model | |
 
 ## Configuration File
 
-Default location: `~/.clinvoker/config.yaml`
+Default location: `~/.clinvk/config.yaml`
 
 See [Configuration Guide](CONFIGURATION.md) for detailed options.
 

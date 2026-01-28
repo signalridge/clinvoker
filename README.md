@@ -1,6 +1,6 @@
-# clinvoker
+# clinvk
 
-Unified AI CLI wrapper for orchestrating multiple AI CLI backends (Claude Code, Codex CLI, Gemini CLI) with session persistence, parallel task execution, and unified output formatting.
+Unified AI CLI wrapper for orchestrating multiple AI CLI backends (Claude Code, Codex CLI, Gemini CLI) with session persistence, parallel task execution, HTTP API server, and unified output formatting.
 
 ## Features
 
@@ -10,6 +10,7 @@ Unified AI CLI wrapper for orchestrating multiple AI CLI backends (Claude Code, 
 - **Parallel Execution**: Run multiple AI tasks concurrently with fail-fast support
 - **Backend Comparison**: Compare responses from multiple backends side-by-side
 - **Chain Execution**: Pipeline prompts through multiple backends sequentially
+- **HTTP API Server**: RESTful API with OpenAI and Anthropic compatible endpoints
 - **Configuration Cascade**: CLI flags → Environment variables → Config file → Defaults
 - **Cross-Platform**: Supports Linux, macOS, and Windows
 
@@ -22,13 +23,13 @@ Download the latest release from [GitHub Releases](https://github.com/signalridg
 ### From Source
 
 ```bash
-go install github.com/signalridge/clinvoker/cmd/clinvoker@latest
+go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 ```
 
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install signalridge/tap/clinvoker
+brew install signalridge/tap/clinvk
 ```
 
 ### Nix
@@ -59,52 +60,55 @@ Add to your flake:
 
 ```bash
 # Using yay
-yay -S clinvoker-bin
+yay -S clinvk-bin
 
 # Or build from source
-yay -S clinvoker
+yay -S clinvk
 ```
 
 ### Scoop (Windows)
 
-```powershell
+```bash
 scoop bucket add signalridge https://github.com/signalridge/scoop-bucket
-scoop install clinvoker
+scoop install clinvk
 ```
 
 ### Debian/Ubuntu (apt)
 
 ```bash
 # Download the .deb package from releases
-sudo dpkg -i clinvoker_*.deb
+sudo dpkg -i clinvk_*.deb
 ```
 
 ### RPM-based (Fedora/RHEL)
 
 ```bash
 # Download the .rpm package from releases
-sudo rpm -i clinvoker_*.rpm
+sudo rpm -i clinvk_*.rpm
 ```
 
 ## Quick Start
 
 ```bash
 # Run with default backend (Claude Code)
-clinvoker "fix the bug in auth.go"
+clinvk "fix the bug in auth.go"
 
 # Specify a backend
-clinvoker --backend codex "implement user registration"
-clinvoker -b gemini "generate unit tests"
+clinvk --backend codex "implement user registration"
+clinvk -b gemini "generate unit tests"
 
 # Resume a session
-clinvoker resume --last "continue working"
-clinvoker resume abc123 "follow up"
+clinvk resume --last "continue working"
+clinvk resume abc123 "follow up"
 
 # Compare backends
-clinvoker compare --all-backends "explain this code"
+clinvk compare --all-backends "explain this code"
 
 # Chain backends
-clinvoker chain --file pipeline.json
+clinvk chain --file pipeline.json
+
+# Start HTTP API server
+clinvk serve --port 8080
 ```
 
 ## Usage
@@ -113,16 +117,16 @@ clinvoker chain --file pipeline.json
 
 ```bash
 # Run a prompt
-clinvoker "your prompt here"
+clinvk "your prompt here"
 
 # With specific backend and model
-clinvoker --backend codex --model o3 "your prompt"
+clinvk --backend codex --model o3 "your prompt"
 
 # Dry run (show command without executing)
-clinvoker --dry-run "your prompt"
+clinvk --dry-run "your prompt"
 
 # Version info
-clinvoker version
+clinvk version
 ```
 
 ### Unified Flags
@@ -142,35 +146,35 @@ Example:
 
 ```bash
 # Auto-approve all tool calls with JSON output
-clinvoker --approval auto --output json "refactor auth module"
+clinvk --approval auto --output json "refactor auth module"
 ```
 
 ### Session Management
 
 ```bash
 # List all sessions
-clinvoker sessions list
+clinvk sessions list
 
 # Show session details
-clinvoker sessions show <session-id>
+clinvk sessions show <session-id>
 
 # Resume last session
-clinvoker resume --last
+clinvk resume --last
 
 # Resume specific session
-clinvoker resume <session-id> "follow up prompt"
+clinvk resume <session-id> "follow up prompt"
 
 # Fork a session (create a branch)
-clinvoker sessions fork <session-id>
+clinvk sessions fork <session-id>
 
 # Tag a session
-clinvoker sessions tag <session-id> important
+clinvk sessions tag <session-id> important
 
 # Delete a session
-clinvoker sessions delete <session-id>
+clinvk sessions delete <session-id>
 
 # Clean old sessions
-clinvoker sessions clean --older-than 30d
+clinvk sessions clean --older-than 30d
 ```
 
 ### Parallel Execution
@@ -203,16 +207,16 @@ Run tasks:
 
 ```bash
 # From file
-clinvoker parallel --file tasks.json
+clinvk parallel --file tasks.json
 
 # From stdin
-cat tasks.json | clinvoker parallel
+cat tasks.json | clinvk parallel
 
 # With fail-fast (stop on first failure)
-clinvoker parallel --file tasks.json --fail-fast
+clinvk parallel --file tasks.json --fail-fast
 
 # JSON output
-clinvoker parallel --file tasks.json --json
+clinvk parallel --file tasks.json --json
 ```
 
 ### Backend Comparison
@@ -221,16 +225,16 @@ Compare responses from multiple backends:
 
 ```bash
 # Compare specific backends
-clinvoker compare --backends claude,codex "explain this algorithm"
+clinvk compare --backends claude,codex "explain this algorithm"
 
 # Compare all enabled backends
-clinvoker compare --all-backends "what does this code do"
+clinvk compare --all-backends "what does this code do"
 
 # Sequential execution (one at a time)
-clinvoker compare --all-backends --sequential "review this PR"
+clinvk compare --all-backends --sequential "review this PR"
 
 # JSON output for programmatic processing
-clinvoker compare --all-backends --json "analyze performance"
+clinvk compare --all-backends --json "analyze performance"
 ```
 
 ### Chain Execution
@@ -264,28 +268,83 @@ Create `pipeline.json`:
 Run chain:
 
 ```bash
-clinvoker chain --file pipeline.json
+clinvk chain --file pipeline.json
 
 # JSON output
-clinvoker chain --file pipeline.json --json
+clinvk chain --file pipeline.json --json
+```
+
+### HTTP API Server
+
+Start the HTTP API server to access AI backends via REST APIs:
+
+```bash
+# Start with default settings (127.0.0.1:8080)
+clinvk serve
+
+# Custom port
+clinvk serve --port 3000
+
+# Bind to all interfaces
+clinvk serve --host 0.0.0.0 --port 8080
+```
+
+The server provides three API styles:
+
+**Custom RESTful API** (`/api/v1/`):
+- `POST /api/v1/prompt` - Execute single prompt
+- `POST /api/v1/parallel` - Execute multiple prompts in parallel
+- `POST /api/v1/chain` - Execute prompts in sequence
+- `POST /api/v1/compare` - Compare responses across backends
+- `GET /api/v1/backends` - List available backends
+- `GET /api/v1/sessions` - List sessions
+- `GET /api/v1/sessions/{id}` - Get session details
+- `DELETE /api/v1/sessions/{id}` - Delete session
+
+**OpenAI Compatible API** (`/openai/v1/`):
+- `GET /openai/v1/models` - List available models
+- `POST /openai/v1/chat/completions` - Create chat completion
+
+**Anthropic Compatible API** (`/anthropic/v1/`):
+- `POST /anthropic/v1/messages` - Create message
+
+**Meta Endpoints**:
+- `GET /health` - Health check
+- `GET /openapi.json` - OpenAPI specification
+
+Example API usage:
+
+```bash
+# Execute a prompt via API
+curl -X POST http://localhost:8080/api/v1/prompt \
+  -H "Content-Type: application/json" \
+  -d '{"backend": "claude", "prompt": "explain this code"}'
+
+# Use OpenAI-compatible endpoint
+curl -X POST http://localhost:8080/openai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
 ```
 
 ### Configuration
 
 ```bash
 # Show current configuration
-clinvoker config show
+clinvk config show
 
 # Set default backend
-clinvoker config set default_backend gemini
+clinvk config set default_backend gemini
 
 # Set backend-specific model
-clinvoker config set backends.claude.model claude-opus-4-5-20251101
+clinvk config set backends.claude.model claude-opus-4-5-20251101
 ```
 
 ## Configuration
 
-Configuration is stored in `~/.clinvoker/config.yaml`:
+Configuration is stored in `~/.clinvk/config.yaml`:
 
 ```yaml
 default_backend: claude
@@ -326,6 +385,11 @@ output:
   show_timing: false
   color: true
 
+server:
+  host: "127.0.0.1"
+  port: 8080
+  request_timeout_secs: 300
+
 parallel:
   max_workers: 3
   fail_fast: false
@@ -336,10 +400,10 @@ parallel:
 
 | Variable | Description |
 |----------|-------------|
-| `CLINVOKER_BACKEND` | Default backend |
-| `CLINVOKER_CLAUDE_MODEL` | Claude model |
-| `CLINVOKER_CODEX_MODEL` | Codex model |
-| `CLINVOKER_GEMINI_MODEL` | Gemini model |
+| `CLINVK_BACKEND` | Default backend |
+| `CLINVK_CLAUDE_MODEL` | Claude model |
+| `CLINVK_CODEX_MODEL` | Codex model |
+| `CLINVK_GEMINI_MODEL` | Gemini model |
 
 ## Backends
 
@@ -351,7 +415,7 @@ parallel:
 
 ### Backend Availability
 
-clinvoker automatically detects which backends are available in your PATH. Use `clinvoker config show` to see which backends are detected.
+clinvk automatically detects which backends are available in your PATH. Use `clinvk config show` to see which backends are detected.
 
 ## Development
 
@@ -363,7 +427,7 @@ clinvoker automatically detects which backends are available in your PATH. Use `
 ### Building
 
 ```bash
-go build ./cmd/clinvoker
+go build ./cmd/clinvk
 ```
 
 ### Testing
