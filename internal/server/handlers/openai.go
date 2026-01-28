@@ -15,12 +15,12 @@ import (
 
 // OpenAIHandlers provides handlers for OpenAI-compatible API.
 type OpenAIHandlers struct {
-	executor *service.Executor
+	runner service.PromptRunner
 }
 
 // NewOpenAIHandlers creates a new OpenAI handlers instance.
-func NewOpenAIHandlers(executor *service.Executor) *OpenAIHandlers {
-	return &OpenAIHandlers{executor: executor}
+func NewOpenAIHandlers(runner service.PromptRunner) *OpenAIHandlers {
+	return &OpenAIHandlers{runner: runner}
 }
 
 // Register registers all OpenAI-compatible API routes.
@@ -199,7 +199,7 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 		SystemPrompt: systemPrompt,
 	}
 
-	result, err := h.executor.ExecutePrompt(ctx, req)
+	result, err := h.runner.ExecutePrompt(ctx, req)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("execution failed", err)
 	}
@@ -216,9 +216,13 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 		finishReason = "error"
 	}
 
-	// Estimate token counts (rough approximation)
+	// Token counts (use backend usage if available, fallback to rough estimate)
 	promptTokens := len(prompt) / 4
 	completionTokens := len(result.Output) / 4
+	if result.TokenUsage != nil {
+		promptTokens = int(result.TokenUsage.InputTokens)
+		completionTokens = int(result.TokenUsage.OutputTokens)
+	}
 
 	return &OpenAIChatCompletionResponse{
 		Body: OpenAIChatCompletionResponseBody{

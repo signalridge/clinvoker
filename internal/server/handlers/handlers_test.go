@@ -27,8 +27,8 @@ func TestNewOpenAIHandlers(t *testing.T) {
 	if handlers == nil {
 		t.Error("NewOpenAIHandlers returned nil")
 	}
-	if handlers.executor == nil {
-		t.Error("executor not set")
+	if handlers.runner == nil {
+		t.Error("runner not set")
 	}
 }
 
@@ -39,8 +39,8 @@ func TestNewAnthropicHandlers(t *testing.T) {
 	if handlers == nil {
 		t.Error("NewAnthropicHandlers returned nil")
 	}
-	if handlers.executor == nil {
-		t.Error("executor not set")
+	if handlers.runner == nil {
+		t.Error("runner not set")
 	}
 }
 

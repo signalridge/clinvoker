@@ -112,7 +112,8 @@ HTTP API server with multiple API styles:
 Components:
 - `server.go` - Server setup and routing
 - `handlers/` - Request handlers
-- `service/` - Business logic
+- `service/` - Business logic & orchestration
+- `core/` - Backend execution core (stateless)
 
 ### Session Layer (`internal/session/`)
 

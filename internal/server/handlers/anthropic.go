@@ -21,12 +21,12 @@ const (
 
 // AnthropicHandlers provides handlers for Anthropic-compatible API.
 type AnthropicHandlers struct {
-	executor *service.Executor
+	runner service.PromptRunner
 }
 
 // NewAnthropicHandlers creates a new Anthropic handlers instance.
-func NewAnthropicHandlers(executor *service.Executor) *AnthropicHandlers {
-	return &AnthropicHandlers{executor: executor}
+func NewAnthropicHandlers(runner service.PromptRunner) *AnthropicHandlers {
+	return &AnthropicHandlers{runner: runner}
 }
 
 // Register registers all Anthropic-compatible API routes.
@@ -147,7 +147,7 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 		Metadata:     input.Body.Metadata,
 	}
 
-	result, err := h.executor.ExecutePrompt(ctx, req)
+	result, err := h.runner.ExecutePrompt(ctx, req)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("execution failed", err)
 	}
@@ -164,9 +164,13 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 		stopReason = "error"
 	}
 
-	// Estimate token counts
+	// Token counts (use backend usage if available, fallback to rough estimate)
 	inputTokens := len(prompt) / 4
 	outputTokens := len(result.Output) / 4
+	if result.TokenUsage != nil {
+		inputTokens = int(result.TokenUsage.InputTokens)
+		outputTokens = int(result.TokenUsage.OutputTokens)
+	}
 
 	return &AnthropicMessagesResponse{
 		Body: AnthropicMessagesResponseBody{
