@@ -10,7 +10,7 @@ import (
 
 func TestOpenAIHandlers_HandleModels(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewOpenAIHandlers(executor)
+	handlers := NewOpenAIHandlers(executor, nil)
 
 	resp, err := handlers.HandleModels(context.Background(), &OpenAIModelsInput{})
 	if err != nil {
@@ -44,7 +44,7 @@ func TestOpenAIHandlers_HandleModels(t *testing.T) {
 
 func TestOpenAIHandlers_HandleChatCompletions_Validation(t *testing.T) {
 	executor := service.NewExecutor()
-	handlers := NewOpenAIHandlers(executor)
+	handlers := NewOpenAIHandlers(executor, nil)
 
 	tests := []struct {
 		name    string
@@ -70,17 +70,6 @@ func TestOpenAIHandlers_HandleChatCompletions_Validation(t *testing.T) {
 				},
 			},
 			wantErr: "messages are required",
-		},
-		{
-			name: "streaming not supported",
-			input: &OpenAIChatCompletionInput{
-				Body: OpenAIChatCompletionRequest{
-					Model:    "claude",
-					Messages: []OpenAIMessage{{Role: "user", Content: "test"}},
-					Stream:   true,
-				},
-			},
-			wantErr: "streaming is not supported",
 		},
 		{
 			name: "no user messages",

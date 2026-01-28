@@ -14,6 +14,7 @@ import (
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // parallelCmd runs multiple tasks in parallel.
@@ -388,35 +389,16 @@ func buildParallelTaskOptions(t *ParallelTask, cfg *config.Config) *backend.Unif
 		MaxTurns:     t.MaxTurns,
 		SystemPrompt: t.SystemPrompt,
 		Verbose:      t.Verbose,
-		DryRun:       t.DryRun || dryRun,
+		DryRun:       t.DryRun,
 		ExtraFlags:   t.Extra,
 	}
 
-	if cfg != nil {
-		if opts.ApprovalMode == "" && cfg.UnifiedFlags.ApprovalMode != "" {
-			opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
-		}
-		if opts.SandboxMode == "" && cfg.UnifiedFlags.SandboxMode != "" {
-			opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
-		}
-		if opts.OutputFormat == "" || opts.OutputFormat == backend.OutputDefault {
-			if cfg.UnifiedFlags.OutputFormat != "" && cfg.UnifiedFlags.OutputFormat != string(backend.OutputDefault) {
-				opts.OutputFormat = backend.OutputFormat(cfg.UnifiedFlags.OutputFormat)
-			}
-		}
-		if opts.MaxTurns == 0 && cfg.UnifiedFlags.MaxTurns > 0 {
-			opts.MaxTurns = cfg.UnifiedFlags.MaxTurns
-		}
-		if opts.MaxTokens == 0 && cfg.UnifiedFlags.MaxTokens > 0 {
-			opts.MaxTokens = cfg.UnifiedFlags.MaxTokens
-		}
-		if !opts.Verbose && cfg.UnifiedFlags.Verbose {
-			opts.Verbose = true
-		}
-		if cfg.UnifiedFlags.DryRun {
-			opts.DryRun = true
-		}
-	}
+	// Apply config defaults using shared util function
+	effectiveDryRun := dryRun || (cfg != nil && cfg.UnifiedFlags.DryRun)
+	util.ApplyUnifiedDefaults(opts, cfg, effectiveDryRun)
+
+	// Apply output format default
+	opts.OutputFormat = backend.OutputFormat(util.ApplyOutputFormatDefault(string(opts.OutputFormat), cfg))
 
 	return opts
 }

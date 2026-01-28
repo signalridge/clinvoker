@@ -111,7 +111,7 @@ func TestOpenAIModelsEndpoint(t *testing.T) {
 	logger := slog.Default()
 
 	srv := New(cfg, logger)
-	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor())
+	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor(), logger)
 	openaiHandlers.Register(srv.API())
 
 	req := httptest.NewRequest(http.MethodGet, "/openai/v1/models", http.NoBody)
@@ -194,7 +194,7 @@ func TestChatCompletionsValidation(t *testing.T) {
 	logger := slog.Default()
 
 	srv := New(cfg, logger)
-	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor())
+	openaiHandlers := handlers.NewOpenAIHandlers(srv.Executor(), logger)
 	openaiHandlers.Register(srv.API())
 
 	tests := []struct {
@@ -211,11 +211,6 @@ func TestChatCompletionsValidation(t *testing.T) {
 			name:       "missing messages",
 			body:       map[string]interface{}{"model": "claude"},
 			wantStatus: http.StatusUnprocessableEntity, // huma returns 422 for schema validation
-		},
-		{
-			name:       "streaming not supported",
-			body:       map[string]interface{}{"model": "claude", "messages": []map[string]string{{"role": "user", "content": "test"}}, "stream": true},
-			wantStatus: http.StatusBadRequest, // explicit 400 from handler
 		},
 	}
 
@@ -243,7 +238,7 @@ func TestAnthropicMessagesValidation(t *testing.T) {
 	logger := slog.Default()
 
 	srv := New(cfg, logger)
-	anthropicHandlers := handlers.NewAnthropicHandlers(srv.Executor())
+	anthropicHandlers := handlers.NewAnthropicHandlers(srv.Executor(), logger)
 	anthropicHandlers.Register(srv.API())
 
 	tests := []struct {
@@ -260,11 +255,6 @@ func TestAnthropicMessagesValidation(t *testing.T) {
 			name:       "missing max_tokens",
 			body:       map[string]interface{}{"model": "claude", "messages": []map[string]string{{"role": "user", "content": "test"}}},
 			wantStatus: http.StatusUnprocessableEntity, // huma returns 422 for schema validation
-		},
-		{
-			name:       "streaming not supported",
-			body:       map[string]interface{}{"model": "claude", "max_tokens": 100, "messages": []map[string]string{{"role": "user", "content": "test"}}, "stream": true},
-			wantStatus: http.StatusBadRequest, // explicit 400 from handler
 		},
 	}
 
