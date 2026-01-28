@@ -96,10 +96,37 @@ type claudeJSONResponse struct {
 	} `json:"usage"`
 }
 
+// claudeErrorResponse represents Claude's error output format.
+type claudeErrorResponse struct {
+	Type      string `json:"type"`
+	Message   string `json:"message"`
+	Error     string `json:"error"`
+	SessionID string `json:"session_id,omitempty"`
+}
+
 // ParseJSONResponse parses Claude's JSON output into a unified response.
 func (c *Claude) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
+	// First try to parse as error response
+	var errResp claudeErrorResponse
+	if err := json.Unmarshal([]byte(rawOutput), &errResp); err == nil {
+		// Check if it's an error response (has error or message field with error type)
+		if errResp.Error != "" {
+			return &UnifiedResponse{
+				SessionID: errResp.SessionID,
+				Error:     errResp.Error,
+			}, nil
+		}
+		if errResp.Type == "error" && errResp.Message != "" {
+			return &UnifiedResponse{
+				SessionID: errResp.SessionID,
+				Error:     errResp.Message,
+			}, nil
+		}
+	}
+
 	var resp claudeJSONResponse
 	if err := json.Unmarshal([]byte(rawOutput), &resp); err != nil {
+		// JSON parsing failed - this might be text output, let caller handle it
 		return nil, err
 	}
 

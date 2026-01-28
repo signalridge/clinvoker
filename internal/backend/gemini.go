@@ -130,16 +130,50 @@ type geminiJSONResponse struct {
 	} `json:"stats"`
 }
 
+// geminiErrorResponse represents Gemini's error output format.
+type geminiErrorResponse struct {
+	SessionID string `json:"session_id"`
+	Error     struct {
+		Type    string `json:"type"`
+		Message string `json:"message"`
+		Code    int    `json:"code"`
+	} `json:"error"`
+}
+
+// geminiCredentialPrefix is the message Gemini CLI outputs when using cached credentials.
+const geminiCredentialPrefix = "Loaded cached credentials." //nolint:gosec // Not a credential, just a UI message prefix
+
 // ParseJSONResponse parses Gemini's JSON output into a unified response.
 func (g *Gemini) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
-	// Gemini may prepend "Loaded cached credentials." message, skip it
+	// Gemini may prepend credential message before JSON output, find the JSON start
 	cleanOutput := rawOutput
 	if idx := strings.Index(rawOutput, "{"); idx > 0 {
 		cleanOutput = rawOutput[idx:]
 	}
 
+	// First try to parse as error response
+	var errResp geminiErrorResponse
+	if err := json.Unmarshal([]byte(cleanOutput), &errResp); err == nil && errResp.Error.Message != "" {
+		return &UnifiedResponse{
+			SessionID: errResp.SessionID,
+			Error:     errResp.Error.Message,
+		}, nil
+	}
+
 	var resp geminiJSONResponse
 	if err := json.Unmarshal([]byte(cleanOutput), &resp); err != nil {
+		// JSON parsing failed - this is likely a plain text error message
+		// Strip credential prefix if present (it's noise, not the actual error)
+		cleanedRaw := rawOutput
+		if strings.HasPrefix(cleanedRaw, geminiCredentialPrefix) {
+			cleanedRaw = strings.TrimPrefix(cleanedRaw, geminiCredentialPrefix)
+			cleanedRaw = strings.TrimSpace(cleanedRaw)
+		}
+		if cleanedRaw != "" {
+			return &UnifiedResponse{
+				Error: cleanedRaw,
+			}, nil
+		}
 		return nil, err
 	}
 
