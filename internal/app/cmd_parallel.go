@@ -406,7 +406,7 @@ func outputParallelResults(results *ParallelResults, tasks *ParallelTasks) {
 		taskName := resolveTaskDisplayName(r, tasks)
 		sessionID := "-"
 		if r.SessionID != "" {
-			sessionID = r.SessionID[:8]
+			sessionID = shortSessionID(r.SessionID)
 		}
 
 		fmt.Printf("%-4d %-12s %-8s %-10.2fs %-10s %s\n",

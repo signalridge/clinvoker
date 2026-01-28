@@ -344,7 +344,7 @@ func outputChainResults(results *ChainResults, _ *ChainDefinition) {
 
 		sessionID := "-"
 		if r.SessionID != "" {
-			sessionID = r.SessionID[:8]
+			sessionID = shortSessionID(r.SessionID)
 		}
 
 		name := r.Name

@@ -29,6 +29,9 @@
 
             vendorHash = "sha256-mVSH+lVn6NavaScayx2DEgnKbRV1nC5LansdCwABV/k=";
 
+            # Use -short to skip integration tests that require writable HOME
+            checkFlags = [ "-short" ];
+
             ldflags = [
               "-s"
               "-w"

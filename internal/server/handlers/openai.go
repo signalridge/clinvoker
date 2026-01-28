@@ -170,12 +170,12 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 		switch msg.Role {
 		case "system":
 			systemPrompt = msg.Content
-		case "user":
+		case roleUser:
 			if prompt != "" {
 				prompt += "\n"
 			}
 			prompt += msg.Content
-		case "assistant":
+		case roleAssistant:
 			// Include assistant context in prompt for continuations
 			if prompt != "" {
 				prompt += "\n[Previous response: " + msg.Content + "]\n"
@@ -230,7 +230,7 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 				{
 					Index: 0,
 					Message: OpenAIMessage{
-						Role:    "assistant",
+						Role:    roleAssistant,
 						Content: result.Output,
 					},
 					FinishReason: finishReason,
