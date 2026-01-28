@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -169,12 +170,23 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 	}
 
 	// Get model from config if not specified
+	cfg := config.Get()
 	model := req.Model
 	if model == "" {
-		cfg := config.Get()
 		if bcfg, ok := cfg.Backends[req.Backend]; ok {
 			model = bcfg.Model
 		}
+	}
+
+	requestedOutput := backend.OutputFormat(req.OutputFormat)
+	if (requestedOutput == "" || requestedOutput == backend.OutputDefault) &&
+		cfg.UnifiedFlags.OutputFormat != "" && cfg.UnifiedFlags.OutputFormat != string(backend.OutputDefault) {
+		requestedOutput = backend.OutputFormat(cfg.UnifiedFlags.OutputFormat)
+	}
+
+	internalOutputFormat := requestedOutput
+	if requestedOutput == "" || requestedOutput == backend.OutputDefault || requestedOutput == backend.OutputText {
+		internalOutputFormat = backend.OutputJSON
 	}
 
 	// Build unified options
@@ -183,13 +195,33 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 		Model:        model,
 		ApprovalMode: backend.ApprovalMode(req.ApprovalMode),
 		SandboxMode:  backend.SandboxMode(req.SandboxMode),
-		OutputFormat: backend.OutputFormat(req.OutputFormat),
+		OutputFormat: internalOutputFormat,
 		MaxTokens:    req.MaxTokens,
 		MaxTurns:     req.MaxTurns,
 		SystemPrompt: req.SystemPrompt,
 		Verbose:      req.Verbose,
 		DryRun:       req.DryRun,
+		Ephemeral:    req.Ephemeral,
 		ExtraFlags:   req.Extra,
+	}
+
+	if opts.ApprovalMode == "" && cfg.UnifiedFlags.ApprovalMode != "" {
+		opts.ApprovalMode = backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode)
+	}
+	if opts.SandboxMode == "" && cfg.UnifiedFlags.SandboxMode != "" {
+		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
+	}
+	if opts.MaxTurns == 0 && cfg.UnifiedFlags.MaxTurns > 0 {
+		opts.MaxTurns = cfg.UnifiedFlags.MaxTurns
+	}
+	if opts.MaxTokens == 0 && cfg.UnifiedFlags.MaxTokens > 0 {
+		opts.MaxTokens = cfg.UnifiedFlags.MaxTokens
+	}
+	if !opts.Verbose && cfg.UnifiedFlags.Verbose {
+		opts.Verbose = true
+	}
+	if cfg.UnifiedFlags.DryRun {
+		opts.DryRun = true
 	}
 
 	// Create session (skip if ephemeral mode - stateless like standard LLM APIs)
@@ -213,8 +245,9 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 
 	// Build command
 	execCmd := b.BuildCommandUnified(req.Prompt, opts)
+	execCmd = commandWithContext(ctx, execCmd)
 
-	if req.DryRun {
+	if opts.DryRun {
 		result.Output = fmt.Sprintf("Would execute: %s %v", execCmd.Path, execCmd.Args[1:])
 		result.ExitCode = 0
 		result.DurationMS = time.Since(start).Milliseconds()
@@ -223,38 +256,73 @@ func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*Prom
 
 	// Execute with output capture
 	var stdoutBuf, stderrBuf bytes.Buffer
-	exec := executor.New()
-	exec.Stdin = nil
-	exec.Stdout = &stdoutBuf
+	runner := executor.New()
+	runner.Stdin = nil
+	runner.Stdout = &stdoutBuf
 
 	// Separate stderr if backend needs it (e.g., to filter credential messages)
 	if b.SeparateStderr() {
-		exec.Stderr = &stderrBuf
+		runner.Stderr = &stderrBuf
 	} else {
-		exec.Stderr = &stdoutBuf
+		runner.Stderr = &stdoutBuf
 	}
 
-	exitCode, execErr := exec.RunSimple(execCmd)
+	exitCode, execErr := runner.RunSimple(execCmd)
 	if execErr != nil {
 		result.Error = execErr.Error()
 	}
 
 	result.ExitCode = exitCode
-	// Parse output through backend's parser for normalized output
-	result.Output = b.ParseOutput(stdoutBuf.String())
 	result.DurationMS = time.Since(start).Milliseconds()
+
+	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
+	var backendSessionID string
+
+	if internalOutputFormat == backend.OutputJSON || internalOutputFormat == backend.OutputStreamJSON {
+		resp, parseErr := b.ParseJSONResponse(rawOutput)
+		if parseErr == nil && resp != nil {
+			backendSessionID = resp.SessionID
+			if resp.Content != "" {
+				result.Output = resp.Content
+			} else {
+				result.Output = b.ParseOutput(rawOutput)
+			}
+			if resp.Error != "" {
+				result.Error = resp.Error
+				if result.ExitCode == 0 {
+					result.ExitCode = 1
+				}
+			}
+			result.TokenUsage = tokenUsageFromBackend(resp.Usage)
+			if sess != nil {
+				if backendSessionID != "" {
+					sess.BackendSessionID = backendSessionID
+				}
+				updateSessionFromResponse(sess, result.ExitCode, result.Error, resp)
+			}
+		} else {
+			result.Output = b.ParseOutput(rawOutput)
+			if sess != nil {
+				updateSessionFromResponse(sess, result.ExitCode, result.Error, nil)
+			}
+		}
+	} else {
+		// Parse output through backend's parser for normalized output
+		result.Output = b.ParseOutput(rawOutput)
+		if sess != nil {
+			updateSessionFromResponse(sess, result.ExitCode, result.Error, nil)
+		}
+	}
 
 	// Update session
 	if sess != nil {
-		sess.IncrementTurn()
-		if exitCode == 0 {
-			sess.Complete()
-		} else {
-			sess.SetError(result.Error)
-		}
 		if err := e.store.Save(sess); err != nil {
 			e.logger.Warn("failed to save session", "session_id", sess.ID, "error", err)
 		}
+	}
+
+	if req.Ephemeral {
+		cleanupBackendSession(ctx, req.Backend, backendSessionID)
 	}
 
 	return result, nil
@@ -715,4 +783,131 @@ func sessionToInfo(s *session.Session) SessionInfo {
 
 func replacePlaceholder(s, old, replacement string) string {
 	return strings.ReplaceAll(s, old, replacement)
+}
+
+func commandWithContext(ctx context.Context, cmd *exec.Cmd) *exec.Cmd {
+	if ctx == nil || cmd == nil {
+		return cmd
+	}
+
+	if len(cmd.Args) == 0 {
+		return exec.CommandContext(ctx, cmd.Path)
+	}
+
+	newCmd := exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)
+	newCmd.Dir = cmd.Dir
+	newCmd.Env = cmd.Env
+	newCmd.SysProcAttr = cmd.SysProcAttr
+	newCmd.ExtraFiles = cmd.ExtraFiles
+	return newCmd
+}
+
+// selectOutput chooses stdout or stderr based on exit code and content.
+func selectOutput(stdout, stderr string, exitCode int) string {
+	if exitCode != 0 && stderr != "" {
+		return stderr
+	}
+	if stdout == "" {
+		return stderr
+	}
+	return stdout
+}
+
+func tokenUsageFromBackend(usage *backend.TokenUsage) *session.TokenUsage {
+	if usage == nil {
+		return nil
+	}
+	return &session.TokenUsage{
+		InputTokens:  int64(usage.InputTokens),
+		OutputTokens: int64(usage.OutputTokens),
+	}
+}
+
+func updateSessionFromResponse(sess *session.Session, exitCode int, errMsg string, resp *backend.UnifiedResponse) {
+	if sess == nil {
+		return
+	}
+
+	sess.IncrementTurn()
+
+	if resp != nil && resp.Usage != nil {
+		sess.AddTokens(int64(resp.Usage.InputTokens), int64(resp.Usage.OutputTokens))
+	}
+
+	if resp != nil && resp.Error != "" {
+		sess.SetError(resp.Error)
+		return
+	}
+
+	if exitCode == 0 {
+		sess.Complete()
+		return
+	}
+
+	if errMsg != "" {
+		sess.SetError(errMsg)
+		return
+	}
+
+	sess.SetError("backend execution failed")
+}
+
+// cleanupBackendSession cleans up backend session for ephemeral requests.
+func cleanupBackendSession(ctx context.Context, backendName, sessionID string) {
+	switch backendName {
+	case "gemini":
+		if sessionID == "" {
+			return
+		}
+		_ = exec.CommandContext(cleanupContext(ctx), "gemini", "--delete-session", sessionID).Run()
+	case "codex":
+		if sessionID == "" {
+			return
+		}
+		cleanupCodexSession(sessionID)
+	}
+}
+
+func cleanupContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
+}
+
+// cleanupCodexSession removes a Codex session file by thread ID.
+func cleanupCodexSession(threadID string) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	cleanupCodexSessionInDir(threadID, home, time.Now())
+}
+
+func cleanupCodexSessionInDir(threadID, baseDir string, now time.Time) {
+	sessionDir := filepath.Join(baseDir, ".codex", "sessions",
+		fmt.Sprintf("%d", now.Year()),
+		fmt.Sprintf("%02d", int(now.Month())),
+		fmt.Sprintf("%02d", now.Day()),
+	)
+
+	entries, err := os.ReadDir(sessionDir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if containsThreadID(entry.Name(), threadID) {
+			sessionPath := filepath.Join(sessionDir, entry.Name())
+			_ = os.Remove(sessionPath)
+			return
+		}
+	}
+}
+
+func containsThreadID(filename, threadID string) bool {
+	return threadID != "" && strings.Contains(filename, threadID)
 }

@@ -163,10 +163,18 @@ var sessionsDeleteCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		store := session.NewStore()
-		if err := store.Delete(args[0]); err != nil {
+		sess, err := store.GetByPrefix(args[0])
+		if err != nil {
+			// Fall back to exact match
+			sess, err = store.Get(args[0])
+			if err != nil {
+				return err
+			}
+		}
+		if err := store.Delete(sess.ID); err != nil {
 			return err
 		}
-		fmt.Printf("Session %s deleted.\n", args[0])
+		fmt.Printf("Session %s deleted.\n", sess.ID)
 		return nil
 	},
 }
@@ -179,10 +187,14 @@ var sessionsCleanCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var days int
 		if cleanOlderThan != "" {
+			var err error
 			if strings.HasSuffix(cleanOlderThan, "d") {
-				fmt.Sscanf(cleanOlderThan, "%dd", &days)
+				_, err = fmt.Sscanf(cleanOlderThan, "%dd", &days)
 			} else {
-				fmt.Sscanf(cleanOlderThan, "%d", &days)
+				_, err = fmt.Sscanf(cleanOlderThan, "%d", &days)
+			}
+			if err != nil || days < 0 {
+				return fmt.Errorf("invalid --older-than value: %q", cleanOlderThan)
 			}
 		}
 		if days == 0 {
