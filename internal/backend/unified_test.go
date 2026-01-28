@@ -454,6 +454,65 @@ func TestMapSystemPrompt(t *testing.T) {
 	}
 }
 
+// ==================== Ephemeral Mapping Tests ====================
+
+func TestMapEphemeral(t *testing.T) {
+	tests := []struct {
+		backend  string
+		expected []string
+	}{
+		{"claude", []string{"--no-session-persistence"}},
+		{"gemini", nil}, // Gemini doesn't have a native flag, cleanup is done post-execution
+		{"codex", nil},  // Codex doesn't have a native flag, cleanup is done post-execution
+		{"unknown", nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.backend, func(t *testing.T) {
+			m := newFlagMapper(tt.backend)
+			result := m.mapEphemeral()
+			if !equalStringSlice(result, tt.expected) {
+				t.Errorf("expected %v, got %v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestMapToOptions_Ephemeral(t *testing.T) {
+	unified := &UnifiedOptions{
+		Ephemeral: true,
+	}
+
+	// Claude should have --no-session-persistence flag
+	claudeOpts := MapFromUnified("claude", unified)
+	found := false
+	for _, f := range claudeOpts.ExtraFlags {
+		if f == "--no-session-persistence" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected --no-session-persistence in claude flags, got: %v", claudeOpts.ExtraFlags)
+	}
+
+	// Gemini should NOT have any ephemeral flag (handled post-execution)
+	geminiOpts := MapFromUnified("gemini", unified)
+	for _, f := range geminiOpts.ExtraFlags {
+		if strings.Contains(f, "session") || strings.Contains(f, "ephemeral") {
+			t.Errorf("gemini should not have ephemeral flags, got: %v", geminiOpts.ExtraFlags)
+		}
+	}
+
+	// Codex should NOT have any ephemeral flag (handled post-execution)
+	codexOpts := MapFromUnified("codex", unified)
+	for _, f := range codexOpts.ExtraFlags {
+		if strings.Contains(f, "session") || strings.Contains(f, "ephemeral") {
+			t.Errorf("codex should not have ephemeral flags, got: %v", codexOpts.ExtraFlags)
+		}
+	}
+}
+
 // ==================== Full Integration Tests ====================
 
 func TestMapToOptions_FullClaude(t *testing.T) {

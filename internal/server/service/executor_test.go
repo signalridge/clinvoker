@@ -381,3 +381,50 @@ func TestExecutor_ContextCancellation(t *testing.T) {
 		t.Log("chain completed despite cancellation (may be expected for fast operations)")
 	}
 }
+
+func TestExecutor_ExecutePrompt_Ephemeral(t *testing.T) {
+	// Skip if no backend available
+	b, _ := backend.Get("claude")
+	if b == nil || !b.IsAvailable() {
+		t.Skip("claude backend not available")
+	}
+
+	e := NewExecutor()
+	ctx := context.Background()
+
+	// Ephemeral mode should not create a session
+	req := &PromptRequest{
+		Backend:   "claude",
+		Prompt:    "test ephemeral",
+		DryRun:    true,
+		Ephemeral: true,
+	}
+
+	result, err := e.ExecutePrompt(ctx, req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Ephemeral mode should NOT return a session ID
+	if result.SessionID != "" {
+		t.Errorf("ephemeral mode should not create session, got session ID: %s", result.SessionID)
+	}
+
+	// Non-ephemeral mode should create a session
+	req2 := &PromptRequest{
+		Backend:   "claude",
+		Prompt:    "test non-ephemeral",
+		DryRun:    true,
+		Ephemeral: false,
+	}
+
+	result2, err := e.ExecutePrompt(ctx, req2)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Non-ephemeral mode SHOULD return a session ID
+	if result2.SessionID == "" {
+		t.Error("non-ephemeral mode should create session")
+	}
+}

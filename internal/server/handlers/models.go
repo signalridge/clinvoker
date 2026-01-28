@@ -22,6 +22,7 @@ type PromptRequest struct {
 	SystemPrompt string            `json:"system_prompt,omitempty" doc:"Custom system prompt"`
 	Verbose      bool              `json:"verbose,omitempty" doc:"Enable verbose output"`
 	DryRun       bool              `json:"dry_run,omitempty" doc:"Simulate execution"`
+	Ephemeral    bool              `json:"ephemeral,omitempty" doc:"Stateless mode: don't persist session (like standard LLM APIs)"`
 	Extra        []string          `json:"extra,omitempty" doc:"Extra backend-specific flags"`
 	Metadata     map[string]string `json:"metadata,omitempty" doc:"Custom metadata"`
 }
@@ -243,6 +244,7 @@ func (r *PromptRequest) ToServiceRequest() *service.PromptRequest {
 		SystemPrompt: r.SystemPrompt,
 		Verbose:      r.Verbose,
 		DryRun:       r.DryRun,
+		Ephemeral:    r.Ephemeral,
 		Extra:        r.Extra,
 		Metadata:     r.Metadata,
 	}

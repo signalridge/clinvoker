@@ -19,6 +19,7 @@ clinvk [command]
 | `--output-format` | `-o` | string | `text` | Output format: text, json, stream-json |
 | `--config` | | string | | Config file (default: ~/.clinvk/config.yaml) |
 | `--dry-run` | | bool | `false` | Print command without executing |
+| `--ephemeral` | | bool | `false` | Stateless mode: don't persist session |
 | `--help` | `-h` | | | Help for clinvk |
 
 ### Root Command Flags
@@ -37,6 +38,9 @@ Run a prompt with the default or specified backend.
 clinvk "fix the bug in auth.go"
 clinvk --backend codex "implement feature X"
 clinvk -b gemini -m gemini-2.5-pro "explain this code"
+
+# Ephemeral mode - no session persisted (like standard LLM APIs)
+clinvk --ephemeral "what is 2+2"
 ```
 
 ### clinvk version
@@ -484,6 +488,10 @@ The server provides three distinct API styles:
 | GET | `/api/v1/sessions/{id}` | Get session details |
 | DELETE | `/api/v1/sessions/{id}` | Delete session |
 
+**Ephemeral (Stateless) Mode:**
+
+Set `"ephemeral": true` in prompt requests to run in stateless mode like standard LLM APIs (OpenAI, Anthropic). In this mode, no session is created or persisted - each request is independent with no conversation history.
+
 **OpenAI Compatible API (`/openai/v1/`):**
 
 | Method | Endpoint | Description |
@@ -511,6 +519,11 @@ The server provides three distinct API styles:
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "explain this code"}'
+
+# Ephemeral (stateless) mode - no session persisted
+curl -X POST http://localhost:8080/api/v1/prompt \
+  -H "Content-Type: application/json" \
+  -d '{"backend": "claude", "prompt": "explain this code", "ephemeral": true}'
 
 # List backends
 curl http://localhost:8080/api/v1/backends

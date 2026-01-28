@@ -111,6 +111,54 @@ func TestMain_DryRun(t *testing.T) {
 	}
 }
 
+// TestMain_Ephemeral tests the --ephemeral flag.
+func TestMain_Ephemeral(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binary := buildTestBinary(t)
+
+	// Test that --ephemeral flag is recognized and works with --dry-run
+	cmd := exec.Command(binary, "--ephemeral", "--dry-run", "test ephemeral")
+	output, err := cmd.CombinedOutput()
+
+	// Should succeed (ephemeral + dry-run)
+	if err != nil {
+		t.Fatalf("ephemeral dry run failed: %v\nOutput: %s", err, output)
+	}
+
+	// Output should show the command
+	outputStr := string(output)
+	if !strings.Contains(outputStr, "Would execute") {
+		t.Errorf("expected 'Would execute' in output, got: %s", outputStr)
+	}
+}
+
+// TestMain_EphemeralHelp tests that --ephemeral appears in help.
+func TestMain_EphemeralHelp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binary := buildTestBinary(t)
+
+	cmd := exec.Command(binary, "--help")
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		t.Fatalf("help failed: %v\nOutput: %s", err, output)
+	}
+
+	// Help should mention ephemeral flag
+	if !strings.Contains(string(output), "--ephemeral") {
+		t.Error("help output should mention --ephemeral flag")
+	}
+	if !strings.Contains(string(output), "stateless") {
+		t.Error("help output should describe ephemeral as stateless mode")
+	}
+}
+
 // TestMain_ConfigShow tests the config show command.
 func TestMain_ConfigShow(t *testing.T) {
 	if testing.Short() {
