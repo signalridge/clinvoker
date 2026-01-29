@@ -7,9 +7,12 @@ Reference for all environment variables supported by clinvk.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CLINVK_BACKEND` | Default backend | `claude` |
-| `CLINVK_CLAUDE_MODEL` | Claude model | `claude-opus-4-5-20251101` |
-| `CLINVK_CODEX_MODEL` | Codex model | `o3` |
-| `CLINVK_GEMINI_MODEL` | Gemini model | `gemini-2.5-pro` |
+| `CLINVK_CLAUDE_MODEL` | Claude model | (backend default) |
+| `CLINVK_CODEX_MODEL` | Codex model | (backend default) |
+| `CLINVK_GEMINI_MODEL` | Gemini model | (backend default) |
+
+!!! note
+    Only the variables above are explicitly supported. Other configuration keys are not currently mapped to environment variables.
 
 ## Usage Examples
 

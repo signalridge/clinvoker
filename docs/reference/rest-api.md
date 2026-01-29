@@ -199,6 +199,7 @@ Execute a sequential pipeline.
   "total_duration_ms": 3500,
   "results": [
     {
+      "step": 1,
       "name": "analyze",
       "backend": "claude",
       "exit_code": 0,
@@ -206,6 +207,7 @@ Execute a sequential pipeline.
       "output": "analysis result"
     },
     {
+      "step": 2,
       "name": "improve",
       "backend": "codex",
       "exit_code": 0,
@@ -286,21 +288,15 @@ List available backends.
   "backends": [
     {
       "name": "claude",
-      "available": true,
-      "enabled": true,
-      "default_model": "claude-opus-4-5-20251101"
+      "available": true
     },
     {
       "name": "codex",
-      "available": true,
-      "enabled": true,
-      "default_model": "o3"
+      "available": true
     },
     {
       "name": "gemini",
-      "available": false,
-      "enabled": true,
-      "default_model": "gemini-2.5-pro"
+      "available": false
     }
   ]
 }
@@ -319,6 +315,7 @@ List sessions.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `backend` | string | Filter by backend |
+| `status` | string | Filter by status (`active`, `completed`, `error`) |
 | `limit` | integer | Maximum results |
 | `offset` | integer | Pagination offset |
 
@@ -330,13 +327,24 @@ List sessions.
     {
       "id": "abc123",
       "backend": "claude",
-      "model": "claude-opus-4-5-20251101",
       "created_at": "2025-01-27T10:00:00Z",
-      "updated_at": "2025-01-27T11:30:00Z",
-      "workdir": "/projects/myapp"
+      "last_used": "2025-01-27T11:30:00Z",
+      "working_dir": "/projects/myapp",
+      "model": "claude-opus-4-5-20251101",
+      "initial_prompt": "Review auth changes",
+      "status": "active",
+      "turn_count": 3,
+      "token_usage": {
+        "input_tokens": 123,
+        "output_tokens": 456
+      },
+      "tags": ["api"],
+      "title": "Review auth changes"
     }
   ],
-  "total": 42
+  "total": 42,
+  "limit": 100,
+  "offset": 0
 }
 ```
 
@@ -350,14 +358,19 @@ Get session details.
 {
   "id": "abc123",
   "backend": "claude",
-  "model": "claude-opus-4-5-20251101",
   "created_at": "2025-01-27T10:00:00Z",
-  "updated_at": "2025-01-27T11:30:00Z",
-  "workdir": "/projects/myapp",
-  "metadata": {
-    "tokens_input": 1234,
-    "tokens_output": 5678
-  }
+  "last_used": "2025-01-27T11:30:00Z",
+  "working_dir": "/projects/myapp",
+  "model": "claude-opus-4-5-20251101",
+  "initial_prompt": "Review auth changes",
+  "status": "active",
+  "turn_count": 3,
+  "token_usage": {
+    "input_tokens": 123,
+    "output_tokens": 456
+  },
+  "tags": ["api"],
+  "title": "Review auth changes"
 }
 ```
 
@@ -369,7 +382,8 @@ Delete a session.
 
 ```json
 {
-  "deleted": true
+  "deleted": true,
+  "id": "abc123"
 }
 ```
 
@@ -403,24 +417,14 @@ Returns the full OpenAPI 3.0 specification for the API.
 
 ## Error Responses
 
-Errors follow this format:
+Execution failures are typically reported in the normal response body via `exit_code != 0` and the `error` field.
+
+For request validation errors (for example, missing required fields), the server responds with non-2xx and an RFC 7807 Problem Details body (via Huma). Example:
 
 ```json
 {
-  "error": {
-    "code": "BACKEND_UNAVAILABLE",
-    "message": "Backend 'codex' is not available",
-    "details": {}
-  }
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "backend is required"
 }
 ```
-
-### Error Codes
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `INVALID_REQUEST` | 400 | Malformed request |
-| `BACKEND_UNAVAILABLE` | 503 | Backend not available |
-| `SESSION_NOT_FOUND` | 404 | Session doesn't exist |
-| `EXECUTION_ERROR` | 500 | Backend execution failed |
-| `TIMEOUT` | 504 | Request timed out |

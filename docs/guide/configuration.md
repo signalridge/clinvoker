@@ -102,7 +102,9 @@ For code review or analysis where the AI should not modify files:
 ```yaml
 unified_flags:
   sandbox_mode: read-only    # No file modifications
-  approval_mode: none        # Reject any risky actions
+  # approval_mode controls prompting behavior, not whether actions are allowed.
+  # Use `sandbox_mode` to restrict file access. Use `always` for maximum safety.
+  approval_mode: always
 ```
 
 ### Scenario 4: Team Shared Configuration
@@ -199,19 +201,18 @@ Override any config with environment variables:
 
 ```bash
 # Override default backend
-export CLINVK_DEFAULT_BACKEND=gemini
+export CLINVK_BACKEND=gemini
 
-# Override model
+# Override models
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
-
-# Override server port
-export CLINVK_SERVER_PORT=3000
+export CLINVK_CODEX_MODEL=o3
+export CLINVK_GEMINI_MODEL=gemini-2.5-pro
 ```
 
 **Priority order** (highest to lowest):
 
 1. CLI flags (`--backend codex`)
-2. Environment variables (`CLINVK_DEFAULT_BACKEND`)
+2. Environment variables (for example, `CLINVK_BACKEND`)
 3. Config file (`~/.clinvk/config.yaml`)
 4. Built-in defaults
 

@@ -173,6 +173,20 @@ curl -X POST http://localhost:8080/anthropic/v1/messages \
   }'
 ```
 
+开启流式传输（SSE）：
+
+```bash
+curl -N -X POST http://localhost:8080/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude",
+    "max_tokens": 1024,
+    "stream": true,
+    "messages": [{"role": "user", "content": "你好！"}]
+  }'
+```
+
 ## 模型映射
 
 `model` 参数映射到 clinvk 后端：
@@ -191,10 +205,10 @@ curl -X POST http://localhost:8080/anthropic/v1/messages \
     - Messages API
     - 系统提示
     - 多轮对话
+    - 流式传输（`stream: true`，SSE）
 
     尚未支持：
 
-    - 流式传输
     - 工具使用
     - 视觉/图像
     - 文档理解

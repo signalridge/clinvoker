@@ -57,7 +57,7 @@ for chunk in stream:
 from anthropic import Anthropic
 
 client = Anthropic(
-    base_url="http://localhost:8080/anthropic",
+    base_url="http://localhost:8080/anthropic/v1",
     api_key="not-needed"
 )
 
@@ -85,7 +85,7 @@ response = httpx.post(
     },
     timeout=60
 )
-print(response.json()["result"])
+print(response.json()["output"])
 
 # 并行执行
 response = httpx.post(
@@ -99,7 +99,7 @@ response = httpx.post(
     timeout=120
 )
 for result in response.json()["results"]:
-    print(f"{result['backend']}: {result['result']}")
+    print(f"{result['backend']}: {result['output']}")
 
 # 链式执行
 response = httpx.post(
@@ -112,7 +112,7 @@ response = httpx.post(
     },
     timeout=120
 )
-print(response.json()["results"][-1]["result"])
+print(response.json()["results"][-1]["output"])
 ```
 
 ### 异步 Python
@@ -176,7 +176,7 @@ for await (const chunk of stream) {
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
-  baseURL: 'http://localhost:8080/anthropic',
+  baseURL: 'http://localhost:8080/anthropic/v1',
   apiKey: 'not-needed',
 });
 
@@ -201,7 +201,7 @@ const response = await fetch('http://localhost:8080/api/v1/prompt', {
   }),
 });
 const data = await response.json();
-console.log(data.result);
+console.log(data.output);
 
 // 并行执行
 const parallelResponse = await fetch('http://localhost:8080/api/v1/parallel', {
@@ -216,7 +216,7 @@ const parallelResponse = await fetch('http://localhost:8080/api/v1/parallel', {
 });
 const parallelData = await parallelResponse.json();
 parallelData.results.forEach((r: any) => {
-  console.log(`${r.backend}: ${r.result}`);
+  console.log(`${r.backend}: ${r.output}`);
 });
 ```
 
@@ -275,7 +275,7 @@ type PromptRequest struct {
 }
 
 type PromptResponse struct {
-    Result string `json:"result"`
+    Output string `json:"output"`
 }
 
 func main() {
@@ -299,7 +299,7 @@ func main() {
     var result PromptResponse
     json.Unmarshal(body, &result)
 
-    fmt.Println(result.Result)
+    fmt.Println(result.Output)
 }
 ```
 
@@ -401,7 +401,7 @@ try:
         timeout=60
     )
     response.raise_for_status()
-    print(response.json()["result"])
+    print(response.json()["output"])
 except httpx.ConnectError:
     print("无法连接到 clinvk 服务器")
 except httpx.TimeoutException:

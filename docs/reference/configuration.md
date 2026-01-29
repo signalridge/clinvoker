@@ -133,9 +133,20 @@ unified_flags:
 | Value | Description |
 |-------|-------------|
 | `default` | Let backend decide |
-| `auto` | Automatically approve actions |
-| `none` | Never approve (reject risky actions) |
-| `always` | Always ask for approval |
+| `auto` | Reduce prompts / auto-approve (backend-specific) |
+| `none` | Never ask for approval prompts (**dangerous**) |
+| `always` | Always ask for approval (when supported) |
+
+**Backend mappings** (best-effort):
+
+| Backend | `auto` | `none` | `always` |
+|---------|--------|--------|----------|
+| Claude | `--permission-mode acceptEdits` | `--permission-mode dontAsk` | `--permission-mode default` |
+| Codex | `--ask-for-approval on-request` | `--ask-for-approval never` | `--ask-for-approval untrusted` |
+| Gemini | `--approval-mode auto_edit` | `--yolo` | `--approval-mode default` |
+
+!!! warning "Safety"
+    `approval_mode: none` disables approval prompts and may allow edits/commands without confirmation (depending on the backend). Prefer `sandbox_mode: read-only` and `approval_mode: always` for audits.
 
 #### sandbox_mode
 
@@ -145,6 +156,12 @@ unified_flags:
 | `read-only` | Read-only file access |
 | `workspace` | Access to project directory only |
 | `full` | Full file system access |
+
+**Backend notes**:
+
+- Claude: `sandbox_mode` is not mapped to a CLI flag (use `allowed_dirs` / approval settings instead).
+- Gemini: `read-only` and `workspace` both map to `--sandbox` (no distinction).
+- Codex: maps to `--sandbox read-only|workspace-write|danger-full-access`.
 
 #### output_format
 

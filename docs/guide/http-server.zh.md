@@ -148,7 +148,7 @@ const response = await fetch('http://localhost:8080/api/v1/prompt', {
 });
 
 const data = await response.json();
-console.log(data.response);
+console.log(data.output);
 ```
 
 ### cURL

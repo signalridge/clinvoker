@@ -7,9 +7,12 @@ clinvk 支持的所有环境变量参考。
 | 变量 | 描述 | 默认值 |
 |------|------|--------|
 | `CLINVK_BACKEND` | 默认后端 | `claude` |
-| `CLINVK_CLAUDE_MODEL` | Claude 模型 | `claude-opus-4-5-20251101` |
-| `CLINVK_CODEX_MODEL` | Codex 模型 | `o3` |
-| `CLINVK_GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-pro` |
+| `CLINVK_CLAUDE_MODEL` | Claude 模型 | （后端默认） |
+| `CLINVK_CODEX_MODEL` | Codex 模型 | （后端默认） |
+| `CLINVK_GEMINI_MODEL` | Gemini 模型 | （后端默认） |
+
+!!! note
+    目前仅显式支持上表中的环境变量；其他配置项暂未映射为环境变量。
 
 ## 使用示例
 

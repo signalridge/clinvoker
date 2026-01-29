@@ -185,6 +185,7 @@ API 默认不需要认证。生产环境使用时，请放在带认证的反向�
   "total_duration_ms": 3500,
   "results": [
     {
+      "step": 1,
       "name": "analyze",
       "backend": "claude",
       "output": "分析结果",
@@ -265,9 +266,7 @@ API 默认不需要认证。生产环境使用时，请放在带认证的反向�
   "backends": [
     {
       "name": "claude",
-      "available": true,
-      "enabled": true,
-      "default_model": "claude-opus-4-5-20251101"
+      "available": true
     }
   ]
 }
@@ -281,13 +280,82 @@ API 默认不需要认证。生产环境使用时，请放在带认证的反向�
 
 列出会话。
 
+**查询参数：**
+
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `backend` | string | 按后端筛选 |
+| `status` | string | 按状态筛选（`active`/`completed`/`error`） |
+| `limit` | int | 返回数量上限（默认 100） |
+| `offset` | int | 分页偏移 |
+
+**响应示例：**
+
+```json
+{
+  "sessions": [
+    {
+      "id": "abc123",
+      "backend": "claude",
+      "created_at": "2025-01-27T10:00:00Z",
+      "last_used": "2025-01-27T11:30:00Z",
+      "working_dir": "/projects/myapp",
+      "model": "claude-opus-4-5-20251101",
+      "initial_prompt": "审查认证模块变更",
+      "status": "active",
+      "turn_count": 3,
+      "token_usage": {
+        "input_tokens": 123,
+        "output_tokens": 456
+      },
+      "tags": ["api"],
+      "title": "审查认证模块变更"
+    }
+  ],
+  "total": 42,
+  "limit": 100,
+  "offset": 0
+}
+```
+
 ### GET /api/v1/sessions/{id}
 
 获取会话详情。
 
+**响应示例：**
+
+```json
+{
+  "id": "abc123",
+  "backend": "claude",
+  "created_at": "2025-01-27T10:00:00Z",
+  "last_used": "2025-01-27T11:30:00Z",
+  "working_dir": "/projects/myapp",
+  "model": "claude-opus-4-5-20251101",
+  "initial_prompt": "审查认证模块变更",
+  "status": "active",
+  "turn_count": 3,
+  "token_usage": {
+    "input_tokens": 123,
+    "output_tokens": 456
+  },
+  "tags": ["api"],
+  "title": "审查认证模块变更"
+}
+```
+
 ### DELETE /api/v1/sessions/{id}
 
 删除会话。
+
+**响应示例：**
+
+```json
+{
+  "deleted": true,
+  "id": "abc123"
+}
+```
 
 ---
 
@@ -309,24 +377,14 @@ API 默认不需要认证。生产环境使用时，请放在带认证的反向�
 
 ## 错误响应
 
-错误遵循以下格式：
+执行失败通常会在正常响应体中通过 `exit_code != 0` 与 `error` 字段体现。
+
+请求校验错误（例如缺少必填字段）会返回非 2xx，并使用 RFC 7807 Problem Details（Huma）格式。示例：
 
 ```json
 {
-  "error": {
-    "code": "BACKEND_UNAVAILABLE",
-    "message": "后端 'codex' 不可用",
-    "details": {}
-  }
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "backend is required"
 }
 ```
-
-### 错误码
-
-| 代码 | HTTP 状态 | 描述 |
-|------|-----------|------|
-| `INVALID_REQUEST` | 400 | 请求格式错误 |
-| `BACKEND_UNAVAILABLE` | 503 | 后端不可用 |
-| `SESSION_NOT_FOUND` | 404 | 会话不存在 |
-| `EXECUTION_ERROR` | 500 | 后端执行失败 |
-| `TIMEOUT` | 504 | 请求超时 |

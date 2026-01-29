@@ -112,11 +112,11 @@ jobs:
             -d "{
               \"backend\": \"claude\",
               \"prompt\": \"Review these code changes for bugs, security issues, and improvements:\\n\\n$DIFF\",
-              \"session_mode\": \"ephemeral\"
+              \"ephemeral\": true
             }")
 
           echo "review<<EOF" >> $GITHUB_OUTPUT
-          echo "$RESULT" | jq -r '.result' >> $GITHUB_OUTPUT
+          echo "$RESULT" | jq -r '.output' >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Post Review Comment
@@ -196,13 +196,13 @@ jobs:
             const body = `## Multi-Model Code Review
 
             ### Architecture Review (Claude)
-            ${results.results[0].result || results.results[0].error}
+            ${results.results[0].output || results.results[0].error}
 
             ### Performance Review (Codex)
-            ${results.results[1].result || results.results[1].error}
+            ${results.results[1].output || results.results[1].error}
 
             ### Security Review (Gemini)
-            ${results.results[2].result || results.results[2].error}
+            ${results.results[2].output || results.results[2].error}
             `;
 
             github.rest.issues.createComment({
@@ -258,7 +258,7 @@ jobs:
                     \"prompt\": \"Generate API documentation in Markdown:\\n{{previous}}\"
                   }
                 ]
-              }" | jq -r '.results[-1].result')
+              }" | jq -r '.results[-1].output')
 
             echo "$DOC" > "docs/api/$(basename $file .ts).md"
           done
@@ -301,7 +301,7 @@ ai-review:
           \"prompt\": \"Review this code:\\n$DIFF\"
         }")
 
-      echo "$RESULT" | jq -r '.result' > review.txt
+      echo "$RESULT" | jq -r '.output' > review.txt
 
     - cat review.txt
   artifacts:
@@ -390,7 +390,7 @@ sudo systemctl start clinvk
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/prompt \
-  -d '{"backend": "claude", "prompt": "...", "session_mode": "ephemeral"}'
+  -d '{"backend": "claude", "prompt": "...", "ephemeral": true}'
 ```
 
 ### 2. Set Timeouts
