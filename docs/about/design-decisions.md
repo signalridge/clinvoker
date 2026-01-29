@@ -1,194 +1,207 @@
 # Design Decisions
 
-This document explains key design decisions in clinvk and the reasoning behind them.
+This document explains the key design decisions made during clinvk development and the rationale behind them.
 
-## Why Wrap CLI Tools?
+## Why Subprocess Execution Instead of SDK?
 
-### Decision
+### The Decision
 
-clinvk wraps existing AI CLI tools (Claude Code, Codex CLI, Gemini CLI) rather than calling APIs directly.
+clinvk executes AI CLI tools as subprocesses rather than using their SDKs directly.
 
-### Reasoning
+### Rationale
 
-1. **Leverage Existing Tooling**: Each AI provider has invested heavily in their CLI tools with features like:
-   - Agentic capabilities (file editing, command execution)
-   - Context management
-   - Safety features and guardrails
-
-2. **Automatic Updates**: When providers update their CLIs with new features or models, clinvk benefits automatically without code changes.
-
-3. **No API Key Management**: The underlying CLIs handle authentication, so clinvk doesn't need to manage API keys.
-
-4. **Full Feature Access**: All CLI features remain accessible, including tool use, file operations, and interactive modes.
+1. **Zero Configuration**: CLI tools handle authentication, API keys, and configuration automatically
+2. **Always Up-to-Date**: No need to update clinvk when SDK APIs change
+3. **Feature Parity**: CLI tools often have features not available in SDKs
+4. **Session Management**: Leverage built-in session handling of CLI tools
+5. **Simplicity**: One abstraction layer instead of multiple SDK integrations
 
 ### Trade-offs
 
-- Requires CLI tools to be installed
-- Dependent on CLI output format stability
-- Less control over low-level API parameters
+| Aspect | Subprocess Approach | SDK Approach |
+|--------|---------------------|--------------|
+| Startup Time | Slightly slower | Faster |
+| Dependencies | Fewer | More libraries |
+| Maintenance | Lower | Higher |
+| Feature Access | Full CLI features | SDK-limited |
+| Authentication | CLI handles it | Code required |
 
-## Why a Unified Interface?
+## Why Multiple API Formats?
 
-### Decision
+### The Decision
 
-Provide the same commands and options regardless of which backend is used.
+clinvk provides three API endpoint families: OpenAI-compatible, Anthropic-compatible, and custom REST.
 
-### Reasoning
+### Rationale
 
-1. **Lower Learning Curve**: Learn once, use everywhere
-2. **Easy Switching**: Change backends with a single flag
-3. **Workflow Portability**: Same scripts work with different backends
-4. **Fair Comparison**: Compare backends using identical prompts
+1. **OpenAI-Compatible** (`/openai/v1/*`)
+   - Most AI frameworks use OpenAI SDK format
+   - LangChain, LangGraph work out of the box
+   - Easy migration from OpenAI to other backends
 
-### Implementation
+2. **Anthropic-Compatible** (`/anthropic/v1/*`)
+   - Native support for Anthropic SDK users
+   - Full Claude-specific features
+   - Messages API format
 
-```go
-type Backend interface {
-    Name() string
-    Execute(ctx context.Context, opts ExecuteOptions) (*Result, error)
-    Available() bool
+3. **Custom REST** (`/api/v1/*`)
+   - Simpler, more direct interface
+   - clinvk-specific features (parallel, chain)
+   - Optimal for Claude Code Skills integration
+
+## Session Management Design
+
+### The Decision
+
+Sessions are tracked per-backend with configurable persistence modes.
+
+### Options Considered
+
+1. **Global Sessions** - Single session across all backends
+2. **Per-Backend Sessions** - Each backend has independent sessions
+3. **Hybrid** - Shared context with backend-specific state
+
+### Why Per-Backend?
+
+- Different backends have incompatible session formats
+- Avoids context pollution between backends
+- Simpler mental model for users
+- Matches CLI tools' native behavior
+
+### Session Modes
+
+| Mode | Persistence | Use Case |
+|------|-------------|----------|
+| `ephemeral` | None | Stateless API calls |
+| `auto` | Auto-named | Default interactive use |
+| `named` | User-specified | Long-running projects |
+
+## Parallel vs Chain Execution
+
+### The Decision
+
+Provide both parallel (concurrent) and chain (sequential) execution modes.
+
+### Design Principles
+
+**Parallel Execution:**
+```
+Task A ─┬─→ Backend 1 ──┬─→ Result A
+        ├─→ Backend 2 ──┤   Result B
+        └─→ Backend 3 ──┘   Result C
+```
+
+- Independent tasks run concurrently
+- Fail-fast option for efficiency
+- Results aggregated at completion
+
+**Chain Execution:**
+```
+Input → Backend 1 → {{previous}} → Backend 2 → {{previous}} → Backend 3 → Output
+```
+
+- Sequential pipeline
+- Each step accesses previous output via `{{previous}}`
+- Enables multi-stage workflows
+
+## Configuration Cascade
+
+### The Decision
+
+Configuration follows a cascade: CLI flags → Environment → Config file → Defaults.
+
+### Rationale
+
+1. **Predictable Override** - Higher priority sources always win
+2. **Environment Friendly** - Works well in containers and CI/CD
+3. **User-Controllable** - Easy to override without changing files
+4. **Secure Defaults** - Safe configuration when nothing specified
+
+### Example Resolution
+
+```yaml
+# Config file: ~/.clinvk/config.yaml
+backend: claude
+timeout: 60
+
+# Environment
+CLINVK_TIMEOUT=120
+
+# CLI
+clinvk --backend codex "prompt"
+
+# Result: backend=codex (CLI), timeout=120 (env)
+```
+
+## HTTP Server Design
+
+### The Decision
+
+Single binary serves all endpoints with graceful shutdown.
+
+### Key Features
+
+1. **Standard HTTP/1.1** - Maximum compatibility
+2. **SSE for Streaming** - Server-Sent Events for real-time output
+3. **CORS Configurable** - For browser-based clients
+4. **Health Endpoint** - `/health` for load balancers
+
+### Why Not gRPC?
+
+- HTTP is universally supported
+- Browser compatibility important
+- Simpler debugging with curl
+- Most AI SDKs use HTTP/REST
+
+## Error Handling Philosophy
+
+### The Decision
+
+Propagate errors with context, fail gracefully.
+
+### Principles
+
+1. **Preserve CLI Exit Codes** - Backend errors propagated accurately
+2. **Structured Errors** - JSON format with error details
+3. **Graceful Degradation** - Partial results in parallel mode
+4. **Detailed Logging** - Debug information when needed
+
+### Error Response Format
+
+```json
+{
+  "error": {
+    "type": "backend_error",
+    "message": "Claude CLI exited with code 1",
+    "backend": "claude",
+    "details": "rate limit exceeded"
+  }
 }
 ```
 
-All backends implement this interface, enabling polymorphic usage.
-
-## Why Ephemeral Chain Mode?
-
-### Decision
-
-Chain execution always runs in ephemeral mode—no sessions are persisted between steps.
-
-### Reasoning
-
-1. **Predictability**: Each chain run produces the same result given the same inputs
-2. **Isolation**: Steps don't accidentally inherit context from previous runs
-3. **Simplicity**: No need to track or clean up sessions
-4. **Composability**: Chains can be nested or combined without side effects
-
-### Trade-off
-
-Users who want session persistence in chains must manage it explicitly outside clinvk.
-
-## Why OpenAI/Anthropic Compatible APIs?
-
-### Decision
-
-The HTTP server provides endpoints compatible with OpenAI and Anthropic SDKs.
-
-### Reasoning
-
-1. **Ecosystem Compatibility**: Use existing SDKs, tools, and frameworks
-2. **Easy Integration**: Drop-in replacement for existing code
-3. **LangChain/LangGraph**: Works with popular AI frameworks out of the box
-4. **Lower Migration Cost**: Switch from direct API to CLI-backed without rewriting
-
-### Implementation
-
-```
-POST /openai/v1/chat/completions
-POST /anthropic/v1/messages
-```
-
-These endpoints translate SDK requests into CLI executions.
-
-## Why YAML Configuration?
-
-### Decision
-
-Use YAML for configuration files instead of JSON, TOML, or environment-only.
-
-### Reasoning
-
-1. **Human Readable**: Easy to read and edit manually
-2. **Comments Supported**: Can document configuration inline
-3. **Familiar**: Common in DevOps and cloud-native tools
-4. **Hierarchical**: Natural fit for nested configuration
-
-### Example
-
-```yaml
-# Default backend for all commands
-default_backend: claude
-
-backends:
-  claude:
-    model: claude-opus-4-5-20251101
-    # Include docs in context
-    extra_flags:
-      - "--add-dir"
-      - "./docs"
-```
-
-## Why Parallel and Chain as Primitives?
-
-### Decision
-
-Provide `parallel` and `chain` as first-class commands rather than scripting solutions.
-
-### Reasoning
-
-1. **Common Patterns**: These are the two most common multi-backend workflows
-2. **Optimized Implementation**: Built-in concurrency control, error handling
-3. **Consistent Output**: Structured results regardless of task count
-4. **Composability**: Can be combined with shell scripts or used via API
-
-### Parallel vs Chain
-
-| Aspect | Parallel | Chain |
-|--------|----------|-------|
-| Execution | Concurrent | Sequential |
-| Data Flow | Independent | Previous output available |
-| Use Case | Multi-perspective | Multi-stage processing |
-| Speed | Fast (max task time) | Slow (sum of task times) |
-
-## Why No Built-in Authentication?
-
-### Decision
-
-The HTTP server has no built-in authentication mechanism.
-
-### Reasoning
-
-1. **Local-First**: Primary use case is local development
-2. **Diverse Requirements**: Auth needs vary widely (API keys, OAuth, mTLS)
-3. **Better Solutions Exist**: Reverse proxies handle auth better
-4. **Simplicity**: Keeps the codebase focused on core functionality
-
-### Recommendation
-
-For production use, place clinvk behind a reverse proxy (nginx, Caddy, Traefik) that handles:
-
-- TLS termination
-- Authentication
-- Rate limiting
-- Request logging
-
-## Why Go?
-
-### Decision
-
-Implement clinvk in Go.
-
-### Reasoning
-
-1. **Single Binary**: No runtime dependencies, easy distribution
-2. **Cross-Platform**: Compile for Linux, macOS, Windows from one codebase
-3. **Performance**: Fast startup, low memory usage
-4. **Concurrency**: goroutines perfect for parallel execution
-5. **CLI Ecosystem**: Excellent libraries (Cobra, Viper)
-
 ## Future Considerations
 
-### Potential Additions
+### MCP Server Support
 
-- **Streaming Support**: Real-time output from backends
-- **Plugin System**: Custom backends without forking
-- **Workflow DSL**: Complex multi-step workflows in declarative format
-- **Metrics/Tracing**: Observability for production use
+We're evaluating adding Model Context Protocol (MCP) server support to enable:
+- Direct integration with Claude Desktop
+- Standardized tool calling interface
+- Ecosystem compatibility
 
-### Guiding Principles
+### Additional Backends
 
-1. **Keep It Simple**: Avoid feature creep
-2. **Wrapper First**: Don't duplicate what CLIs already do
-3. **Composability**: Build complex from simple
-4. **Stability**: Maintain backward compatibility
+The backend abstraction allows adding new AI CLIs as they become available. Requirements for new backends:
+- CLI supports non-interactive mode
+- Structured output (JSON preferred)
+- Session management (optional but preferred)
+
+## Summary
+
+| Decision | Choice | Key Reason |
+|----------|--------|------------|
+| Execution | Subprocess | Zero configuration, always up-to-date |
+| API Format | Multiple | Framework compatibility |
+| Sessions | Per-backend | Isolation and simplicity |
+| Orchestration | Parallel + Chain | Different workflow needs |
+| Config | Cascade | Predictable, environment-friendly |
+| Server | HTTP/SSE | Universal compatibility |
