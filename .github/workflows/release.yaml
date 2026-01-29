@@ -53,6 +53,30 @@ jobs:
         uses: sigstore/cosign-installer@v3
       - name: Install syft
         uses: anchore/sbom-action/download-syft@v0
+      - name: Setup AUR SSH
+        if: env.AUR_SSH_PRIVATE_KEY != ''
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur_key
+          chmod 600 ~/.ssh/aur_key
+          # AUR SSH host keys (from https://aur.archlinux.org)
+          # Fingerprints:
+          #   Ed25519: SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4
+          #   ECDSA:   SHA256:uTa/0PndEgPZTf76e1DFqXKJEXKsn7m9ivhLQtzGOCI
+          #   RSA:     SHA256:5s5cIyReIfNNVGRFdDbe3hdYiI5OelHGpw2rOUud3Q8
+          cat >> ~/.ssh/known_hosts << 'EOF'
+          aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN
+          aur.archlinux.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDgkLJ5duxdL9glzQP5A0qEPs9hzbr04XEiKa0LwsxGS/1Xb2VJM/C0YJR8b2VU3E88IKlmpIvT8Sej6E6m6D3xP//hFHrCV7cMr7GWZW1a9GOnCf08ETbPwG/wV7lx7kZpLJqcOYW7K5Rtlp8+mz0/mVwlqvnxhYu55xTBplswoALlsBMp7b8J9zOWZvMjhXCePFjwMIWOPXAF2MwJlpXLCyYRRqjfSjrPamYcE87TCXfhDYvzVRhUfGJ1Y6hA2u67DqKPFcKXKzhsMaIOaP9lCYfuMu+vgP/iYGhLxJjYkPZHLzqSvILrLRwERsbm+dEZ6e+JwNKJwqe2GIQJB47y9DLneyJMHxVhbsSlmhCBzVbGqAx9FWqFaP4OGhP8YwH9797CVWt8UlOR3gNIlinjLoZF5FDDgc8DprQtoTNpJxg0xNJs9gPUDFq3E5loJKj1gEKOjswifCAM7NuqSB7xJVnbHTn3d2OpqI9JpGQb4el11woJN78D9echPJk=
+          aur.archlinux.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLMiLrP8pVi5BFX2i3vepSUnpedeiewE5XptnUnau+ZoeUOPkpoCgZZuYfpaIQfhhJy+YOUF3cWE7EIBroFBqOw=
+          EOF
+          # Configure SSH to use the key for AUR
+          cat >> ~/.ssh/config << 'EOF'
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur_key
+            User aur
+          EOF
       - name: Run GoReleaser
         id: release
         uses: goreleaser/goreleaser-action@v6
@@ -62,6 +86,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           COSIGN_EXPERIMENTAL: "1"
       - name: Extract version
         id: version
