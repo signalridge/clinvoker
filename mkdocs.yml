@@ -1,4 +1,4 @@
-site_name: clinvk Documentation
+site_name: clinvk
 site_description: Unified AI CLI wrapper for orchestrating multiple AI CLI backends
 site_url: https://signalridge.github.io/clinvoker/
 repo_url: https://github.com/signalridge/clinvoker
@@ -57,6 +57,9 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.mark
   - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - attr_list
   - md_in_html
   - def_list
@@ -89,29 +92,33 @@ extra:
     provider: google
     property: G-XXXXXXXXXX
 nav:
-  - Home: index.md
-  - Getting Started:
-      - getting-started/index.md
-      - Installation: getting-started/installation.md
-      - Quick Start: getting-started/quick-start.md
-  - User Guide:
-      - user-guide/index.md
-      - Basic Usage: user-guide/basic-usage.md
-      - Session Management: user-guide/session-management.md
-      - Parallel Execution: user-guide/parallel-execution.md
-      - Chain Execution: user-guide/chain-execution.md
-      - Backend Comparison: user-guide/backend-comparison.md
+  - clinvk:
+      - index.md
+      - Architecture: about/architecture.md
+      - Design Decisions: about/design-decisions.md
+  - Guide:
+      - guide/index.md
+      - Installation: guide/installation.md
+      - Quick Start: guide/quick-start.md
+      - Configuration: guide/configuration.md
+      - Basic Usage: guide/basic-usage.md
+      - Session Management: guide/session-management.md
+      - Parallel Execution: guide/parallel-execution.md
+      - Chain Execution: guide/chain-execution.md
+      - Backend Comparison: guide/backend-comparison.md
+      - HTTP Server: guide/http-server.md
       - Backends:
-          - user-guide/backends/index.md
-          - Claude Code: user-guide/backends/claude.md
-          - Codex CLI: user-guide/backends/codex.md
-          - Gemini CLI: user-guide/backends/gemini.md
-  - HTTP API:
-      - server/index.md
-      - Getting Started: server/getting-started.md
-      - REST API: server/rest-api.md
-      - OpenAI Compatible: server/openai-compatible.md
-      - Anthropic Compatible: server/anthropic-compatible.md
+          - guide/backends/index.md
+          - Claude Code: guide/backends/claude.md
+          - Codex CLI: guide/backends/codex.md
+          - Gemini CLI: guide/backends/gemini.md
+  - Integration:
+      - integration/index.md
+      - Claude Code Skills: integration/claude-code-skills.md
+      - LangChain/LangGraph: integration/langchain-langgraph.md
+      - CI/CD: integration/ci-cd.md
+      - Client Libraries: integration/client-libraries.md
+      - MCP Server: integration/mcp-server.md
   - Reference:
       - reference/index.md
       - Commands:
@@ -124,6 +131,9 @@ nav:
           - compare: reference/commands/compare.md
           - chain: reference/commands/chain.md
           - serve: reference/commands/serve.md
+      - REST API: reference/rest-api.md
+      - OpenAI Compatible: reference/openai-compatible.md
+      - Anthropic Compatible: reference/anthropic-compatible.md
       - Configuration: reference/configuration.md
       - Environment Variables: reference/environment.md
       - Exit Codes: reference/exit-codes.md
@@ -133,7 +143,6 @@ nav:
       - Contributing: development/contributing.md
       - Adding Backends: development/adding-backends.md
       - Testing: development/testing.md
-  - Appendix:
-      - Troubleshooting: appendix/troubleshooting.md
-      - FAQ: appendix/faq.md
-      - Changelog: appendix/changelog.md
+      - Troubleshooting: development/troubleshooting.md
+      - FAQ: development/faq.md
+      - Changelog: development/changelog.md

@@ -6,18 +6,6 @@ clinvk 技术参考文档。
 
 所有 clinvk 命令的完整文档：
 
-<div class="grid cards" markdown>
-
--   :material-console-line:{ .lg .middle } **[命令](commands/index.md)**
-
-    ---
-
-    所有 CLI 命令的完整参考
-
-</div>
-
-### 命令列表
-
 | 命令 | 描述 |
 |------|------|
 | [`clinvk [prompt]`](commands/prompt.md) | 执行提示 |
@@ -31,27 +19,9 @@ clinvk 技术参考文档。
 
 ## 配置
 
-<div class="grid cards" markdown>
-
--   :material-cog:{ .lg .middle } **[配置](configuration.md)**
-
-    ---
-
-    完整配置参考
-
--   :material-variable:{ .lg .middle } **[环境变量](environment.md)**
-
-    ---
-
-    环境变量参考
-
--   :material-numeric:{ .lg .middle } **[退出码](exit-codes.md)**
-
-    ---
-
-    退出码含义
-
-</div>
+- **[配置](configuration.md)** - 完整配置参考
+- **[环境变量](environment.md)** - 环境变量参考
+- **[退出码](exit-codes.md)** - 退出码含义
 
 ## 配置优先级
 

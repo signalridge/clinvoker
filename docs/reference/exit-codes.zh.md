@@ -117,4 +117,4 @@ esac
 ## 另请参阅
 
 - [命令参考](commands/index.md)
-- [故障排除](../appendix/troubleshooting.md)
+- [故障排除](../development/troubleshooting.md)
