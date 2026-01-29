@@ -197,10 +197,10 @@ go build ./cmd/clinvk
 
 This project is inspired by the following amazing projects:
 
-- **[AgentAPI](https://github.com/coder/agentapi)** — Inspired the HTTP API design for controlling multiple coding agents with a unified interface.
-- **[CCG-Workflow](https://github.com/fengshao1227/ccg-workflow)** — Inspired the multi-model collaboration approach (Claude + Codex + Gemini), parallel task execution, and CLI wrapper design.
-- **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** — Inspired the OpenAI/Anthropic-compatible API server design for CLI proxy.
-- **[MyClaude](https://github.com/cexll/myclaude)** — Inspired the multi-agent workflow system, session management, and CLI wrapper architecture.
+- **[AgentAPI](https://github.com/coder/agentapi)** — Pioneered the concept of controlling coding agents via HTTP API. clinvoker takes a different approach with direct CLI invocation instead of terminal emulation.
+- **[CCG-Workflow](https://github.com/fengshao1227/ccg-workflow)** — Demonstrated multi-model collaboration (Claude + Codex + Gemini) and task routing patterns. clinvoker provides similar capabilities as a standalone binary without requiring Claude Code as orchestrator.
+- **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** — Established the OpenAI/Anthropic-compatible API paradigm for CLI tools. clinvoker integrates this API server directly into the CLI binary.
+- **[MyClaude](https://github.com/cexll/myclaude)** — Created the codeagent-wrapper concept for multi-backend execution. clinvoker reimplements this in Go as a native, dependency-free binary.
 
 ---
 
