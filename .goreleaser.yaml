@@ -26,7 +26,6 @@ archives:
   - id: clinvk
     formats:
       - tar.gz
-      - zip
     format_overrides:
       - goos: windows
         formats:
