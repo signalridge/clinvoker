@@ -50,7 +50,7 @@ test_chain_sequential_execution() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --input "$input_file" --dry-run 2>&1 || true)
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1 || true)
 
 	assert_not_empty "$output"
 
@@ -83,7 +83,7 @@ test_chain_with_placeholder() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --input "$input_file" --dry-run 2>&1 || true)
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1 || true)
 
 	assert_not_empty "$output"
 	assert_contains "$output" "$backend1"
@@ -105,7 +105,7 @@ test_chain_stop_on_failure() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --input "$input_file" --stop-on-failure --dry-run 2>&1 || true)
+	output=$(clinvk chain --file "$input_file" --stop-on-failure --dry-run 2>&1 || true)
 
 	assert_not_empty "$output"
 }
@@ -125,7 +125,7 @@ test_chain_json_output() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --input "$input_file" --json --dry-run 2>&1 || true)
+	output=$(clinvk chain --file "$input_file" --json --dry-run 2>&1 || true)
 
 	assert_not_empty "$output"
 
@@ -150,7 +150,7 @@ test_chain_cross_backend() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --input "$input_file" --dry-run 2>&1 || true)
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1 || true)
 
 	# Verify all backends are used
 	for backend in "${available_backends[@]}"; do

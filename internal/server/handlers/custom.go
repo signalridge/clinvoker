@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
 
@@ -206,11 +208,18 @@ func (h *CustomHandlers) HandleChain(ctx context.Context, input *ChainInput) (*C
 	if len(input.Body.Steps) == 0 {
 		return nil, huma.Error400BadRequest("steps are required")
 	}
+	if input.Body.PassSessionID || input.Body.PersistSessions {
+		return nil, huma.Error400BadRequest("chain is always ephemeral; pass_session_id and persist_sessions are not supported")
+	}
+	for i, step := range input.Body.Steps {
+		if strings.Contains(step.Prompt, "{{session}}") {
+			return nil, huma.Error400BadRequest(fmt.Sprintf("chain step %d uses {{session}} but sessions are not persisted", i+1))
+		}
+	}
 
 	// Convert to service request
 	serviceReq := &service.ChainRequest{
 		StopOnFailure:  input.Body.StopOnFailure,
-		PassSessionID:  input.Body.PassSessionID,
 		PassWorkingDir: input.Body.PassWorkingDir,
 		DryRun:         input.Body.DryRun,
 		Steps:          make([]service.ChainStep, len(input.Body.Steps)),

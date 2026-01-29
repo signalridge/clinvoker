@@ -1,0 +1,139 @@
+site_name: clinvk Documentation
+site_description: Unified AI CLI wrapper for orchestrating multiple AI CLI backends
+site_url: https://signalridge.github.io/clinvoker/
+repo_url: https://github.com/signalridge/clinvoker
+repo_name: signalridge/clinvoker
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2025 SignalRidge
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.mark
+  - pymdownx.keys
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      toc_depth: 3
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/signalridge/clinvoker
+  generator: false
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+  - User Guide:
+      - user-guide/index.md
+      - Basic Usage: user-guide/basic-usage.md
+      - Session Management: user-guide/session-management.md
+      - Parallel Execution: user-guide/parallel-execution.md
+      - Chain Execution: user-guide/chain-execution.md
+      - Backend Comparison: user-guide/backend-comparison.md
+      - Backends:
+          - user-guide/backends/index.md
+          - Claude Code: user-guide/backends/claude.md
+          - Codex CLI: user-guide/backends/codex.md
+          - Gemini CLI: user-guide/backends/gemini.md
+  - HTTP API:
+      - server/index.md
+      - Getting Started: server/getting-started.md
+      - REST API: server/rest-api.md
+      - OpenAI Compatible: server/openai-compatible.md
+      - Anthropic Compatible: server/anthropic-compatible.md
+  - Reference:
+      - reference/index.md
+      - Commands:
+          - reference/commands/index.md
+          - prompt: reference/commands/prompt.md
+          - resume: reference/commands/resume.md
+          - sessions: reference/commands/sessions.md
+          - config: reference/commands/config.md
+          - parallel: reference/commands/parallel.md
+          - compare: reference/commands/compare.md
+          - chain: reference/commands/chain.md
+          - serve: reference/commands/serve.md
+      - Configuration: reference/configuration.md
+      - Environment Variables: reference/environment.md
+      - Exit Codes: reference/exit-codes.md
+  - Development:
+      - development/index.md
+      - Architecture: development/architecture.md
+      - Contributing: development/contributing.md
+      - Adding Backends: development/adding-backends.md
+      - Testing: development/testing.md
+  - Appendix:
+      - Troubleshooting: appendix/troubleshooting.md
+      - FAQ: appendix/faq.md
+      - Changelog: appendix/changelog.md

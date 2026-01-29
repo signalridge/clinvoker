@@ -62,6 +62,28 @@ coverage-html: test
 bench:
     go test -bench=. -benchmem ./...
 
+# ==================== Integration Tests ====================
+
+# Run all integration tests (CLI + API)
+[group('integration')]
+integration: build
+    ./test/run_all_tests.sh
+
+# Run CLI integration tests only
+[group('integration')]
+integration-cli: build
+    ./test/run_cli_tests.sh
+
+# Run API integration tests only
+[group('integration')]
+integration-api: build
+    ./test/run_api_tests.sh
+
+# Run a specific test file (e.g., just integration-file cli/test_version)
+[group('integration')]
+integration-file file: build
+    ./test/{{file}}.sh
+
 # ==================== Lint ====================
 
 # Run all linters
@@ -193,10 +215,15 @@ setup:
 
 # ==================== CI ====================
 
-# Run CI checks locally
+# Run CI checks locally (fast)
 [group('ci')]
 ci: deps-tidy lint test build
     @echo "All CI checks passed!"
+
+# Run full CI checks including integration tests
+[group('ci')]
+ci-full: deps-tidy lint test build integration
+    @echo "All CI checks (including integration) passed!"
 
 # Run security checks
 [group('ci')]
