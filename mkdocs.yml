@@ -92,7 +92,7 @@ extra:
     provider: google
     property: G-XXXXXXXXXX
 nav:
-  - Home: index.md
+  - clinvk: index.md
   - Getting Started:
       - getting-started/index.md
       - Installation: getting-started/installation.md
