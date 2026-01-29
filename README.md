@@ -198,9 +198,9 @@ go build ./cmd/clinvk
 This project is inspired by the following amazing projects:
 
 - **[AgentAPI](https://github.com/coder/agentapi)** — Inspired the HTTP API design for controlling multiple coding agents with a unified interface.
-- **[CCG-Workflow](https://github.com/fengshao1227/ccg-workflow)** — Inspired the multi-model collaboration approach (Claude + Codex + Gemini) and parallel task execution.
+- **[CCG-Workflow](https://github.com/fengshao1227/ccg-workflow)** — Inspired the multi-model collaboration approach (Claude + Codex + Gemini), parallel task execution, and CLI wrapper design.
 - **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** — Inspired the OpenAI/Anthropic-compatible API server design for CLI proxy.
-- **[MyClaude](https://github.com/cexll/myclaude)** — Inspired the multi-agent workflow system and session management features.
+- **[MyClaude](https://github.com/cexll/myclaude)** — Inspired the multi-agent workflow system, session management, and CLI wrapper architecture.
 
 ---
 
