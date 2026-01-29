@@ -12,6 +12,8 @@ type preparedPrompt struct {
 	backend backend.Backend
 	model   string
 	opts    *backend.UnifiedOptions
+	// requestedFormat captures the requested output format (after config defaults).
+	requestedFormat backend.OutputFormat
 }
 
 func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, error) {
@@ -43,6 +45,8 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 		}
 	}
 
+	requestedFormat := backend.OutputFormat(util.ApplyOutputFormatDefault(req.OutputFormat, cfg))
+
 	opts := &backend.UnifiedOptions{
 		WorkDir:      req.WorkDir,
 		Model:        model,
@@ -64,8 +68,9 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 	}
 
 	return &preparedPrompt{
-		backend: b,
-		model:   model,
-		opts:    opts,
+		backend:         b,
+		model:           model,
+		opts:            opts,
+		requestedFormat: requestedFormat,
 	}, nil
 }
