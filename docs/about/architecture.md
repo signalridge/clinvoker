@@ -4,22 +4,30 @@ clinvk is a lightweight orchestration layer that wraps existing AI CLI tools, pr
 
 ## System Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         clinvk                              │
-├─────────────────────────────────────────────────────────────┤
-│  CLI Interface          │  HTTP Server                      │
-│  - prompt               │  - /api/v1/*      (Custom REST)   │
-│  - parallel             │  - /openai/v1/*   (OpenAI compat) │
-│  - chain                │  - /anthropic/v1/* (Anthropic)    │
-│  - compare              │                                   │
-│  - serve                │                                   │
-├─────────────────────────┴───────────────────────────────────┤
-│                    Executor Layer                           │
-│              (Backend abstraction + Session)                │
-├─────────────────────────────────────────────────────────────┤
-│     claude binary    │   codex binary    │   gemini binary  │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph interface ["User Interface"]
+        CLI["CLI Commands"]
+        HTTP["HTTP Server"]
+    end
+
+    subgraph core ["Core"]
+        Exec["Executor"]
+        Session["Session Manager"]
+    end
+
+    subgraph backends ["Backends"]
+        Claude["claude"]
+        Codex["codex"]
+        Gemini["gemini"]
+    end
+
+    CLI --> Exec
+    HTTP --> Exec
+    Exec --> Claude
+    Exec --> Codex
+    Exec --> Gemini
+    Exec <--> Session
 ```
 
 ## Key Principles
@@ -68,17 +76,29 @@ User → CLI → Executor → Backend CLI → AI Response → User
 
 ### Parallel Execution
 
-```
-                    ┌→ Backend 1 → Result 1 ─┐
-User → Executor ────┼→ Backend 2 → Result 2 ─┼→ Aggregate → User
-                    └→ Backend 3 → Result 3 ─┘
+```mermaid
+flowchart LR
+    User --> Exec["Executor"]
+    Exec --> B1["Backend 1"]
+    Exec --> B2["Backend 2"]
+    Exec --> B3["Backend 3"]
+    B1 --> Agg["Aggregate"]
+    B2 --> Agg
+    B3 --> Agg
+    Agg --> User2["User"]
 ```
 
 ### Chain Execution
 
-```
-User → Executor → Backend 1 → Output 1 → Backend 2 → Output 2 → User
-                             ({{previous}})
+```mermaid
+flowchart LR
+    User --> S1["Step 1"]
+    S1 --> B1["Backend A"]
+    B1 --> O1["Output 1"]
+    O1 --> S2["Step 2"]
+    S2 --> B2["Backend B"]
+    B2 --> Final["Final Output"]
+    Final --> User2["User"]
 ```
 
 ## Configuration Cascade

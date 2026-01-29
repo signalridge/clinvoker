@@ -2,6 +2,28 @@
 
 clinvk 开发者技术架构细节。
 
+## 系统架构
+
+```mermaid
+flowchart TD
+    CLI["CLI (cmd/clinvk)"] --> App["应用层 (internal/app)"]
+    App --> Executor["执行器 (internal/executor)"]
+    App --> Server["HTTP 服务器 (internal/server)"]
+    App --> Session["会话存储 (internal/session)"]
+
+    Executor --> Claude["Claude 后端"]
+    Executor --> Codex["Codex 后端"]
+    Executor --> Gemini["Gemini 后端"]
+
+    Server --> Handlers["HTTP 处理器"]
+    Handlers --> Service["服务层"]
+    Service --> Executor
+
+    Claude --> ExtClaude["claude 二进制"]
+    Codex --> ExtCodex["codex 二进制"]
+    Gemini --> ExtGemini["gemini 二进制"]
+```
+
 ## 项目结构
 
 ```
@@ -98,6 +120,30 @@ type Session struct {
 ### 配置 (`internal/config/`)
 
 优先级：CLI 参数 > 环境变量 > 配置文件 > 默认值
+
+## 数据流
+
+### 单个提示执行
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant CLI
+    participant App as 应用
+    participant Exec as 执行器
+    participant Backend as 后端
+    participant Store as 会话存储
+
+    User->>CLI: clinvk "提示"
+    CLI->>App: 解析参数
+    App->>Backend: 构建命令
+    App->>Exec: 执行
+    Exec->>Backend: 运行外部二进制
+    Backend-->>Exec: 输出
+    Exec->>App: 解析输出
+    App->>Store: 持久化会话
+    App-->>User: 显示结果
+```
 
 ## 关键设计决策
 
