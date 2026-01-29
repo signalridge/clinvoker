@@ -1,27 +1,15 @@
 <div align="center">
 
-![header](https://capsule-render.vercel.app/api?type=waving&color=0%3A4f46e5,50%3A7c3aed,100%3Aa855f7&height=180&section=header&text=clinvoker&fontSize=52&fontColor=ffffff&fontAlignY=32&desc=Multi-backend%20AI%20CLI%20with%20OpenAI-compatible%20API&descSize=18&descColor=e2e8f0&descAlignY=52&animation=twinkling)
+# clinvoker
 
-<p>
-  <a href="https://github.com/signalridge/clinvoker/actions/workflows/ci.yaml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/signalridge/clinvoker/ci.yaml?style=for-the-badge&logo=github&label=CI"></a>&nbsp;
-  <a href="https://goreportcard.com/report/github.com/signalridge/clinvoker"><img alt="Go Report Card" src="https://img.shields.io/badge/Go_Report-A+-00ADD8?style=for-the-badge&logo=go&logoColor=white"></a>&nbsp;
-  <a href="https://github.com/signalridge/clinvoker/releases"><img alt="Release" src="https://img.shields.io/github/v/release/signalridge/clinvoker?style=for-the-badge&logo=github"></a>&nbsp;
-  <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"></a>
-</p>
+**Multi-backend AI CLI with OpenAI-compatible API server**
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=8B5CF6&center=true&vCenter=true&width=700&lines=One+CLI+for+Claude%2C+Codex%2C+and+Gemini;OpenAI-compatible+HTTP+API+server;Session+management+and+parallel+execution;Cross-platform%3A+Linux%2C+macOS%2C+Windows)](https://git.io/typing-svg)
+[![CI](https://img.shields.io/github/actions/workflow/status/signalridge/clinvoker/ci.yaml?logo=github)](https://github.com/signalridge/clinvoker/actions/workflows/ci.yaml)
+[![Release](https://img.shields.io/github/v/release/signalridge/clinvoker)](https://github.com/signalridge/clinvoker/releases)
+[![Go Report](https://img.shields.io/badge/Go_Report-A+-00ADD8?logo=go&logoColor=white)](https://goreportcard.com/report/github.com/signalridge/clinvoker)
+[![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 
-<p>
-  <a href="#-installation"><img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-FBB040?style=flat-square&logo=homebrew&logoColor=black"></a>
-  <a href="#-installation"><img alt="Scoop" src="https://img.shields.io/badge/Scoop-00BFFF?style=flat-square&logo=windows&logoColor=white"></a>
-  <a href="#-installation"><img alt="AUR" src="https://img.shields.io/badge/AUR-1793D1?style=flat-square&logo=archlinux&logoColor=white"></a>
-  <a href="#-installation"><img alt="Nix" src="https://img.shields.io/badge/Nix-5277C3?style=flat-square&logo=nixos&logoColor=white"></a>
-  <a href="#-installation"><img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white"></a>
-  <a href="#-installation"><img alt="deb" src="https://img.shields.io/badge/deb-A81D33?style=flat-square&logo=debian&logoColor=white"></a>
-  <a href="#-installation"><img alt="rpm" src="https://img.shields.io/badge/rpm-EE0000?style=flat-square&logo=redhat&logoColor=white"></a>
-  <a href="#-installation"><img alt="apk" src="https://img.shields.io/badge/apk-0D597F?style=flat-square&logo=alpinelinux&logoColor=white"></a>
-  <a href="#-installation"><img alt="Go" src="https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
-</p>
+[Documentation](https://signalridge.github.io/clinvoker/) · [Installation](#-installation) · [Quick Start](#-quick-start)
 
 </div>
 
