@@ -150,7 +150,7 @@ flowchart TB
       "command": "clinvk",
       "args": ["mcp", "--port", "stdio"],
       "env": {
-        "CLINVK_DEFAULT_BACKEND": "claude"
+        "CLINVK_BACKEND": "claude"
       }
     }
   }

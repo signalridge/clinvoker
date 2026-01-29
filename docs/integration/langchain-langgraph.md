@@ -184,7 +184,7 @@ def chain_documentation(code: str) -> str:
         timeout=120
     )
     results = response.json()
-    return results["results"][-1]["result"]
+    return results["results"][-1]["output"]
 
 # Create the agent
 llm = ChatOpenAI(

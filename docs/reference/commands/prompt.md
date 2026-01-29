@@ -118,9 +118,10 @@ The exact event shape depends on the backend.
 | Code | Description |
 |------|-------------|
 | 0 | Success |
-| 1 | General error |
-| 126 | Backend not available |
-| 127 | Backend not found |
+| 1 | Error |
+| (backend) | Backend exit code (propagated when the backend process exits non-zero) |
+
+See [Exit Codes](../exit-codes.md) for details.
 
 ## See Also
 

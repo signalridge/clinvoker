@@ -102,7 +102,9 @@ unified_flags:
 ```yaml
 unified_flags:
   sandbox_mode: read-only    # 不允许文件修改
-  approval_mode: none        # 拒绝任何风险操作
+  # approval_mode 控制“是否询问/如何询问”，并不等同于“允许/拒绝”。
+  # 若你更重视安全性，建议使用 `always` 并配合 `sandbox_mode` 限制访问范围。
+  approval_mode: always
 ```
 
 ### 场景 4：团队共享配置
@@ -199,19 +201,18 @@ backends:
 
 ```bash
 # 覆盖默认后端
-export CLINVK_DEFAULT_BACKEND=gemini
+export CLINVK_BACKEND=gemini
 
 # 覆盖模型
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
-
-# 覆盖服务器端口
-export CLINVK_SERVER_PORT=3000
+export CLINVK_CODEX_MODEL=o3
+export CLINVK_GEMINI_MODEL=gemini-2.5-pro
 ```
 
 **优先级顺序**（从高到低）：
 
 1. CLI 参数（`--backend codex`）
-2. 环境变量（`CLINVK_DEFAULT_BACKEND`）
+2. 环境变量（例如 `CLINVK_BACKEND`）
 3. 配置文件（`~/.clinvk/config.yaml`）
 4. 内置默认值
 

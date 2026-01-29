@@ -111,10 +111,10 @@ cat > /tmp/review-tasks.json << EOF
 }
 EOF
 
-clinvk parallel -f /tmp/review-tasks.json -o json | jq -r '
-  "## Architecture (Claude)\n" + .results[0].result + "\n\n" +
-  "## Performance (Codex)\n" + .results[1].result + "\n\n" +
-  "## Security (Gemini)\n" + .results[2].result
+clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
+  "## Architecture (Claude)\n" + .results[0].output + "\n\n" +
+  "## Performance (Codex)\n" + .results[1].output + "\n\n" +
+  "## Security (Gemini)\n" + .results[2].output
 '
 ```
 ```
@@ -160,7 +160,7 @@ cat > /tmp/doc-pipeline.json << EOF
 }
 EOF
 
-clinvk chain -f /tmp/doc-pipeline.json -o json | jq -r '.results[-1].result'
+clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
 ```
 ```
 
@@ -238,7 +238,7 @@ clinvk -b claude --ephemeral "your prompt"
 When you need to process the output:
 
 ```bash
-clinvk -b claude -o json --ephemeral "..." | jq -r '.result'
+clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
 ```
 
 ### 4. Format Output for Claude

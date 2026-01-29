@@ -7,10 +7,8 @@ Reference for clinvk exit codes and their meanings.
 | Code | Name | Description |
 |------|------|-------------|
 | 0 | Success | Command completed successfully |
-| 1 | General Error | General error or failure |
-| 2 | Usage Error | Command line usage error |
-| 126 | Backend Unavailable | Backend CLI not available |
-| 127 | Backend Not Found | Backend CLI not found in PATH |
+| 1 | Error | CLI/validation error or subcommand failure |
+| (backend) | Backend exit code | For `clinvk [prompt]` and `clinvk resume`, the backend CLI exit code is propagated |
 
 ## Detailed Descriptions
 
@@ -23,13 +21,11 @@ clinvk "hello world"
 echo $?  # 0
 ```
 
-### 1 - General Error
+### 1 - Error
 
-A general error occurred during execution:
+A general error occurred during execution, for example:
 
 - Backend execution failed
-- Network error
-- Timeout
 - Invalid input
 
 ```bash
@@ -37,32 +33,9 @@ clinvk "prompt with error"
 echo $?  # 1
 ```
 
-### 2 - Usage Error
+### Backend Exit Codes (prompt/resume)
 
-Invalid command line arguments or flags:
-
-```bash
-clinvk --invalid-flag "prompt"
-echo $?  # 2
-```
-
-### 126 - Backend Unavailable
-
-The backend is configured but not currently available (e.g., API down):
-
-```bash
-clinvk -b codex "prompt"  # Backend API unavailable
-echo $?  # 126
-```
-
-### 127 - Backend Not Found
-
-The backend's CLI tool is not installed or not in PATH:
-
-```bash
-clinvk -b gemini "prompt"  # 'gemini' not in PATH
-echo $?  # 127
-```
+When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend CLI and propagates the backend process exit code when it is non-zero.
 
 ## Command-Specific Exit Codes
 
@@ -77,8 +50,8 @@ echo $?  # 127
 
 | Code | Description |
 |------|-------------|
-| 0 | At least one backend succeeded |
-| 1 | All backends failed |
+| 0 | All backends succeeded |
+| 1 | One or more backends failed |
 
 ### chain
 
@@ -115,13 +88,6 @@ code=$?
 case $code in
   0)
     echo "Success"
-    ;;
-  126)
-    echo "Backend unavailable, trying another..."
-    clinvk -b claude "prompt"
-    ;;
-  127)
-    echo "Codex not installed"
     ;;
   *)
     echo "Error: $code"

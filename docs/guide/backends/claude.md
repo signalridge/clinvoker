@@ -84,9 +84,9 @@ Claude supports different approval behaviors:
 | Mode | Description |
 |------|-------------|
 | `default` | Let Claude decide based on action risk |
-| `auto` | Automatically approve all actions |
-| `none` | Never ask for approval (reject risky actions) |
-| `always` | Always ask before any action |
+| `auto` | Reduce prompts / auto-approve edits (backend-specific) |
+| `none` | Never ask for approval prompts (**dangerous**) |
+| `always` | Always ask for approval (when supported) |
 
 Set via config:
 
@@ -109,6 +109,9 @@ Or per-command (in tasks/chains):
 ## Sandbox Modes
 
 Control Claude's file system access:
+
+!!! note
+    `sandbox_mode` is a unified setting. For the `claude` backend, clinvk does not currently map `sandbox_mode` to a Claude CLI flag, so it may have no effect.
 
 | Mode | Description |
 |------|-------------|
