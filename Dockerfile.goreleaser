@@ -1,0 +1,21 @@
+# Dockerfile for GoReleaser - uses pre-built binary
+# For local development builds, use Dockerfile
+
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# Copy pre-built binary from GoReleaser context
+COPY clinvk /clinvk
+
+# Use non-root user (distroless default)
+USER nonroot:nonroot
+
+# Default command
+ENTRYPOINT ["/clinvk"]
+CMD ["--help"]
+
+# Metadata labels (set by GoReleaser build_flag_templates)
+LABEL org.opencontainers.image.title="clinvk"
+LABEL org.opencontainers.image.description="Unified AI CLI wrapper for multiple backends"
+LABEL org.opencontainers.image.source="https://github.com/signalridge/clinvoker"
+LABEL org.opencontainers.image.vendor="SignalRidge"
+LABEL org.opencontainers.image.licenses="MIT"
