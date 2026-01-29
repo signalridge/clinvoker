@@ -37,6 +37,18 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [🚀 Quick Start](#-quick-start)
+- [📦 Installation](#-installation)
+- [💡 Usage](#-usage)
+- [🌐 HTTP API Server](#-http-api-server)
+- [⚙️ Configuration](#️-configuration)
+- [📖 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
+
+---
+
 ## 🚀 Quick Start
 
 ```bash
@@ -54,23 +66,25 @@ clinvk serve --port 8080
 
 ## 📦 Installation
 
-| Platform      | Method    | Command                                                                                            |
-| ------------- | --------- | -------------------------------------------------------------------------------------------------- |
-| macOS/Linux   | Homebrew  | `brew install signalridge/tap/clinvk`                                                              |
-| Windows       | Scoop     | `scoop bucket add signalridge https://github.com/signalridge/scoop-bucket && scoop install clinvk` |
-| Arch Linux    | AUR       | `yay -S clinvk-bin`                                                                                |
-| NixOS         | Flake     | `nix run github:signalridge/clinvoker`                                                             |
-| Docker        | GHCR      | `docker run ghcr.io/signalridge/clinvk:latest`                                                     |
-| Debian/Ubuntu | deb       | Download from [Releases](https://github.com/signalridge/clinvoker/releases)                        |
-| Fedora/RHEL   | rpm       | Download from [Releases](https://github.com/signalridge/clinvoker/releases)                        |
-| Alpine        | apk       | Download from [Releases](https://github.com/signalridge/clinvoker/releases)                        |
-| Go            | go install| `go install github.com/signalridge/clinvoker/cmd/clinvk@latest`                                    |
+| Platform | Method | Command |
+|----------|--------|---------|
+| macOS/Linux | Homebrew | `brew install signalridge/tap/clinvk` |
+| Windows | Scoop | `scoop bucket add signalridge https://github.com/signalridge/scoop-bucket && scoop install clinvk` |
+| Arch Linux | AUR | `yay -S clinvk-bin` |
+| NixOS | Flake | `nix run github:signalridge/clinvoker` |
+| Docker | GHCR | `docker run ghcr.io/signalridge/clinvk:latest` |
+| Debian/Ubuntu | deb | Download from [Releases](https://github.com/signalridge/clinvoker/releases) |
+| Fedora/RHEL | rpm | Download from [Releases](https://github.com/signalridge/clinvoker/releases) |
+| Alpine | apk | Download from [Releases](https://github.com/signalridge/clinvoker/releases) |
+| Go | go install | `go install github.com/signalridge/clinvoker/cmd/clinvk@latest` |
 
 See [Installation Guide](https://signalridge.github.io/clinvoker/getting-started/installation/) for detailed instructions.
 
 ---
 
 ## 💡 Usage
+
+### Basic Commands
 
 ```bash
 # Run with default backend
@@ -85,10 +99,18 @@ clinvk resume --last "continue where we left off"
 
 # Compare responses across backends
 clinvk compare --all-backends "explain this algorithm"
+```
 
-# Session management
+### Session Management
+
+```bash
+# List all sessions
 clinvk sessions list
+
+# Resume a specific session
 clinvk resume <session-id>
+
+# Export session history
 clinvk sessions export <session-id> -o history.json
 ```
 
@@ -99,25 +121,34 @@ clinvk sessions export <session-id> -o history.json
 Start an OpenAI/Anthropic-compatible API server:
 
 ```bash
+# Start server on port 8080
 clinvk serve --port 8080
+
+# With specific backend
 clinvk serve --port 8080 --backend claude
 ```
 
-| Endpoint                    | Description                       |
-| --------------------------- | --------------------------------- |
-| `POST /v1/chat/completions` | OpenAI-compatible chat completions|
-| `POST /v1/messages`         | Anthropic-compatible messages     |
-| `GET /v1/models`            | List available models             |
-| `GET /health`               | Health check                      |
+### API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/chat/completions` | OpenAI-compatible chat completions |
+| `POST /v1/messages` | Anthropic-compatible messages |
+| `GET /v1/models` | List available models |
+| `GET /health` | Health check |
 
 ---
 
 ## ⚙️ Configuration
 
 ```bash
+# Show current configuration
 clinvk config show
+
+# Set default backend
 clinvk config set default_backend claude
 
+# Configure API keys
 export ANTHROPIC_API_KEY="sk-..."
 export OPENAI_API_KEY="sk-..."
 export GOOGLE_API_KEY="..."
@@ -129,12 +160,12 @@ export GOOGLE_API_KEY="..."
 
 Full documentation: **[signalridge.github.io/clinvoker](https://signalridge.github.io/clinvoker/)**
 
-| Section                                                                        | Description                    |
-| ------------------------------------------------------------------------------ | ------------------------------ |
-| [Getting Started](https://signalridge.github.io/clinvoker/getting-started/)    | Installation and first steps   |
-| [User Guide](https://signalridge.github.io/clinvoker/user-guide/)              | Detailed usage instructions    |
-| [HTTP API](https://signalridge.github.io/clinvoker/server/)                    | API server documentation       |
-| [Reference](https://signalridge.github.io/clinvoker/reference/)                | CLI reference and configuration|
+| Section | Description |
+|---------|-------------|
+| [Getting Started](https://signalridge.github.io/clinvoker/getting-started/) | Installation and first steps |
+| [User Guide](https://signalridge.github.io/clinvoker/user-guide/) | Detailed usage instructions |
+| [HTTP API](https://signalridge.github.io/clinvoker/server/) | API server documentation |
+| [Reference](https://signalridge.github.io/clinvoker/reference/) | CLI reference and configuration |
 
 ---
 
@@ -143,9 +174,14 @@ Full documentation: **[signalridge.github.io/clinvoker](https://signalridge.gith
 Contributions welcome! See [Contributing Guide](https://signalridge.github.io/clinvoker/development/contributing/).
 
 ```bash
+# Clone the repo
 git clone https://github.com/signalridge/clinvoker.git
 cd clinvoker
+
+# Run tests
 go test ./...
+
+# Build
 go build ./cmd/clinvk
 ```
 
