@@ -2,7 +2,10 @@
 
 Unified AI CLI wrapper for orchestrating multiple AI backends (Claude Code, Codex CLI, Gemini CLI).
 
+[![CI](https://github.com/signalridge/clinvoker/actions/workflows/ci.yaml/badge.svg)](https://github.com/signalridge/clinvoker/actions/workflows/ci.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/signalridge/clinvoker)](https://goreportcard.com/report/github.com/signalridge/clinvoker)
+[![Go Reference](https://pkg.go.dev/badge/github.com/signalridge/clinvoker.svg)](https://pkg.go.dev/github.com/signalridge/clinvoker)
+[![GitHub release](https://img.shields.io/github/v/release/signalridge/clinvoker)](https://github.com/signalridge/clinvoker/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/signalridge/clinvoker/blob/main/LICENSE)
 
 ## Features
