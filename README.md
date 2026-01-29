@@ -1,6 +1,6 @@
 <div align="center">
 
-![header](https://capsule-render.vercel.app/api?type=rounded&color=0%3A6366f1,100%3A8b5cf6&height=200&section=header&text=clinvoker&fontSize=48&fontColor=ffffff&fontAlignY=30&desc=Multi-backend%20AI%20CLI%20with%20OpenAI-compatible%20API%20server&descSize=16&descColor=e0e7ff&descAlignY=55&animation=fadeIn)
+![header](https://capsule-render.vercel.app/api?type=waving&color=0%3A4f46e5,50%3A7c3aed,100%3Aa855f7&height=180&section=header&text=clinvoker&fontSize=52&fontColor=ffffff&fontAlignY=32&desc=Multi-backend%20AI%20CLI%20with%20OpenAI-compatible%20API&descSize=18&descColor=e2e8f0&descAlignY=52&animation=twinkling)
 
 <p>
   <a href="https://github.com/signalridge/clinvoker/actions/workflows/ci.yaml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/signalridge/clinvoker/ci.yaml?style=for-the-badge&logo=github&label=CI"></a>&nbsp;
@@ -39,13 +39,19 @@
 
 ## 📑 Table of Contents
 
+- [✨ Highlights](#-highlights)
+- [📑 Table of Contents](#-table-of-contents)
 - [🚀 Quick Start](#-quick-start)
 - [📦 Installation](#-installation)
 - [💡 Usage](#-usage)
+  - [Basic Commands](#basic-commands)
+  - [Session Management](#session-management)
 - [🌐 HTTP API Server](#-http-api-server)
+  - [API Endpoints](#api-endpoints)
 - [⚙️ Configuration](#️-configuration)
 - [📖 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
+- [📝 License](#-license)
 
 ---
 
