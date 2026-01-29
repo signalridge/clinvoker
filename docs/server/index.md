@@ -25,27 +25,9 @@ clinvk serve --host 0.0.0.0 --port 8080
 
 ## API Styles
 
-<div class="grid cards" markdown>
-
--   :material-api:{ .lg .middle } **[REST API](rest-api.md)**
-
-    ---
-
-    Full-featured custom API for all clinvk operations
-
--   :material-openai:{ .lg .middle } **[OpenAI Compatible](openai-compatible.md)**
-
-    ---
-
-    Use with existing OpenAI client libraries
-
--   :material-robot-outline:{ .lg .middle } **[Anthropic Compatible](anthropic-compatible.md)**
-
-    ---
-
-    Use with existing Anthropic client libraries
-
-</div>
+- **[REST API](rest-api.md)** - Full-featured custom API for all clinvk operations
+- **[OpenAI Compatible](openai-compatible.md)** - Use with existing OpenAI client libraries
+- **[Anthropic Compatible](anthropic-compatible.md)** - Use with existing Anthropic client libraries
 
 ## Endpoints Overview
 

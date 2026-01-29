@@ -25,27 +25,9 @@ clinvk serve --host 0.0.0.0 --port 8080
 
 ## API 风格
 
-<div class="grid cards" markdown>
-
--   :material-api:{ .lg .middle } **[REST API](rest-api.md)**
-
-    ---
-
-    用于所有 clinvk 操作的全功能自定义 API
-
--   :material-openai:{ .lg .middle } **[OpenAI 兼容](openai-compatible.md)**
-
-    ---
-
-    使用现有的 OpenAI 客户端库
-
--   :material-robot-outline:{ .lg .middle } **[Anthropic 兼容](anthropic-compatible.md)**
-
-    ---
-
-    使用现有的 Anthropic 客户端库
-
-</div>
+- **[REST API](rest-api.md)** - 用于所有 clinvk 操作的全功能自定义 API
+- **[OpenAI 兼容](openai-compatible.md)** - 使用现有的 OpenAI 客户端库
+- **[Anthropic 兼容](anthropic-compatible.md)** - 使用现有的 Anthropic 客户端库
 
 ## 端点概览
 

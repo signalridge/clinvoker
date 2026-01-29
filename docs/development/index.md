@@ -8,33 +8,10 @@ clinvk is written in Go and uses a modular architecture that makes it easy to ad
 
 ## Getting Started
 
-<div class="grid cards" markdown>
-
--   :material-cog:{ .lg .middle } **[Architecture](architecture.md)**
-
-    ---
-
-    System architecture and design decisions
-
--   :material-account-group:{ .lg .middle } **[Contributing](contributing.md)**
-
-    ---
-
-    How to contribute to the project
-
--   :material-plus-box:{ .lg .middle } **[Adding Backends](adding-backends.md)**
-
-    ---
-
-    Guide to implementing new backends
-
--   :material-test-tube:{ .lg .middle } **[Testing](testing.md)**
-
-    ---
-
-    Testing guidelines and practices
-
-</div>
+- **[Architecture](architecture.md)** - System architecture and design decisions
+- **[Contributing](contributing.md)** - How to contribute to the project
+- **[Adding Backends](adding-backends.md)** - Guide to implementing new backends
+- **[Testing](testing.md)** - Testing guidelines and practices
 
 ## Quick Start
 

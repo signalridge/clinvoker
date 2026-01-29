@@ -16,21 +16,8 @@ Before installing clinvk, ensure you have at least one AI CLI tool installed:
 
 ## In This Section
 
-<div class="grid cards" markdown>
-
--   :material-download:{ .lg .middle } **[Installation](installation.md)**
-
-    ---
-
-    Multiple installation methods for all platforms
-
--   :material-rocket-launch:{ .lg .middle } **[Quick Start](quick-start.md)**
-
-    ---
-
-    Get up and running in minutes
-
-</div>
+- **[Installation](installation.md)** - Multiple installation methods for all platforms
+- **[Quick Start](quick-start.md)** - Get up and running in minutes
 
 ## Platform Support
 

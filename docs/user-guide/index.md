@@ -8,65 +8,19 @@ clinvk provides a unified interface to multiple AI coding assistants, with power
 
 ## Core Features
 
-<div class="grid cards" markdown>
-
--   :material-console:{ .lg .middle } **[Basic Usage](basic-usage.md)**
-
-    ---
-
-    Learn the fundamentals of running prompts and using backends
-
--   :material-history:{ .lg .middle } **[Session Management](session-management.md)**
-
-    ---
-
-    Track and resume conversations across sessions
-
--   :material-layers-triple:{ .lg .middle } **[Parallel Execution](parallel-execution.md)**
-
-    ---
-
-    Run multiple tasks concurrently for faster workflows
-
--   :material-link-variant:{ .lg .middle } **[Chain Execution](chain-execution.md)**
-
-    ---
-
-    Pipeline prompts through multiple backends sequentially
-
--   :material-compare:{ .lg .middle } **[Backend Comparison](backend-comparison.md)**
-
-    ---
-
-    Compare responses from different AI backends
-
-</div>
+- **[Basic Usage](basic-usage.md)** - Learn the fundamentals of running prompts and using backends
+- **[Session Management](session-management.md)** - Track and resume conversations across sessions
+- **[Parallel Execution](parallel-execution.md)** - Run multiple tasks concurrently for faster workflows
+- **[Chain Execution](chain-execution.md)** - Pipeline prompts through multiple backends sequentially
+- **[Backend Comparison](backend-comparison.md)** - Compare responses from different AI backends
 
 ## Backend Guides
 
 Learn about each supported backend:
 
-<div class="grid cards" markdown>
-
--   :material-robot:{ .lg .middle } **[Claude Code](backends/claude.md)**
-
-    ---
-
-    Anthropic's AI coding assistant
-
--   :material-code-tags:{ .lg .middle } **[Codex CLI](backends/codex.md)**
-
-    ---
-
-    OpenAI's code-focused CLI tool
-
--   :material-google:{ .lg .middle } **[Gemini CLI](backends/gemini.md)**
-
-    ---
-
-    Google's Gemini AI assistant
-
-</div>
+- **[Claude Code](backends/claude.md)** - Anthropic's AI coding assistant
+- **[Codex CLI](backends/codex.md)** - OpenAI's code-focused CLI tool
+- **[Gemini CLI](backends/gemini.md)** - Google's Gemini AI assistant
 
 ## Workflow Examples
 

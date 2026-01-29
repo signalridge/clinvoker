@@ -1,4 +1,4 @@
-site_name: clinvk Documentation
+site_name: clinvk
 site_description: Unified AI CLI wrapper for orchestrating multiple AI CLI backends
 site_url: https://signalridge.github.io/clinvoker/
 repo_url: https://github.com/signalridge/clinvoker
