@@ -126,11 +126,30 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
       - name: Build
-        run: go build -o clinvk ./cmd/clinvk
-      - name: Test CLI
         run: |
-          ./clinvk version
-          ./clinvk --help
-          ./clinvk config show
-          ./clinvk sessions list
-          ./clinvk --dry-run "test"
+          go build -o bin/clinvk ./cmd/clinvk
+          chmod +x bin/clinvk
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      - name: Basic CLI smoke test
+        run: |
+          ./bin/clinvk version
+          ./bin/clinvk --help
+          ./bin/clinvk config show
+          ./bin/clinvk sessions list
+          ./bin/clinvk --dry-run "test"
+      - name: Run CLI integration tests
+        run: |
+          chmod +x test/run_cli_tests.sh test/cli/*.sh test/lib/*.sh
+          ./test/run_cli_tests.sh
+        env:
+          CLINVK_BIN: ${{ github.workspace }}/bin/clinvk
+      - name: Run API integration tests
+        run: |
+          chmod +x test/run_api_tests.sh test/api/*.sh
+          ./test/run_api_tests.sh
+        env:
+          CLINVK_BIN: ${{ github.workspace }}/bin/clinvk
+          SERVER_PORT: "18080"

@@ -205,6 +205,19 @@ func TestChainDefinition_JSONParsing(t *testing.T) {
 	}
 }
 
+func TestSubstitutePromptPlaceholders(t *testing.T) {
+	prompt := "prev={{previous}}"
+	got := substitutePromptPlaceholders(prompt, "OUT", true)
+	if got != "prev=OUT" {
+		t.Errorf("unexpected substitution: %q", got)
+	}
+
+	noPrev := substitutePromptPlaceholders(prompt, "OUT", false)
+	if noPrev != "prev={{previous}}" {
+		t.Errorf("unexpected substitution when no previous output: %q", noPrev)
+	}
+}
+
 func TestChainStepResult_Structure(t *testing.T) {
 	result := ChainStepResult{
 		Step:      1,
@@ -428,7 +441,7 @@ func TestBuildChainStepOptions_AppliesOutputFormat(t *testing.T) {
 				Prompt:  "test",
 			}
 
-			opts := buildChainStepOptions(step, "/tmp", "opus", cfg)
+			opts := buildChainStepOptions(step, "/tmp", "opus", cfg, false)
 
 			if tt.wantHasFormat {
 				if string(opts.OutputFormat) != tt.outputFormat {
@@ -456,7 +469,7 @@ func TestBuildChainStepOptions_AppliesAllConfigDefaults(t *testing.T) {
 		Prompt:  "test",
 	}
 
-	opts := buildChainStepOptions(step, "/tmp", "opus", cfg)
+	opts := buildChainStepOptions(step, "/tmp", "opus", cfg, false)
 
 	if opts.ApprovalMode != "auto" {
 		t.Errorf("ApprovalMode = %q, want 'auto'", opts.ApprovalMode)
@@ -483,7 +496,7 @@ func TestBuildChainStepOptions_StepOverridesConfig(t *testing.T) {
 		SandboxMode:  "none",
 	}
 
-	opts := buildChainStepOptions(step, "/tmp", "opus", cfg)
+	opts := buildChainStepOptions(step, "/tmp", "opus", cfg, false)
 
 	// Step values should be used, not config defaults
 	if opts.ApprovalMode != "always" {
