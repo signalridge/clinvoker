@@ -122,6 +122,6 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 
 ## 下一步
 
-- [基本用法](../user-guide/basic-usage.md) - 详细使用指南
-- [会话管理](../user-guide/session-management.md) - 使用会话
+- [基本用法](basic-usage.md) - 详细使用指南
+- [会话管理](session-management.md) - 使用会话
 - [配置](../reference/configuration.md) - 自定义设置

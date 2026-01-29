@@ -1,38 +1,51 @@
 # Architecture Overview
 
-This document describes the architecture of clinvk.
+Technical architecture details for clinvk developers.
 
 ## System Architecture
 
 ```mermaid
-graph TD
-    CLI[CLI Interface] --> App[Application Layer]
-    App --> Executor[Executor Layer]
-    App --> Server[HTTP Server]
-    App --> Session[Session Manager]
+flowchart TD
+    CLI["CLI (cmd/clinvk)"] --> App["App layer (internal/app)"]
+    App --> Executor["Executor (internal/executor)"]
+    App --> Server["HTTP server (internal/server)"]
+    App --> Session["Session store (internal/session)"]
 
-    Executor --> Claude[Claude Backend]
-    Executor --> Codex[Codex Backend]
-    Executor --> Gemini[Gemini Backend]
+    Executor --> Claude["Claude backend"]
+    Executor --> Codex["Codex backend"]
+    Executor --> Gemini["Gemini backend"]
 
-    Server --> Handlers[API Handlers]
-    Handlers --> Service[Service Layer]
+    Server --> Handlers["HTTP handlers"]
+    Handlers --> Service["Service layer"]
     Service --> Executor
 
-    Claude --> ExtClaude[claude binary]
-    Codex --> ExtCodex[codex binary]
-    Gemini --> ExtGemini[gemini binary]
+    Claude --> ExtClaude["claude binary"]
+    Codex --> ExtCodex["codex binary"]
+    Gemini --> ExtGemini["gemini binary"]
+```
+
+## Project Structure
+
+```
+cmd/clinvk/           Entry point
+internal/
+├── app/              CLI commands and orchestration
+├── backend/          Backend implementations (claude, codex, gemini)
+├── executor/         Command execution with PTY support
+├── server/           HTTP API server
+├── session/          Session persistence
+└── config/           Configuration loading
 ```
 
 ## Layer Overview
 
 ### Entry Point (`cmd/clinvk/`)
 
-The main entry point initializes the CLI application and delegates to the app layer.
+Initializes the CLI application and delegates to the app layer.
 
 ### Application Layer (`internal/app/`)
 
-Implements CLI commands and orchestrates other modules:
+Implements CLI commands:
 
 | File | Purpose |
 |------|---------|
@@ -41,13 +54,12 @@ Implements CLI commands and orchestrates other modules:
 | `cmd_chain.go` | Sequential pipeline execution |
 | `cmd_compare.go` | Multi-backend comparison |
 | `cmd_serve.go` | HTTP server startup |
-| `cmd_sessions.go` | Session management commands |
+| `cmd_sessions.go` | Session management |
 | `cmd_config.go` | Configuration commands |
-| `cmd_version.go` | Version command |
 
 ### Backend Layer (`internal/backend/`)
 
-Provides a unified interface for different AI CLI tools:
+Unified interface for AI CLI tools:
 
 ```go
 type Backend interface {
@@ -55,23 +67,16 @@ type Backend interface {
     IsAvailable() bool
     BuildCommand(prompt string, opts *Options) *exec.Cmd
     ResumeCommand(sessionID, prompt string, opts *Options) *exec.Cmd
-    BuildCommandUnified(prompt string, opts *UnifiedOptions) *exec.Cmd
-    ResumeCommandUnified(sessionID, prompt string, opts *UnifiedOptions) *exec.Cmd
     ParseOutput(rawOutput string) string
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
-    SeparateStderr() bool
 }
 ```
 
-Implementations:
-
-- `claude.go` - Claude Code backend
-- `codex.go` - Codex CLI backend
-- `gemini.go` - Gemini CLI backend
+Implementations: `claude.go`, `codex.go`, `gemini.go`
 
 ### Executor Layer (`internal/executor/`)
 
-Handles actual execution of backend commands:
+Handles command execution:
 
 | File | Purpose |
 |------|---------|
@@ -82,24 +87,21 @@ Handles actual execution of backend commands:
 
 ### Server Layer (`internal/server/`)
 
-HTTP API server with multiple API styles:
+HTTP API with multiple styles:
 
 ```
-/api/v1/          - Custom RESTful API
-/openai/v1/       - OpenAI-compatible API
-/anthropic/v1/    - Anthropic-compatible API
+/api/v1/          Custom RESTful API
+/openai/v1/       OpenAI-compatible API
+/anthropic/v1/    Anthropic-compatible API
 ```
 
 Components:
-
 - `server.go` - Server setup and routing
 - `handlers/` - Request handlers
-- `service/` - Business logic & orchestration
-- `core/` - Backend execution core (stateless)
+- `service/` - Business logic
+- `core/` - Backend execution core
 
 ### Session Layer (`internal/session/`)
-
-Manages persistent sessions:
 
 ```go
 type Session struct {
@@ -117,62 +119,79 @@ Storage: JSON files in `~/.clinvk/sessions/`
 
 ### Configuration (`internal/config/`)
 
-Handles configuration loading with cascade:
+Configuration loading with cascade priority:
 
-```
-CLI Flags > Environment Variables > Config File > Defaults
-```
+1. **CLI Flags** - Immediate overrides for one-off changes
+2. **Environment Variables** - Environment-specific settings
+3. **Config File** (`~/.clinvk/config.yaml`) - Persistent preferences
+4. **Defaults** - Sensible fallbacks
 
 ## Data Flow
 
 ### Single Prompt Execution
 
+The standard flow for a single prompt. The App layer coordinates between Backend (command building), Executor (running), and Session store (persistence).
+
 ```mermaid
 sequenceDiagram
+    autonumber
     participant User
     participant CLI
     participant App
-    participant Executor
+    participant Exec as Executor
     participant Backend
-    participant Session
+    participant Store as Session store
 
     User->>CLI: clinvk "prompt"
-    CLI->>App: Parse command
-    App->>Backend: Build command
-    App->>Executor: Execute
-    Executor->>Backend: Run external binary
-    Backend-->>Executor: Output
-    Executor->>App: Parse output
-    App->>Session: Store session
-    App-->>User: Display result
+    CLI->>App: parse args
+    App->>Backend: build command
+    App->>Exec: execute
+    Exec->>Backend: run external binary
+    Backend-->>Exec: output
+    Exec->>App: parse output
+    App->>Store: persist session
+    App-->>User: display result
 ```
 
 ### Parallel Execution
 
+Parallel execution distributes tasks across a worker pool. Each worker independently executes its assigned backend, and results are aggregated after all complete (or on first failure with `--fail-fast`).
+
 ```mermaid
-graph LR
-    Tasks[Task List] --> Pool[Worker Pool]
-    Pool --> B1[Backend 1]
-    Pool --> B2[Backend 2]
-    Pool --> B3[Backend 3]
-    B1 --> Agg[Aggregate Results]
-    B2 --> Agg
-    B3 --> Agg
-    Agg --> Output[Output]
+sequenceDiagram
+    autonumber
+    participant User
+    participant Pool as Worker Pool
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+    participant Agg as Aggregator
+
+    User->>Pool: parallel tasks
+    Pool->>W1: task 1 (claude)
+    Pool->>W2: task 2 (codex)
+    W1-->>Agg: result 1
+    W2-->>Agg: result 2
+    Agg-->>User: combined results
 ```
 
 ### Chain Execution
 
+Chain execution pipelines output through multiple backends sequentially. Each step receives the previous step's output via `{{previous}}` placeholder, enabling multi-stage processing.
+
 ```mermaid
-graph LR
-    S1[Step 1] --> B1[Backend A]
-    B1 --> O1[Output 1]
-    O1 --> S2[Step 2]
-    S2 --> B2[Backend B]
-    B2 --> O2[Output 2]
-    O2 --> S3[Step 3]
-    S3 --> B3[Backend C]
-    B3 --> Final[Final Output]
+sequenceDiagram
+    autonumber
+    participant User
+    participant Exec as Executor
+    participant A as Backend A
+    participant B as Backend B
+
+    User->>Exec: chain request
+    Exec->>A: step 1 prompt
+    A-->>Exec: output 1
+    Exec->>B: step 2 + {{previous}}
+    B-->>Exec: output 2
+    Exec-->>User: final result
 ```
 
 ## Key Design Decisions
@@ -180,80 +199,53 @@ graph LR
 ### 1. Backend Abstraction
 
 All backends implement a common interface, enabling:
-
 - Easy addition of new backends
 - Consistent behavior across backends
 - Backend-agnostic orchestration
 
-### 2. Configuration Cascade
-
-Priority: CLI flags > env vars > config file > defaults
-
-This allows:
-
-- Quick overrides via CLI
-- Environment-specific configuration
-- Persistent preferences in config file
-
-### 3. Session Persistence
+### 2. Session Persistence
 
 Sessions stored as JSON files for:
-
 - Resumability across invocations
 - Easy debugging and inspection
 - No database dependency
 
-### 4. HTTP API Compatibility
+### 3. HTTP API Compatibility
 
 Multiple API styles for integration:
-
 - Custom API for full functionality
 - OpenAI-compatible for existing tooling
 - Anthropic-compatible for Claude clients
 
-### 5. Streaming Output
+### 4. Streaming Output
 
-Real-time output streaming via:
-
-- Subprocess stdout/stderr pipes
-- Chunk-based parsing utilities
+Real-time output via subprocess stdout/stderr pipes with chunk-based parsing.
 
 ## Security Considerations
 
 ### Subprocess Execution
-
-- Commands are built programmatically, not shell-interpreted
-- Working directory is validated
+- Commands built programmatically, not shell-interpreted
+- Working directory validated
 - Timeouts prevent runaway processes
 
 ### Configuration
-
 - Config file uses restrictive permissions
-- No sensitive data stored in sessions
+- No sensitive data in sessions
 - API keys handled by underlying CLI tools
 
 ### HTTP Server
-
-- Bind to localhost by default
-- No authentication (intended for local use)
+- Binds to localhost by default
+- No built-in authentication (intended for local use)
 - Request validation via huma/v2
 
-## Performance Considerations
+## Performance
 
 ### Parallel Execution
-
 - Configurable worker pool size
 - Fail-fast option for early termination
 - Memory-efficient result aggregation
 
 ### Session Store
-
 - Indexed lookups for common queries
 - Pagination for large session lists
 - Lazy loading of session content
-
-### Output Parsing
-
-- Streaming parse for large outputs
-- Efficient JSON unmarshaling
-- Compiled regex patterns

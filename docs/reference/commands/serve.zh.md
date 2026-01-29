@@ -89,6 +89,6 @@ clinvk serve --host 0.0.0.0 --port 8080
 
 ## 另请参阅
 
-- [REST API 参考](../../server/rest-api.md)
-- [OpenAI 兼容](../../server/openai-compatible.md)
-- [Anthropic 兼容](../../server/anthropic-compatible.md)
+- [REST API 参考](../rest-api.md)
+- [OpenAI 兼容](../openai-compatible.md)
+- [Anthropic 兼容](../anthropic-compatible.md)

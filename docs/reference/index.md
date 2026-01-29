@@ -6,18 +6,6 @@ Technical reference documentation for clinvk.
 
 Complete documentation for all clinvk commands:
 
-<div class="grid cards" markdown>
-
--   :material-console-line:{ .lg .middle } **[Commands](commands/index.md)**
-
-    ---
-
-    Full reference for all CLI commands
-
-</div>
-
-### Command List
-
 | Command | Description |
 |---------|-------------|
 | [`clinvk [prompt]`](commands/prompt.md) | Execute a prompt |
@@ -31,27 +19,9 @@ Complete documentation for all clinvk commands:
 
 ## Configuration
 
-<div class="grid cards" markdown>
-
--   :material-cog:{ .lg .middle } **[Configuration](configuration.md)**
-
-    ---
-
-    Complete configuration reference
-
--   :material-variable:{ .lg .middle } **[Environment Variables](environment.md)**
-
-    ---
-
-    Environment variable reference
-
--   :material-numeric:{ .lg .middle } **[Exit Codes](exit-codes.md)**
-
-    ---
-
-    Exit code meanings
-
-</div>
+- **[Configuration](configuration.md)** - Complete configuration reference
+- **[Environment Variables](environment.md)** - Environment variable reference
+- **[Exit Codes](exit-codes.md)** - Exit code meanings
 
 ## Configuration Priority
 

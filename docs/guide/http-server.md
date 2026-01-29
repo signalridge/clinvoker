@@ -1,6 +1,14 @@
-# Server Getting Started
+# HTTP Server
 
-Get the clinvk HTTP server up and running in minutes.
+clinvk includes a built-in HTTP API server that exposes all functionality via REST endpoints.
+
+## Overview
+
+The `clinvk serve` command starts an HTTP server that provides:
+
+- **Custom REST API** - Full access to all clinvk features
+- **OpenAI Compatible API** - Drop-in replacement for OpenAI clients
+- **Anthropic Compatible API** - Drop-in replacement for Anthropic clients
 
 ## Starting the Server
 
@@ -55,26 +63,40 @@ curl -X POST http://localhost:8080/api/v1/prompt \
   -d '{"backend": "claude", "prompt": "hello world"}'
 ```
 
-## Configuration
+## Endpoints Overview
 
-### Via Config File
+### Custom REST API (`/api/v1/`)
 
-Edit `~/.clinvk/config.yaml`:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/prompt` | Execute single prompt |
+| POST | `/api/v1/parallel` | Execute multiple prompts |
+| POST | `/api/v1/chain` | Execute prompt chain |
+| POST | `/api/v1/compare` | Compare backend responses |
+| GET | `/api/v1/backends` | List backends |
+| GET | `/api/v1/sessions` | List sessions |
+| GET | `/api/v1/sessions/{id}` | Get session |
+| DELETE | `/api/v1/sessions/{id}` | Delete session |
 
-```yaml
-server:
-  host: "127.0.0.1"
-  port: 8080
-  request_timeout_secs: 300
-```
+### OpenAI Compatible (`/openai/v1/`)
 
-### Via CLI Flags
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/openai/v1/models` | List models |
+| POST | `/openai/v1/chat/completions` | Chat completion |
 
-```bash
-clinvk serve --host 0.0.0.0 --port 3000
-```
+### Anthropic Compatible (`/anthropic/v1/`)
 
-CLI flags override config file settings.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/anthropic/v1/messages` | Create message |
+
+### Meta Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/openapi.json` | OpenAPI spec |
 
 ## Using with Client Libraries
 
@@ -148,6 +170,41 @@ curl -X POST http://localhost:8080/api/v1/parallel \
   }'
 ```
 
+## Configuration
+
+### Via Config File
+
+Edit `~/.clinvk/config.yaml`:
+
+```yaml
+server:
+  # Bind address
+  host: "127.0.0.1"
+
+  # Port number
+  port: 8080
+
+  # Request processing timeout (seconds)
+  request_timeout_secs: 300
+
+  # Read request timeout (seconds)
+  read_timeout_secs: 30
+
+  # Write response timeout (seconds)
+  write_timeout_secs: 300
+
+  # Idle connection timeout (seconds)
+  idle_timeout_secs: 120
+```
+
+### Via CLI Flags
+
+```bash
+clinvk serve --host 0.0.0.0 --port 3000
+```
+
+CLI flags override config file settings.
+
 ## Running as a Service
 
 ### systemd (Linux)
@@ -218,8 +275,32 @@ Load the service:
 launchctl load ~/Library/LaunchAgents/com.clinvk.server.plist
 ```
 
+## Security Notes
+
+!!! warning "Local Use Only"
+    By default, the server binds to `127.0.0.1` (localhost only). If you bind to `0.0.0.0` to expose it publicly, be aware that **there is no authentication**.
+
+!!! tip "Production Use"
+    For production deployments, place the server behind a reverse proxy (nginx, Caddy) that handles:
+
+    - TLS termination
+    - Authentication
+    - Rate limiting
+    - Request logging
+
+## OpenAPI Specification
+
+The server provides an OpenAPI specification at `/openapi.json`:
+
+```bash
+# Download spec
+curl http://localhost:8080/openapi.json > openapi.json
+
+# View in Swagger UI or import into API tools
+```
+
 ## Next Steps
 
-- [REST API Reference](rest-api.md) - Full API documentation
-- [OpenAI Compatible](openai-compatible.md) - Use with OpenAI clients
-- [Anthropic Compatible](anthropic-compatible.md) - Use with Anthropic clients
+- [REST API Reference](../reference/rest-api.md) - Full API documentation
+- [OpenAI Compatible](../reference/openai-compatible.md) - Use with OpenAI clients
+- [Anthropic Compatible](../reference/anthropic-compatible.md) - Use with Anthropic clients

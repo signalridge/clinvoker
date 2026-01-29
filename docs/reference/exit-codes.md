@@ -170,4 +170,4 @@ test:
 ## See Also
 
 - [Commands Reference](commands/index.md)
-- [Troubleshooting](../appendix/troubleshooting.md)
+- [Troubleshooting](../development/troubleshooting.md)

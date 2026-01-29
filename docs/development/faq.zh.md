@@ -44,7 +44,7 @@ go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 nix run github:signalridge/clinvoker
 ```
 
-详见 [安装](../getting-started/installation.md)。
+详见 [安装](../guide/installation.md)。
 
 ### 需要安装所有后端吗？
 
