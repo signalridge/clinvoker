@@ -40,5 +40,8 @@ Thumbs.db
 # Nix
 /result
 
-# claude
-.claude
+# Claude
+.claude/
+
+# MkDocs
+site/
