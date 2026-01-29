@@ -197,10 +197,10 @@ go build ./cmd/clinvk
 
 This project is inspired by the following amazing projects:
 
-- **[AgentAPI](https://github.com/coder/agentapi)** — Pioneered the concept of controlling coding agents via HTTP API. clinvoker takes a different approach with direct CLI invocation instead of terminal emulation.
-- **[CCG-Workflow](https://github.com/fengshao1227/ccg-workflow)** — Demonstrated multi-model collaboration (Claude + Codex + Gemini) and task routing patterns. clinvoker provides similar capabilities as a standalone binary without requiring Claude Code as orchestrator.
-- **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** — Established the OpenAI/Anthropic-compatible API paradigm for CLI tools. clinvoker integrates this API server directly into the CLI binary.
-- **[MyClaude](https://github.com/cexll/myclaude)** — Created the codeagent-wrapper concept for multi-backend execution. clinvoker reimplements this in Go as a native, dependency-free binary.
+- **[AgentAPI](https://github.com/coder/agentapi)** — Pioneered HTTP API control for coding agents. clinvoker adds cross-backend comparison, parallel execution, and session persistence.
+- **[CCG-Workflow](https://github.com/fengshao1227/ccg-workflow)** — Demonstrated Claude + Codex + Gemini collaboration with task routing. clinvoker enables standalone operation with built-in compare/parallel/chain commands.
+- **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** — Established OpenAI/Anthropic-compatible API for CLI tools. clinvoker combines this with CLI wrapper, session management, and multi-backend orchestration.
+- **[MyClaude](https://github.com/cexll/myclaude)** — Created codeagent-wrapper for multi-backend execution. clinvoker extends this with response comparison, parallel runs, and persistent sessions.
 
 ---
 
