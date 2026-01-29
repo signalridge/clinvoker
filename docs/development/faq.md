@@ -44,7 +44,7 @@ go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 nix run github:signalridge/clinvoker
 ```
 
-See [Installation](../getting-started/installation.md) for all options.
+See [Installation](../guide/installation.md) for all options.
 
 ### Do I need all backends installed?
 
@@ -106,7 +106,7 @@ Create a tasks file and use the parallel command:
 clinvk parallel --file tasks.json
 ```
 
-See [Parallel Execution](../user-guide/parallel-execution.md).
+See [Parallel Execution](../guide/parallel-execution.md).
 
 ### How do I compare backend responses?
 
@@ -114,7 +114,7 @@ See [Parallel Execution](../user-guide/parallel-execution.md).
 clinvk compare --all-backends "your prompt"
 ```
 
-See [Backend Comparison](../user-guide/backend-comparison.md).
+See [Backend Comparison](../guide/backend-comparison.md).
 
 ## Configuration
 

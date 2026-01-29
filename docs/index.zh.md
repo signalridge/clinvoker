@@ -85,7 +85,7 @@ clinvk serve --port 8080
 
 ## 下一步
 
-- [安装](getting-started/installation.md) - 在您的系统上安装 clinvk
-- [快速开始](getting-started/quick-start.md) - 几分钟内上手使用
-- [用户指南](user-guide/index.md) - 了解所有功能
-- [HTTP API](server/index.md) - 使用 REST API 服务器
+- [安装](guide/installation.md) - 在您的系统上安装 clinvk
+- [快速开始](guide/quick-start.md) - 几分钟内上手使用
+- [用户指南](guide/index.md) - 了解所有功能
+- [HTTP API](guide/http-server.md) - 使用 REST API 服务器
