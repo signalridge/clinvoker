@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/signalridge/clinvoker/internal/config"
 )
 
 // ==================== CompareResult Tests ====================
@@ -387,4 +389,107 @@ func getBackendIfAvailable(name string) error {
 	}
 
 	return nil
+}
+
+// ==================== Output Format Config Defaults Tests ====================
+
+func TestBuildChainStepOptions_AppliesOutputFormat(t *testing.T) {
+	tests := []struct {
+		name          string
+		outputFormat  string
+		wantHasFormat bool
+	}{
+		{
+			name:          "applies json format from config",
+			outputFormat:  "json",
+			wantHasFormat: true,
+		},
+		{
+			name:          "applies text format from config",
+			outputFormat:  "text",
+			wantHasFormat: true,
+		},
+		{
+			name:          "empty config format results in empty",
+			outputFormat:  "",
+			wantHasFormat: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{
+				UnifiedFlags: config.UnifiedFlagsConfig{
+					OutputFormat: tt.outputFormat,
+				},
+			}
+			step := &ChainStep{
+				Backend: "claude",
+				Prompt:  "test",
+			}
+
+			opts := buildChainStepOptions(step, "/tmp", "opus", cfg)
+
+			if tt.wantHasFormat {
+				if string(opts.OutputFormat) != tt.outputFormat {
+					t.Errorf("OutputFormat = %q, want %q", opts.OutputFormat, tt.outputFormat)
+				}
+			} else {
+				if opts.OutputFormat != "" {
+					t.Errorf("OutputFormat = %q, want empty", opts.OutputFormat)
+				}
+			}
+		})
+	}
+}
+
+func TestBuildChainStepOptions_AppliesAllConfigDefaults(t *testing.T) {
+	cfg := &config.Config{
+		UnifiedFlags: config.UnifiedFlagsConfig{
+			ApprovalMode: "auto",
+			SandboxMode:  "workspace",
+			OutputFormat: "json",
+		},
+	}
+	step := &ChainStep{
+		Backend: "claude",
+		Prompt:  "test",
+	}
+
+	opts := buildChainStepOptions(step, "/tmp", "opus", cfg)
+
+	if opts.ApprovalMode != "auto" {
+		t.Errorf("ApprovalMode = %q, want 'auto'", opts.ApprovalMode)
+	}
+	if opts.SandboxMode != "workspace" {
+		t.Errorf("SandboxMode = %q, want 'workspace'", opts.SandboxMode)
+	}
+	if opts.OutputFormat != "json" {
+		t.Errorf("OutputFormat = %q, want 'json'", opts.OutputFormat)
+	}
+}
+
+func TestBuildChainStepOptions_StepOverridesConfig(t *testing.T) {
+	cfg := &config.Config{
+		UnifiedFlags: config.UnifiedFlagsConfig{
+			ApprovalMode: "auto",
+			SandboxMode:  "workspace",
+		},
+	}
+	step := &ChainStep{
+		Backend:      "claude",
+		Prompt:       "test",
+		ApprovalMode: "always",
+		SandboxMode:  "none",
+	}
+
+	opts := buildChainStepOptions(step, "/tmp", "opus", cfg)
+
+	// Step values should be used, not config defaults
+	if opts.ApprovalMode != "always" {
+		t.Errorf("ApprovalMode = %q, want 'always' (from step)", opts.ApprovalMode)
+	}
+	if opts.SandboxMode != "none" {
+		t.Errorf("SandboxMode = %q, want 'none' (from step)", opts.SandboxMode)
+	}
 }

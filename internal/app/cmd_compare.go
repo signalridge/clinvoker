@@ -13,6 +13,7 @@ import (
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // compareCmd runs the same prompt on multiple backends for comparison.
@@ -248,6 +249,7 @@ func runCompareTask(backendName, prompt string, cfg *config.Config, store *sessi
 		MaxTokens:    cfg.UnifiedFlags.MaxTokens,
 		Verbose:      cfg.UnifiedFlags.Verbose,
 		DryRun:       dryRun,
+		OutputFormat: backend.OutputFormat(util.ApplyOutputFormatDefault("", cfg)),
 	}
 
 	// Create session
