@@ -112,6 +112,13 @@ nav:
           - Claude Code: guide/backends/claude.md
           - Codex CLI: guide/backends/codex.md
           - Gemini CLI: guide/backends/gemini.md
+  - Integration:
+      - integration/index.md
+      - Claude Code Skills: integration/claude-code-skills.md
+      - LangChain/LangGraph: integration/langchain-langgraph.md
+      - CI/CD: integration/ci-cd.md
+      - Client Libraries: integration/client-libraries.md
+      - MCP Server: integration/mcp-server.md
   - Reference:
       - reference/index.md
       - Commands:

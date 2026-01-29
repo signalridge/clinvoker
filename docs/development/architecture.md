@@ -5,23 +5,32 @@ This document describes the architecture of clinvk.
 ## System Architecture
 
 ```mermaid
-graph TD
-    CLI[CLI Interface] --> App[Application Layer]
-    App --> Executor[Executor Layer]
-    App --> Server[HTTP Server]
-    App --> Session[Session Manager]
+flowchart TD
+    CLI["CLI (cmd/clinvk)"] --> App["App layer (internal/app)"]
+    App --> Executor["Executor (internal/executor)"]
+    App --> Server["HTTP server (internal/server)"]
+    App --> Session["Session store (internal/session)"]
 
-    Executor --> Claude[Claude Backend]
-    Executor --> Codex[Codex Backend]
-    Executor --> Gemini[Gemini Backend]
+    Executor --> Claude["Claude backend"]
+    Executor --> Codex["Codex backend"]
+    Executor --> Gemini["Gemini backend"]
 
-    Server --> Handlers[API Handlers]
-    Handlers --> Service[Service Layer]
+    Server --> Handlers["HTTP handlers"]
+    Handlers --> Service["Service layer"]
     Service --> Executor
 
-    Claude --> ExtClaude[claude binary]
-    Codex --> ExtCodex[codex binary]
-    Gemini --> ExtGemini[gemini binary]
+    Claude --> ExtClaude["claude binary"]
+    Codex --> ExtCodex["codex binary"]
+    Gemini --> ExtGemini["gemini binary"]
+
+    style CLI fill:#e3f2fd,stroke:#1976d2
+    style App fill:#fff3e0,stroke:#f57c00
+    style Executor fill:#ffecb3,stroke:#ffa000
+    style Server fill:#e8f5e9,stroke:#388e3c
+    style Session fill:#f3e5f5,stroke:#7b1fa2
+    style Claude fill:#f3e5f5,stroke:#7b1fa2
+    style Codex fill:#e8f5e9,stroke:#388e3c
+    style Gemini fill:#ffebee,stroke:#c62828
 ```
 
 ## Layer Overview
@@ -129,50 +138,69 @@ CLI Flags > Environment Variables > Config File > Defaults
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant User
     participant CLI
     participant App
-    participant Executor
+    participant Exec as Executor
     participant Backend
-    participant Session
+    participant Store as Session store
 
     User->>CLI: clinvk "prompt"
-    CLI->>App: Parse command
-    App->>Backend: Build command
-    App->>Executor: Execute
-    Executor->>Backend: Run external binary
-    Backend-->>Executor: Output
-    Executor->>App: Parse output
-    App->>Session: Store session
-    App-->>User: Display result
+    CLI->>App: parse args
+    App->>Backend: build command
+    App->>Exec: execute
+    Exec->>Backend: run external binary
+    Backend-->>Exec: output
+    Exec->>App: parse output
+    App->>Store: persist session (unless ephemeral)
+    App-->>User: display result
 ```
 
 ### Parallel Execution
 
 ```mermaid
-graph LR
-    Tasks[Task List] --> Pool[Worker Pool]
-    Pool --> B1[Backend 1]
-    Pool --> B2[Backend 2]
-    Pool --> B3[Backend 3]
-    B1 --> Agg[Aggregate Results]
+flowchart LR
+    Tasks["Task list"] --> Pool["Worker pool"]
+    Pool --> B1["Backend 1"]
+    Pool --> B2["Backend 2"]
+    Pool --> B3["Backend 3"]
+    B1 --> Agg["Aggregate results"]
     B2 --> Agg
     B3 --> Agg
-    Agg --> Output[Output]
+    Agg --> Output["Output"]
+
+    style Tasks fill:#e3f2fd,stroke:#1976d2
+    style Pool fill:#fff3e0,stroke:#f57c00
+    style B1 fill:#f3e5f5,stroke:#7b1fa2
+    style B2 fill:#e8f5e9,stroke:#388e3c
+    style B3 fill:#ffebee,stroke:#c62828
+    style Agg fill:#ffecb3,stroke:#ffa000
+    style Output fill:#c8e6c9,stroke:#2e7d32
 ```
 
 ### Chain Execution
 
 ```mermaid
-graph LR
-    S1[Step 1] --> B1[Backend A]
-    B1 --> O1[Output 1]
-    O1 --> S2[Step 2]
-    S2 --> B2[Backend B]
-    B2 --> O2[Output 2]
-    O2 --> S3[Step 3]
-    S3 --> B3[Backend C]
-    B3 --> Final[Final Output]
+flowchart LR
+    S1["Step 1"] --> B1["Backend A"]
+    B1 --> O1["Output 1"]
+    O1 --> S2["Step 2"]
+    S2 --> B2["Backend B"]
+    B2 --> O2["Output 2"]
+    O2 --> S3["Step 3"]
+    S3 --> B3["Backend C"]
+    B3 --> Final["Final output"]
+
+    style S1 fill:#e3f2fd,stroke:#1976d2
+    style S2 fill:#e3f2fd,stroke:#1976d2
+    style S3 fill:#e3f2fd,stroke:#1976d2
+    style B1 fill:#f3e5f5,stroke:#7b1fa2
+    style B2 fill:#e8f5e9,stroke:#388e3c
+    style B3 fill:#ffebee,stroke:#c62828
+    style O1 fill:#fff3e0,stroke:#f57c00
+    style O2 fill:#fff3e0,stroke:#f57c00
+    style Final fill:#c8e6c9,stroke:#2e7d32
 ```
 
 ## Key Design Decisions
