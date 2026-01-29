@@ -8,16 +8,11 @@ Claude Code Skills extend Claude's capabilities, but sometimes you need:
 
 - **Other AI Backends**: Gemini excels at data analysis, Codex at code generation
 - **Multi-Model Collaboration**: Complex tasks benefit from multiple perspectives
-- **Standardized API**: Single HTTP interface for all backends
 - **Parallel Processing**: Run multiple AI tasks concurrently
 
 ## Prerequisites
 
-1. **clinvk server running**:
-   ```bash
-   clinvk serve --port 8080 &
-   ```
-
+1. **clinvk installed** and in your PATH
 2. **At least one backend CLI installed** (`claude`, `codex`, or `gemini`)
 
 ## Basic Skill Example
@@ -40,13 +35,7 @@ Run this skill when you need to analyze structured data.
 #!/bin/bash
 DATA="$1"
 
-curl -s http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"backend\": \"gemini\",
-    \"prompt\": \"Analyze this data and provide insights: $DATA\",
-    \"output_format\": \"json\"
-  }" | jq -r '.result'
+clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $DATA"
 ```
 ```
 
@@ -77,36 +66,56 @@ Provide a file path or code snippet for multi-perspective review.
 #!/bin/bash
 CODE="$1"
 
-# Parallel review using all backends
-RESULT=$(curl -s http://localhost:8080/api/v1/parallel \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"tasks\": [
-      {
-        \"backend\": \"claude\",
-        \"prompt\": \"Review this code for architecture and design patterns:\\n$CODE\"
-      },
-      {
-        \"backend\": \"codex\",
-        \"prompt\": \"Review this code for performance issues and optimizations:\\n$CODE\"
-      },
-      {
-        \"backend\": \"gemini\",
-        \"prompt\": \"Review this code for security vulnerabilities:\\n$CODE\"
-      }
-    ]
-  }")
-
 echo "## Multi-Model Code Review Results"
 echo ""
+
 echo "### Architecture Review (Claude)"
-echo "$RESULT" | jq -r '.results[0].result // .results[0].error'
+clinvk -b claude --ephemeral "Review this code for architecture and design patterns:
+$CODE"
+
 echo ""
 echo "### Performance Review (Codex)"
-echo "$RESULT" | jq -r '.results[1].result // .results[1].error'
+clinvk -b codex --ephemeral "Review this code for performance issues and optimizations:
+$CODE"
+
 echo ""
 echo "### Security Review (Gemini)"
-echo "$RESULT" | jq -r '.results[2].result // .results[2].error'
+clinvk -b gemini --ephemeral "Review this code for security vulnerabilities:
+$CODE"
+```
+```
+
+## Parallel Review Skill
+
+For faster multi-model review using parallel execution:
+
+```markdown
+<!-- ~/.claude/skills/parallel-review/SKILL.md -->
+# Parallel Multi-Model Review
+
+Fast parallel code review using all backends simultaneously.
+
+## Script
+```bash
+#!/bin/bash
+CODE="$1"
+
+# Create tasks file
+cat > /tmp/review-tasks.json << EOF
+{
+  "tasks": [
+    {"backend": "claude", "prompt": "Review for architecture and design: $CODE"},
+    {"backend": "codex", "prompt": "Review for performance issues: $CODE"},
+    {"backend": "gemini", "prompt": "Review for security vulnerabilities: $CODE"}
+  ]
+}
+EOF
+
+clinvk parallel -f /tmp/review-tasks.json -o json | jq -r '
+  "## Architecture (Claude)\n" + .results[0].result + "\n\n" +
+  "## Performance (Codex)\n" + .results[1].result + "\n\n" +
+  "## Security (Gemini)\n" + .results[2].result
+'
 ```
 ```
 
@@ -128,27 +137,30 @@ Generates polished documentation through a multi-step pipeline:
 #!/bin/bash
 CODE="$1"
 
-curl -s http://localhost:8080/api/v1/chain \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"steps\": [
-      {
-        \"name\": \"analyze\",
-        \"backend\": \"claude\",
-        \"prompt\": \"Analyze the structure and purpose of this code. List all functions, classes, and their relationships:\\n$CODE\"
-      },
-      {
-        \"name\": \"document\",
-        \"backend\": \"codex\",
-        \"prompt\": \"Based on this analysis, generate comprehensive API documentation in Markdown format:\\n{{previous}}\"
-      },
-      {
-        \"name\": \"polish\",
-        \"backend\": \"gemini\",
-        \"prompt\": \"Improve the readability and add helpful examples to this documentation:\\n{{previous}}\"
-      }
-    ]
-  }" | jq -r '.results[-1].result'
+# Create pipeline file
+cat > /tmp/doc-pipeline.json << EOF
+{
+  "steps": [
+    {
+      "name": "analyze",
+      "backend": "claude",
+      "prompt": "Analyze the structure and purpose of this code. List all functions, classes, and their relationships:\n$CODE"
+    },
+    {
+      "name": "document",
+      "backend": "codex",
+      "prompt": "Based on this analysis, generate comprehensive API documentation in Markdown format:\n{{previous}}"
+    },
+    {
+      "name": "polish",
+      "backend": "gemini",
+      "prompt": "Improve the readability and add helpful examples to this documentation:\n{{previous}}"
+    }
+  ]
+}
+EOF
+
+clinvk chain -f /tmp/doc-pipeline.json -o json | jq -r '.results[-1].result'
 ```
 ```
 
@@ -158,20 +170,14 @@ curl -s http://localhost:8080/api/v1/chain \
 
 ```bash
 #!/bin/bash
-RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d '{"backend": "claude", "prompt": "'"$1"'"}')
+set -e
 
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-
-if [ "$HTTP_CODE" != "200" ]; then
-  echo "Error: API returned $HTTP_CODE"
-  echo "$BODY" | jq -r '.error.message // .error // "Unknown error"'
+if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
+  echo "Error executing clinvk: $OUTPUT"
   exit 1
 fi
 
-echo "$BODY" | jq -r '.result'
+echo "$OUTPUT"
 ```
 
 ### Conditional Backend Selection
@@ -196,43 +202,25 @@ case "$TASK_TYPE" in
     ;;
 esac
 
-curl -s http://localhost:8080/api/v1/prompt \
-  -d "{\"backend\": \"$BACKEND\", \"prompt\": \"$PROMPT\"}" | jq -r '.result'
+clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 ```
 
-### Streaming Response
-
-For long-running tasks, use streaming:
+### Compare Backends
 
 ```bash
 #!/bin/bash
-curl -N http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d '{
-    "backend": "claude",
-    "prompt": "'"$1"'",
-    "stream": true
-  }' | while read -r line; do
-    # Process each SSE event
-    if [[ $line == data:* ]]; then
-      echo "${line#data: }" | jq -r '.content // empty'
-    fi
-  done
+# Get responses from all backends and compare
+clinvk compare --all-backends "$1"
 ```
 
 ## Best Practices
 
 ### 1. Use Ephemeral Mode
 
-For stateless skill execution, use ephemeral sessions:
+For stateless skill execution, always use `--ephemeral`:
 
 ```bash
-curl -s http://localhost:8080/api/v1/prompt \
-  -d '{
-    "backend": "claude",
-    "prompt": "...",
-    "session_mode": "ephemeral"
-  }'
+clinvk -b claude --ephemeral "your prompt"
 ```
 
 ### 2. Choose the Right Backend
@@ -245,16 +233,15 @@ curl -s http://localhost:8080/api/v1/prompt \
 | Documentation | Any | All perform well |
 | Security Audit | Claude + Gemini | Different perspectives |
 
-### 3. Handle Timeouts
+### 3. Use JSON Output for Parsing
 
-Set appropriate timeouts for long tasks:
+When you need to process the output:
 
 ```bash
-curl -s --max-time 120 http://localhost:8080/api/v1/prompt \
-  -d '{"backend": "claude", "prompt": "...", "timeout": 60}'
+clinvk -b claude -o json --ephemeral "..." | jq -r '.result'
 ```
 
-### 4. Format Output
+### 4. Format Output for Claude
 
 Structure skill output for Claude to process:
 
@@ -262,12 +249,7 @@ Structure skill output for Claude to process:
 echo "## Skill Results"
 echo ""
 echo "### Summary"
-echo "$SUMMARY"
-echo ""
-echo "### Details"
-echo '```json'
-echo "$RESULT" | jq '.'
-echo '```'
+clinvk -b gemini --ephemeral "Summarize: $INPUT"
 ```
 
 ## Skill Directory Structure
@@ -286,33 +268,21 @@ echo '```'
 
 ## Troubleshooting
 
-### Server Not Running
-
-```bash
-# Check if server is running
-curl -s http://localhost:8080/health
-
-# If not, start it
-clinvk serve --port 8080 &
-```
-
 ### Backend Not Available
 
 ```bash
 # Check available backends
-curl -s http://localhost:8080/api/v1/backends | jq '.backends'
+clinvk config show | grep available
 ```
 
-### Permission Issues
-
-Ensure skill scripts are executable:
+### Check Version
 
 ```bash
-chmod +x ~/.claude/skills/*/SKILL.md
+clinvk version
 ```
 
 ## Next Steps
 
 - [LangChain/LangGraph Integration](langchain-langgraph.md) - For Python-based agents
 - [CI/CD Integration](ci-cd.md) - Automate in pipelines
-- [REST API Reference](../reference/rest-api.md) - Complete API documentation
+- [CLI Commands Reference](../reference/commands/index.md) - Complete CLI documentation
