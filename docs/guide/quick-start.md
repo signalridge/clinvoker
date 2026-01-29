@@ -122,6 +122,6 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 
 ## Next Steps
 
-- [Basic Usage](../user-guide/basic-usage.md) - Detailed usage guide
-- [Session Management](../user-guide/session-management.md) - Work with sessions
+- [Basic Usage](basic-usage.md) - Detailed usage guide
+- [Session Management](session-management.md) - Work with sessions
 - [Configuration](../reference/configuration.md) - Customize settings

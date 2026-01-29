@@ -137,6 +137,6 @@ clinvk HTTP server starting
 
 ## See Also
 
-- [REST API Reference](../../server/rest-api.md)
-- [OpenAI Compatible](../../server/openai-compatible.md)
-- [Anthropic Compatible](../../server/anthropic-compatible.md)
+- [REST API Reference](../rest-api.md)
+- [OpenAI Compatible](../openai-compatible.md)
+- [Anthropic Compatible](../anthropic-compatible.md)

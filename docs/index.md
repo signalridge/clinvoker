@@ -85,7 +85,7 @@ clinvk serve --port 8080
 
 ## Next Steps
 
-- [Installation](getting-started/installation.md) - Install clinvk on your system
-- [Quick Start](getting-started/quick-start.md) - Get up and running in minutes
-- [User Guide](user-guide/index.md) - Learn about all features
-- [HTTP API](server/index.md) - Use the REST API server
+- [Installation](guide/installation.md) - Install clinvk on your system
+- [Quick Start](guide/quick-start.md) - Get up and running in minutes
+- [User Guide](guide/index.md) - Learn about all features
+- [HTTP API](guide/http-server.md) - Use the REST API server
