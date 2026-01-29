@@ -23,9 +23,7 @@ clinvk 将 AI CLI 工具转换为可编程的基础设施，提供三个核心�
 
 ```bash
 # Claude Code Skill 调用 Gemini 进行数据分析
-curl http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d '{"backend": "gemini", "prompt": "分析这个数据集..."}'
+clinvk -b gemini --ephemeral "分析这个数据集..."
 ```
 
 **使用场景：**

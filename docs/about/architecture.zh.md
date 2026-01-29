@@ -90,15 +90,21 @@ flowchart LR
 
 ### 链式执行
 
+链式执行将一个后端的输出传递给下一个后端。每个步骤可以使用不同的后端，通过 `{{previous}}` 占位符传递前一步的结果。
+
 ```mermaid
-flowchart LR
-    User["用户"] --> S1["步骤 1"]
-    S1 --> B1["后端 A"]
-    B1 --> O1["输出 1"]
-    O1 --> S2["步骤 2"]
-    S2 --> B2["后端 B"]
-    B2 --> Final["最终输出"]
-    Final --> User2["用户"]
+sequenceDiagram
+    participant User as 用户
+    participant Exec as 执行器
+    participant A as 后端 A
+    participant B as 后端 B
+
+    User->>Exec: 链式请求
+    Exec->>A: 步骤 1 提示
+    A-->>Exec: 输出 1
+    Exec->>B: 步骤 2 + {{previous}}
+    B-->>Exec: 输出 2
+    Exec-->>User: 最终结果
 ```
 
 ## 配置级联

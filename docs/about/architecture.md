@@ -90,15 +90,21 @@ flowchart LR
 
 ### Chain Execution
 
+Chain execution pipelines output from one backend to the next. Each step can use a different backend, with `{{previous}}` placeholder passing the prior result.
+
 ```mermaid
-flowchart LR
-    User --> S1["Step 1"]
-    S1 --> B1["Backend A"]
-    B1 --> O1["Output 1"]
-    O1 --> S2["Step 2"]
-    S2 --> B2["Backend B"]
-    B2 --> Final["Final Output"]
-    Final --> User2["User"]
+sequenceDiagram
+    participant User
+    participant Exec as Executor
+    participant A as Backend A
+    participant B as Backend B
+
+    User->>Exec: chain request
+    Exec->>A: step 1 prompt
+    A-->>Exec: output 1
+    Exec->>B: step 2 + {{previous}}
+    B-->>Exec: output 2
+    Exec-->>User: final result
 ```
 
 ## Configuration Cascade
