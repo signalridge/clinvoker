@@ -136,6 +136,23 @@ any_backend_available() {
 	return 1
 }
 
+# Skip current test if required backends are missing.
+# Relies on CURRENT_TEST_NAME set by run_test.
+skip_if_missing_backends() {
+	local missing=()
+	local backend
+	for backend in "$@"; do
+		if ! backend_available "$backend"; then
+			missing+=("$backend")
+		fi
+	done
+	if (( ${#missing[@]} > 0 )); then
+		skip_test "${CURRENT_TEST_NAME:-unnamed test}" "backends not available: ${missing[*]}"
+		return 1
+	fi
+	return 0
+}
+
 # =============================================================================
 # Binary Management
 # =============================================================================
@@ -457,7 +474,23 @@ assert_http_status() {
 
 # Generate a unique test ID
 generate_test_id() {
-	date +%s%N | sha256sum | head -c 8
+	local seed
+	seed="$(date +%s%N 2>/dev/null || date +%s)"
+	seed="${seed}-${$}-${RANDOM}"
+
+	if command -v sha256sum &>/dev/null; then
+		echo "$seed" | sha256sum | awk '{print substr($1,1,8)}'
+		return 0
+	fi
+	if command -v shasum &>/dev/null; then
+		echo "$seed" | shasum -a 256 | awk '{print substr($1,1,8)}'
+		return 0
+	fi
+	if command -v md5 &>/dev/null; then
+		echo "$seed" | md5 -q | awk '{print substr($1,1,8)}'
+		return 0
+	fi
+	echo "$seed" | tr -cd '0-9a-f' | head -c 8
 }
 
 # Create a temporary JSON file
@@ -495,7 +528,7 @@ run_with_timeout() {
 # Extract session ID from output
 extract_session_id() {
 	local output="$1"
-	echo "$output" | grep -oP 'session[_-]?id["\s:]+\K[a-f0-9]+' | head -1
+	echo "$output" | sed -nE 's/.*session[_-]?id["[:space:]:]*([A-Za-z0-9-]+).*/\1/p' | head -1
 }
 
 # Check if jq is available

@@ -8,6 +8,10 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Test listing OpenAI models
 test_openai_list_models() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	local response
 	response=$(http_get "/openai/v1/models")
 
@@ -40,6 +44,10 @@ test_openai_list_models() {
 
 # Test OpenAI chat completions endpoint
 test_openai_chat_completions() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	# Note: We use dry_run via system message hack or just test request format
 	local payload
 	payload=$(jq -n '{
@@ -73,6 +81,10 @@ test_openai_chat_completions() {
 
 # Test OpenAI chat completions with streaming
 test_openai_chat_completions_streaming() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "gpt-3.5-turbo",
@@ -86,7 +98,7 @@ test_openai_chat_completions_streaming() {
 	# For streaming, we just verify the request is accepted
 	# Full SSE validation would require special handling
 	local response http_code
-	response=$(http_post "/openai/v1/chat/completions" "$payload" "http_code" || true)
+	response=$(http_post_status "/openai/v1/chat/completions" "$payload")
 	http_code=$(echo "$response" | tail -n1)
 
 	if [[ "$http_code" -ge 400 ]]; then
@@ -97,6 +109,10 @@ test_openai_chat_completions_streaming() {
 
 # Test OpenAI chat completions with different parameters
 test_openai_chat_completions_parameters() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "gpt-4",
@@ -122,6 +138,10 @@ test_openai_chat_completions_parameters() {
 
 # Test OpenAI error handling
 test_openai_error_handling() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	# Test with invalid model
 	local payload
 	payload=$(jq -n '{
@@ -132,7 +152,7 @@ test_openai_error_handling() {
     }')
 
 	local response http_code
-	response=$(http_post "/openai/v1/chat/completions" "$payload" "http_code" || true)
+	response=$(http_post_status "/openai/v1/chat/completions" "$payload")
 	http_code=$(echo "$response" | tail -n1)
 
 	if [[ "$http_code" -lt 400 ]]; then
@@ -143,6 +163,10 @@ test_openai_error_handling() {
 
 # Test OpenAI response format compliance
 test_openai_response_format() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "gpt-3.5-turbo",

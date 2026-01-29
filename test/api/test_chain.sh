@@ -8,6 +8,10 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Test basic chain execution
 test_chain_basic() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         steps: [
@@ -44,6 +48,10 @@ test_chain_basic() {
 
 # Test chain with previous placeholder
 test_chain_with_placeholder() {
+	if ! skip_if_missing_backends "claude" "codex"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         steps: [
@@ -62,6 +70,10 @@ test_chain_with_placeholder() {
 
 # Test chain with stop_on_failure option
 test_chain_stop_on_failure() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         steps: [
@@ -92,6 +104,10 @@ test_chain_stop_on_failure() {
 
 # Test chain across all backends
 test_chain_all_backends() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         steps: [

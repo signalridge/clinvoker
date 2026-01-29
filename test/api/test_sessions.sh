@@ -18,6 +18,10 @@ test_list_sessions() {
 
 # Test listing sessions with pagination
 test_list_sessions_pagination() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	# Create a test session first
 	local create_payload
 	create_payload=$(jq -n '{
@@ -52,6 +56,10 @@ test_list_sessions_pagination() {
 
 # Test getting session detail
 test_get_session_detail() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	# Create a test session
 	local create_payload
 	create_payload=$(jq -n '{
@@ -83,6 +91,10 @@ test_get_session_detail() {
 
 # Test deleting session
 test_delete_session() {
+	if ! skip_if_missing_backends "codex"; then
+		return 0
+	fi
+
 	# Create a test session
 	local create_payload
 	create_payload=$(jq -n '{
@@ -122,6 +134,10 @@ test_delete_session() {
 
 # Test session lifecycle
 test_session_lifecycle() {
+	if ! skip_if_missing_backends "gemini"; then
+		return 0
+	fi
+
 	# 1. Create session
 	local create_payload
 	create_payload=$(jq -n '{

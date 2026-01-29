@@ -8,6 +8,10 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Test basic parallel execution
 test_parallel_basic() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         tasks: [
@@ -45,6 +49,10 @@ test_parallel_basic() {
 
 # Test parallel with max_parallel option
 test_parallel_max_parallel() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         tasks: [
@@ -65,6 +73,10 @@ test_parallel_max_parallel() {
 
 # Test parallel with fail_fast option
 test_parallel_fail_fast() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         tasks: [
@@ -86,6 +98,10 @@ test_parallel_fail_fast() {
 
 # Test parallel with all backends
 test_parallel_all_backends() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         tasks: [

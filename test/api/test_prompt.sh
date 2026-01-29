@@ -10,6 +10,11 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 test_basic_prompt() {
 	local backend="$1"
 
+	if ! backend_available "$backend"; then
+		skip_test "$CURRENT_TEST_NAME" "$backend not available"
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg backend "$backend" \
@@ -34,6 +39,11 @@ test_prompt_with_model() {
 	local backend="$1"
 	local model="$2"
 
+	if ! backend_available "$backend"; then
+		skip_test "$CURRENT_TEST_NAME" "$backend not available"
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg backend "$backend" \
@@ -57,6 +67,11 @@ test_prompt_with_model() {
 test_prompt_with_ephemeral() {
 	local backend="$1"
 
+	if ! backend_available "$backend"; then
+		skip_test "$CURRENT_TEST_NAME" "$backend not available"
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg backend "$backend" \
@@ -79,6 +94,11 @@ test_prompt_with_ephemeral() {
 # Test error handling for empty prompt
 test_empty_prompt_error() {
 	local backend="$1"
+
+	if ! backend_available "$backend"; then
+		skip_test "$CURRENT_TEST_NAME" "$backend not available"
+		return 0
+	fi
 
 	local payload
 	payload=$(jq -n \

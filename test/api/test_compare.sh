@@ -8,6 +8,10 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Test basic compare functionality
 test_compare_basic() {
+	if ! skip_if_missing_backends "claude" "codex"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg prompt "What is 2+2?" \
@@ -43,6 +47,10 @@ test_compare_basic() {
 
 # Test compare with all backends
 test_compare_all_backends() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg prompt "Calculate 5+5" \
@@ -88,6 +96,10 @@ test_compare_all_backends() {
 
 # Test compare with sequential option
 test_compare_sequential() {
+	if ! skip_if_missing_backends "claude" "codex" "gemini"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg prompt "What is 3+3?" \
@@ -115,6 +127,10 @@ test_compare_sequential() {
 
 # Test compare response structure
 test_compare_response_structure() {
+	if ! skip_if_missing_backends "claude" "codex"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n \
 		--arg prompt "Test prompt" \

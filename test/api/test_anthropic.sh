@@ -8,6 +8,10 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Test Anthropic messages endpoint
 test_anthropic_messages() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
@@ -41,6 +45,10 @@ test_anthropic_messages() {
 
 # Test Anthropic messages with system prompt
 test_anthropic_messages_with_system() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-sonnet-20240229",
@@ -61,6 +69,10 @@ test_anthropic_messages_with_system() {
 
 # Test Anthropic messages with streaming
 test_anthropic_messages_streaming() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
@@ -74,7 +86,7 @@ test_anthropic_messages_streaming() {
 
 	# For streaming, we just verify the request is accepted
 	local response http_code
-	response=$(http_post "/anthropic/v1/messages" "$payload" "http_code" || true)
+	response=$(http_post_status "/anthropic/v1/messages" "$payload")
 	http_code=$(echo "$response" | tail -n1)
 
 	if [[ "$http_code" -ge 400 ]]; then
@@ -85,6 +97,10 @@ test_anthropic_messages_streaming() {
 
 # Test Anthropic messages with temperature
 test_anthropic_messages_with_temperature() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
@@ -105,6 +121,10 @@ test_anthropic_messages_with_temperature() {
 
 # Test Anthropic messages with multiple content blocks
 test_anthropic_messages_multi_content() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
@@ -127,6 +147,10 @@ test_anthropic_messages_multi_content() {
 
 # Test Anthropic error handling
 test_anthropic_error_handling() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	# Test with missing required field (messages)
 	local payload
 	payload=$(jq -n '{
@@ -135,7 +159,7 @@ test_anthropic_error_handling() {
     }')
 
 	local response http_code
-	response=$(http_post "/anthropic/v1/messages" "$payload" "http_code" || true)
+	response=$(http_post_status "/anthropic/v1/messages" "$payload")
 	http_code=$(echo "$response" | tail -n1)
 
 	if [[ "$http_code" -lt 400 ]]; then
@@ -146,6 +170,10 @@ test_anthropic_error_handling() {
 
 # Test Anthropic response format compliance
 test_anthropic_response_format() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
@@ -211,6 +239,10 @@ test_anthropic_response_format() {
 
 # Test Anthropic with stop sequences
 test_anthropic_stop_sequences() {
+	if ! skip_if_missing_backends "claude"; then
+		return 0
+	fi
+
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
