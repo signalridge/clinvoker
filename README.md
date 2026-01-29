@@ -1,4 +1,6 @@
-# clinvk
+# clinvoker
+
+> **Command:** `clinvk`
 
 Unified AI CLI wrapper for orchestrating multiple AI backends (Claude Code, Codex CLI, Gemini CLI).
 
