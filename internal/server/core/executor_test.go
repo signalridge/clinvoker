@@ -150,6 +150,29 @@ func TestExecute_OptionsNotMutated(t *testing.T) {
 	}
 }
 
+func TestExecute_FallbackToParseOutputWhenJSONContentEmpty(t *testing.T) {
+	mockBackend := mock.NewMockBackend("mock",
+		mock.WithAvailable(true),
+		mock.WithParseOutput("parsed output"),
+		mock.WithJSONResponse(&backend.UnifiedResponse{}),
+	)
+
+	req := &Request{
+		Backend: mockBackend,
+		Prompt:  "test prompt",
+		Options: &backend.UnifiedOptions{},
+	}
+
+	result, err := Execute(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Output != "parsed output" {
+		t.Errorf("Output = %q, want %q", result.Output, "parsed output")
+	}
+}
+
 func TestRequest_Structure(t *testing.T) {
 	mockBackend := mock.NewMockBackend("mock", mock.WithAvailable(true))
 

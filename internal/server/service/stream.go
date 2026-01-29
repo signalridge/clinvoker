@@ -60,7 +60,8 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 	parser := output.NewParser(prep.backend.Name(), "")
 	scanner := bufio.NewScanner(stdout)
 	buf := make([]byte, 0, 64*1024)
-	scanner.Buffer(buf, 1024*1024)
+	const maxStreamLine = 10 * 1024 * 1024
+	scanner.Buffer(buf, maxStreamLine)
 
 	var backendSessionID string
 	var tokenUsage *session.TokenUsage
@@ -105,6 +106,7 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 	}
 
 	if scanErr := scanner.Err(); scanErr != nil && handlerErr == nil {
+		// Scanner stops on overly long tokens; treat as a stream error.
 		streamErr = scanErr
 	}
 

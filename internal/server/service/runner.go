@@ -98,7 +98,7 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 		Backend:         b,
 		Prompt:          req.Prompt,
 		Options:         opts,
-		RequestedFormat: backend.OutputFormat(req.OutputFormat),
+		RequestedFormat: prep.requestedFormat,
 	})
 	if execErr != nil {
 		result.Error = execErr.Error()

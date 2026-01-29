@@ -84,7 +84,12 @@ func Execute(ctx context.Context, req *Request) (*Result, error) {
 
 	resp, parseErr := req.Backend.ParseJSONResponse(rawOutput)
 	if parseErr == nil && resp != nil {
-		result.Output = resp.Content
+		if resp.Content != "" {
+			result.Output = resp.Content
+		} else {
+			// Fallback to backend parsing when JSON payload has no content.
+			result.Output = req.Backend.ParseOutput(rawOutput)
+		}
 		result.BackendSessionID = resp.SessionID
 		result.Usage = resp.Usage
 		if resp.Error != "" {
