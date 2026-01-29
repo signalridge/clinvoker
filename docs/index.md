@@ -4,57 +4,16 @@ Unified AI CLI wrapper for orchestrating multiple AI CLI backends with session p
 
 ## Features
 
-<div class="grid cards" markdown>
-
--   :material-robot-outline:{ .lg .middle } **Multi-Backend Support**
-
-    ---
-
-    Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI
-
--   :material-cog-outline:{ .lg .middle } **Unified Options**
-
-    ---
-
-    Consistent configuration options work across all backends
-
--   :material-history:{ .lg .middle } **Session Persistence**
-
-    ---
-
-    Automatic session tracking with resume capability
-
--   :material-layers-triple:{ .lg .middle } **Parallel Execution**
-
-    ---
-
-    Run multiple AI tasks concurrently with fail-fast support
-
--   :material-compare:{ .lg .middle } **Backend Comparison**
-
-    ---
-
-    Compare responses from multiple backends side-by-side
-
--   :material-link-variant:{ .lg .middle } **Chain Execution**
-
-    ---
-
-    Pipeline prompts through multiple backends sequentially
-
--   :material-api:{ .lg .middle } **HTTP API Server**
-
-    ---
-
-    RESTful API with OpenAI and Anthropic compatible endpoints
-
--   :material-tune-vertical:{ .lg .middle } **Configuration Cascade**
-
-    ---
-
-    CLI flags → Environment variables → Config file → Defaults
-
-</div>
+| Feature | Description |
+|---------|-------------|
+| **Multi-Backend Support** | Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI |
+| **Unified Options** | Consistent configuration options work across all backends |
+| **Session Persistence** | Automatic session tracking with resume capability |
+| **Parallel Execution** | Run multiple AI tasks concurrently with fail-fast support |
+| **Backend Comparison** | Compare responses from multiple backends side-by-side |
+| **Chain Execution** | Pipeline prompts through multiple backends sequentially |
+| **HTTP API Server** | RESTful API with OpenAI and Anthropic compatible endpoints |
+| **Configuration Cascade** | CLI flags → Environment variables → Config file → Defaults |
 
 ## Quick Start
 

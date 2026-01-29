@@ -4,57 +4,16 @@
 
 ## 功能特性
 
-<div class="grid cards" markdown>
-
--   :material-robot-outline:{ .lg .middle } **多后端支持**
-
-    ---
-
-    在 Claude Code、Codex CLI 和 Gemini CLI 之间无缝切换
-
--   :material-cog-outline:{ .lg .middle } **统一选项**
-
-    ---
-
-    一致的配置选项适用于所有后端
-
--   :material-history:{ .lg .middle } **会话持久化**
-
-    ---
-
-    自动会话跟踪，支持恢复功能
-
--   :material-layers-triple:{ .lg .middle } **并行执行**
-
-    ---
-
-    并发运行多个 AI 任务，支持快速失败
-
--   :material-compare:{ .lg .middle } **后端对比**
-
-    ---
-
-    并排比较多个后端的响应
-
--   :material-link-variant:{ .lg .middle } **链式执行**
-
-    ---
-
-    通过多个后端顺序传递提示
-
--   :material-api:{ .lg .middle } **HTTP API 服务器**
-
-    ---
-
-    RESTful API，兼容 OpenAI 和 Anthropic 端点
-
--   :material-tune-vertical:{ .lg .middle } **配置级联**
-
-    ---
-
-    CLI 参数 → 环境变量 → 配置文件 → 默认值
-
-</div>
+| 功能 | 描述 |
+|------|------|
+| **多后端支持** | 在 Claude Code、Codex CLI 和 Gemini CLI 之间无缝切换 |
+| **统一选项** | 一致的配置选项适用于所有后端 |
+| **会话持久化** | 自动会话跟踪，支持恢复功能 |
+| **并行执行** | 并发运行多个 AI 任务，支持快速失败 |
+| **后端对比** | 并排比较多个后端的响应 |
+| **链式执行** | 通过多个后端顺序传递提示 |
+| **HTTP API 服务器** | RESTful API，兼容 OpenAI 和 Anthropic 端点 |
+| **配置级联** | CLI 参数 → 环境变量 → 配置文件 → 默认值 |
 
 ## 快速开始
 
