@@ -119,14 +119,22 @@ Storage: JSON files in `~/.clinvk/sessions/`
 
 ### Configuration (`internal/config/`)
 
-Priority: CLI Flags > Environment Variables > Config File > Defaults
+Configuration loading with cascade priority:
+
+1. **CLI Flags** - Immediate overrides for one-off changes
+2. **Environment Variables** - Environment-specific settings
+3. **Config File** (`~/.clinvk/config.yaml`) - Persistent preferences
+4. **Defaults** - Sensible fallbacks
 
 ## Data Flow
 
 ### Single Prompt Execution
 
+The standard flow for a single prompt. The App layer coordinates between Backend (command building), Executor (running), and Session store (persistence).
+
 ```mermaid
 sequenceDiagram
+    autonumber
     participant User
     participant CLI
     participant App
@@ -143,6 +151,47 @@ sequenceDiagram
     Exec->>App: parse output
     App->>Store: persist session
     App-->>User: display result
+```
+
+### Parallel Execution
+
+Parallel execution distributes tasks across a worker pool. Each worker independently executes its assigned backend, and results are aggregated after all complete (or on first failure with `--fail-fast`).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant Pool as Worker Pool
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+    participant Agg as Aggregator
+
+    User->>Pool: parallel tasks
+    Pool->>W1: task 1 (claude)
+    Pool->>W2: task 2 (codex)
+    W1-->>Agg: result 1
+    W2-->>Agg: result 2
+    Agg-->>User: combined results
+```
+
+### Chain Execution
+
+Chain execution pipelines output through multiple backends sequentially. Each step receives the previous step's output via `{{previous}}` placeholder, enabling multi-stage processing.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant Exec as Executor
+    participant A as Backend A
+    participant B as Backend B
+
+    User->>Exec: chain request
+    Exec->>A: step 1 prompt
+    A-->>Exec: output 1
+    Exec->>B: step 2 + {{previous}}
+    B-->>Exec: output 2
+    Exec-->>User: final result
 ```
 
 ## Key Design Decisions

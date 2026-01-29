@@ -119,14 +119,22 @@ type Session struct {
 
 ### 配置 (`internal/config/`)
 
-优先级：CLI 参数 > 环境变量 > 配置文件 > 默认值
+配置加载采用级联优先级：
+
+1. **CLI 参数** - 一次性更改的即时覆盖
+2. **环境变量** - 环境特定的设置
+3. **配置文件**（`~/.clinvk/config.yaml`）- 持久化偏好
+4. **默认值** - 合理的回退值
 
 ## 数据流
 
 ### 单个提示执行
 
+标准的单个提示执行流程。应用层协调后端（命令构建）、执行器（运行）和会话存储（持久化）。
+
 ```mermaid
 sequenceDiagram
+    autonumber
     participant User as 用户
     participant CLI
     participant App as 应用
@@ -143,6 +151,47 @@ sequenceDiagram
     Exec->>App: 解析输出
     App->>Store: 持久化会话
     App-->>User: 显示结果
+```
+
+### 并行执行
+
+并行执行将任务分发到工作池。每个工作者独立执行其分配的后端，所有完成后聚合结果（或使用 `--fail-fast` 在首次失败时终止）。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as 用户
+    participant Pool as 工作池
+    participant W1 as 工作者 1
+    participant W2 as 工作者 2
+    participant Agg as 聚合器
+
+    User->>Pool: 并行任务
+    Pool->>W1: 任务 1 (claude)
+    Pool->>W2: 任务 2 (codex)
+    W1-->>Agg: 结果 1
+    W2-->>Agg: 结果 2
+    Agg-->>User: 合并结果
+```
+
+### 链式执行
+
+链式执行将输出依次通过多个后端传递。每个步骤通过 `{{previous}}` 占位符接收上一步的输出，实现多阶段处理。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as 用户
+    participant Exec as 执行器
+    participant A as 后端 A
+    participant B as 后端 B
+
+    User->>Exec: 链式请求
+    Exec->>A: 步骤 1 提示
+    A-->>Exec: 输出 1
+    Exec->>B: 步骤 2 + {{previous}}
+    B-->>Exec: 输出 2
+    Exec-->>User: 最终结果
 ```
 
 ## 关键设计决策
