@@ -21,6 +21,14 @@ func Register(b Backend) {
 	registry[b.Name()] = b
 }
 
+// Unregister removes a backend from the registry by name.
+// This is primarily used for testing to clean up temporary registrations.
+func Unregister(name string) {
+	mu.Lock()
+	defer mu.Unlock()
+	delete(registry, name)
+}
+
 // Get returns a backend by name.
 // Returns an error if a backend is not found in the registry.
 // This function is thread-safe and can be called from multiple goroutines.

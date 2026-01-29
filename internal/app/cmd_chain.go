@@ -12,6 +12,7 @@ import (
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // chainCmd runs backends in sequence, passing context between them.
@@ -308,6 +309,9 @@ func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.C
 	if opts.SandboxMode == "" {
 		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
 	}
+
+	// Apply output format default from config
+	opts.OutputFormat = backend.OutputFormat(util.ApplyOutputFormatDefault("", cfg))
 
 	return opts
 }

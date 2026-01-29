@@ -291,6 +291,10 @@ http_post_stream() {
 # Setup test environment
 setup_test_env() {
 	ensure_binary
+	if ! require_jq; then
+		log_skip "jq is required but not installed; skipping tests"
+		exit 0
+	fi
 
 	# Create temp directory for test artifacts
 	TEST_TEMP_DIR="$(mktemp -d)"
@@ -534,13 +538,11 @@ extract_session_id() {
 # Check if jq is available
 require_jq() {
 	if ! command -v jq &>/dev/null; then
-		log_error "jq is required but not installed"
-		exit 1
+		return 1
 	fi
+	return 0
 }
 
 # =============================================================================
 # Initialization
 # =============================================================================
-
-require_jq

@@ -253,18 +253,22 @@ func searchSubstring(s, substr string) bool {
 }
 
 // WithMockBackend registers a mock backend and returns a cleanup function
-// that unregisters all backends and re-registers the standard ones.
+// that unregisters the mock and restores the previous backend if one existed.
 // Usage:
 //
 //	cleanup := mock.WithMockBackend(t, mockBackend)
 //	t.Cleanup(cleanup)
 func WithMockBackend(t *testing.T, m *MockBackend) func() {
 	t.Helper()
+	var prev backend.Backend
+	if existing, err := backend.Get(m.Name()); err == nil {
+		prev = existing
+	}
 	backend.Register(m)
 	return func() {
-		backend.UnregisterAll()
-		backend.Register(&backend.Claude{})
-		backend.Register(&backend.Codex{})
-		backend.Register(&backend.Gemini{})
+		backend.Unregister(m.Name())
+		if prev != nil {
+			backend.Register(prev)
+		}
 	}
 }
