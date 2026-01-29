@@ -41,9 +41,9 @@ Note: chain is always ephemeral (no sessions are persisted).`,
 }
 
 var (
-	chainFile     string
+	chainFile      string
 	chainInputFile string
-	chainJSONFlag bool
+	chainJSONFlag  bool
 )
 
 func init() {
@@ -58,7 +58,7 @@ type ChainDefinition struct {
 	StopOnFailure  bool        `json:"stop_on_failure,omitempty"`
 	PassWorkingDir bool        `json:"pass_working_dir,omitempty"`
 	// Deprecated/unsupported fields (chain is always ephemeral).
-	PassSessionID  bool `json:"pass_session_id,omitempty"`
+	PassSessionID   bool `json:"pass_session_id,omitempty"`
 	PersistSessions bool `json:"persist_sessions,omitempty"`
 }
 
