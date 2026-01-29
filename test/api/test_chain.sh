@@ -40,7 +40,6 @@ test_chain_basic() {
 
 	# Verify each result has required fields
 	for i in $(seq 0 $((results_count - 1))); do
-		assert_json_field "$response" "results[$i].session_id"
 		assert_json_field "$response" "results[$i].backend"
 		assert_json_field "$response" "results[$i].exit_code"
 	done

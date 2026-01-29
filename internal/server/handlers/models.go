@@ -93,8 +93,9 @@ type ChainStep struct {
 type ChainRequest struct {
 	Steps          []ChainStep `json:"steps" doc:"Steps to execute in sequence"`
 	StopOnFailure  bool        `json:"stop_on_failure,omitempty" doc:"Stop chain on first failure"`
-	PassSessionID  bool        `json:"pass_session_id,omitempty" doc:"Pass session ID between steps"`
+	PassSessionID  bool        `json:"pass_session_id,omitempty" doc:"Unsupported (chain is always ephemeral)"`
 	PassWorkingDir bool        `json:"pass_working_dir,omitempty" doc:"Pass working directory between steps"`
+	PersistSessions bool       `json:"persist_sessions,omitempty" doc:"Unsupported (chain is always ephemeral)"`
 	DryRun         bool        `json:"dry_run,omitempty" doc:"Simulate execution without running commands"`
 }
 

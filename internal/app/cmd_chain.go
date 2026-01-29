@@ -11,7 +11,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/session"
 	"github.com/signalridge/clinvoker/internal/util"
 )
 
@@ -19,7 +18,7 @@ import (
 var chainCmd = &cobra.Command{
 	Use:   "chain",
 	Short: "Chain multiple backends in sequence with context passing",
-	Long: `Run multiple AI backends in sequence, optionally passing output between steps.
+	Long: `Run multiple AI backends in sequence, passing output between steps.
 
 Read chain definition from stdin or a file:
   clinvk chain --file chain.json
@@ -34,18 +33,22 @@ Chain format (JSON):
     ]
   }
 
-The {{previous}} placeholder is replaced with the previous step's session ID,
-allowing the next backend to access context via session resume.`,
+Placeholders:
+  {{previous}} - replaced with the previous step's output text
+
+Note: chain is always ephemeral (no sessions are persisted).`,
 	RunE: runChain,
 }
 
 var (
 	chainFile     string
+	chainInputFile string
 	chainJSONFlag bool
 )
 
 func init() {
 	chainCmd.Flags().StringVarP(&chainFile, "file", "f", "", "file containing chain definition")
+	chainCmd.Flags().StringVar(&chainInputFile, "input", "", "file containing chain definition (deprecated, use --file)")
 	chainCmd.Flags().BoolVar(&chainJSONFlag, "json", false, "output results as JSON")
 }
 
@@ -53,8 +56,10 @@ func init() {
 type ChainDefinition struct {
 	Steps          []ChainStep `json:"steps"`
 	StopOnFailure  bool        `json:"stop_on_failure,omitempty"`
-	PassSessionID  bool        `json:"pass_session_id,omitempty"`
 	PassWorkingDir bool        `json:"pass_working_dir,omitempty"`
+	// Deprecated/unsupported fields (chain is always ephemeral).
+	PassSessionID  bool `json:"pass_session_id,omitempty"`
+	PersistSessions bool `json:"persist_sessions,omitempty"`
 }
 
 // ChainStep represents a single step in the chain.
@@ -96,9 +101,9 @@ type ChainResults struct {
 
 // chainContext holds state that's passed between chain steps.
 type chainContext struct {
-	previousSessionID string
 	previousWorkDir   string
-	store             *session.Store
+	previousOutput    string
+	hasPreviousOutput bool
 	cfg               *config.Config
 }
 
@@ -124,7 +129,11 @@ func runChain(cmd *cobra.Command, args []string) error {
 
 // parseChainDefinition reads and parses the chain definition from file or stdin.
 func parseChainDefinition() (*ChainDefinition, error) {
-	input, err := readInputFromFileOrStdin(chainFile)
+	file := chainFile
+	if file == "" && chainInputFile != "" {
+		file = chainInputFile
+	}
+	input, err := readInputFromFileOrStdin(file)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +145,14 @@ func parseChainDefinition() (*ChainDefinition, error) {
 
 	if len(chain.Steps) == 0 {
 		return nil, fmt.Errorf("no steps defined in chain")
+	}
+	if chain.PassSessionID || chain.PersistSessions {
+		return nil, fmt.Errorf("chain is always ephemeral; pass_session_id and persist_sessions are not supported")
+	}
+	for i, step := range chain.Steps {
+		if strings.Contains(step.Prompt, "{{session}}") {
+			return nil, fmt.Errorf("chain step %d uses {{session}} but sessions are not persisted", i+1)
+		}
 	}
 
 	// Default to stop on failure
@@ -155,8 +172,7 @@ func executeChain(chain *ChainDefinition) *ChainResults {
 	}
 
 	ctx := &chainContext{
-		store: session.NewStore(),
-		cfg:   config.Get(),
+		cfg: config.Get(),
 	}
 
 	for i := range chain.Steps {
@@ -200,23 +216,12 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 	}
 
 	// Prepare execution context
-	prompt := substitutePromptPlaceholders(step.Prompt, ctx.previousSessionID)
+	prompt := substitutePromptPlaceholders(step.Prompt, ctx.previousOutput, ctx.hasPreviousOutput)
 	stepWorkDir := resolveStepWorkDir(step.WorkDir, chain.PassWorkingDir, ctx.previousWorkDir)
 	model := resolveModel(step.Model, step.Backend, modelName)
 
-	// Build unified options
-	opts := buildChainStepOptions(step, stepWorkDir, model, ctx.cfg)
-
-	// Create and save session
-	tags := []string{"chain", fmt.Sprintf("chain-step-%d", index+1)}
-	sess := createAndSaveSession(ctx.store, step.Backend, stepWorkDir, model, prompt, tags, step.Name, chainJSONFlag)
-	if sess != nil {
-		result.SessionID = sess.ID
-		if ctx.previousSessionID != "" && chain.PassSessionID {
-			sess.ParentID = ctx.previousSessionID
-			_ = ctx.store.Save(sess)
-		}
-	}
+	// Build unified options (always ephemeral)
+	opts := buildChainStepOptions(step, stepWorkDir, model, ctx.cfg, true)
 
 	// Build and execute command
 	execCmd := b.BuildCommandUnified(prompt, opts)
@@ -226,7 +231,7 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 		result.ExitCode = 0
 		result.EndTime = time.Now()
 		result.Duration = result.EndTime.Sub(startTime).Seconds()
-		updateChainContext(ctx, sess, stepWorkDir)
+		updateChainContext(ctx, stepWorkDir, "", false)
 		return result
 	}
 
@@ -245,9 +250,7 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 		fmt.Println(output)
 	}
 
-	// Update session
-	updateSessionAfterExecution(ctx.store, sess, exitCode, result.Error, chainJSONFlag)
-	updateChainContext(ctx, sess, stepWorkDir)
+	updateChainContext(ctx, stepWorkDir, result.Output, true)
 
 	return result
 }
@@ -271,12 +274,10 @@ func printStepHeader(index, total int, step *ChainStep) {
 }
 
 // substitutePromptPlaceholders replaces placeholders in the prompt.
-func substitutePromptPlaceholders(prompt, previousSessionID string) string {
-	if previousSessionID == "" {
-		return prompt
+func substitutePromptPlaceholders(prompt, previousOutput string, hasPreviousOutput bool) string {
+	if hasPreviousOutput {
+		prompt = strings.ReplaceAll(prompt, "{{previous}}", previousOutput)
 	}
-	prompt = strings.ReplaceAll(prompt, "{{previous}}", previousSessionID)
-	prompt = strings.ReplaceAll(prompt, "{{session}}", previousSessionID)
 	return prompt
 }
 
@@ -292,7 +293,7 @@ func resolveStepWorkDir(explicit string, passWorkDir bool, previousWorkDir strin
 }
 
 // buildChainStepOptions builds unified options for a chain step.
-func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.Config) *backend.UnifiedOptions {
+func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.Config, ephemeral bool) *backend.UnifiedOptions {
 	opts := &backend.UnifiedOptions{
 		WorkDir:      workDir,
 		Model:        model,
@@ -300,6 +301,7 @@ func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.C
 		SandboxMode:  backend.SandboxMode(step.SandboxMode),
 		MaxTurns:     step.MaxTurns,
 		DryRun:       dryRun,
+		Ephemeral:    ephemeral,
 	}
 
 	// Apply config defaults if not set
@@ -317,11 +319,12 @@ func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.C
 }
 
 // updateChainContext updates the context for the next step.
-func updateChainContext(ctx *chainContext, sess *session.Session, workDir string) {
-	if sess != nil {
-		ctx.previousSessionID = sess.ID
-	}
+func updateChainContext(ctx *chainContext, workDir, output string, hasOutput bool) {
 	ctx.previousWorkDir = workDir
+	if hasOutput {
+		ctx.previousOutput = output
+		ctx.hasPreviousOutput = true
+	}
 }
 
 // outputChainResults outputs the chain results in the appropriate format.
@@ -337,7 +340,8 @@ func outputChainResults(results *ChainResults, _ *ChainDefinition) {
 	fmt.Println(strings.Repeat("=", tableSeparatorWidth))
 	fmt.Println("CHAIN EXECUTION SUMMARY")
 	fmt.Println(strings.Repeat("=", tableSeparatorWidth))
-	fmt.Printf("%-6s %-12s %-8s %-10s %-10s %s\n", "STEP", "BACKEND", "STATUS", "DURATION", "SESSION", "NAME")
+
+	fmt.Printf("%-6s %-12s %-8s %-10s %s\n", "STEP", "BACKEND", "STATUS", "DURATION", "NAME")
 	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
 
 	for _, r := range results.Results {
@@ -346,18 +350,14 @@ func outputChainResults(results *ChainResults, _ *ChainDefinition) {
 			status = "FAILED"
 		}
 
-		sessionID := "-"
-		if r.SessionID != "" {
-			sessionID = shortSessionID(r.SessionID)
-		}
-
 		name := r.Name
 		if name == "" {
 			name = "-"
 		}
 
-		fmt.Printf("%-6d %-12s %-8s %-10.2fs %-10s %s\n",
-			r.Step, r.Backend, status, r.Duration, sessionID, name)
+		fmt.Printf("%-6d %-12s %-8s %-10.2fs %s\n",
+			r.Step, r.Backend, status, r.Duration, name)
+
 		if r.Error != "" {
 			fmt.Printf("       Error: %s\n", r.Error)
 		}

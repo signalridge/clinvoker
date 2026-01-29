@@ -244,7 +244,6 @@ type ChainStep struct {
 type ChainRequest struct {
 	Steps          []ChainStep `json:"steps"`
 	StopOnFailure  bool        `json:"stop_on_failure,omitempty"`
-	PassSessionID  bool        `json:"pass_session_id,omitempty"`
 	PassWorkingDir bool        `json:"pass_working_dir,omitempty"`
 	DryRun         bool        `json:"dry_run,omitempty"`
 }
@@ -279,8 +278,9 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 		Results:    make([]ChainStepResult, 0, len(req.Steps)),
 	}
 
-	var previousSessionID string
 	var previousWorkDir string
+	var previousOutput string
+	var hasPreviousOutput bool
 
 	for i, step := range req.Steps {
 		select {
@@ -299,9 +299,8 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 
 		// Process prompt with placeholders
 		prompt := step.Prompt
-		if previousSessionID != "" {
-			prompt = replacePlaceholder(prompt, "{{previous}}", previousSessionID)
-			prompt = replacePlaceholder(prompt, "{{session}}", previousSessionID)
+		if hasPreviousOutput {
+			prompt = replacePlaceholder(prompt, "{{previous}}", previousOutput)
 		}
 
 		// Determine working directory
@@ -319,6 +318,7 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 			SandboxMode:  step.SandboxMode,
 			MaxTurns:     step.MaxTurns,
 			DryRun:       req.DryRun,
+			Ephemeral:    true,
 		}
 
 		res, err := e.ExecutePrompt(ctx, promptReq)
@@ -328,7 +328,7 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 
 		stepResult.ExitCode = res.ExitCode
 		stepResult.Error = res.Error
-		stepResult.SessionID = res.SessionID
+		stepResult.SessionID = ""
 		stepResult.Output = res.Output
 		stepResult.DurationMS = time.Since(stepStart).Milliseconds()
 
@@ -343,8 +343,9 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 			}
 		}
 
-		previousSessionID = res.SessionID
 		previousWorkDir = workDir
+		previousOutput = res.Output
+		hasPreviousOutput = true
 	}
 
 	result.TotalDuration = time.Since(start).Milliseconds()

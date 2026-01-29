@@ -310,7 +310,7 @@ func TestReplacePlaceholder(t *testing.T) {
 		expected string
 	}{
 		{"hello {{previous}}", "{{previous}}", "abc123", "hello abc123"},
-		{"{{session}} world", "{{session}}", "xyz", "xyz world"},
+		{"{{placeholder}} world", "{{placeholder}}", "xyz", "xyz world"},
 		{"no placeholder", "{{previous}}", "abc", "no placeholder"},
 		{"{{previous}}{{previous}}", "{{previous}}", "x", "xx"},
 		{"", "{{previous}}", "abc", ""},
