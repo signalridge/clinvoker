@@ -39,11 +39,32 @@ checksum:
   algorithm: sha256
 changelog:
   sort: asc
+  use: github
+  groups:
+    - title: "\U0001F680 Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: "\U0001F41B Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "\U0001F527 Refactoring"
+      regexp: '^.*?refactor(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: "\U0001F4E6 Dependencies"
+      regexp: '^.*?deps(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: "\U0001F512 Security"
+      regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+      order: 4
+    - title: "Others"
+      order: 999
   filters:
     exclude:
       - "^docs:"
       - "^test:"
       - "^chore:"
+      - "^ci:"
+      - "^style:"
       - "Merge pull request"
       - "Merge branch"
 release:
@@ -53,6 +74,24 @@ release:
   draft: false
   prerelease: auto
   name_template: "v{{.Version}}"
+  header: |
+    ## What's New in {{ .Tag }}
+
+    This release includes the following changes:
+  footer: |
+    ---
+    **Full Changelog**: https://github.com/signalridge/clinvoker/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    **Docker Image**: `ghcr.io/signalridge/clinvk:{{ .Version }}`
+
+    **Installation**:
+    ```bash
+    # Homebrew
+    brew install signalridge/tap/clinvk
+
+    # Go
+    go install github.com/signalridge/clinvoker/cmd/clinvk@{{ .Tag }}
+    ```
 brews:
   - name: clinvk
     repository:
