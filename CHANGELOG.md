@@ -7,8 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-alpha] - 2025-01-30
+
 ### Added
 
+- Initial alpha release
+- Multi-backend support (Claude Code, Codex CLI, Gemini CLI)
+- HTTP API server with OpenAI and Anthropic compatible endpoints
+- Unified output format support (text, json, stream-json)
+- Session persistence and management
+- Session resumption with `--continue` flag
+- Parallel execution with `parallel` command
+- Backend comparison with `compare` command
+- Chain execution with `chain` command
+- Unified error handling across all backends
+- Configuration file support (~/.clinvk/config.yaml)
+- Cross-platform support (Linux, macOS, Windows)
+- Homebrew, Scoop, AUR, deb, and rpm package distribution
 - CONTRIBUTING.md with contribution guidelines
 - CHANGELOG.md following Keep a Changelog format
 - SECURITY.md with security policy
@@ -19,36 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Improved CI workflow with better caching and security scanning
-
-## [0.2.0] - 2025-01-XX
-
-### Added
-
-- HTTP API server with OpenAI and Anthropic compatible endpoints
-- Unified output format support (text, json, stream-json)
-- Session resumption with `--continue` flag
-- Unified error handling across all backends
-
-### Changed
-
 - Renamed binary from `clinvoker` to `clinvk`
 - Improved configuration cascade handling
 
-## [0.1.0] - 2025-01-XX
-
-### Added
-
-- Initial release
-- Multi-backend support (Claude Code, Codex CLI, Gemini CLI)
-- Session persistence and management
-- Parallel execution with `parallel` command
-- Backend comparison with `compare` command
-- Chain execution with `chain` command
-- Configuration file support (~/.clinvk/config.yaml)
-- Cross-platform support (Linux, macOS, Windows)
-- Homebrew, Scoop, AUR, deb, and rpm package distribution
-
-[Unreleased]: https://github.com/signalridge/clinvoker/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/signalridge/clinvoker/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/signalridge/clinvoker/releases/tag/v0.1.0
+[Unreleased]: https://github.com/signalridge/clinvoker/compare/v0.1.0-alpha...HEAD
+[0.1.0-alpha]: https://github.com/signalridge/clinvoker/releases/tag/v0.1.0-alpha
