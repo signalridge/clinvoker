@@ -11,10 +11,14 @@ Multi-backend AI CLI & OpenAI-compatible API server (Claude, Codex, Gemini).
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/signalridge/clinvoker/blob/main/LICENSE)
 
 [![Homebrew](https://img.shields.io/badge/Homebrew-tap-FBB040?logo=homebrew&logoColor=white)](https://github.com/signalridge/homebrew-tap)
-[![Docker](https://img.shields.io/badge/Docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/signalridge/clinvoker/pkgs/container/clinvk)
-[![Nix](https://img.shields.io/badge/Nix-flake-5277C3?logo=nixos&logoColor=white)](https://github.com/signalridge/clinvoker/blob/main/flake.nix)
-[![Scoop](https://img.shields.io/badge/Scoop-bucket-9b59b6?logo=windows&logoColor=white)](https://github.com/signalridge/scoop-bucket)
+[![Scoop](https://img.shields.io/badge/Scoop-bucket-00BFFF?logo=windows&logoColor=white)](https://github.com/signalridge/scoop-bucket)
 [![AUR](https://img.shields.io/badge/AUR-clinvk--bin-1793D1?logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/clinvk-bin)
+[![Nix](https://img.shields.io/badge/Nix-flake-5277C3?logo=nixos&logoColor=white)](https://github.com/signalridge/clinvoker/blob/main/flake.nix)
+[![Docker](https://img.shields.io/badge/Docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/signalridge/clinvoker/pkgs/container/clinvk)
+[![deb](https://img.shields.io/badge/deb-package-A81D33?logo=debian&logoColor=white)](https://github.com/signalridge/clinvoker/releases)
+[![rpm](https://img.shields.io/badge/rpm-package-EE0000?logo=redhat&logoColor=white)](https://github.com/signalridge/clinvoker/releases)
+[![apk](https://img.shields.io/badge/apk-package-0D597F?logo=alpinelinux&logoColor=white)](https://github.com/signalridge/clinvoker/releases)
+[![Go](https://img.shields.io/badge/go%20install-00ADD8?logo=go&logoColor=white)](https://pkg.go.dev/github.com/signalridge/clinvoker)
 
 ## Features
 
