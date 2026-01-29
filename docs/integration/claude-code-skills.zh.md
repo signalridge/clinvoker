@@ -99,10 +99,10 @@ cat > /tmp/review-tasks.json << EOF
 }
 EOF
 
-clinvk parallel -f /tmp/review-tasks.json -o json | jq -r '
-  "## 架构 (Claude)\n" + .results[0].result + "\n\n" +
-  "## 性能 (Codex)\n" + .results[1].result + "\n\n" +
-  "## 安全 (Gemini)\n" + .results[2].result
+clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
+  "## 架构 (Claude)\n" + .results[0].output + "\n\n" +
+  "## 性能 (Codex)\n" + .results[1].output + "\n\n" +
+  "## 安全 (Gemini)\n" + .results[2].output
 '
 ```
 ```
@@ -148,7 +148,7 @@ cat > /tmp/doc-pipeline.json << EOF
 }
 EOF
 
-clinvk chain -f /tmp/doc-pipeline.json -o json | jq -r '.results[-1].result'
+clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
 ```
 ```
 
@@ -226,7 +226,7 @@ clinvk -b claude --ephemeral "你的提示"
 需要处理输出时：
 
 ```bash
-clinvk -b claude -o json --ephemeral "..." | jq -r '.result'
+clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
 ```
 
 ## Skill 目录结构

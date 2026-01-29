@@ -73,7 +73,7 @@ Create a chat completion.
 | `messages` | array | Yes | Chat messages |
 | `max_tokens` | integer | No | Maximum response tokens |
 | `temperature` | number | No | Sampling temperature (ignored) |
-| `stream` | boolean | No | Enable streaming (not yet supported) |
+| `stream` | boolean | No | Enable streaming (SSE) when `true` |
 
 **Response:**
 
@@ -128,6 +128,16 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
+
+# Streaming (SSE)
+stream = client.chat.completions.create(
+    model="claude",
+    messages=[{"role": "user", "content": "Write a poem"}],
+    stream=True
+)
+for chunk in stream:
+    if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
 ```
 
 ### TypeScript/JavaScript
@@ -212,10 +222,10 @@ response = client.chat.completions.create(
     - Chat completions
     - Model listing
     - Basic message format
+    - Streaming (`stream: true`, SSE)
 
     Not yet supported:
 
-    - Streaming
     - Function calling
     - Vision/images
     - Embeddings
@@ -237,15 +247,13 @@ server:
 
 ## Error Handling
 
-Errors follow OpenAI's error format:
+Errors are returned as RFC 7807 Problem Details (via Huma), not OpenAI's error schema. For example, schema validation errors may return HTTP 422:
 
 ```json
 {
-  "error": {
-    "message": "Backend 'invalid' not found",
-    "type": "invalid_request_error",
-    "code": "model_not_found"
-  }
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "model is required"
 }
 ```
 

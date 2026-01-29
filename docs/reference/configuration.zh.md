@@ -89,9 +89,20 @@ parallel:
 | 值 | 描述 |
 |---|------|
 | `default` | 让后端决定 |
-| `auto` | 自动批准操作 |
-| `none` | 永不批准（拒绝风险操作） |
-| `always` | 总是请求批准 |
+| `auto` | 减少提示/自动批准（因后端而异） |
+| `none` | 不再弹出批准提示（**危险**） |
+| `always` | 尽可能总是请求批准 |
+
+**后端映射（best-effort）**：
+
+| 后端 | `auto` | `none` | `always` |
+|------|--------|--------|----------|
+| Claude | `--permission-mode acceptEdits` | `--permission-mode dontAsk` | `--permission-mode default` |
+| Codex | `--ask-for-approval on-request` | `--ask-for-approval never` | `--ask-for-approval untrusted` |
+| Gemini | `--approval-mode auto_edit` | `--yolo` | `--approval-mode default` |
+
+!!! warning "安全说明"
+    `approval_mode: none` 会关闭批准提示，可能导致在没有确认的情况下执行编辑/命令（取决于后端）。做审查/只读分析时，推荐使用 `sandbox_mode: read-only` 并搭配 `approval_mode: always`。
 
 #### sandbox_mode
 
@@ -101,6 +112,12 @@ parallel:
 | `read-only` | 只读文件访问 |
 | `workspace` | 仅访问项目目录 |
 | `full` | 完全文件系统访问 |
+
+**后端说明**：
+
+- Claude：目前 `sandbox_mode` 不会映射为 CLI 参数（建议改用 `allowed_dirs`/审批设置控制）。
+- Gemini：`read-only` 与 `workspace` 都会映射为 `--sandbox`（无法区分）。
+- Codex：映射为 `--sandbox read-only|workspace-write|danger-full-access`。
 
 ### backends
 

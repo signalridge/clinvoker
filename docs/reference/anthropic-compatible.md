@@ -47,7 +47,7 @@ Create a message (chat completion).
 | `messages` | array | Yes | Chat messages |
 | `system` | string | No | System prompt |
 | `temperature` | number | No | Sampling temperature (ignored) |
-| `stream` | boolean | No | Enable streaming (not yet supported) |
+| `stream` | boolean | No | Enable streaming (SSE) when `true` |
 
 **Response:**
 
@@ -175,6 +175,20 @@ curl -X POST http://localhost:8080/anthropic/v1/messages \
   }'
 ```
 
+To stream responses:
+
+```bash
+curl -N -X POST http://localhost:8080/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude",
+    "max_tokens": 1024,
+    "stream": true,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
 ## Model Mapping
 
 The `model` parameter maps to clinvk backends:
@@ -203,10 +217,10 @@ message = client.messages.create(
     - Messages API
     - System prompts
     - Multi-turn conversations
+    - Streaming (`stream: true`, SSE)
 
     Not yet supported:
 
-    - Streaming
     - Tool use
     - Vision/images
     - Document understanding
@@ -249,15 +263,13 @@ System prompts are passed as a top-level field:
 
 ## Error Handling
 
-Errors follow Anthropic's error format:
+Errors are returned as RFC 7807 Problem Details (via Huma), not Anthropic's error schema. For example, schema validation errors may return HTTP 422:
 
 ```json
 {
-  "type": "error",
-  "error": {
-    "type": "invalid_request_error",
-    "message": "max_tokens is required"
-  }
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "max_tokens is required"
 }
 ```
 
