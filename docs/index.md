@@ -2,18 +2,123 @@
 
 Unified AI CLI wrapper for orchestrating multiple AI CLI backends with session persistence, parallel task execution, HTTP API server, and unified output formatting.
 
+## Why clinvk?
+
+### The Challenge
+
+When working with AI programming assistants, you often face these limitations:
+
+- **Single Model Lock-in**: Stuck with one AI's capabilities when different models excel at different tasks
+- **No SDK for CLI Tools**: Can't easily integrate Claude Code, Codex CLI, or Gemini CLI into your applications
+- **Manual Orchestration**: Complex workflows require switching between tools manually
+- **No Framework Integration**: Can't use familiar SDKs (OpenAI, Anthropic) with CLI tools
+
+### The Solution
+
+clinvk transforms AI CLI tools into a programmable infrastructure with three core capabilities:
+
+#### 1. Skills Integration - Extend AI Agent Capabilities
+
+Build Claude Code Skills that call other AI backends for specialized tasks:
+
+```bash
+# A Claude Code Skill calling Gemini for data analysis
+curl http://localhost:8080/api/v1/prompt \
+  -H "Content-Type: application/json" \
+  -d '{"backend": "gemini", "prompt": "analyze this dataset..."}'
+```
+
+**Use cases:**
+- Claude analyzing code, then Codex generating fixes
+- Multi-model code review from different perspectives
+- Specialized tasks routed to the best-suited model
+
+#### 2. HTTP API Transformation - SDK Compatibility
+
+Use your favorite SDK while leveraging any CLI backend:
+
+```python
+from openai import OpenAI
+
+# Use OpenAI SDK, actually calling Claude CLI
+client = OpenAI(base_url="http://localhost:8080/openai/v1")
+response = client.chat.completions.create(
+    model="claude",  # Maps to Claude CLI backend
+    messages=[{"role": "user", "content": "Review this code"}]
+)
+```
+
+**Compatible with:**
+- OpenAI SDK (Python, TypeScript, Go)
+- Anthropic SDK
+- LangChain / LangGraph
+- Any HTTP client
+
+#### 3. Orchestration - Multi-Backend Workflows
+
+Coordinate multiple AI backends for complex tasks:
+
+=== "Parallel: Multi-Perspective Review"
+
+    ```bash
+    # Claude reviews architecture, Codex reviews performance, Gemini reviews security
+    clinvk parallel -f tasks.json
+    ```
+
+    ```json
+    {
+      "tasks": [
+        {"backend": "claude", "prompt": "Review architecture for this code:\n\n<PASTE CODE OR DIFF HERE>"},
+        {"backend": "codex", "prompt": "Review performance for this code:\n\n<PASTE CODE OR DIFF HERE>"},
+        {"backend": "gemini", "prompt": "Review security for this code:\n\n<PASTE CODE OR DIFF HERE>"}
+      ]
+    }
+    ```
+
+=== "Chain: Pipeline Processing"
+
+    ```bash
+    # Claude analyzes → Codex fixes → Claude reviews
+    clinvk chain -f pipeline.json
+    ```
+
+    ```json
+    {
+      "steps": [
+        {"name": "analyze", "backend": "claude", "prompt": "Analyze this code"},
+        {"name": "fix", "backend": "codex", "prompt": "Fix issues: {{previous}}"},
+        {"name": "review", "backend": "claude", "prompt": "Review fixes: {{previous}}"}
+      ]
+    }
+    ```
+
+### How It Works
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Client (SDK/Agent/Skill)
+    participant Server as clinvk server
+    participant Backend as Backend CLI (claude/codex/gemini)
+
+    Client->>+Server: HTTP request (OpenAI/Anthropic/REST)
+    Server->>Server: Normalize + route
+    Server->>+Backend: Execute CLI command
+    Backend-->>-Server: Output (text/JSON)
+    Server-->>-Client: SDK-compatible response
+```
+
 ## Features
 
 | Feature | Description |
 |---------|-------------|
 | **Multi-Backend Support** | Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI |
-| **Unified Options** | Consistent configuration options work across all backends |
+| **SDK Compatibility** | OpenAI and Anthropic compatible API endpoints |
 | **Session Persistence** | Automatic session tracking with resume capability |
 | **Parallel Execution** | Run multiple AI tasks concurrently with fail-fast support |
-| **Backend Comparison** | Compare responses from multiple backends side-by-side |
 | **Chain Execution** | Pipeline prompts through multiple backends sequentially |
-| **HTTP API Server** | RESTful API with OpenAI and Anthropic compatible endpoints |
-| **Configuration Cascade** | CLI flags → Environment variables → Config file → Defaults |
+| **Backend Comparison** | Compare responses from multiple backends side-by-side |
+| **HTTP API Server** | RESTful API for integration with any tool or framework |
 
 ## Quick Start
 
@@ -24,15 +129,28 @@ clinvk "fix the bug in auth.go"
 # Specify a backend
 clinvk --backend codex "implement user registration"
 
-# Resume a session
-clinvk resume --last "continue working"
+# Start HTTP API server
+clinvk serve --port 8080
 
 # Compare backends
 clinvk compare --all-backends "explain this code"
 
-# Start HTTP API server
-clinvk serve --port 8080
+# Parallel execution
+clinvk parallel -f tasks.json
+
+# Chain execution
+clinvk chain -f pipeline.json
 ```
+
+## Use Case Comparison
+
+| Scenario | Traditional Approach | clinvk Approach |
+|----------|---------------------|-----------------|
+| AI Skill calling other AIs | Not supported | HTTP API call |
+| LangChain integration | Custom code per model | OpenAI-compatible endpoint |
+| CI/CD code review | Shell scripts | REST API + parallel execution |
+| Multi-model comparison | Manual execution | `clinvk compare` |
+| Agent orchestration | Complex wiring | Chain/parallel execution |
 
 ## Supported Backends
 
@@ -46,5 +164,7 @@ clinvk serve --port 8080
 
 - [Installation](guide/installation.md) - Install clinvk on your system
 - [Quick Start](guide/quick-start.md) - Get up and running in minutes
-- [User Guide](guide/index.md) - Learn about all features
+- [Architecture](about/architecture.md) - Learn about clinvk's architecture and design
+- [Integration Guide](integration/index.md) - Connect clinvk to your tools
+- [Parallel & Chain Execution](guide/parallel-execution.md) - Multi-backend workflow patterns
 - [HTTP API](guide/http-server.md) - Use the REST API server
