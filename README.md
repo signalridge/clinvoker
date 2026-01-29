@@ -9,22 +9,19 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"></a>
 </p>
 
-<p>
-  <a href="https://github.com/signalridge/homebrew-tap"><img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-FBB040?style=for-the-badge&logo=homebrew&logoColor=black"></a>&nbsp;
-  <a href="https://github.com/signalridge/scoop-bucket"><img alt="Scoop" src="https://img.shields.io/badge/Scoop-00BFFF?style=for-the-badge&logo=windows&logoColor=white"></a>&nbsp;
-  <a href="https://aur.archlinux.org/packages/clinvk-bin"><img alt="AUR" src="https://img.shields.io/badge/AUR-1793D1?style=for-the-badge&logo=archlinux&logoColor=white"></a>&nbsp;
-  <a href="https://github.com/signalridge/clinvoker/blob/main/flake.nix"><img alt="Nix" src="https://img.shields.io/badge/Nix-5277C3?style=for-the-badge&logo=nixos&logoColor=white"></a>&nbsp;
-  <a href="https://github.com/signalridge/clinvoker/pkgs/container/clinvk"><img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"></a>
-</p>
-
-<p>
-  <a href="https://github.com/signalridge/clinvoker/releases"><img alt="deb" src="https://img.shields.io/badge/deb-A81D33?style=for-the-badge&logo=debian&logoColor=white"></a>&nbsp;
-  <a href="https://github.com/signalridge/clinvoker/releases"><img alt="rpm" src="https://img.shields.io/badge/rpm-EE0000?style=for-the-badge&logo=redhat&logoColor=white"></a>&nbsp;
-  <a href="https://github.com/signalridge/clinvoker/releases"><img alt="apk" src="https://img.shields.io/badge/apk-0D597F?style=for-the-badge&logo=alpinelinux&logoColor=white"></a>&nbsp;
-  <a href="https://pkg.go.dev/github.com/signalridge/clinvoker"><img alt="Go" src="https://img.shields.io/badge/go_install-00ADD8?style=for-the-badge&logo=go&logoColor=white"></a>
-</p>
-
 [![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=8B5CF6&center=true&vCenter=true&width=700&lines=One+CLI+for+Claude%2C+Codex%2C+and+Gemini;OpenAI-compatible+HTTP+API+server;Session+management+%26+parallel+execution;Cross-platform%3A+Linux%2C+macOS%2C+Windows)](https://git.io/typing-svg)
+
+<p>
+  <a href="#-installation"><img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-FBB040?style=flat-square&logo=homebrew&logoColor=black"></a>
+  <a href="#-installation"><img alt="Scoop" src="https://img.shields.io/badge/Scoop-00BFFF?style=flat-square&logo=windows&logoColor=white"></a>
+  <a href="#-installation"><img alt="AUR" src="https://img.shields.io/badge/AUR-1793D1?style=flat-square&logo=archlinux&logoColor=white"></a>
+  <a href="#-installation"><img alt="Nix" src="https://img.shields.io/badge/Nix-5277C3?style=flat-square&logo=nixos&logoColor=white"></a>
+  <a href="#-installation"><img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white"></a>
+  <a href="#-installation"><img alt="deb" src="https://img.shields.io/badge/deb-A81D33?style=flat-square&logo=debian&logoColor=white"></a>
+  <a href="#-installation"><img alt="rpm" src="https://img.shields.io/badge/rpm-EE0000?style=flat-square&logo=redhat&logoColor=white"></a>
+  <a href="#-installation"><img alt="apk" src="https://img.shields.io/badge/apk-0D597F?style=flat-square&logo=alpinelinux&logoColor=white"></a>
+  <a href="#-installation"><img alt="Go" src="https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
+</p>
 
 </div>
 
