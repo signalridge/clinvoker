@@ -4,27 +4,9 @@ clinvk supports multiple AI CLI backends, each with unique strengths and charact
 
 ## Supported Backends
 
-<div class="grid cards" markdown>
-
--   :material-robot:{ .lg .middle } **[Claude Code](claude.md)**
-
-    ---
-
-    Anthropic's AI coding assistant with deep reasoning capabilities
-
--   :material-code-tags:{ .lg .middle } **[Codex CLI](codex.md)**
-
-    ---
-
-    OpenAI's code-focused CLI tool optimized for code generation
-
--   :material-google:{ .lg .middle } **[Gemini CLI](gemini.md)**
-
-    ---
-
-    Google's Gemini AI with broad knowledge and capabilities
-
-</div>
+- **[Claude Code](claude.md)** - Anthropic's AI coding assistant with deep reasoning capabilities
+- **[Codex CLI](codex.md)** - OpenAI's code-focused CLI tool optimized for code generation
+- **[Gemini CLI](gemini.md)** - Google's Gemini AI with broad knowledge and capabilities
 
 ## Backend Comparison
 

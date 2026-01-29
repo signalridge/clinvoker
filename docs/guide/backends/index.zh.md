@@ -4,27 +4,9 @@ clinvk 支持多个 AI CLI 后端，每个都有独特的优势和特点。
 
 ## 支持的后端
 
-<div class="grid cards" markdown>
-
--   :material-robot:{ .lg .middle } **[Claude Code](claude.md)**
-
-    ---
-
-    Anthropic 的 AI 编程助手，具有深度推理能力
-
--   :material-code-tags:{ .lg .middle } **[Codex CLI](codex.md)**
-
-    ---
-
-    OpenAI 的代码专注 CLI 工具，优化用于代码生成
-
--   :material-google:{ .lg .middle } **[Gemini CLI](gemini.md)**
-
-    ---
-
-    Google 的 Gemini AI，具有广泛的知识和能力
-
-</div>
+- **[Claude Code](claude.md)** - Anthropic 的 AI 编程助手，具有深度推理能力
+- **[Codex CLI](codex.md)** - OpenAI 的代码专注 CLI 工具，优化用于代码生成
+- **[Gemini CLI](gemini.md)** - Google 的 Gemini AI，具有广泛的知识和能力
 
 ## 后端对比
 

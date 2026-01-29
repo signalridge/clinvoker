@@ -1,4 +1,4 @@
-site_name: clinvk Documentation
+site_name: clinvk
 site_description: Unified AI CLI wrapper for orchestrating multiple AI CLI backends
 site_url: https://signalridge.github.io/clinvoker/
 repo_url: https://github.com/signalridge/clinvoker
@@ -57,6 +57,9 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.mark
   - pymdownx.keys
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - attr_list
   - md_in_html
   - def_list
