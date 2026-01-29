@@ -11,6 +11,7 @@ import (
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // resumeCmd resumes a previous session.
@@ -45,6 +46,12 @@ func init() {
 
 func runResume(cmd *cobra.Command, args []string) error {
 	store := session.NewStore()
+	cfg := config.Get()
+
+	// Apply config default output format if flag not explicitly set
+	if !cmd.Flags().Changed("output-format") {
+		outputFormat = util.ApplyOutputFormatDefault(outputFormat, cfg)
+	}
 
 	var sess *session.Session
 	var prompt string
@@ -116,7 +123,6 @@ func runResume(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build unified options
-	cfg := config.Get()
 	opts := &backend.UnifiedOptions{
 		WorkDir:      sess.WorkingDir,
 		Model:        modelName,
