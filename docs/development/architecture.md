@@ -2,6 +2,28 @@
 
 Technical architecture details for clinvk developers.
 
+## System Architecture
+
+```mermaid
+flowchart TD
+    CLI["CLI (cmd/clinvk)"] --> App["App layer (internal/app)"]
+    App --> Executor["Executor (internal/executor)"]
+    App --> Server["HTTP server (internal/server)"]
+    App --> Session["Session store (internal/session)"]
+
+    Executor --> Claude["Claude backend"]
+    Executor --> Codex["Codex backend"]
+    Executor --> Gemini["Gemini backend"]
+
+    Server --> Handlers["HTTP handlers"]
+    Handlers --> Service["Service layer"]
+    Service --> Executor
+
+    Claude --> ExtClaude["claude binary"]
+    Codex --> ExtCodex["codex binary"]
+    Gemini --> ExtGemini["gemini binary"]
+```
+
 ## Project Structure
 
 ```
@@ -98,6 +120,30 @@ Storage: JSON files in `~/.clinvk/sessions/`
 ### Configuration (`internal/config/`)
 
 Priority: CLI Flags > Environment Variables > Config File > Defaults
+
+## Data Flow
+
+### Single Prompt Execution
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant App
+    participant Exec as Executor
+    participant Backend
+    participant Store as Session store
+
+    User->>CLI: clinvk "prompt"
+    CLI->>App: parse args
+    App->>Backend: build command
+    App->>Exec: execute
+    Exec->>Backend: run external binary
+    Backend-->>Exec: output
+    Exec->>App: parse output
+    App->>Store: persist session
+    App-->>User: display result
+```
 
 ## Key Design Decisions
 
