@@ -5,23 +5,32 @@
 ## 系统架构
 
 ```mermaid
-graph TD
-    CLI[CLI 接口] --> App[应用层]
-    App --> Executor[执行器层]
-    App --> Server[HTTP 服务器]
-    App --> Session[会话管理器]
+flowchart TD
+    CLI["CLI（cmd/clinvk）"] --> App["应用层（internal/app）"]
+    App --> Executor["执行器（internal/executor）"]
+    App --> Server["HTTP 服务器（internal/server）"]
+    App --> Session["会话存储（internal/session）"]
 
-    Executor --> Claude[Claude 后端]
-    Executor --> Codex[Codex 后端]
-    Executor --> Gemini[Gemini 后端]
+    Executor --> Claude["Claude 后端"]
+    Executor --> Codex["Codex 后端"]
+    Executor --> Gemini["Gemini 后端"]
 
-    Server --> Handlers[API 处理器]
-    Handlers --> Service[服务层]
+    Server --> Handlers["HTTP 处理器"]
+    Handlers --> Service["服务层"]
     Service --> Executor
 
-    Claude --> ExtClaude[claude 二进制文件]
-    Codex --> ExtCodex[codex 二进制文件]
-    Gemini --> ExtGemini[gemini 二进制文件]
+    Claude --> ExtClaude["claude 二进制文件"]
+    Codex --> ExtCodex["codex 二进制文件"]
+    Gemini --> ExtGemini["gemini 二进制文件"]
+
+    style CLI fill:#e3f2fd,stroke:#1976d2
+    style App fill:#fff3e0,stroke:#f57c00
+    style Executor fill:#ffecb3,stroke:#ffa000
+    style Server fill:#e8f5e9,stroke:#388e3c
+    style Session fill:#f3e5f5,stroke:#7b1fa2
+    style Claude fill:#f3e5f5,stroke:#7b1fa2
+    style Codex fill:#e8f5e9,stroke:#388e3c
+    style Gemini fill:#ffebee,stroke:#c62828
 ```
 
 ## 层级概述
