@@ -187,9 +187,15 @@ go build ./cmd/clinvk
 
 ---
 
-## 📊 Analytics
+## 📊 Stats
 
 ![Repobeats](https://repobeats.axiom.co/api/embed/640263fe1e0af60e340f1ac257bff68a562c26c6.svg "Repobeats analytics image")
+
+---
+
+## 🙏 Acknowledgments
+
+Inspired by [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
 
 ---
 
