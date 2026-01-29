@@ -187,6 +187,12 @@ go build ./cmd/clinvk
 
 ---
 
+## 📊 Analytics
+
+![Repobeats](https://repobeats.axiom.co/api/embed/640263fe1e0af60e340f1ac257bff68a562c26c6.svg "Repobeats analytics image")
+
+---
+
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE).
