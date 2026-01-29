@@ -1,6 +1,6 @@
 <div align="center">
 
-![header](https://capsule-render.vercel.app/api?type=waving&color=0:6366f1,100:8b5cf6&height=200&section=header&text=clinvoker&fontSize=48&fontColor=ffffff&fontAlignY=30&desc=Multi-backend%20AI%20CLI%20%26%20OpenAI-compatible%20API%20server&descSize=16&descColor=e0e7ff&descAlignY=55&animation=fadeIn)
+![header](https://capsule-render.vercel.app/api?type=waving&color=0%3A6366f1,100%3A8b5cf6&height=200&section=header&text=clinvoker&fontSize=48&fontColor=ffffff&fontAlignY=30&desc=Multi-backend%20AI%20CLI%20with%20OpenAI-compatible%20API%20server&descSize=16&descColor=e0e7ff&descAlignY=55&animation=fadeIn)
 
 <p>
   <a href="https://github.com/signalridge/clinvoker/actions/workflows/ci.yaml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/signalridge/clinvoker/ci.yaml?style=for-the-badge&logo=github&label=CI"></a>&nbsp;
@@ -9,7 +9,7 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"></a>
 </p>
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=8B5CF6&center=true&vCenter=true&width=700&lines=One+CLI+for+Claude%2C+Codex%2C+and+Gemini;OpenAI-compatible+HTTP+API+server;Session+management+%26+parallel+execution;Cross-platform%3A+Linux%2C+macOS%2C+Windows)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=8B5CF6&center=true&vCenter=true&width=700&lines=One+CLI+for+Claude%2C+Codex%2C+and+Gemini;OpenAI-compatible+HTTP+API+server;Session+management+and+parallel+execution;Cross-platform%3A+Linux%2C+macOS%2C+Windows)](https://git.io/typing-svg)
 
 <p>
   <a href="#-installation"><img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-FBB040?style=flat-square&logo=homebrew&logoColor=black"></a>
