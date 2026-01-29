@@ -156,3 +156,74 @@ jobs:
         if: always()
         with:
           sarif_file: trivy-results.sarif
+  # Package installation verification
+  verify-homebrew:
+    name: Verify Homebrew
+    runs-on: macos-latest
+    needs: [release]
+    steps:
+      - name: Install via Homebrew
+        run: |
+          brew tap signalridge/tap
+          brew install clinvk
+      - name: Verify installation
+        run: |
+          clinvk version
+          clinvk --help
+  verify-deb:
+    name: Verify Debian Package
+    runs-on: ubuntu-latest
+    needs: [release]
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Download and install deb
+        run: |
+          TAG="${VERSION#v}"
+          curl -LO "https://github.com/signalridge/clinvoker/releases/download/${VERSION}/clinvk_${TAG}_linux_amd64.deb"
+          sudo dpkg -i "clinvk_${TAG}_linux_amd64.deb"
+      - name: Verify installation
+        run: |
+          clinvk version
+          clinvk --help
+  verify-rpm:
+    name: Verify RPM Package
+    runs-on: ubuntu-latest
+    needs: [release]
+    container: fedora:latest
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Download and install rpm
+        run: |
+          TAG="${VERSION#v}"
+          curl -LO "https://github.com/signalridge/clinvoker/releases/download/${VERSION}/clinvk_${TAG}_linux_amd64.rpm"
+          rpm -i "clinvk_${TAG}_linux_amd64.rpm"
+      - name: Verify installation
+        run: |
+          clinvk version
+          clinvk --help
+  verify-binary:
+    name: Verify Binary (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [release]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: clinvoker_VERSION_linux_amd64.tar.gz
+          - os: macos-latest
+            asset: clinvoker_VERSION_darwin_arm64.tar.gz
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Download and extract binary
+        run: |
+          TAG="${VERSION#v}"
+          ASSET=$(echo "${{ matrix.asset }}" | sed "s/VERSION/${TAG}/")
+          curl -LO "https://github.com/signalridge/clinvoker/releases/download/${VERSION}/${ASSET}"
+          tar xzf "${ASSET}"
+      - name: Verify binary
+        run: |
+          ./clinvk version
+          ./clinvk --help
