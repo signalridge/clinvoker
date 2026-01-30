@@ -134,9 +134,11 @@ parallel:
 | 字段 | 类型 | 描述 |
 |------|------|------|
 | `model` | string | 默认模型 |
-| `allowed_tools` | string | `all` 或逗号分隔列表 |
+| `allowed_tools` | string | `all` 或逗号分隔列表（**仅 Claude**） |
 | `enabled` | bool | 启用/禁用后端 |
 | `extra_flags` | array | 额外 CLI 参数 |
+
+> **注意**：`allowed_tools` 选项目前仅 Claude 后端支持。为 Codex 或 Gemini 设置此选项将无效，系统会在日志中记录警告。
 
 ### session
 

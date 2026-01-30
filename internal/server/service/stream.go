@@ -179,8 +179,24 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, store *session.Store,
 	}
 
 	if scanErr := scanner.Err(); scanErr != nil && handlerErr == nil {
-		// Scanner stops on overly long tokens; treat as a stream error.
-		streamErr = scanErr
+		// Scanner stops on overly long tokens; emit an error event and treat as a stream error.
+		errMsg := scanErr.Error()
+		if scanErr == bufio.ErrTooLong {
+			errMsg = fmt.Sprintf("stream event exceeded maximum size limit of %d bytes; consider reducing output size", maxStreamLine)
+		}
+
+		// Emit error event to client if callback is available
+		if onEvent != nil {
+			errEvent := output.NewUnifiedEvent(output.EventError, prep.backend.Name(), sessionID)
+			if err := errEvent.SetContent(&output.ErrorContent{
+				Code:    "stream_line_too_long",
+				Message: errMsg,
+			}); err == nil {
+				_ = onEvent(errEvent) // Best effort, ignore error
+			}
+		}
+
+		streamErr = errors.New(errMsg)
 	}
 
 	if handlerErr != nil && cmd.Process != nil {

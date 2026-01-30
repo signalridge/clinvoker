@@ -1,10 +1,19 @@
 package util
 
 import (
+	"log/slog"
 	"strings"
+	"sync"
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
+)
+
+// Track which backends we've already warned about allowed_tools support.
+// This prevents spamming the log with repeated warnings.
+var (
+	warnedBackends   = make(map[string]bool)
+	warnedBackendsMu sync.Mutex
 )
 
 // ApplyUnifiedDefaults applies unified flag defaults from config to options.
@@ -95,6 +104,20 @@ func ApplyBackendDefaults(opts *backend.UnifiedOptions, backendName string, cfg 
 	// Backend-specific allowed tools (if not already set)
 	if opts.AllowedTools == "" && bc.AllowedTools != "" {
 		opts.AllowedTools = bc.AllowedTools
+	}
+
+	// Warn if allowed_tools is set for a backend that doesn't support it
+	if opts.AllowedTools != "" && backendName != "claude" {
+		warnedBackendsMu.Lock()
+		if !warnedBackends[backendName] {
+			warnedBackends[backendName] = true
+			warnedBackendsMu.Unlock()
+			slog.Warn("allowed_tools option is only supported by Claude backend; ignoring for this backend",
+				"backend", backendName,
+				"allowed_tools", opts.AllowedTools)
+		} else {
+			warnedBackendsMu.Unlock()
+		}
 	}
 
 	// Backend-specific extra flags (append to existing)

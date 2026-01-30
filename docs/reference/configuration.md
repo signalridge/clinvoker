@@ -185,12 +185,14 @@ backends:
 | Field | Type | Description |
 |-------|------|-------------|
 | `model` | string | Default model |
-| `allowed_tools` | string | `all` or comma-separated list |
+| `allowed_tools` | string | `all` or comma-separated list (**Claude only**) |
 | `approval_mode` | string | Override unified setting |
 | `sandbox_mode` | string | Override unified setting |
 | `enabled` | bool | Enable/disable backend |
 | `system_prompt` | string | Default system prompt |
 | `extra_flags` | array | Additional CLI flags |
+
+> **Note**: The `allowed_tools` option is currently only supported by the Claude backend. Setting it for Codex or Gemini will have no effect. A warning will be logged if configured for unsupported backends.
 
 #### extra_flags Examples
 
