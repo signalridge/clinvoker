@@ -68,7 +68,9 @@ func ExecuteCommand(cfg *ExecutionConfig, cmd *exec.Cmd) (*ExecutionResult, erro
 		return executeStream(ctx, cfg.Backend, cmd, cfg.Session, cfg.Stdin)
 	case OutputModeJSON:
 		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, true, cfg.Stdin)
-	default: // OutputModeText
+	case OutputModeText:
+		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin)
+	default:
 		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin)
 	}
 }
@@ -130,7 +132,10 @@ scanLoop:
 		}
 
 		line := scanner.Text()
-		fmt.Fprintln(os.Stdout, line)
+		if _, err := fmt.Fprintln(os.Stdout, line); err != nil {
+			streamErr = err
+			break scanLoop
+		}
 
 		event, parseErr := parser.ParseLine(line)
 		if parseErr != nil || event == nil {
@@ -157,7 +162,11 @@ scanLoop:
 	}
 
 	if scanErr := scanner.Err(); scanErr != nil && streamErr == nil && !timedOut {
-		streamErr = scanErr
+		// Ignore "file already closed" error which can occur due to race
+		// between scanner reading and cmd.Wait() closing the pipe
+		if !errors.Is(scanErr, os.ErrClosed) && scanErr.Error() != "read |0: file already closed" {
+			streamErr = scanErr
+		}
 	}
 
 	// Wait for command to finish or timeout
@@ -166,7 +175,7 @@ scanLoop:
 	case waitErr = <-waitDone:
 		// Command finished
 	case <-ctx.Done():
-		// Context cancelled (timeout)
+		// Context canceled (timeout)
 		_ = cmd.Process.Kill()
 		<-waitDone // Wait for process to exit after kill
 		timedOut = true
@@ -222,7 +231,7 @@ scanLoop:
 }
 
 // executeWithCapture executes a command and captures output.
-func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, sess *session.Session, outputJSON bool, useStdin bool) (*ExecutionResult, error) {
+func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, sess *session.Session, outputJSON, useStdin bool) (*ExecutionResult, error) {
 	startTime := time.Now()
 
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -254,7 +263,7 @@ func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, s
 	case waitErr = <-waitDone:
 		// Command finished normally
 	case <-ctx.Done():
-		// Context cancelled (timeout)
+		// Context canceled (timeout)
 		_ = cmd.Process.Kill()
 		<-waitDone // Wait for process to exit after kill
 		timedOut = true
@@ -334,7 +343,7 @@ func outputTextResult(b backend.Backend, result *ExecutionResult) {
 
 	if result.Content != "" {
 		fmt.Print(result.Content)
-		if len(result.Content) > 0 && result.Content[len(result.Content)-1] != '\n' {
+		if result.Content != "" && result.Content[len(result.Content)-1] != '\n' {
 			fmt.Println()
 		}
 	}

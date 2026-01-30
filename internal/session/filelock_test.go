@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -74,7 +75,9 @@ func TestFileLock_SharedLock(t *testing.T) {
 	if err := lock2.TryLockShared(); err != nil {
 		t.Fatalf("second shared lock should succeed: %v", err)
 	}
-	defer lock2.Unlock()
+	if err := lock2.Unlock(); err != nil {
+		t.Fatalf("failed to release shared lock: %v", err)
+	}
 }
 
 func TestFileLock_ExclusiveBlocksShared(t *testing.T) {
@@ -163,7 +166,7 @@ func TestFileLock_Concurrent(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	lockPath := filepath.Join(tmpDir, "test")
-	counter := 0
+	var counter atomic.Int32
 	var wg sync.WaitGroup
 	iterations := 10
 
@@ -177,14 +180,14 @@ func TestFileLock_Concurrent(t *testing.T) {
 				return
 			}
 			defer lock.Unlock()
-			counter++
+			counter.Add(1)
 		}()
 	}
 
 	wg.Wait()
 
-	if counter != iterations {
-		t.Errorf("expected counter %d, got %d", iterations, counter)
+	if counter.Load() != int32(iterations) {
+		t.Errorf("expected counter %d, got %d", iterations, counter.Load())
 	}
 }
 
