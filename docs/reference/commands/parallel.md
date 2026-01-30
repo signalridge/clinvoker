@@ -112,6 +112,7 @@ cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk paral
 ```
 
 This writes:
+
 - `summary.json` (aggregate results)
 - One JSON file per task (includes task + result)
 

@@ -130,7 +130,7 @@ done
 
 ```makefile
 test:
-	clinvk "generate tests" || (echo "Failed" && exit 1)
+ clinvk "generate tests" || (echo "Failed" && exit 1)
 ```
 
 ## See Also

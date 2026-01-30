@@ -97,19 +97,19 @@ backends:
 
 ## 选择后端
 
-### 使用 Claude Code 当：
+### 使用 Claude Code 当
 
 - 处理复杂的多步骤任务
 - 需要彻底的代码审查和分析
 - 安全性和准确性至关重要
 
-### 使用 Codex CLI 当：
+### 使用 Codex CLI 当
 
 - 生成样板代码
 - 编写测试
 - 快速代码转换
 
-### 使用 Gemini CLI 当：
+### 使用 Gemini CLI 当
 
 - 需要广泛的知识上下文
 - 处理文档

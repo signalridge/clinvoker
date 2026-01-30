@@ -22,7 +22,7 @@ clinvk config set default_backend claude
 clinvk config set default_backend gemini
 ```
 
-### 3. 完成！
+### 3. 完成
 
 基本设置就这些。clinvk 开箱即用，具有合理的默认值。
 

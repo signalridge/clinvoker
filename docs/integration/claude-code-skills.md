@@ -37,6 +37,7 @@ DATA="$1"
 
 clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $DATA"
 ```
+
 ```
 
 ### Using the Skill
@@ -44,7 +45,9 @@ clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $D
 In Claude Code, the skill can be invoked:
 
 ```
+
 User: /analyze-data {"sales": [100, 150, 200], "months": ["Jan", "Feb", "Mar"]}
+
 ```
 
 ## Multi-Model Review Skill
@@ -83,6 +86,7 @@ echo "### Security Review (Gemini)"
 clinvk -b gemini --ephemeral "Review this code for security vulnerabilities:
 $CODE"
 ```
+
 ```
 
 ## Parallel Review Skill
@@ -117,6 +121,7 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
   "## Security (Gemini)\n" + .results[2].output
 '
 ```
+
 ```
 
 ## Chain Execution Skill
@@ -162,6 +167,7 @@ EOF
 
 clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
 ```
+
 ```
 
 ## Advanced Patterns

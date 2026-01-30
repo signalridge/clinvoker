@@ -144,6 +144,7 @@ From `lib/common.sh`:
 ## Test Coverage
 
 ### CLI Tests
+
 | Test File | Coverage |
 |-----------|----------|
 | `test_version.sh` | Version command, help flag |
@@ -156,6 +157,7 @@ From `lib/common.sh`:
 | `test_parallel.sh` | Parallel execution, JSON input, fail-fast |
 
 ### API Tests
+
 | Test File | Coverage |
 |-----------|----------|
 | `test_health.sh` | Health endpoint, backend status |
@@ -175,6 +177,7 @@ From `lib/common.sh`:
 ## CI Integration
 
 Tests run automatically on:
+
 - Push to main
 - Pull requests
 

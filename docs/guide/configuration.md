@@ -22,7 +22,7 @@ clinvk config set default_backend claude
 clinvk config set default_backend gemini
 ```
 
-### 3. Done!
+### 3. Done
 
 That's it for basic setup. clinvk works out of the box with sensible defaults.
 

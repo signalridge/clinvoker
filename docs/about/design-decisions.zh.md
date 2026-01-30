@@ -85,6 +85,7 @@ clinvk 提供三类 API 端点：OpenAI 兼容、Anthropic 兼容和自定义 RE
 ### 设计原则
 
 **并行执行：**
+
 ```
 任务 A ─┬─→ 后端 1 ──┬─→ 结果 A
         ├─→ 后端 2 ──┤   结果 B
@@ -96,6 +97,7 @@ clinvk 提供三类 API 端点：OpenAI 兼容、Anthropic 兼容和自定义 RE
 - 完成时聚合结果
 
 **链式执行：**
+
 ```
 输入 → 后端 1 → {{previous}} → 后端 2 → {{previous}} → 后端 3 → 输出
 ```
@@ -184,6 +186,7 @@ clinvk --backend codex "prompt"
 ### MCP 服务器支持
 
 我们正在评估添加 Model Context Protocol (MCP) 服务器支持以实现：
+
 - 与 Claude Desktop 直接集成
 - 标准化的工具调用接口
 - 生态系统兼容性
@@ -191,6 +194,7 @@ clinvk --backend codex "prompt"
 ### 额外后端
 
 后端抽象允许在新 AI CLI 可用时添加它们。新后端的要求：
+
 - CLI 支持非交互模式
 - 结构化输出（首选 JSON）
 - 会话管理（可选但首选）

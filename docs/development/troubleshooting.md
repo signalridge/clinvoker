@@ -11,16 +11,19 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. Verify the backend CLI is installed:
+
    ```bash
    which claude codex gemini
    ```
 
 2. Add the binary location to your PATH:
+
    ```bash
    export PATH="$PATH:/path/to/backend"
    ```
 
 3. Check clinvk detection:
+
    ```bash
    clinvk config show | grep available
    ```
@@ -42,6 +45,7 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. List available models for the backend:
+
    ```bash
    # For Claude
    claude models list
@@ -51,6 +55,7 @@ Common issues and solutions for clinvk.
    ```
 
 2. Update your configuration:
+
    ```bash
    clinvk config set backends.claude.model claude-opus-4-5-20251101
    ```
@@ -64,21 +69,25 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. Check config file location:
+
    ```bash
    ls -la ~/.clinvk/config.yaml
    ```
 
 2. Validate YAML syntax:
+
    ```bash
    cat ~/.clinvk/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
    ```
 
 3. Check file permissions:
+
    ```bash
    chmod 600 ~/.clinvk/config.yaml
    ```
 
 4. View effective configuration:
+
    ```bash
    clinvk config show
    ```
@@ -88,11 +97,13 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. Verify the variable is set:
+
    ```bash
    echo $CLINVK_BACKEND
    ```
 
 2. Check shell configuration is loaded:
+
    ```bash
    source ~/.bashrc  # or ~/.zshrc
    ```
@@ -108,11 +119,13 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. List available sessions:
+
    ```bash
    clinvk sessions list
    ```
 
 2. Check session directory:
+
    ```bash
    ls ~/.clinvk/sessions/
    ```
@@ -142,16 +155,19 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Find the process using the port:
+
    ```bash
    lsof -i :8080
    ```
 
 2. Use a different port:
+
    ```bash
    clinvk serve --port 3000
    ```
 
 3. Or kill the existing process:
+
    ```bash
    kill -9 <PID>
    ```
@@ -161,11 +177,13 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Verify server is running:
+
    ```bash
    curl http://localhost:8080/health
    ```
 
 2. Check bind address:
+
    ```bash
    # If connecting from another machine, use 0.0.0.0
    clinvk serve --host 0.0.0.0
@@ -182,6 +200,7 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Increase timeout in config:
+
    ```yaml
    server:
      request_timeout_secs: 600
@@ -194,6 +213,7 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Use JSON output for full response:
+
    ```bash
    clinvk -o json "long prompt"
    ```
@@ -209,6 +229,7 @@ rm -rf ~/.clinvk/sessions/*
 1. Wait before retrying
 2. Use `--sequential` for compare commands
 3. Reduce parallel workers:
+
    ```bash
    clinvk parallel --max-parallel 1 --file tasks.json
    ```

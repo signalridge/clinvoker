@@ -109,6 +109,7 @@ cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk paral
 ```
 
 写入内容：
+
 - `summary.json`（汇总结果）
 - 每个任务的 JSON 文件（包含 task + result）
 

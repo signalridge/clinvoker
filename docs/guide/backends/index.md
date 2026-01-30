@@ -97,19 +97,19 @@ backends:
 
 ## Choosing a Backend
 
-### Use Claude Code when:
+### Use Claude Code when
 
 - Working on complex, multi-step tasks
 - Needing thorough code review and analysis
 - Safety and accuracy are paramount
 
-### Use Codex CLI when:
+### Use Codex CLI when
 
 - Generating boilerplate code
 - Writing tests
 - Quick code transformations
 
-### Use Gemini CLI when:
+### Use Gemini CLI when
 
 - Needing broad knowledge context
 - Working with documentation

@@ -37,6 +37,7 @@ DATA="$1"
 
 clinvk -b gemini -o json --ephemeral "分析此数据并提供洞察：$DATA"
 ```
+
 ```
 
 ## 多模型审查 Skill
@@ -71,6 +72,7 @@ echo "### 安全审查 (Gemini)"
 clinvk -b gemini --ephemeral "审查此代码的安全漏洞：
 $CODE"
 ```
+
 ```
 
 ## 并行审查 Skill
@@ -105,6 +107,7 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
   "## 安全 (Gemini)\n" + .results[2].output
 '
 ```
+
 ```
 
 ## 链式执行 Skill
@@ -150,6 +153,7 @@ EOF
 
 clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
 ```
+
 ```
 
 ## 高级模式
