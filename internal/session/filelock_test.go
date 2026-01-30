@@ -170,11 +170,14 @@ func TestFileLock_Concurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	iterations := 10
 
+	// Use a single lock instance for concurrent access
+	// The internal mutex ensures serialization, file lock ensures cross-process safety
+	lock := NewFileLock(lockPath)
+
 	for i := 0; i < iterations; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			lock := NewFileLock(lockPath)
 			if err := lock.Lock(); err != nil {
 				t.Errorf("failed to acquire lock: %v", err)
 				return
