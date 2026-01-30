@@ -82,7 +82,7 @@ flowchart TB
     "required": ["backend", "prompt"]
   }
 }
-```text
+```
 
 ### `clinvk_parallel`
 
@@ -109,7 +109,7 @@ flowchart TB
     "required": ["tasks"]
   }
 }
-```text
+```
 
 ### `clinvk_chain`
 
@@ -155,7 +155,7 @@ flowchart TB
     }
   }
 }
-```bash
+```
 
 ### 启动 MCP 服务器
 
@@ -165,7 +165,7 @@ clinvk mcp --transport stdio
 
 # HTTP 传输（用于网络客户端）
 clinvk mcp --transport http --port 3000
-```bash
+```
 
 ## 使用场景
 
@@ -196,7 +196,7 @@ Claude：我将使用 clinvk_chain 工具通过流水线创建文档。
 [使用 analyze → generate → polish 步骤调用 clinvk_chain]
 
 这是精修后的文档：...
-```text
+```
 
 ### 3. 专业任务路由
 

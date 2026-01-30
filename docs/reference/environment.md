@@ -21,7 +21,7 @@ Reference for all environment variables supported by clinvk.
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "implement feature"  # Uses codex
-```bash
+```
 
 ### Set Model per Backend
 
@@ -37,7 +37,7 @@ clinvk -b codex "quick task"     # Uses o3-mini
 
 ```bash
 CLINVK_BACKEND=gemini clinvk "explain this"
-```bash
+```
 
 ## Priority
 
@@ -64,7 +64,7 @@ Add to `~/.bashrc` or `~/.bash_profile`:
 ```bash
 export CLINVK_BACKEND=claude
 export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-```bash
+```
 
 ### Zsh
 
@@ -82,7 +82,7 @@ Add to `~/.config/fish/config.fish`:
 ```fish
 set -gx CLINVK_BACKEND claude
 set -gx CLINVK_CLAUDE_MODEL claude-opus-4-5-20251101
-```bash
+```
 
 ## Per-Directory Configuration
 
@@ -106,7 +106,7 @@ jobs:
       CLINVK_CODEX_MODEL: o3
     steps:
       - run: clinvk "generate tests"
-```text
+```
 
 ### Docker
 

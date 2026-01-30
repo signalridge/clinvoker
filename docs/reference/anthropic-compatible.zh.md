@@ -36,7 +36,7 @@ http://localhost:8080/anthropic/v1
   ],
   "system": "你是一个有帮助的助手。"
 }
-```yaml
+```
 
 **字段：**
 
@@ -91,7 +91,7 @@ message = client.messages.create(
 )
 
 print(message.content[0].text)
-```text
+```
 
 ### 带对话历史
 
@@ -158,7 +158,7 @@ async function main() {
 }
 
 main();
-```bash
+```
 
 ### cURL
 

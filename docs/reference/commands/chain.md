@@ -37,7 +37,7 @@ Execute a series of prompts sequentially, passing output from each step to the n
     }
   ]
 }
-```bash
+```
 
 ### Step Fields
 
@@ -81,7 +81,7 @@ clinvk chain --file pipeline.json
 
 ```bash
 clinvk chain --file pipeline.json --json
-```text
+```
 
 ### Example Pipeline
 
@@ -166,7 +166,7 @@ Total time: 7.1s
     }
   ]
 }
-```text
+```
 
 ## Error Handling
 

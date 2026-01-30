@@ -8,7 +8,7 @@ Guidelines and practices for testing clinvk.
 
 ```bash
 go test ./...
-```bash
+```
 
 ### With Race Detection
 
@@ -21,7 +21,7 @@ go test -race ./...
 ```bash
 go test -coverprofile=coverage.txt ./...
 go tool cover -html=coverage.txt
-```bash
+```
 
 ### Short Tests
 
@@ -33,7 +33,7 @@ go test -short ./...
 
 ```bash
 go test -v ./...
-```bash
+```
 
 ### Specific Package
 
@@ -49,7 +49,7 @@ just test-verbose   # Verbose output
 just test-short     # Short tests only
 just test-coverage  # Generate coverage
 just coverage-html  # View HTML report
-```text
+```
 
 ## Writing Tests
 
@@ -128,7 +128,7 @@ func TestB(t *testing.T) {
     t.Parallel()
     // ...
 }
-```text
+```
 
 ## Mock Package
 
@@ -166,7 +166,7 @@ mock.WithParseOutput("custom output")
 mock.WithCommand(func(prompt string, opts *Options) *exec.Cmd {
     return exec.Command("echo", prompt)
 })
-```text
+```
 
 ### Temporary Directories
 
@@ -212,7 +212,7 @@ func TestPromptHandler(t *testing.T) {
         t.Errorf("expected 200, got %d", resp.StatusCode)
     }
 }
-```text
+```
 
 ## Integration Tests
 
@@ -269,7 +269,7 @@ func loadFixture(t *testing.T, name string) []byte {
     }
     return data
 }
-```text
+```
 
 ## Benchmarks
 
@@ -289,7 +289,7 @@ Run benchmarks:
 ```bash
 go test -bench=. ./...
 go test -bench=BenchmarkParseOutput -benchmem ./internal/output/
-```text
+```
 
 ## Coverage Goals
 

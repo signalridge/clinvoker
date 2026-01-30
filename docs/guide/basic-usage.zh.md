@@ -8,7 +8,7 @@
 
 ```bash
 clinvk "您的提示"
-```bash
+```
 
 ### 指定后端
 
@@ -18,7 +18,7 @@ clinvk "您的提示"
 clinvk --backend claude "修复 auth.go 中的 bug"
 clinvk -b codex "实现用户注册"
 clinvk -b gemini "解释这个算法"
-```bash
+```
 
 ### 指定模型
 
@@ -27,7 +27,7 @@ clinvk -b gemini "解释这个算法"
 ```bash
 clinvk --model claude-opus-4-5-20251101 "复杂任务"
 clinvk -b codex -m o3 "实现功能"
-```bash
+```
 
 ### 工作目录
 
@@ -46,19 +46,19 @@ clinvk -w ./subproject "修复测试"
 
 ```bash
 clinvk "解释这段代码"
-```bash
+```
 
 ### JSON
 
 ```bash
 clinvk --output-format json "解释这段代码"
-```bash
+```
 
 ### 流式 JSON
 
 ```bash
 clinvk -o stream-json "解释这段代码"
-```bash
+```
 
 ## 继续对话
 
@@ -85,7 +85,7 @@ clinvk resume --interactive
 
 # 恢复并带上特定提示
 clinvk resume --last "从上次中断的地方继续"
-```bash
+```
 
 详见 [会话管理](session-management.md)。
 
@@ -95,7 +95,7 @@ clinvk resume --last "从上次中断的地方继续"
 
 ```bash
 clinvk --dry-run "实现功能 X"
-```yaml
+```
 
 输出显示将要运行的确切命令：
 
@@ -109,7 +109,7 @@ Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
 
 ```bash
 clinvk --ephemeral "2+2 等于多少"
-```bash
+```
 
 这对于不需要对话历史的快速一次性查询很有用。
 
@@ -132,13 +132,13 @@ clinvk --ephemeral "2+2 等于多少"
 
 ```bash
 clinvk "utils.go 第 45 行有空指针异常"
-```bash
+```
 
 ### 代码生成
 
 ```bash
 clinvk -b codex "生成用户 CRUD 操作的 REST API 处理器"
-```bash
+```
 
 ### 代码解释
 

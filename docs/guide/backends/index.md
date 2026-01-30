@@ -23,7 +23,7 @@ clinvk automatically detects available backends by checking for their binaries i
 
 ```bash
 clinvk config show
-```yaml
+```
 
 Output shows which backends are available:
 
@@ -48,7 +48,7 @@ backends:
 clinvk --backend claude "prompt"
 clinvk -b codex "prompt"
 clinvk -b gemini "prompt"
-```text
+```
 
 ### Via Configuration
 
@@ -63,7 +63,7 @@ default_backend: claude
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "prompt"  # Uses codex
-```text
+```
 
 ## Backend-Specific Options
 

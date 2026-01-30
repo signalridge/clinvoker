@@ -19,7 +19,7 @@ Codex CLI 是 OpenAI 的命令行工具，专注于代码生成和编程辅助�
 # 验证安装
 which codex
 codex --version
-```bash
+```
 
 ## 基本用法
 
@@ -40,7 +40,7 @@ clinvk -b codex "为 user.go 生成单元测试"
 
 ```bash
 clinvk -b codex -m o3-mini "快速代码生成"
-```text
+```
 
 ## 配置
 
@@ -63,7 +63,7 @@ backends:
 
 ```bash
 export CLINVK_CODEX_MODEL=o3-mini
-```bash
+```
 
 ## 会话管理
 
@@ -102,7 +102,7 @@ clinvk resume <session-id>
 
 ```bash
 clinvk -b codex "为 User 模型创建 CRUD API"
-```bash
+```
 
 ### 编写测试
 
@@ -114,7 +114,7 @@ clinvk -b codex "为 auth 模块生成全面的单元测试"
 
 ```bash
 clinvk -b codex "将这个基于回调的代码转换为 async/await"
-```bash
+```
 
 ### 快速实现
 

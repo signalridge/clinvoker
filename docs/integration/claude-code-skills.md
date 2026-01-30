@@ -184,7 +184,7 @@ if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
 fi
 
 echo "$OUTPUT"
-```bash
+```
 
 ### Conditional Backend Selection
 
@@ -217,7 +217,7 @@ clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 #!/bin/bash
 # Get responses from all backends and compare
 clinvk compare --all-backends "$1"
-```bash
+```
 
 ## Best Practices
 
@@ -245,7 +245,7 @@ When you need to process the output:
 
 ```bash
 clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
-```bash
+```
 
 ### 4. Format Output for Claude
 
@@ -279,7 +279,7 @@ clinvk -b gemini --ephemeral "Summarize: $INPUT"
 ```bash
 # Check available backends
 clinvk config show | grep available
-```bash
+```
 
 ### Check Version
 

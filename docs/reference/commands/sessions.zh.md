@@ -42,7 +42,7 @@ clinvk sessions list --backend claude
 
 # 限制结果
 clinvk sessions list --limit 10
-```bash
+```
 
 ---
 
@@ -66,7 +66,7 @@ clinvk sessions show <session-id>
 
 ```bash
 clinvk sessions delete <session-id>
-```bash
+```
 
 ---
 

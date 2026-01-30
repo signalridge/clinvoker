@@ -170,7 +170,7 @@ if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
 fi
 
 echo "$OUTPUT"
-```bash
+```
 
 ### 条件后端选择
 
@@ -203,7 +203,7 @@ clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 #!/bin/bash
 # 获取所有后端的响应并对比
 clinvk compare --all-backends "$1"
-```bash
+```
 
 ## 最佳实践
 
@@ -231,12 +231,11 @@ clinvk -b claude --ephemeral "你的提示"
 
 ```bash
 clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
-```text
+```
 
 ## Skill 目录结构
 
-```
-
+```text
 ~/.claude/skills/
 ├── analyze-data/
 │   └── SKILL.md
@@ -247,7 +246,7 @@ clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
 └── shared/
     └── clinvk-helpers.sh  # 共享函数
 
-```bash
+```
 
 ## 故障排除
 

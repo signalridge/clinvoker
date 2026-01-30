@@ -20,7 +20,7 @@ clinvk is written in Go and uses a modular architecture that makes it easy to ad
 ```bash
 nix develop
 just ci
-```bash
+```
 
 ### Manual Setup
 
@@ -44,12 +44,11 @@ pre-commit install
 
 # Run on all files
 pre-commit run --all-files
-```text
+```
 
 ## Project Structure
 
-```
-
+```text
 clinvoker/
 ├── cmd/clinvk/           # Entry point
 ├── internal/
@@ -67,7 +66,7 @@ clinvoker/
 ├── docs/                 # Documentation
 └── testdata/             # Test fixtures
 
-```text
+```
 
 ## Common Tasks
 

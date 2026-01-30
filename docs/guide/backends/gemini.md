@@ -19,7 +19,7 @@ Install Gemini CLI from [Google](https://github.com/google/gemini-cli):
 # Verify installation
 which gemini
 gemini --version
-```bash
+```
 
 ## Basic Usage
 
@@ -40,7 +40,7 @@ Specify a model:
 
 ```bash
 clinvk -b gemini -m gemini-2.5-flash "quick explanation"
-```text
+```
 
 ## Configuration
 
@@ -63,7 +63,7 @@ backends:
 
 ```bash
 export CLINVK_GEMINI_MODEL=gemini-2.5-flash
-```bash
+```
 
 ## Session Management
 
@@ -84,7 +84,7 @@ backends:
   gemini:
     extra_flags:
       - "--sandbox"
-```bash
+```
 
 ## Unified Options
 
@@ -119,7 +119,7 @@ clinvk -b gemini "write comprehensive documentation for this module"
 
 ```bash
 clinvk -b gemini "explain the architecture of this microservice"
-```bash
+```
 
 ### Research
 
@@ -131,7 +131,7 @@ clinvk -b gemini "what are the best practices for implementing rate limiting"
 
 ```bash
 clinvk -b gemini "review this code and explain potential issues"
-```text
+```
 
 ## Comparison with Other Backends
 

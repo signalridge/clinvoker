@@ -23,7 +23,7 @@ clinvk 通过检查 PATH 中的二进制文件自动检测可用的后端：
 
 ```bash
 clinvk config show
-```yaml
+```
 
 输出显示哪些后端可用：
 
@@ -48,7 +48,7 @@ backends:
 clinvk --backend claude "提示"
 clinvk -b codex "提示"
 clinvk -b gemini "提示"
-```text
+```
 
 ### 通过配置
 
@@ -63,7 +63,7 @@ default_backend: claude
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "提示"  # 使用 codex
-```text
+```
 
 ## 后端特定选项
 

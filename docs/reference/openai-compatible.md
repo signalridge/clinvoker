@@ -44,7 +44,7 @@ List available models (backends mapped as models).
     }
   ]
 }
-```text
+```
 
 ### POST /openai/v1/chat/completions
 
@@ -99,7 +99,7 @@ Create a chat completion.
     "total_tokens": 25
   }
 }
-```bash
+```
 
 ## Client Examples
 
@@ -162,7 +162,7 @@ async function main() {
 }
 
 main();
-```bash
+```
 
 ### cURL
 
@@ -192,7 +192,7 @@ llm = ChatOpenAI(
 
 response = llm.invoke("Explain Python decorators")
 print(response.content)
-```bash
+```
 
 ## Model Mapping
 
@@ -243,7 +243,7 @@ server:
   host: "127.0.0.1"
   port: 8080
   request_timeout_secs: 300
-```text
+```
 
 ## Error Handling
 

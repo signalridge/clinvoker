@@ -20,7 +20,7 @@ clinvk 使用 Go 编写，采用模块化架构，便于添加新后端和功能
 ```bash
 nix develop
 just ci
-```bash
+```
 
 ### 手动设置
 
@@ -69,7 +69,7 @@ just ci
 
 # 启动开发服务器
 just serve
-```text
+```
 
 ## 技术栈
 

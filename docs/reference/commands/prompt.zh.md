@@ -30,7 +30,7 @@ clinvk [flags] [prompt]
 
 ```bash
 clinvk "修复 auth.go 中的 bug"
-```bash
+```
 
 ### 指定后端
 
@@ -43,7 +43,7 @@ clinvk -b gemini "解释这个算法"
 
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
-```bash
+```
 
 ### 继续会话
 
@@ -57,7 +57,7 @@ clinvk -c "添加速率限制"
 
 ```bash
 clinvk --output-format json "解释这段代码"
-```bash
+```
 
 ### 试运行
 

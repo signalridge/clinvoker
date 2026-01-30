@@ -37,7 +37,7 @@ clinvk parallel [flags]
   "max_parallel": 3,
   "fail_fast": true
 }
-```bash
+```
 
 ### 任务字段
 
@@ -82,7 +82,7 @@ clinvk parallel --file tasks.json
 
 ```bash
 cat tasks.json | clinvk parallel
-```bash
+```
 
 ### 限制工作器
 
@@ -94,7 +94,7 @@ clinvk parallel --file tasks.json --max-parallel 2
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```bash
+```
 
 ### JSON 输出
 

@@ -33,7 +33,7 @@
     }
   ]
 }
-```bash
+```
 
 ### 运行任务
 
@@ -47,7 +47,7 @@ clinvk parallel --file tasks.json
 
 ```bash
 cat tasks.json | clinvk parallel
-```text
+```
 
 ## 任务选项
 
@@ -96,7 +96,7 @@ cat tasks.json | clinvk parallel
 ```bash
 # 最多同时运行 2 个任务
 clinvk parallel --file tasks.json --max-parallel 2
-```bash
+```
 
 ### 快速失败模式
 
@@ -112,7 +112,7 @@ clinvk parallel --file tasks.json --fail-fast
 
 ```bash
 clinvk parallel --file tasks.json --json
-```bash
+```
 
 ### 静默模式
 

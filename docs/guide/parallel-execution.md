@@ -33,7 +33,7 @@ Create a `tasks.json` file:
     }
   ]
 }
-```bash
+```
 
 ### Run Tasks
 
@@ -47,7 +47,7 @@ You can also pipe task definitions:
 
 ```bash
 cat tasks.json | clinvk parallel
-```text
+```
 
 ## Task Options
 
@@ -96,7 +96,7 @@ Control how many tasks run simultaneously:
 ```bash
 # Run at most 2 tasks at a time
 clinvk parallel --file tasks.json --max-parallel 2
-```bash
+```
 
 ### Fail-Fast Mode
 
@@ -112,7 +112,7 @@ Get structured output for programmatic processing:
 
 ```bash
 clinvk parallel --file tasks.json --json
-```bash
+```
 
 ### Quiet Mode
 
@@ -213,7 +213,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
     }
   ]
 }
-```text
+```
 
 ### Batch Test Generation
 
@@ -245,7 +245,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
     }
   ]
 }
-```text
+```
 
 ## Configuration
 

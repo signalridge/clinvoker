@@ -44,7 +44,7 @@ flowchart LR
     style E1 fill:#f3e5f5,stroke:#7b1fa2
     style E2 fill:#e8f5e9,stroke:#388e3c
     style E3 fill:#ffebee,stroke:#c62828
-```bash
+```
 
 ## Integration Methods
 
@@ -77,7 +77,7 @@ llm = ChatOpenAI(
     model="claude",
     api_key="not-needed"
 )
-```text
+```
 
 ### OpenAI SDK
 

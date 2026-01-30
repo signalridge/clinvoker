@@ -16,7 +16,7 @@ clinvk 内置 HTTP API 服务器，通过 REST 端点暴露所有功能。
 
 ```bash
 clinvk serve
-```yaml
+```
 
 服务器默认在 `http://127.0.0.1:8080` 启动。
 
@@ -30,7 +30,7 @@ clinvk serve --port 3000
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 8080
-```yaml
+```
 
 !!! warning "安全"
     绑定到 `0.0.0.0` 会将服务器暴露到网络。没有内置认证。
@@ -47,7 +47,7 @@ curl http://localhost:8080/health
 
 ```json
 {"status": "ok"}
-```bash
+```
 
 ### 列出后端
 
@@ -61,7 +61,7 @@ curl http://localhost:8080/api/v1/backends
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "hello world"}'
-```bash
+```
 
 ## 端点概览
 
@@ -133,7 +133,7 @@ message = client.messages.create(
     messages=[{"role": "user", "content": "你好！"}]
 )
 print(message.content[0].text)
-```text
+```
 
 ### JavaScript/TypeScript
 
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8080/api/v1/parallel \
       {"backend": "codex", "prompt": "任务 2"}
     ]
   }'
-```text
+```
 
 ## 配置
 
@@ -201,7 +201,7 @@ server:
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 3000
-```bash
+```
 
 CLI 参数覆盖配置文件设置。
 
@@ -232,7 +232,7 @@ WantedBy=multi-user.target
 ```bash
 sudo systemctl enable clinvk
 sudo systemctl start clinvk
-```bash
+```
 
 ### Docker
 
@@ -267,7 +267,7 @@ docker run -d \
     <true/>
 </dict>
 </plist>
-```text
+```
 
 加载服务：
 

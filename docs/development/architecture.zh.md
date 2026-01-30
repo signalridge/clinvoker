@@ -26,8 +26,7 @@ flowchart TD
 
 ## 项目结构
 
-```
-
+```text
 cmd/clinvk/           入口点
 internal/
 ├── app/              CLI 命令和编排
@@ -37,7 +36,7 @@ internal/
 ├── session/          会话持久化
 └── config/           配置加载
 
-```text
+```
 
 ## 层级概述
 
@@ -116,7 +115,7 @@ type Session struct {
     UpdatedAt time.Time
     Metadata  map[string]any
 }
-```yaml
+```
 
 存储：`~/.clinvk/sessions/` 中的 JSON 文件
 

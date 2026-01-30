@@ -49,7 +49,7 @@ clinvk [command] [flags]
 clinvk --backend claude "提示"
 clinvk -b codex "提示"
 clinvk -b gemini "提示"
-```bash
+```
 
 可用后端：`claude`, `codex`, `gemini`
 
@@ -68,7 +68,7 @@ clinvk -b codex -m o3-mini "提示"
 
 ```bash
 clinvk --workdir /path/to/project "分析这个代码库"
-```bash
+```
 
 ### --output-format, -o
 
@@ -95,7 +95,7 @@ clinvk --dry-run "实现功能 X"
 
 ```bash
 clinvk --ephemeral "快速问题"
-```bash
+```
 
 ## 示例
 

@@ -58,7 +58,7 @@ just integration-api
 
 # Run specific test file
 just integration-file cli/test_version
-```bash
+```
 
 ### Direct Execution
 

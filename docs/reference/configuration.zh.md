@@ -10,7 +10,7 @@ clinvk 配置选项完整参考。
 
 ```bash
 clinvk --config /path/to/config.yaml "提示"
-```text
+```
 
 ## 完整配置示例
 
