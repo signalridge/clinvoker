@@ -9,22 +9,26 @@ Download the latest release for your platform from [GitHub Releases](https://git
 === "Linux (amd64)"
 
     ```bash
-    curl -LO https://github.com/signalridge/clinvoker/releases/latest/download/clinvk_linux_amd64.tar.gz
-    tar xzf clinvk_linux_amd64.tar.gz
+    VERSION="<version>" # e.g. 0.1.0-alpha
+    ASSET="clinvoker_${VERSION}_linux_amd64.tar.gz"
+    curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
+    tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
     ```
 
 === "macOS (arm64)"
 
     ```bash
-    curl -LO https://github.com/signalridge/clinvoker/releases/latest/download/clinvk_darwin_arm64.tar.gz
-    tar xzf clinvk_darwin_arm64.tar.gz
+    VERSION="<version>" # e.g. 0.1.0-alpha
+    ASSET="clinvoker_${VERSION}_darwin_arm64.tar.gz"
+    curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
+    tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
     ```
 
 === "Windows"
 
-    Download `clinvk_windows_amd64.zip` from the releases page and extract to your PATH.
+    Download `clinvoker_<version>_windows_amd64.zip` from the releases page and extract to your PATH.
 
 ## Package Managers
 
