@@ -175,6 +175,7 @@ func NewExecutor() *Executor {
 		store:  store,
 		logger: slog.Default(),
 	}
+	e.cleanupOldSessions()
 	// Initialize active sessions metric if enabled
 	e.updateActiveSessionsMetric()
 	return e
@@ -190,9 +191,27 @@ func NewExecutorWithLogger(logger *slog.Logger) *Executor {
 		store:  store,
 		logger: logger,
 	}
+	e.cleanupOldSessions()
 	// Initialize active sessions metric if enabled
 	e.updateActiveSessionsMetric()
 	return e
+}
+
+// cleanupOldSessions removes sessions older than configured retention days.
+func (e *Executor) cleanupOldSessions() {
+	cfg := config.Get()
+	if cfg.Session.RetentionDays <= 0 {
+		return
+	}
+
+	deleted, err := e.store.CleanByDays(cfg.Session.RetentionDays)
+	if err != nil {
+		e.logger.Warn("failed to clean old sessions", "error", err)
+		return
+	}
+	if deleted > 0 {
+		e.logger.Info("cleaned old sessions", "deleted", deleted, "retention_days", cfg.Session.RetentionDays)
+	}
 }
 
 // updateActiveSessionsMetric updates the active sessions gauge metric.
