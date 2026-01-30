@@ -15,12 +15,22 @@ var (
 	buildErr      error
 	testBinary    string
 	testBinaryDir string
+	testHomeDir   string
 )
 
 func TestMain(m *testing.M) {
+	tmpHome, err := os.MkdirTemp("", "clinvk-home-*")
+	if err == nil {
+		testHomeDir = tmpHome
+		_ = os.Setenv("HOME", tmpHome)
+	}
+
 	code := m.Run()
 	if testBinaryDir != "" {
 		_ = os.RemoveAll(testBinaryDir)
+	}
+	if testHomeDir != "" {
+		_ = os.RemoveAll(testHomeDir)
 	}
 	os.Exit(code)
 }

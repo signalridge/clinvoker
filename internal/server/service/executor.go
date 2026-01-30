@@ -13,6 +13,8 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/metrics"
+	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -22,8 +24,65 @@ const (
 	DefaultMaxParallelWorkers = 3
 )
 
+// defaultBlockedWorkDirPrefixes contains paths that should never be used as working directories.
+// These are applied even if AllowedWorkDirPrefixes is configured.
+var defaultBlockedWorkDirPrefixes = []string{
+	"/etc",
+	"/var/run",
+	"/var/lock",
+	"/root",
+	"/sys",
+	"/proc",
+	"/dev",
+	"/usr/bin",
+	"/usr/sbin",
+	"/bin",
+	"/sbin",
+	"/boot",
+	"/lib",
+	"/lib64",
+	"/usr/lib",
+	"/usr/lib64",
+}
+
+// hasPathPrefix checks if path starts with prefix using proper path boundary checks.
+// This prevents "/etcfoo" from matching prefix "/etc".
+//
+// Returns true if:
+//   - path equals prefix exactly (e.g., "/etc" matches "/etc")
+//   - path is a child of prefix (e.g., "/etc/passwd" matches "/etc")
+//
+// Returns false if:
+//   - path merely starts with prefix string (e.g., "/etcfoo" does NOT match "/etc")
+//   - prefix has trailing slash but path equals the prefix without slash
+//     (e.g., "/etc" does NOT match "/etc/" because "/etc" is not under "/etc/")
+//
+// Note: When configuring allowed/blocked prefixes, use paths WITHOUT trailing slashes
+// to match both the directory itself and its children (e.g., use "/etc" not "/etc/").
+func hasPathPrefix(path, prefix string) bool {
+	// Normalize paths to use forward slashes for cross-platform comparison
+	path = filepath.ToSlash(path)
+	prefix = filepath.ToSlash(prefix)
+
+	if path == prefix {
+		return true
+	}
+	// Ensure prefix ends with separator for proper boundary check
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	return strings.HasPrefix(path, prefix)
+}
+
 // validateWorkDir validates that the working directory is safe and exists.
 func validateWorkDir(workDir string) error {
+	return validateWorkDirWithConfig(workDir, nil, nil)
+}
+
+// validateWorkDirWithConfig validates the working directory with configurable restrictions.
+// allowedPrefixes: if non-empty, workDir must start with one of these prefixes.
+// blockedPrefixes: workDir must not start with any of these prefixes (defaults applied if nil).
+func validateWorkDirWithConfig(workDir string, allowedPrefixes, blockedPrefixes []string) error {
 	if workDir == "" {
 		return nil // Empty workDir is allowed, will use current directory
 	}
@@ -56,6 +115,31 @@ func validateWorkDir(workDir string) error {
 		return fmt.Errorf("invalid work directory: resolved path is not absolute")
 	}
 
+	// Apply blocked prefixes (use defaults if not specified)
+	blocked := blockedPrefixes
+	if len(blocked) == 0 {
+		blocked = defaultBlockedWorkDirPrefixes
+	}
+	for _, prefix := range blocked {
+		if hasPathPrefix(realPath, prefix) {
+			return fmt.Errorf("work directory not allowed: %s (blocked path)", workDir)
+		}
+	}
+
+	// Apply allowed prefixes if specified
+	if len(allowedPrefixes) > 0 {
+		allowed := false
+		for _, prefix := range allowedPrefixes {
+			if hasPathPrefix(realPath, prefix) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fmt.Errorf("work directory not allowed: %s (not in allowed paths)", workDir)
+		}
+	}
+
 	// Check if directory exists and is actually a directory
 	info, err := os.Stat(realPath)
 	if err != nil {
@@ -72,6 +156,16 @@ func validateWorkDir(workDir string) error {
 	return nil
 }
 
+// ValidateWorkDirFromConfig validates workDir using configuration from config.Get().
+func ValidateWorkDirFromConfig(workDir string) error {
+	cfg := config.Get()
+	return validateWorkDirWithConfig(
+		workDir,
+		cfg.Server.AllowedWorkDirPrefixes,
+		cfg.Server.BlockedWorkDirPrefixes,
+	)
+}
+
 // Executor handles the execution of AI backend commands.
 type Executor struct {
 	store  *session.Store
@@ -80,10 +174,15 @@ type Executor struct {
 
 // NewExecutor creates a new executor.
 func NewExecutor() *Executor {
-	return &Executor{
-		store:  session.NewStore(),
+	store := session.NewStore()
+	e := &Executor{
+		store:  store,
 		logger: slog.Default(),
 	}
+	e.cleanupOldSessions()
+	// Initialize active sessions metric if enabled
+	e.updateActiveSessionsMetric()
+	return e
 }
 
 // NewExecutorWithLogger creates a new executor with a custom logger.
@@ -91,10 +190,52 @@ func NewExecutorWithLogger(logger *slog.Logger) *Executor {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Executor{
-		store:  session.NewStore(),
+	store := session.NewStore()
+	e := &Executor{
+		store:  store,
 		logger: logger,
 	}
+	e.cleanupOldSessions()
+	// Initialize active sessions metric if enabled
+	e.updateActiveSessionsMetric()
+	return e
+}
+
+// cleanupOldSessions removes sessions older than configured retention days.
+func (e *Executor) cleanupOldSessions() {
+	cfg := config.Get()
+	if cfg.Session.RetentionDays <= 0 {
+		return
+	}
+
+	deleted, err := e.store.CleanByDays(cfg.Session.RetentionDays)
+	if err != nil {
+		e.logger.Warn("failed to clean old sessions", "error", err)
+		return
+	}
+	if deleted > 0 {
+		e.logger.Info("cleaned old sessions", "deleted", deleted, "retention_days", cfg.Session.RetentionDays)
+	}
+}
+
+// updateActiveSessionsMetric updates the active sessions gauge metric.
+func (e *Executor) updateActiveSessionsMetric() {
+	if !config.Get().Server.MetricsEnabled {
+		return
+	}
+	// Count active sessions (exclude completed/error status)
+	sessions, err := e.store.List()
+	if err != nil {
+		e.logger.Warn("failed to count sessions for metrics", "error", err)
+		return
+	}
+	var activeCount float64
+	for _, s := range sessions {
+		if s.Status == session.StatusActive || s.Status == session.StatusPaused {
+			activeCount++
+		}
+	}
+	metrics.SetActiveSessions(activeCount)
 }
 
 // PromptRequest represents a prompt execution request.
@@ -131,6 +272,11 @@ type PromptResult struct {
 func (e *Executor) ExecutePrompt(ctx context.Context, req *PromptRequest) (*PromptResult, error) {
 	runner := NewStatefulRunner(e.store, e.logger)
 	return runner.ExecutePrompt(ctx, req)
+}
+
+// StreamPrompt executes a single prompt in streaming mode.
+func (e *Executor) StreamPrompt(ctx context.Context, req *PromptRequest, onEvent func(*output.UnifiedEvent) error) (*StreamResult, error) {
+	return StreamPrompt(ctx, req, e.store, e.logger, false, onEvent)
 }
 
 // ParallelRequest represents a parallel execution request.
@@ -201,6 +347,8 @@ func (e *Executor) ExecuteParallel(ctx context.Context, req *ParallelRequest) (*
 			if req.DryRun {
 				t.DryRun = true
 			}
+			// Parallel execution is always ephemeral (clean mode).
+			t.Ephemeral = true
 
 			res, err := e.ExecutePrompt(ctx, &t)
 			if err != nil {
@@ -230,14 +378,18 @@ func (e *Executor) ExecuteParallel(ctx context.Context, req *ParallelRequest) (*
 
 // ChainStep represents a step in a chain execution.
 type ChainStep struct {
-	Backend      string `json:"backend"`
-	Prompt       string `json:"prompt"`
-	Model        string `json:"model,omitempty"`
-	WorkDir      string `json:"workdir,omitempty"`
-	ApprovalMode string `json:"approval_mode,omitempty"`
-	SandboxMode  string `json:"sandbox_mode,omitempty"`
-	MaxTurns     int    `json:"max_turns,omitempty"`
-	Name         string `json:"name,omitempty"`
+	Backend      string   `json:"backend"`
+	Prompt       string   `json:"prompt"`
+	Model        string   `json:"model,omitempty"`
+	WorkDir      string   `json:"workdir,omitempty"`
+	ApprovalMode string   `json:"approval_mode,omitempty"`
+	SandboxMode  string   `json:"sandbox_mode,omitempty"`
+	MaxTokens    int      `json:"max_tokens,omitempty"`
+	MaxTurns     int      `json:"max_turns,omitempty"`
+	SystemPrompt string   `json:"system_prompt,omitempty"`
+	Verbose      bool     `json:"verbose,omitempty"`
+	Extra        []string `json:"extra,omitempty"`
+	Name         string   `json:"name,omitempty"`
 }
 
 // ChainRequest represents a chain execution request.
@@ -316,9 +468,13 @@ func (e *Executor) ExecuteChain(ctx context.Context, req *ChainRequest) (*ChainR
 			WorkDir:      workDir,
 			ApprovalMode: step.ApprovalMode,
 			SandboxMode:  step.SandboxMode,
+			MaxTokens:    step.MaxTokens,
 			MaxTurns:     step.MaxTurns,
+			SystemPrompt: step.SystemPrompt,
+			Verbose:      step.Verbose,
 			DryRun:       req.DryRun,
 			Ephemeral:    true,
+			Extra:        step.Extra,
 		}
 
 		res, err := e.ExecutePrompt(ctx, promptReq)
@@ -430,6 +586,8 @@ func (e *Executor) runCompareBackend(ctx context.Context, backendName string, re
 		Model:   req.Model,
 		WorkDir: req.WorkDir,
 		DryRun:  req.DryRun,
+		// Compare is always ephemeral (clean mode).
+		Ephemeral: true,
 	}
 
 	res, err := e.ExecutePrompt(ctx, promptReq)
@@ -551,23 +709,41 @@ type BackendInfo struct {
 }
 
 // ListBackends returns all registered backends.
+// Uses cached availability checks for better performance during frequent health checks.
 func (e *Executor) ListBackends(ctx context.Context) []BackendInfo {
 	names := backend.List()
 	result := make([]BackendInfo, len(names))
 
 	for i, name := range names {
-		b, _ := backend.Get(name)
-		available := false
-		if b != nil {
-			available = b.IsAvailable()
-		}
 		result[i] = BackendInfo{
 			Name:      name,
-			Available: available,
+			Available: backend.IsAvailableCached(name),
 		}
 	}
 
 	return result
+}
+
+// SessionStoreHealth represents the health status of the session store.
+type SessionStoreHealth struct {
+	Available    bool
+	SessionCount int
+	Error        string
+}
+
+// GetSessionStoreHealth returns the health status of the session store.
+func (e *Executor) GetSessionStoreHealth(ctx context.Context) SessionStoreHealth {
+	health := SessionStoreHealth{Available: true}
+
+	sessions, err := e.store.List()
+	if err != nil {
+		health.Available = false
+		health.Error = err.Error()
+		return health
+	}
+
+	health.SessionCount = len(sessions)
+	return health
 }
 
 func sessionToInfo(s *session.Session) SessionInfo {

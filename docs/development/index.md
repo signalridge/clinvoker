@@ -31,6 +31,21 @@ go build ./cmd/clinvk
 ./clinvk version
 ```
 
+## Pre-commit Hooks
+
+This repo includes `.pre-commit-config.yaml` for formatting and lint checks.
+
+```bash
+# Install pre-commit (macOS)
+brew install pre-commit
+
+# Install hooks for this repo
+pre-commit install
+
+# Run on all files
+pre-commit run --all-files
+```
+
 ## Project Structure
 
 ```

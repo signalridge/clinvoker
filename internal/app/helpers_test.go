@@ -302,3 +302,40 @@ func TestUpdateSessionAfterExecution(t *testing.T) {
 
 // Note: Tests for cleanup functions (cleanupBackendSession, cleanupCodexSession, etc.)
 // are now in internal/util/cleanup_test.go since those functions were moved to the util package.
+
+func TestUpdateSessionAfterExecutionWithBackendID(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "session-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	store := session.NewStoreWithDir(tmpDir)
+
+	t.Run("updates backend session ID", func(t *testing.T) {
+		sess, _ := store.Create("claude", "/tmp")
+
+		updateSessionAfterExecutionWithBackendID(store, sess, 0, "", "backend-123", true)
+
+		retrieved, _ := store.Get(sess.ID)
+		if retrieved.BackendSessionID != "backend-123" {
+			t.Errorf("backend session ID = %q, want %q", retrieved.BackendSessionID, "backend-123")
+		}
+	})
+
+	t.Run("handles empty backend session ID", func(t *testing.T) {
+		sess, _ := store.Create("claude", "/tmp")
+
+		updateSessionAfterExecutionWithBackendID(store, sess, 0, "", "", true)
+
+		retrieved, _ := store.Get(sess.ID)
+		if retrieved.BackendSessionID != "" {
+			t.Errorf("backend session ID = %q, want empty", retrieved.BackendSessionID)
+		}
+	})
+
+	t.Run("handles nil session", func(t *testing.T) {
+		// Should not panic
+		updateSessionAfterExecutionWithBackendID(store, nil, 0, "", "test-id", true)
+	})
+}

@@ -328,7 +328,7 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 			streamReq := *req
 			streamCtx := hctx.Context()
 
-			streamResult, streamErr := service.StreamPrompt(streamCtx, &streamReq, nil, true, func(event *output.UnifiedEvent) error {
+			streamResult, streamErr := service.StreamPrompt(streamCtx, &streamReq, nil, nil, true, func(event *output.UnifiedEvent) error {
 				if event.Type != output.EventMessage {
 					return nil
 				}

@@ -139,8 +139,8 @@ func TestApplyOutputFormatDefault(t *testing.T) {
 			name:    "empty with config default",
 			current: "",
 			cfg: &config.Config{
-				UnifiedFlags: config.UnifiedFlagsConfig{
-					OutputFormat: "json",
+				Output: config.OutputConfig{
+					Format: "json",
 				},
 			},
 			want: "json",
@@ -149,8 +149,8 @@ func TestApplyOutputFormatDefault(t *testing.T) {
 			name:    "explicit value not overridden",
 			current: "text",
 			cfg: &config.Config{
-				UnifiedFlags: config.UnifiedFlagsConfig{
-					OutputFormat: "json",
+				Output: config.OutputConfig{
+					Format: "json",
 				},
 			},
 			want: "text",
@@ -159,8 +159,8 @@ func TestApplyOutputFormatDefault(t *testing.T) {
 			name:    "default value gets replaced",
 			current: "default",
 			cfg: &config.Config{
-				UnifiedFlags: config.UnifiedFlagsConfig{
-					OutputFormat: "json",
+				Output: config.OutputConfig{
+					Format: "json",
 				},
 			},
 			want: "json",
@@ -172,10 +172,16 @@ func TestApplyOutputFormatDefault(t *testing.T) {
 			want:    "text",
 		},
 		{
-			name:    "empty config returns current",
+			name:    "empty config uses builtin default",
 			current: "",
 			cfg:     &config.Config{},
-			want:    "",
+			want:    "json",
+		},
+		{
+			name:    "nil config uses builtin default",
+			current: "",
+			cfg:     nil,
+			want:    "json",
 		},
 	}
 
@@ -210,4 +216,141 @@ func TestInternalOutputFormat(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestApplyBackendDefaults(t *testing.T) {
+	t.Run("nil opts does nothing", func(t *testing.T) {
+		cfg := &config.Config{}
+		ApplyBackendDefaults(nil, "claude", cfg)
+		// Should not panic
+	})
+
+	t.Run("nil config does nothing", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{}
+		ApplyBackendDefaults(opts, "claude", nil)
+		// Should not panic
+	})
+
+	t.Run("empty backend name does nothing", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {SystemPrompt: "test"},
+			},
+		}
+		ApplyBackendDefaults(opts, "", cfg)
+		if opts.SystemPrompt != "" {
+			t.Errorf("expected empty SystemPrompt, got %q", opts.SystemPrompt)
+		}
+	})
+
+	t.Run("unknown backend does nothing", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {SystemPrompt: "test"},
+			},
+		}
+		ApplyBackendDefaults(opts, "unknown", cfg)
+		if opts.SystemPrompt != "" {
+			t.Errorf("expected empty SystemPrompt, got %q", opts.SystemPrompt)
+		}
+	})
+
+	t.Run("applies system prompt from backend config", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {SystemPrompt: "You are helpful."},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if opts.SystemPrompt != "You are helpful." {
+			t.Errorf("SystemPrompt = %q, want %q", opts.SystemPrompt, "You are helpful.")
+		}
+	})
+
+	t.Run("does not override explicit system prompt", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{SystemPrompt: "User prompt"}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {SystemPrompt: "Config prompt"},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if opts.SystemPrompt != "User prompt" {
+			t.Errorf("SystemPrompt = %q, want %q", opts.SystemPrompt, "User prompt")
+		}
+	})
+
+	t.Run("appends extra flags from backend config", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{ExtraFlags: []string{"--existing"}}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {ExtraFlags: []string{"--config-flag", "--another"}},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if len(opts.ExtraFlags) != 3 {
+			t.Errorf("ExtraFlags len = %d, want 3", len(opts.ExtraFlags))
+		}
+		if opts.ExtraFlags[0] != "--existing" {
+			t.Errorf("ExtraFlags[0] = %q, want %q", opts.ExtraFlags[0], "--existing")
+		}
+		if opts.ExtraFlags[1] != "--config-flag" {
+			t.Errorf("ExtraFlags[1] = %q, want %q", opts.ExtraFlags[1], "--config-flag")
+		}
+	})
+
+	t.Run("applies approval mode from backend config", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {ApprovalMode: "auto"},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if opts.ApprovalMode != "auto" {
+			t.Errorf("ApprovalMode = %q, want %q", opts.ApprovalMode, "auto")
+		}
+	})
+
+	t.Run("applies sandbox mode from backend config", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {SandboxMode: "workspace"},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if opts.SandboxMode != "workspace" {
+			t.Errorf("SandboxMode = %q, want %q", opts.SandboxMode, "workspace")
+		}
+	})
+
+	t.Run("does not override explicit approval mode", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{ApprovalMode: "always"}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {ApprovalMode: "auto"},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if opts.ApprovalMode != "always" {
+			t.Errorf("ApprovalMode = %q, want %q", opts.ApprovalMode, "always")
+		}
+	})
+
+	t.Run("overrides default approval mode with backend config", func(t *testing.T) {
+		opts := &backend.UnifiedOptions{ApprovalMode: backend.ApprovalDefault}
+		cfg := &config.Config{
+			Backends: map[string]config.BackendConfig{
+				"claude": {ApprovalMode: "auto"},
+			},
+		}
+		ApplyBackendDefaults(opts, "claude", cfg)
+		if opts.ApprovalMode != "auto" {
+			t.Errorf("ApprovalMode = %q, want %q", opts.ApprovalMode, "auto")
+		}
+	})
 }

@@ -5,6 +5,17 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"time"
+	"unicode/utf8"
+)
+
+// Constants for session display and ID generation.
+const (
+	// MaxDisplayNameLength is the maximum length for truncated display names.
+	MaxDisplayNameLength = 50
+	// ShortIDLength is the length of the short session ID prefix.
+	ShortIDLength = 8
+	// SessionIDBytes is the number of random bytes for session ID generation (128-bit entropy).
+	SessionIDBytes = 16
 )
 
 // SessionStatus represents the current status of a session.
@@ -264,19 +275,24 @@ func (s *Session) DisplayName() string {
 		return s.Title
 	}
 	if s.InitialPrompt != "" {
-		// Truncate to first 50 chars
+		// Truncate to first MaxDisplayNameLength runes (UTF-8 safe)
 		prompt := s.InitialPrompt
-		if len(prompt) > 50 {
-			prompt = prompt[:47] + "..."
+		if utf8.RuneCountInString(prompt) > MaxDisplayNameLength {
+			runes := []rune(prompt)
+			prompt = string(runes[:MaxDisplayNameLength-3]) + "..."
 		}
 		return prompt
 	}
-	return s.ID[:8] // Short ID
+	// Return short ID prefix
+	if len(s.ID) >= ShortIDLength {
+		return s.ID[:ShortIDLength]
+	}
+	return s.ID
 }
 
-// generateID generates a random session ID.
+// generateID generates a random session ID with 128-bit entropy.
 func generateID() (string, error) {
-	bytes := make([]byte, 8)
+	bytes := make([]byte, SessionIDBytes)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}

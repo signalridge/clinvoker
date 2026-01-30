@@ -3,18 +3,17 @@ package app
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 var (
@@ -56,7 +55,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&modelName, "model", "m", "", "model to use for the backend")
 	rootCmd.PersistentFlags().StringVarP(&workDir, "workdir", "w", "", "working directory for the AI backend")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "print command without executing")
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output-format", "o", "text", "output format: text, json, stream-json")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output-format", "o", "json", "output format: text, json, stream-json")
 	rootCmd.PersistentFlags().BoolVar(&ephemeralMode, "ephemeral", false, "stateless mode: don't persist session (like standard LLM APIs)")
 	rootCmd.Flags().BoolVarP(&continueLastSession, "continue", "c", false, "continue the last session")
 
@@ -87,42 +86,61 @@ func SetVersion(v, c, d string) {
 	date = d
 }
 
-func runPrompt(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 && !continueLastSession {
-		return cmd.Help()
-	}
+// promptContext holds the context for prompt execution.
+type promptContext struct {
+	cfg         *config.Config
+	backend     backend.Backend
+	backendName string
+	opts        *backend.UnifiedOptions
+	store       *session.Store
+	sess        *session.Session
+	dryRun      bool
+	userFormat  backend.OutputFormat
+	ephemeral   bool
+}
 
-	var prompt string
-	if len(args) > 0 {
-		prompt = args[0]
-	}
+// normalizedFlags holds normalized flag values after applying config defaults.
+type normalizedFlags struct {
+	outputFormat string
+	dryRun       bool
+}
 
+// normalizeFlags normalizes output format and dry-run flags using config defaults.
+// This is extracted so it can be reused by --continue path without backend resolution.
+func normalizeFlags(cmd *cobra.Command) *normalizedFlags {
 	cfg := config.Get()
 
 	// Apply config default output format if flag not explicitly set
+	effectiveOutputFormat := outputFormat
 	if !cmd.Flags().Changed("output-format") {
-		if cfg.UnifiedFlags.OutputFormat != "" && cfg.UnifiedFlags.OutputFormat != string(backend.OutputDefault) {
-			outputFormat = cfg.UnifiedFlags.OutputFormat
-		}
+		// Ignore flag default to allow config to override
+		effectiveOutputFormat = ""
 	}
-
-	// Normalize and validate output format
-	outputFormat = strings.ToLower(outputFormat)
-	switch backend.OutputFormat(outputFormat) {
-	case backend.OutputDefault, backend.OutputText, backend.OutputJSON, backend.OutputStreamJSON, "":
-		// Valid formats
-	default:
-		return fmt.Errorf("invalid output format %q: must be one of: text, json, stream-json", outputFormat)
-	}
+	effectiveOutputFormat = util.ApplyOutputFormatDefault(effectiveOutputFormat, cfg)
+	effectiveOutputFormat = strings.ToLower(effectiveOutputFormat)
 
 	effectiveDryRun := dryRun
 	if !cmd.Flags().Changed("dry-run") && cfg.UnifiedFlags.DryRun {
 		effectiveDryRun = true
 	}
 
-	// If --continue flag is set, resume the last session
-	if continueLastSession {
-		return runContinueLastSession(prompt, effectiveDryRun)
+	return &normalizedFlags{
+		outputFormat: effectiveOutputFormat,
+		dryRun:       effectiveDryRun,
+	}
+}
+
+// preparePromptContext prepares the context for prompt execution.
+func preparePromptContext(cmd *cobra.Command, _ string) (*promptContext, error) {
+	cfg := config.Get()
+	flags := normalizeFlags(cmd)
+
+	// Validate output format
+	switch backend.OutputFormat(flags.outputFormat) {
+	case backend.OutputDefault, backend.OutputText, backend.OutputJSON, backend.OutputStreamJSON, "":
+		// Valid formats
+	default:
+		return nil, fmt.Errorf("invalid output format %q: must be one of: text, json, stream-json", flags.outputFormat)
 	}
 
 	// Determine backend
@@ -137,99 +155,154 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 	// Get backend
 	b, err := backend.Get(bn)
 	if err != nil {
-		return fmt.Errorf("backend error: %w", err)
+		return nil, fmt.Errorf("backend error: %w", err)
 	}
 
 	// Skip availability check in dry-run mode
-	if !effectiveDryRun && !b.IsAvailable() {
-		return fmt.Errorf("backend %q is not available (CLI not found in PATH)", bn)
+	if !flags.dryRun && !b.IsAvailable() {
+		return nil, fmt.Errorf("backend %q is not available (CLI not found in PATH)", bn)
 	}
 
-	// Determine internal output format
-	// For text output, we use JSON internally to capture session ID, then extract content
-	userOutputFormat := backend.OutputFormat(outputFormat)
-	internalOutputFormat := userOutputFormat
-	if userOutputFormat == backend.OutputText || userOutputFormat == backend.OutputDefault || userOutputFormat == "" {
-		internalOutputFormat = backend.OutputJSON
-	}
+	userFormat := backend.OutputFormat(flags.outputFormat)
+	internalFormat := DetermineInternalFormat(userFormat)
 
-	// Build unified options with internal output format
+	// Build unified options
 	opts := &backend.UnifiedOptions{
 		WorkDir:      workDir,
 		Model:        modelName,
-		OutputFormat: internalOutputFormat,
+		OutputFormat: internalFormat,
 		Ephemeral:    ephemeralMode,
 	}
-	applyUnifiedDefaults(opts, cfg, effectiveDryRun)
+	applyUnifiedDefaults(opts, cfg, flags.dryRun)
+	applyBackendDefaults(opts, bn, cfg)
 
-	// Get backend-specific config
-	if bcfg, ok := cfg.Backends[bn]; ok {
-		if opts.Model == "" {
+	// Get backend-specific model if not already set
+	if opts.Model == "" {
+		if bcfg, ok := cfg.Backends[bn]; ok {
 			opts.Model = bcfg.Model
 		}
 	}
 
-	// Build command
-	execCmd := b.BuildCommandUnified(prompt, opts)
+	return &promptContext{
+		cfg:         cfg,
+		backend:     b,
+		backendName: bn,
+		opts:        opts,
+		dryRun:      flags.dryRun,
+		userFormat:  userFormat,
+		ephemeral:   ephemeralMode,
+	}, nil
+}
 
-	if effectiveDryRun {
+func runPrompt(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 && !continueLastSession {
+		return cmd.Help()
+	}
+
+	var prompt string
+	if len(args) > 0 {
+		prompt = args[0]
+	}
+
+	// If --continue flag is set or auto-resume config is true, resume the last session
+	// Use normalizeFlags directly to avoid checking default backend availability
+	// (the session's backend is what matters, not the default backend)
+	cfg := config.Get()
+	if continueLastSession || (cfg.Session.AutoResume && !ephemeralMode) {
+		flags := normalizeFlags(cmd)
+		// Check if there is any session to resume
+		store := session.NewStore()
+		filter := &session.ListFilter{}
+		if backendName != "" {
+			filter.Backend = backendName
+		}
+		sessions, err := store.ListWithFilter(filter)
+		if err == nil && len(sessions) > 0 {
+			if continueLastSession {
+				return runContinueLastSession(cmd, prompt, flags)
+			}
+			if len(filterResumableSessions(sessions)) > 0 {
+				return runContinueLastSession(cmd, prompt, flags)
+			}
+		}
+		// If no sessions found, fall back to creating new session
+	}
+
+	ctx, err := preparePromptContext(cmd, prompt)
+	if err != nil {
+		return err
+	}
+
+	// Build command
+	execCmd := ctx.backend.BuildCommandUnified(prompt, ctx.opts)
+
+	if ctx.dryRun {
 		fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
 	}
 
 	// Create session (skip if ephemeral mode)
-	var store *session.Store
-	var sess *session.Session
-	if !ephemeralMode {
-		store = session.NewStore()
-		sess, err = store.Create(bn, workDir)
+	if !ctx.ephemeral {
+		ctx.store = session.NewStore()
+		sessOpts := &session.SessionOptions{
+			Model:         ctx.opts.Model,
+			InitialPrompt: prompt,
+			Tags:          append([]string{}, cfg.Session.DefaultTags...),
+		}
+		ctx.sess, err = ctx.store.CreateWithOptions(ctx.backendName, workDir, sessOpts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: failed to create session: %v\n", err)
 		}
 	}
 
-	// Execute based on output format and capture backend session ID
-	var exitCode int
-	var backendSessionID string
-	switch userOutputFormat {
-	case backend.OutputJSON:
-		exitCode, backendSessionID, err = executeWithJSONOutputAndCapture(b, execCmd, sess)
-	case backend.OutputStreamJSON:
-		exitCode, err = executeWithStreamOutput(b, execCmd)
-	default:
-		// Text output: use JSON internally, extract content for display
-		exitCode, backendSessionID, err = executeTextViaJSON(b, execCmd, sess)
+	// Execute using unified execution
+	execCfg := &ExecutionConfig{
+		Backend:    ctx.backend,
+		Session:    ctx.sess,
+		OutputMode: DetermineOutputMode(ctx.userFormat),
+		Stdin:      true,
+		Timeout:    GetCommandTimeout(),
 	}
+	result, err := ExecuteCommand(execCfg, execCmd)
 
 	// Update session with backend session ID (skip if ephemeral mode)
-	if sess != nil && store != nil {
-		sess.MarkUsed()
-		if backendSessionID != "" {
-			sess.BackendSessionID = backendSessionID
+	if ctx.sess != nil && ctx.store != nil {
+		ctx.sess.MarkUsed()
+		if result != nil && result.SessionID != "" {
+			ctx.sess.BackendSessionID = result.SessionID
 		}
-		if err := store.Save(sess); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
+		if saveErr := ctx.store.Save(ctx.sess); saveErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", saveErr)
 		}
 	}
 
-	// Clean up backend session if ephemeral mode (for backends that don't support --no-session-persistence)
-	if ephemeralMode {
-		cleanupBackendSession(bn, backendSessionID)
+	// Clean up backend session if ephemeral mode
+	if ctx.ephemeral && result != nil {
+		cleanupBackendSession(ctx.backendName, result.SessionID)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	if exitCode != 0 {
-		os.Exit(exitCode)
+	if result != nil && result.ExitCode != 0 {
+		os.Exit(result.ExitCode)
 	}
 
 	return nil
 }
 
 // runContinueLastSession continues the most recent session.
-func runContinueLastSession(prompt string, effectiveDryRun bool) error {
+// It uses normalizedFlags directly to avoid checking default backend availability.
+func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFlags) error {
+	// Validate output format
+	switch backend.OutputFormat(flags.outputFormat) {
+	case backend.OutputDefault, backend.OutputText, backend.OutputJSON, backend.OutputStreamJSON, "":
+		// Valid formats
+	default:
+		return fmt.Errorf("invalid output format %q: must be one of: text, json, stream-json", flags.outputFormat)
+	}
+
 	store := session.NewStore()
 
 	// Build filter based on flags
@@ -247,9 +320,14 @@ func runContinueLastSession(prompt string, effectiveDryRun bool) error {
 		return fmt.Errorf("no sessions found to continue")
 	}
 
-	sess := sessions[0]
+	resumable := filterResumableSessions(sessions)
+	if len(resumable) == 0 {
+		return fmt.Errorf("no resumable sessions found (missing backend session id)")
+	}
 
-	// Get backend
+	sess := resumable[0]
+
+	// Get backend from session (not default backend)
 	b, err := backend.Get(sess.Backend)
 	if err != nil {
 		return fmt.Errorf("backend error: %w", err)
@@ -257,42 +335,41 @@ func runContinueLastSession(prompt string, effectiveDryRun bool) error {
 
 	cfg := config.Get()
 
-	if !effectiveDryRun && !b.IsAvailable() {
+	// Check session's backend availability (not default backend)
+	if !flags.dryRun && !b.IsAvailable() {
 		return fmt.Errorf("backend %q is not available", sess.Backend)
 	}
 
-	// Determine internal output format (use JSON internally for text to capture session ID)
-	userOutputFormat := backend.OutputFormat(outputFormat)
-	internalOutputFormat := userOutputFormat
-	if userOutputFormat == backend.OutputText || userOutputFormat == backend.OutputDefault || userOutputFormat == "" {
-		internalOutputFormat = backend.OutputJSON
-	}
+	// Determine output formats (use normalized format)
+	userFormat := backend.OutputFormat(flags.outputFormat)
+	internalFormat := DetermineInternalFormat(userFormat)
 
 	// Build unified options
 	opts := &backend.UnifiedOptions{
 		WorkDir:      sess.WorkingDir,
 		Model:        modelName,
-		OutputFormat: internalOutputFormat,
+		OutputFormat: internalFormat,
 	}
-	applyUnifiedDefaults(opts, cfg, effectiveDryRun)
+	applyUnifiedDefaults(opts, cfg, flags.dryRun)
+	applyBackendDefaults(opts, sess.Backend, cfg)
 
-	// Get backend-specific config
-	if bcfg, ok := cfg.Backends[sess.Backend]; ok {
-		if opts.Model == "" {
+	// Get backend-specific model if not already set
+	if opts.Model == "" {
+		if bcfg, ok := cfg.Backends[sess.Backend]; ok {
 			opts.Model = bcfg.Model
 		}
 	}
 
 	// Get session ID for resume
-	backendSessionID := sess.BackendSessionID
-	if backendSessionID == "" {
-		backendSessionID = sess.ID
+	bSessionID := sess.BackendSessionID
+	if bSessionID == "" {
+		return fmt.Errorf("session %s has no backend session id; cannot resume", shortSessionID(sess.ID))
 	}
 
 	// Build resume command
-	execCmd := b.ResumeCommandUnified(backendSessionID, prompt, opts)
+	execCmd := b.ResumeCommandUnified(bSessionID, prompt, opts)
 
-	if effectiveDryRun {
+	if flags.dryRun {
 		fmt.Printf("Would continue session %s (%s)\n", shortSessionID(sess.ID), sess.Backend)
 		fmt.Printf("Command: %s %v\n", execCmd.Path, execCmd.Args[1:])
 		return nil
@@ -304,24 +381,33 @@ func runContinueLastSession(prompt string, effectiveDryRun bool) error {
 		fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
 	}
 
-	// Execute based on output format
-	var exitCode int
-	switch userOutputFormat {
-	case backend.OutputJSON:
-		exitCode, _, err = executeWithJSONOutputAndCapture(b, execCmd, sess)
-	case backend.OutputStreamJSON:
-		exitCode, err = executeWithStreamOutput(b, execCmd)
-	default:
-		// Text output: use JSON internally, extract content for display
-		exitCode, _, err = executeTextViaJSON(b, execCmd, sess)
+	// Execute using unified execution
+	execCfg := &ExecutionConfig{
+		Backend:    b,
+		Session:    sess,
+		OutputMode: DetermineOutputMode(userFormat),
+		Stdin:      true,
+		Timeout:    GetCommandTimeout(),
+	}
+	result, err := ExecuteCommand(execCfg, execCmd)
+
+	// Persist session updates (including backend session ID) after execution.
+	if result != nil && sess != nil {
+		sess.MarkUsed()
+		if result.SessionID != "" {
+			sess.BackendSessionID = result.SessionID
+		}
+		if saveErr := store.Save(sess); saveErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", saveErr)
+		}
 	}
 
 	if err != nil {
 		return err
 	}
 
-	if exitCode != 0 {
-		os.Exit(exitCode)
+	if result != nil && result.ExitCode != 0 {
+		os.Exit(result.ExitCode)
 	}
 
 	return nil
@@ -340,85 +426,22 @@ func selectOutput(stdout, stderr string, exitCode int) string {
 	return stdout
 }
 
-// executeTextViaJSON executes a command with JSON output internally,
-// extracts the content for text display, and captures the session ID.
-func executeTextViaJSON(b backend.Backend, cmd *exec.Cmd, sess *session.Session) (exitCode int, sessionID string, err error) {
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = &stdoutBuf
-	// Always capture stderr for JSON parsing (some backends output errors to stderr)
-	cmd.Stderr = &stderrBuf
-
-	if err := cmd.Start(); err != nil {
-		return 1, "", err
-	}
-
-	waitErr := cmd.Wait()
-	exitCode = 0
-	var errMsg string
-	if waitErr != nil {
-		if exitErr, ok := waitErr.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-			errMsg = exitErr.Error()
-		} else {
-			return 1, "", waitErr
-		}
-	}
-
-	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
-
-	// Parse JSON response to get content and session ID
-	resp, parseErr := b.ParseJSONResponse(rawOutput)
-	if parseErr == nil && resp != nil {
-		sessionID = resp.SessionID
-
-		// Check for errors first
-		if resp.Error != "" {
-			fmt.Fprintf(os.Stderr, "Error [%s]: %s\n", b.Name(), resp.Error)
-			if exitCode == 0 {
-				exitCode = 1
-			}
-		}
-
-		// Print content as plain text
-		if resp.Content != "" {
-			fmt.Print(resp.Content)
-			if resp.Content[len(resp.Content)-1] != '\n' {
-				fmt.Println()
-			}
-		}
-	} else {
-		// Fallback: print raw output if JSON parsing fails
-		output := b.ParseOutput(rawOutput)
-		if output != "" {
-			fmt.Print(output)
-			if output[len(output)-1] != '\n' {
-				fmt.Println()
-			}
-		}
-	}
-
-	// Update session metadata if available
-	if sess != nil {
-		updateSessionFromResponse(sess, exitCode, errMsg, resp)
-	}
-
-	return exitCode, sessionID, nil
-}
-
 // ExecuteAndCapture executes a command and returns the parsed output.
 // This is used by commands like compare, parallel, and chain that need to capture output.
 // Note: This function expects text output format, not JSON.
+//
+// Deprecated: Use ExecuteAndCaptureWithJSON for proper session ID capture.
 func ExecuteAndCapture(b backend.Backend, cmd *exec.Cmd) (output string, exitCode int, err error) {
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 
 	cmd.Stdin = nil
 	cmd.Stdout = &stdoutBuf
-	// Always capture stderr (some backends output errors to stderr)
-	cmd.Stderr = &stderrBuf
+	if b.SeparateStderr() {
+		cmd.Stderr = &stderrBuf
+	} else {
+		cmd.Stderr = &stdoutBuf
+	}
 
 	if err := cmd.Start(); err != nil {
 		return "", 1, err
@@ -441,6 +464,70 @@ func ExecuteAndCapture(b backend.Backend, cmd *exec.Cmd) (output string, exitCod
 	return output, exitCode, nil
 }
 
+// CaptureResult contains the result of command execution with JSON parsing.
+type CaptureResult struct {
+	Content          string // Parsed text content
+	BackendSessionID string // Session ID from backend's JSON response
+	ExitCode         int
+	Error            string
+	Response         *backend.UnifiedResponse // Full parsed response (may be nil)
+}
+
+// ExecuteAndCaptureWithJSON executes a command that uses JSON output format internally
+// and returns parsed content along with backend session ID.
+// This properly captures backend session IDs for resume functionality.
+// The cmd should already be built with JSON output format.
+func ExecuteAndCaptureWithJSON(b backend.Backend, cmd *exec.Cmd) (*CaptureResult, error) {
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+
+	cmd.Stdin = nil
+	cmd.Stdout = &stdoutBuf
+	if b.SeparateStderr() {
+		cmd.Stderr = &stderrBuf
+	} else {
+		cmd.Stderr = &stdoutBuf
+	}
+
+	if err := cmd.Start(); err != nil {
+		return &CaptureResult{ExitCode: 1, Error: err.Error()}, err
+	}
+
+	waitErr := cmd.Wait()
+	result := &CaptureResult{}
+
+	if waitErr != nil {
+		if exitErr, ok := waitErr.(*exec.ExitError); ok {
+			result.ExitCode = exitErr.ExitCode()
+			result.Error = exitErr.Error()
+		} else {
+			return &CaptureResult{ExitCode: 1, Error: waitErr.Error()}, waitErr
+		}
+	}
+
+	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), result.ExitCode)
+
+	// Try to parse as JSON response
+	resp, parseErr := b.ParseJSONResponse(rawOutput)
+	if parseErr == nil && resp != nil {
+		result.Response = resp
+		result.Content = resp.Content
+		result.BackendSessionID = resp.SessionID
+		if resp.Error != "" {
+			result.Error = resp.Error
+			// If backend reports error but process exited 0, treat as failure
+			if result.ExitCode == 0 {
+				result.ExitCode = 1
+			}
+		}
+	} else {
+		// Fallback to text parsing if JSON parsing fails
+		result.Content = b.ParseOutput(rawOutput)
+	}
+
+	return result, nil
+}
+
 // PromptResult represents a unified result for JSON output.
 type PromptResult struct {
 	Backend   string              `json:"backend"`
@@ -452,104 +539,4 @@ type PromptResult struct {
 	Error     string              `json:"error,omitempty"`
 	Usage     *backend.TokenUsage `json:"usage,omitempty"`
 	Raw       map[string]any      `json:"raw,omitempty"`
-}
-
-// executeWithJSONOutputAndCapture executes a command, outputs unified JSON, and returns backend session ID.
-func executeWithJSONOutputAndCapture(b backend.Backend, cmd *exec.Cmd, sess *session.Session) (exitCode int, sessionID string, err error) {
-	startTime := time.Now()
-
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = &stdoutBuf
-	// Always capture stderr for JSON parsing (some backends output errors to stderr)
-	cmd.Stderr = &stderrBuf
-
-	if err := cmd.Start(); err != nil {
-		return 1, "", err
-	}
-
-	waitErr := cmd.Wait()
-	exitCode = 0
-	var errMsg string
-	if waitErr != nil {
-		if exitErr, ok := waitErr.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-			errMsg = exitErr.Error()
-		} else {
-			return 1, "", waitErr
-		}
-	}
-
-	duration := time.Since(startTime).Seconds()
-	rawOutput := selectOutput(stdoutBuf.String(), stderrBuf.String(), exitCode)
-
-	// Parse the backend's JSON response into unified format
-	resp, parseErr := b.ParseJSONResponse(rawOutput)
-
-	result := PromptResult{
-		Backend:  b.Name(),
-		Duration: duration,
-		ExitCode: exitCode,
-		Error:    errMsg,
-	}
-
-	if parseErr == nil && resp != nil {
-		result.Content = resp.Content
-		result.SessionID = resp.SessionID
-		result.Model = resp.Model
-		result.Usage = resp.Usage
-		result.Raw = resp.Raw
-		sessionID = resp.SessionID
-		// Include backend error in result (prioritize over exec error)
-		if resp.Error != "" {
-			result.Error = resp.Error
-		}
-	} else {
-		// Fallback to text parsing if JSON parsing fails
-		result.Content = b.ParseOutput(rawOutput)
-		if sess != nil {
-			result.SessionID = sess.ID
-		}
-	}
-
-	// Update session metadata if available
-	if sess != nil {
-		updateSessionFromResponse(sess, exitCode, errMsg, resp)
-	}
-
-	// Output unified JSON
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(result); err != nil {
-		return 1, "", err
-	}
-
-	return exitCode, sessionID, nil
-}
-
-// executeWithStreamOutput executes a command and streams output directly.
-// For stream-json, we pass through the backend's native streaming format.
-// Note: stderr is always shown to the user (not discarded) so errors are visible.
-func executeWithStreamOutput(_ backend.Backend, cmd *exec.Cmd) (int, error) {
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout // Direct pass-through for streaming
-	cmd.Stderr = os.Stderr // Always show stderr so errors are visible
-
-	if err := cmd.Start(); err != nil {
-		return 1, err
-	}
-
-	err := cmd.Wait()
-	exitCode := 0
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-		} else {
-			return 1, err
-		}
-	}
-
-	return exitCode, nil
 }

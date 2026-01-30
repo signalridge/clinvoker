@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -309,5 +310,134 @@ func TestHandleSessionsWithFilters(t *testing.T) {
 	}
 	if resp.Body.Offset != 10 {
 		t.Errorf("expected offset 10, got %d", resp.Body.Offset)
+	}
+}
+
+func TestCustomHandlersRegister(t *testing.T) {
+	router := chi.NewRouter()
+	api := humachi.New(router, huma.DefaultConfig("test", "1.0"))
+
+	executor := service.NewExecutor()
+	handlers := NewCustomHandlers(executor)
+	handlers.Register(api)
+
+	// Verify endpoints are registered
+	paths := api.OpenAPI().Paths
+	expectedPaths := []string{
+		"/api/v1/prompt",
+		"/api/v1/parallel",
+		"/api/v1/chain",
+		"/api/v1/compare",
+		"/api/v1/backends",
+		"/api/v1/sessions",
+		"/api/v1/sessions/{id}",
+		"/health",
+	}
+
+	for _, path := range expectedPaths {
+		if _, ok := paths[path]; !ok {
+			t.Errorf("expected path %q to be registered", path)
+		}
+	}
+}
+
+func TestFormatDuration(t *testing.T) {
+	tests := []struct {
+		name     string
+		duration time.Duration
+		want     string
+	}{
+		{"zero", 0, "0s"},
+		{"seconds only", 45 * time.Second, "45s"},
+		{"minutes and seconds", 3*time.Minute + 25*time.Second, "3m25s"},
+		{"hours minutes seconds", 2*time.Hour + 15*time.Minute + 30*time.Second, "2h15m30s"},
+		{"one hour", time.Hour, "1h0m0s"},
+		{"subsecond rounds to zero", 500 * time.Millisecond, "1s"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := formatDuration(tt.duration)
+			if got != tt.want {
+				t.Errorf("formatDuration(%v) = %q, want %q", tt.duration, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHandleGetSession_NotFound(t *testing.T) {
+	executor := service.NewExecutor()
+	handlers := NewCustomHandlers(executor)
+
+	_, err := handlers.HandleGetSession(context.Background(), &GetSessionInput{
+		ID: "nonexistent-session-id",
+	})
+
+	if err == nil {
+		t.Error("expected error for nonexistent session")
+	}
+}
+
+func TestHandleDeleteSession_NotFound(t *testing.T) {
+	executor := service.NewExecutor()
+	handlers := NewCustomHandlers(executor)
+
+	_, err := handlers.HandleDeleteSession(context.Background(), &DeleteSessionInput{
+		ID: "nonexistent-session-id",
+	})
+
+	if err == nil {
+		t.Error("expected error for nonexistent session")
+	}
+}
+
+func TestNewCustomHandlersWithHealthInfo(t *testing.T) {
+	executor := service.NewExecutor()
+	healthInfo := HealthInfo{
+		Version:   "2.0.0",
+		StartTime: time.Now().Add(-time.Hour),
+	}
+
+	handlers := NewCustomHandlersWithHealthInfo(executor, healthInfo)
+
+	if handlers == nil {
+		t.Fatal("NewCustomHandlersWithHealthInfo returned nil")
+	}
+	if handlers.healthInfo.Version != "2.0.0" {
+		t.Errorf("Version = %q, want %q", handlers.healthInfo.Version, "2.0.0")
+	}
+}
+
+func TestHealthResponseIncludesAllFields(t *testing.T) {
+	executor := service.NewExecutor()
+	healthInfo := HealthInfo{
+		Version:   "1.2.3",
+		StartTime: time.Now().Add(-30 * time.Minute),
+	}
+	handlers := NewCustomHandlersWithHealthInfo(executor, healthInfo)
+
+	resp, err := handlers.HandleHealth(context.Background(), &HealthInput{})
+	if err != nil {
+		t.Fatalf("HandleHealth failed: %v", err)
+	}
+
+	// Check version is included
+	if resp.Body.Version != "1.2.3" {
+		t.Errorf("Version = %q, want %q", resp.Body.Version, "1.2.3")
+	}
+
+	// Check uptime is calculated
+	if resp.Body.UptimeMillis <= 0 {
+		t.Error("UptimeMillis should be positive")
+	}
+
+	// Check uptime string is formatted
+	if resp.Body.Uptime == "" {
+		t.Error("Uptime string should not be empty")
+	}
+
+	// Check session store status is included
+	if !resp.Body.SessionStore.Available {
+		t.Log("Session store reported as unavailable (may be expected in test env)")
 	}
 }

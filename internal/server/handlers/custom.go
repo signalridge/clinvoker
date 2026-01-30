@@ -2,23 +2,41 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 
+	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/server/service"
+	"github.com/signalridge/clinvoker/internal/util"
 )
+
+// HealthInfo contains information for health check responses.
+type HealthInfo struct {
+	Version   string
+	StartTime time.Time
+}
 
 // CustomHandlers provides handlers for the custom RESTful API.
 type CustomHandlers struct {
-	executor *service.Executor
+	executor   *service.Executor
+	healthInfo HealthInfo
 }
 
 // NewCustomHandlers creates a new custom handlers instance.
 func NewCustomHandlers(executor *service.Executor) *CustomHandlers {
-	return &CustomHandlers{executor: executor}
+	return NewCustomHandlersWithHealthInfo(executor, HealthInfo{Version: "1.0.0", StartTime: time.Now()})
+}
+
+// NewCustomHandlersWithHealthInfo creates a new custom handlers instance with health info.
+func NewCustomHandlersWithHealthInfo(executor *service.Executor, healthInfo HealthInfo) *CustomHandlers {
+	return &CustomHandlers{executor: executor, healthInfo: healthInfo}
 }
 
 // Register registers all custom API routes.
@@ -118,7 +136,7 @@ type PromptInput struct {
 }
 
 // HandlePrompt handles prompt execution requests.
-func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (*PromptResponse, error) {
+func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (*huma.StreamResponse, error) {
 	if input.Body.Backend == "" {
 		return nil, huma.Error400BadRequest("backend is required")
 	}
@@ -126,13 +144,66 @@ func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (
 		return nil, huma.Error400BadRequest("prompt is required")
 	}
 
+	cfg := config.Get()
+	requestedFormat := backend.OutputFormat(util.ApplyOutputFormatDefault(input.Body.OutputFormat, cfg))
+
+	if requestedFormat == backend.OutputStreamJSON {
+		streamReq := input.Body.ToServiceRequest()
+		return &huma.StreamResponse{
+			Body: func(hctx huma.Context) {
+				hctx.SetStatus(http.StatusOK)
+				hctx.SetHeader("Content-Type", "application/x-ndjson")
+				hctx.SetHeader("Cache-Control", "no-cache")
+
+				writer := output.NewWriter(hctx.BodyWriter(), output.WithFormat(output.FormatJSON))
+				flusher, _ := hctx.BodyWriter().(http.Flusher)
+				sawErrorEvent := false
+
+				streamResult, streamErr := h.executor.StreamPrompt(hctx.Context(), streamReq, func(event *output.UnifiedEvent) error {
+					if event.Type == output.EventError {
+						sawErrorEvent = true
+					}
+					if err := writer.WriteEvent(event); err != nil {
+						return err
+					}
+					if flusher != nil {
+						flusher.Flush()
+					}
+					return nil
+				})
+
+				if (streamErr != nil || (streamResult != nil && streamResult.Error != "")) && !sawErrorEvent {
+					errMsg := "stream failed"
+					if streamErr != nil {
+						errMsg = streamErr.Error()
+					} else if streamResult != nil && streamResult.Error != "" {
+						errMsg = streamResult.Error
+					}
+
+					errEvent := output.NewUnifiedEvent(output.EventError, streamReq.Backend, "")
+					if err := errEvent.SetContent(&output.ErrorContent{Message: errMsg}); err == nil {
+						_ = writer.WriteEvent(errEvent)
+						if flusher != nil {
+							flusher.Flush()
+						}
+					}
+				}
+			},
+		}, nil
+	}
+
 	result, err := h.executor.ExecutePrompt(ctx, input.Body.ToServiceRequest())
 	if err != nil {
 		return nil, huma.Error500InternalServerError("execution failed", err)
 	}
 
-	return &PromptResponse{
-		Body: FromServiceResult(result),
+	payload := FromServiceResult(result)
+	return &huma.StreamResponse{
+		Body: func(hctx huma.Context) {
+			hctx.SetStatus(http.StatusOK)
+			hctx.SetHeader("Content-Type", "application/json")
+			_ = json.NewEncoder(hctx.BodyWriter()).Encode(payload)
+		},
 	}, nil
 }
 
@@ -163,8 +234,14 @@ func (h *CustomHandlers) HandleParallel(ctx context.Context, input *ParallelInpu
 			WorkDir:      t.WorkDir,
 			ApprovalMode: t.ApprovalMode,
 			SandboxMode:  t.SandboxMode,
+			OutputFormat: t.OutputFormat,
+			MaxTokens:    t.MaxTokens,
 			MaxTurns:     t.MaxTurns,
+			SystemPrompt: t.SystemPrompt,
+			Verbose:      t.Verbose,
+			Ephemeral:    t.Ephemeral,
 			Extra:        t.Extra,
+			Metadata:     t.Metadata,
 		}
 	}
 
@@ -233,7 +310,11 @@ func (h *CustomHandlers) HandleChain(ctx context.Context, input *ChainInput) (*C
 			WorkDir:      s.WorkDir,
 			ApprovalMode: s.ApprovalMode,
 			SandboxMode:  s.SandboxMode,
+			MaxTokens:    s.MaxTokens,
 			MaxTurns:     s.MaxTurns,
+			SystemPrompt: s.SystemPrompt,
+			Verbose:      s.Verbose,
+			Extra:        s.Extra,
 			Name:         s.Name,
 		}
 	}
@@ -447,33 +528,73 @@ func (h *CustomHandlers) HandleDeleteSession(ctx context.Context, input *DeleteS
 type HealthInput struct{}
 
 // HandleHealth handles health check requests.
-// Returns overall status and individual backend availability.
+// Returns overall status, version, uptime, backend availability, and session store status.
 func (h *CustomHandlers) HandleHealth(ctx context.Context, _ *HealthInput) (*HealthResponse, error) {
 	// Get backend status
 	backends := h.executor.ListBackends(ctx)
 
 	backendStatus := make([]BackendHealthStatus, len(backends))
-	allAvailable := true
+	allBackendsAvailable := true
 	for i, b := range backends {
 		backendStatus[i] = BackendHealthStatus{
 			Name:      b.Name,
 			Available: b.Available,
 		}
 		if !b.Available {
-			allAvailable = false
+			allBackendsAvailable = false
 		}
 	}
 
+	// Get session store status
+	storeHealth := h.executor.GetSessionStoreHealth(ctx)
+	sessionStoreStatus := SessionStoreStatus{
+		Available:    storeHealth.Available,
+		SessionCount: storeHealth.SessionCount,
+		Error:        storeHealth.Error,
+	}
+
+	// Calculate uptime
+	uptime := time.Since(h.healthInfo.StartTime)
+	uptimeMillis := uptime.Milliseconds()
+
+	// Format uptime as human-readable string
+	uptimeStr := formatDuration(uptime)
+
 	// Determine overall status
 	status := "ok"
-	if !allAvailable {
+	if !allBackendsAvailable {
 		status = "degraded"
+	}
+	if !storeHealth.Available {
+		status = "unhealthy"
 	}
 
 	return &HealthResponse{
 		Body: HealthResponseBody{
-			Status:   status,
-			Backends: backendStatus,
+			Status:       status,
+			Version:      h.healthInfo.Version,
+			Uptime:       uptimeStr,
+			UptimeMillis: uptimeMillis,
+			Backends:     backendStatus,
+			SessionStore: sessionStoreStatus,
 		},
 	}, nil
+}
+
+// formatDuration formats a duration as a human-readable string.
+func formatDuration(d time.Duration) string {
+	d = d.Round(time.Second)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+
+	if h > 0 {
+		return fmt.Sprintf("%dh%dm%ds", h, m, s)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm%ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
 }

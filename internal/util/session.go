@@ -2,6 +2,7 @@ package util
 
 import (
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/session"
 )
 
@@ -14,7 +15,8 @@ func UpdateSessionFromResponse(sess *session.Session, exitCode int, errMsg strin
 
 	sess.IncrementTurn()
 
-	if resp != nil && resp.Usage != nil {
+	cfg := config.Get()
+	if resp != nil && resp.Usage != nil && cfg.Session.StoreTokenUsage {
 		sess.AddTokens(int64(resp.Usage.InputTokens), int64(resp.Usage.OutputTokens))
 	}
 

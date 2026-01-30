@@ -73,6 +73,12 @@ func applyUnifiedDefaults(opts *backend.UnifiedOptions, cfg *config.Config, effe
 	util.ApplyUnifiedDefaults(opts, cfg, effectiveDryRun)
 }
 
+// applyBackendDefaults applies backend-specific config defaults to options.
+// This should be called after applyUnifiedDefaults to allow backend config to override.
+func applyBackendDefaults(opts *backend.UnifiedOptions, backendName string, cfg *config.Config) {
+	util.ApplyBackendDefaults(opts, backendName, cfg)
+}
+
 // createAndSaveSession creates a new session and saves it to the store.
 // Returns the session (may be nil if creation failed) and logs warnings if quiet is false.
 func createAndSaveSession(store *session.Store, backendName, workDir, model, prompt string, tags []string, title string, quiet bool) *session.Session {
@@ -112,12 +118,24 @@ func updateSessionFromResponse(sess *session.Session, exitCode int, errMsg strin
 // updateSessionAfterExecution updates session status after command execution.
 // This variant also saves the session to the store.
 func updateSessionAfterExecution(store *session.Store, sess *session.Session, exitCode int, errorMsg string, quiet bool) {
+	updateSessionAfterExecutionWithBackendID(store, sess, exitCode, errorMsg, "", quiet)
+}
+
+// updateSessionAfterExecutionWithBackendID updates session status after command execution,
+// including the backend's session ID for resume functionality.
+func updateSessionAfterExecutionWithBackendID(store *session.Store, sess *session.Session, exitCode int, errorMsg, backendSessionID string, quiet bool) {
 	if sess == nil {
 		return
 	}
 
 	sess.IncrementTurn()
-	if exitCode == 0 {
+
+	// Store the backend's session ID if provided
+	if backendSessionID != "" {
+		sess.BackendSessionID = backendSessionID
+	}
+
+	if exitCode == 0 && errorMsg == "" {
 		sess.Complete()
 	} else {
 		sess.SetError(errorMsg)
@@ -145,6 +163,21 @@ func shortSessionID(id string) string {
 		return id
 	}
 	return id[:8]
+}
+
+// filterResumableSessions returns sessions that have a backend session ID.
+// Sessions without a backend session ID cannot be resumed.
+func filterResumableSessions(sessions []*session.Session) []*session.Session {
+	if len(sessions) == 0 {
+		return nil
+	}
+	resumable := make([]*session.Session, 0, len(sessions))
+	for _, s := range sessions {
+		if s != nil && s.BackendSessionID != "" {
+			resumable = append(resumable, s)
+		}
+	}
+	return resumable
 }
 
 // cleanupBackendSession cleans up the backend's session after execution in ephemeral mode.

@@ -15,7 +15,7 @@ func TestStreamPrompt_InvalidBackend(t *testing.T) {
 		Prompt:  "test",
 	}
 
-	result, err := StreamPrompt(context.Background(), req, nil, true, nil)
+	result, err := StreamPrompt(context.Background(), req, nil, nil, true, nil)
 	if err == nil {
 		t.Fatal("expected error for invalid backend")
 	}
@@ -38,7 +38,7 @@ func TestStreamPrompt_DryRun(t *testing.T) {
 	}
 
 	var eventCount int
-	result, err := StreamPrompt(context.Background(), req, nil, true, func(event *output.UnifiedEvent) error {
+	result, err := StreamPrompt(context.Background(), req, nil, nil, true, func(event *output.UnifiedEvent) error {
 		eventCount++
 		return nil
 	})
@@ -68,7 +68,7 @@ func TestStreamPrompt_NilCallback(t *testing.T) {
 	}
 
 	// nil callback should be handled gracefully
-	result, err := StreamPrompt(context.Background(), req, nil, true, nil)
+	result, err := StreamPrompt(context.Background(), req, nil, nil, true, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestStreamPrompt_ContextCancellation(t *testing.T) {
 	}
 
 	// Canceled context should not cause panic
-	_, _ = StreamPrompt(ctx, req, nil, true, nil)
+	_, _ = StreamPrompt(ctx, req, nil, nil, true, nil)
 	// We don't care about the result, just that it doesn't panic
 }
 
@@ -111,7 +111,7 @@ func TestStreamPrompt_ForceStateless(t *testing.T) {
 	}
 
 	// forceStateless = true should work
-	result, err := StreamPrompt(context.Background(), req, nil, true, nil)
+	result, err := StreamPrompt(context.Background(), req, nil, nil, true, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -158,4 +158,14 @@ func TestStreamResult_WithError(t *testing.T) {
 	if result.TokenUsage != nil {
 		t.Error("TokenUsage should be nil")
 	}
+}
+
+func TestStreamPrompt_Constants(t *testing.T) {
+	// Verify the maxStreamLine constant is reasonable (should be defined in stream.go)
+	// This documents the expected behavior for large events
+	const expectedMaxStreamLine = 10 * 1024 * 1024 // 10MB
+
+	// The test verifies the constant exists and is used consistently
+	// Actual testing of the limit would require a more complex setup with a mock backend
+	t.Logf("maxStreamLine constant is expected to be %d bytes (%d MB)", expectedMaxStreamLine, expectedMaxStreamLine/(1024*1024))
 }

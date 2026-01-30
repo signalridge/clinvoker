@@ -22,7 +22,6 @@ default_backend: claude
 unified_flags:
   approval_mode: default
   sandbox_mode: default
-  output_format: default
   verbose: false
   dry_run: false
   max_turns: 0
@@ -50,7 +49,7 @@ session:
 
 # 输出设置
 output:
-  format: text
+  format: json
   show_tokens: false
   show_timing: false
   color: true
@@ -60,6 +59,15 @@ server:
   host: "127.0.0.1"
   port: 8080
   request_timeout_secs: 300
+  read_timeout_secs: 30
+  write_timeout_secs: 300
+  idle_timeout_secs: 120
+  rate_limit_enabled: false
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+  rate_limit_cleanup_secs: 180
+  trusted_proxies: []
+  max_request_body_bytes: 10485760
 
 # 并行执行设置
 parallel:
@@ -126,9 +134,11 @@ parallel:
 | 字段 | 类型 | 描述 |
 |------|------|------|
 | `model` | string | 默认模型 |
-| `allowed_tools` | string | `all` 或逗号分隔列表 |
+| `allowed_tools` | string | `all` 或逗号分隔列表（**仅 Claude**） |
 | `enabled` | bool | 启用/禁用后端 |
 | `extra_flags` | array | 额外 CLI 参数 |
+
+> **注意**：`allowed_tools` 选项目前仅 Claude 后端支持。为 Codex 或 Gemini 设置此选项将无效，系统会在日志中记录警告。
 
 ### session
 
@@ -149,6 +159,15 @@ HTTP 服务器设置：
 | `host` | string | `127.0.0.1` | 绑定地址 |
 | `port` | int | `8080` | 监听端口 |
 | `request_timeout_secs` | int | `300` | 请求超时 |
+| `read_timeout_secs` | int | `30` | 读取超时 |
+| `write_timeout_secs` | int | `300` | 写入超时 |
+| `idle_timeout_secs` | int | `120` | 空闲连接超时 |
+| `rate_limit_enabled` | bool | `false` | 启用按 IP 限流 |
+| `rate_limit_rps` | int | `10` | 每个 IP 每秒请求数 |
+| `rate_limit_burst` | int | `20` | 限流突发值 |
+| `rate_limit_cleanup_secs` | int | `180` | 限流表清理间隔 |
+| `trusted_proxies` | array | `[]` | 可信代理；为空时忽略代理头 |
+| `max_request_body_bytes` | int | `10485760` | 请求体最大大小（0 表示不限制） |
 
 ### parallel
 

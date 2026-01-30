@@ -15,8 +15,12 @@ import (
 	"github.com/signalridge/clinvoker/internal/config"
 )
 
-// sessionIDPattern validates session IDs (hex string, 16 characters).
-var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16}$`)
+// sessionIDPattern validates session IDs (hex string, 32 characters for 128-bit entropy).
+// Also accepts legacy 16-character IDs for backward compatibility.
+var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16,32}$`)
+
+// indexFileName is the name of the persisted index file.
+const indexFileName = "index.json"
 
 // SessionMeta holds lightweight metadata for indexing without loading full session.
 type SessionMeta struct {
@@ -32,11 +36,15 @@ type SessionMeta struct {
 }
 
 // Store handles session persistence with in-memory index for performance.
+// It uses cross-process file locking to ensure safe concurrent access
+// from multiple CLI instances or server processes.
 type Store struct {
-	mu    sync.RWMutex
-	dir   string
-	index map[string]*SessionMeta // Lightweight metadata cache
-	dirty bool                    // True if index needs refresh from disk
+	mu           sync.RWMutex
+	dir          string
+	index        map[string]*SessionMeta // Lightweight metadata cache
+	dirty        bool                    // True if index needs refresh from disk
+	fileLock     *FileLock               // Cross-process file lock
+	indexModTime time.Time               // Last known modification time of index file
 }
 
 // validateSessionID checks if the session ID is valid and safe.
@@ -48,8 +56,8 @@ func validateSessionID(id string) error {
 	if strings.Contains(id, "/") || strings.Contains(id, "\\") || strings.Contains(id, "..") {
 		return fmt.Errorf("invalid session ID: contains path characters")
 	}
-	// For full session IDs, validate format
-	if len(id) == 16 && !sessionIDPattern.MatchString(id) {
+	// For full session IDs, validate format (16 chars legacy, 32 chars new)
+	if (len(id) == 16 || len(id) == 32) && !sessionIDPattern.MatchString(id) {
 		return fmt.Errorf("invalid session ID format")
 	}
 	return nil
@@ -76,19 +84,22 @@ func validateSessionPrefix(prefix string) error {
 
 // NewStore creates a new session store.
 func NewStore() *Store {
+	dir := config.SessionsDir()
 	return &Store{
-		dir:   config.SessionsDir(),
-		index: make(map[string]*SessionMeta),
-		dirty: true, // Index needs to be loaded on first use
+		dir:      dir,
+		index:    make(map[string]*SessionMeta),
+		dirty:    true, // Index needs to be loaded on first use
+		fileLock: NewFileLock(filepath.Join(dir, "store")),
 	}
 }
 
 // NewStoreWithDir creates a new session store with a custom directory.
 func NewStoreWithDir(dir string) *Store {
 	return &Store{
-		dir:   dir,
-		index: make(map[string]*SessionMeta),
-		dirty: true,
+		dir:      dir,
+		index:    make(map[string]*SessionMeta),
+		dirty:    true,
+		fileLock: NewFileLock(filepath.Join(dir, "store")),
 	}
 }
 
@@ -110,6 +121,76 @@ func (s *Store) updateIndex(sess *Session) {
 // removeFromIndex removes a session from the index.
 func (s *Store) removeFromIndex(id string) {
 	delete(s.index, id)
+}
+
+// persistedIndex is the JSON structure for the persisted index file.
+type persistedIndex struct {
+	Version int                     `json:"version"`
+	Index   map[string]*SessionMeta `json:"index"`
+}
+
+// persistIndex saves the index to disk for fast startup.
+// Caller must hold write lock.
+func (s *Store) persistIndex() error {
+	if err := s.ensureStoreDirLocked(); err != nil {
+		return err
+	}
+
+	data, err := json.Marshal(&persistedIndex{
+		Version: 1,
+		Index:   s.index,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to marshal index: %w", err)
+	}
+
+	indexPath := filepath.Join(s.dir, indexFileName)
+	if err := writeFileAtomic(indexPath, data, 0600); err != nil {
+		return fmt.Errorf("failed to write index: %w", err)
+	}
+
+	// Update our tracked modification time to avoid false "external modification" detection
+	if info, err := os.Stat(indexPath); err == nil {
+		s.indexModTime = info.ModTime()
+	}
+
+	return nil
+}
+
+// loadPersistedIndex loads the index from disk if it exists.
+// Returns true if index was successfully loaded, false otherwise.
+// Caller must hold write lock.
+func (s *Store) loadPersistedIndex() bool {
+	indexPath := filepath.Join(s.dir, indexFileName)
+
+	// Get file info for modification time tracking
+	info, err := os.Stat(indexPath)
+	if err != nil {
+		return false // File doesn't exist
+	}
+
+	data, err := os.ReadFile(indexPath)
+	if err != nil {
+		return false // Can't be read
+	}
+
+	var pi persistedIndex
+	if err := json.Unmarshal(data, &pi); err != nil {
+		return false // Invalid JSON
+	}
+
+	// Validate index version
+	if pi.Version != 1 {
+		return false // Unknown version
+	}
+
+	s.index = pi.Index
+	if s.index == nil {
+		s.index = make(map[string]*SessionMeta)
+	}
+	s.dirty = false
+	s.indexModTime = info.ModTime()
+	return true
 }
 
 // ensureIndexLoaded loads the index from disk if needed.
@@ -136,36 +217,75 @@ func (s *Store) ensureIndexLoaded() error {
 // 3. Write operations (Save, Delete, Create) hold write lock and update index directly
 // 4. The index is only marked dirty on initialization or explicit InvalidateIndex()
 func (s *Store) ensureIndexLoadedForRead() error {
-	// Fast path: index is already loaded (most common case)
-	if !s.dirty {
+	// Check if index needs reload due to dirty flag or external modification
+	needsReload := s.dirty || s.indexModifiedExternally()
+
+	// Fast path: index is already loaded and not modified externally
+	if !needsReload {
 		return nil
 	}
 
 	// Slow path: need to rebuild index
 	// Release read lock and acquire write lock for rebuild
 	s.mu.RUnlock()
+	if s.fileLock != nil {
+		if err := s.fileLock.Lock(); err != nil {
+			s.mu.RLock()
+			return err
+		}
+	}
 	s.mu.Lock()
 
 	// Double-check after acquiring write lock - another goroutine may have
 	// already rebuilt the index while we were waiting for the lock
 	var err error
-	if s.dirty {
+	if s.dirty || s.indexModifiedExternally() {
 		err = s.rebuildIndex()
 	}
 
 	// Downgrade back to read lock for caller's read operation
 	s.mu.Unlock()
+	if s.fileLock != nil {
+		_ = s.fileLock.Unlock()
+	}
 	s.mu.RLock()
 
 	return err
 }
 
+// indexModifiedExternally checks if the index file has been modified by another process.
+// This allows long-running servers to detect changes made by CLI instances.
+func (s *Store) indexModifiedExternally() bool {
+	if s.indexModTime.IsZero() {
+		// Never loaded, needs reload
+		return true
+	}
+
+	indexPath := filepath.Join(s.dir, indexFileName)
+	info, err := os.Stat(indexPath)
+	if err != nil {
+		// File doesn't exist or can't be read - may need rebuild
+		return true
+	}
+
+	// If file modification time is newer than our recorded time, reload
+	return info.ModTime().After(s.indexModTime)
+}
+
 // rebuildIndex rebuilds the in-memory index from disk.
+// First tries to load from persisted index file for fast startup.
+// Falls back to scanning session files if index file is missing/invalid.
 func (s *Store) rebuildIndex() error {
 	if err := s.ensureStoreDirLocked(); err != nil {
 		return err
 	}
 
+	// Fast path: try to load persisted index
+	if s.loadPersistedIndex() {
+		return nil
+	}
+
+	// Slow path: scan session files
 	entries, err := os.ReadDir(s.dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -179,6 +299,11 @@ func (s *Store) rebuildIndex() error {
 	newIndex := make(map[string]*SessionMeta, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+
+		// Skip the index file itself
+		if entry.Name() == indexFileName {
 			continue
 		}
 
@@ -203,6 +328,10 @@ func (s *Store) rebuildIndex() error {
 
 	s.index = newIndex
 	s.dirty = false
+
+	// Persist the newly built index for next startup
+	_ = s.persistIndex()
+
 	return nil
 }
 
@@ -214,8 +343,75 @@ func (s *Store) InvalidateIndex() {
 	s.dirty = true
 }
 
+// ValidateIndex checks all index entries against actual files and removes stale entries.
+// Returns the number of stale entries removed and any error encountered.
+// This should be called periodically or when ghost sessions are suspected.
+func (s *Store) ValidateIndex() (int, error) {
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return 0, fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.dirty {
+		// Index not loaded yet - rebuild will validate automatically
+		if err := s.rebuildIndex(); err != nil {
+			return 0, err
+		}
+		return 0, nil // rebuildIndex scans files, no stale entries possible
+	}
+
+	// Check each index entry against actual files
+	var staleIDs []string
+	for id := range s.index {
+		path := s.sessionPath(id)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			staleIDs = append(staleIDs, id)
+		}
+	}
+
+	// Remove stale entries
+	for _, id := range staleIDs {
+		delete(s.index, id)
+	}
+
+	// Persist cleaned index if any entries were removed
+	if len(staleIDs) > 0 {
+		_ = s.persistIndex()
+	}
+
+	return len(staleIDs), nil
+}
+
+// CountValidated returns the count of sessions that actually exist on disk.
+// Unlike Count(), this validates each index entry against the file system.
+// Use Count() for fast lookups when accuracy is less critical.
+func (s *Store) CountValidated() (int, error) {
+	removed, err := s.ValidateIndex()
+	if err != nil {
+		return 0, err
+	}
+	if removed > 0 {
+		// Log would go here if logger available
+	}
+	return s.Count()
+}
+
 // Create creates a new session and saves it.
 func (s *Store) Create(backend, workDir string) (*Session, error) {
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return nil, fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -233,11 +429,28 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 	}
 
 	s.updateIndex(sess)
+
+	// Persist index synchronously for Create to ensure consistency
+	// (new sessions should be visible immediately after restart)
+	if err := s.persistIndex(); err != nil {
+		// Log but don't fail - session is already saved to disk
+		// Index can be rebuilt on next startup
+		_ = err // Silent ignore, consider adding logging in future
+	}
+
 	return sess, nil
 }
 
 // Save persists a session to disk.
 func (s *Store) Save(sess *Session) error {
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -246,6 +459,10 @@ func (s *Store) Save(sess *Session) error {
 	}
 
 	s.updateIndex(sess)
+
+	// Persist index synchronously since we already hold the file lock
+	_ = s.persistIndex()
+
 	return nil
 }
 
@@ -262,7 +479,7 @@ func (s *Store) saveLocked(sess *Session) error {
 
 	path := s.sessionPath(sess.ID)
 	// Use 0600 to protect potentially sensitive prompt data
-	if err := os.WriteFile(path, data, 0600); err != nil {
+	if err := writeFileAtomic(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write session file: %w", err)
 	}
 
@@ -306,6 +523,14 @@ func (s *Store) Delete(id string) error {
 		return err
 	}
 
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -314,6 +539,10 @@ func (s *Store) Delete(id string) error {
 	}
 
 	s.removeFromIndex(id)
+
+	// Persist index synchronously since we already hold the file lock
+	_ = s.persistIndex()
+
 	return nil
 }
 
@@ -441,6 +670,14 @@ func (s *Store) LastForBackend(backend string) (*Session, error) {
 
 // Clean removes sessions older than the specified duration.
 func (s *Store) Clean(maxAge time.Duration) (int, error) {
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return 0, fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -463,6 +700,11 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 			s.removeFromIndex(id)
 			deleted++
 		}
+	}
+
+	// Persist index if anything was deleted
+	if deleted > 0 {
+		_ = s.persistIndex()
 	}
 
 	return deleted, nil
@@ -575,6 +817,9 @@ func (s *Store) ListPaginated(filter *ListFilter) (*ListResult, error) {
 
 // metaMatchesFilter checks if metadata matches the filter criteria.
 func (s *Store) metaMatchesFilter(meta *SessionMeta, filter *ListFilter) bool {
+	if filter == nil {
+		return true
+	}
 	if filter.Backend != "" && meta.Backend != filter.Backend {
 		return false
 	}
@@ -710,6 +955,14 @@ func (s *Store) GetByPrefix(prefix string) (*Session, error) {
 
 // Fork creates a new session based on an existing one.
 func (s *Store) Fork(sessionID string) (*Session, error) {
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return nil, fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -728,11 +981,23 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 	}
 
 	s.updateIndex(forked)
+
+	// Persist index synchronously
+	_ = s.persistIndex()
+
 	return forked, nil
 }
 
 // CreateWithOptions creates a new session with options and saves it.
 func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions) (*Session, error) {
+	// Acquire cross-process lock for write operation
+	if err := s.fileLock.Lock(); err != nil {
+		return nil, fmt.Errorf("failed to acquire store lock: %w", err)
+	}
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -750,6 +1015,10 @@ func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions)
 	}
 
 	s.updateIndex(sess)
+
+	// Persist index synchronously
+	_ = s.persistIndex()
+
 	return sess, nil
 }
 
@@ -835,6 +1104,51 @@ func (s *Store) Count() (int, error) {
 
 func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
+}
+
+func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return err
+	}
+
+	tmpName := tmp.Name()
+	cleanup := true
+	defer func() {
+		if cleanup {
+			_ = os.Remove(tmpName)
+		}
+	}()
+
+	if err := tmp.Chmod(perm); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tmpName, path); err != nil {
+		_ = os.Remove(path)
+		if err2 := os.Rename(tmpName, path); err2 != nil {
+			return err
+		}
+	}
+
+	cleanup = false
+	return nil
 }
 
 // ensureStoreDirLocked creates the store directory. Caller must hold s.mu.

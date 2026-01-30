@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -12,17 +13,27 @@ import (
 	"github.com/signalridge/clinvoker/internal/config"
 )
 
+// gopassPathPattern validates gopass paths to prevent injection attacks.
+// Allows alphanumeric characters, slashes, hyphens, underscores, and dots.
+var gopassPathPattern = regexp.MustCompile(`^[a-zA-Z0-9/_.\-]+$`)
+
 const (
 	// EnvAPIKeys is the environment variable name for API keys.
 	EnvAPIKeys = "CLINVK_API_KEYS" //nolint:gosec // Not a credential, just env var name
 
 	// EnvAPIKeysGopassPath is the environment variable for gopass path.
 	EnvAPIKeysGopassPath = "CLINVK_API_KEYS_GOPASS_PATH" //nolint:gosec // Not a credential, just env var name
+
+	// DefaultKeyReloadInterval is the default interval for reloading API keys.
+	// Set to 0 to disable automatic reloading.
+	DefaultKeyReloadInterval = 5 * time.Minute
 )
 
 var (
-	cachedKeys []string
-	cacheOnce  sync.Once
+	cachedKeys     []string
+	cacheMu        sync.RWMutex
+	cacheLoadedAt  time.Time
+	reloadInterval = DefaultKeyReloadInterval
 )
 
 // LoadAPIKeys loads API keys using a layered approach:
@@ -31,10 +42,28 @@ var (
 //
 // The first source with valid keys wins. Empty result means auth is disabled.
 // Note: Config file storage is intentionally NOT supported for security reasons.
+// Keys are automatically reloaded after the reload interval (default: 5 minutes).
 func LoadAPIKeys() []string {
-	cacheOnce.Do(func() {
-		cachedKeys = loadAPIKeysInternal()
-	})
+	cacheMu.RLock()
+	// Check if cache is valid
+	if cachedKeys != nil && (reloadInterval == 0 || time.Since(cacheLoadedAt) < reloadInterval) {
+		keys := cachedKeys
+		cacheMu.RUnlock()
+		return keys
+	}
+	cacheMu.RUnlock()
+
+	// Cache miss or expired - reload with write lock
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cachedKeys != nil && (reloadInterval == 0 || time.Since(cacheLoadedAt) < reloadInterval) {
+		return cachedKeys
+	}
+
+	cachedKeys = loadAPIKeysInternal()
+	cacheLoadedAt = time.Now()
 	return cachedKeys
 }
 
@@ -85,6 +114,11 @@ func loadFromGopass() []string {
 		return nil // Not configured, skip gopass
 	}
 
+	// Validate gopass path to prevent injection attacks
+	if !isValidGopassPath(gopassPath) {
+		return nil // Invalid path format
+	}
+
 	// Check if gopass is available
 	if _, err := exec.LookPath("gopass"); err != nil {
 		return nil
@@ -102,6 +136,15 @@ func loadFromGopass() []string {
 	}
 
 	return parseKeys(string(out))
+}
+
+// isValidGopassPath validates that the gopass path contains only safe characters.
+// Allowed: alphanumeric, slashes, hyphens, underscores, dots.
+func isValidGopassPath(path string) bool {
+	if path == "" {
+		return false
+	}
+	return gopassPathPattern.MatchString(path)
 }
 
 // parseKeys parses a comma-separated string of API keys.
@@ -123,10 +166,32 @@ func parseKeys(input string) []string {
 	return keys
 }
 
-// ResetCache clears the cached API keys (mainly for testing).
+// ResetCache clears the cached API keys, forcing a reload on next access.
+// This can be used for testing or to manually trigger a key reload.
 func ResetCache() {
-	cacheOnce = sync.Once{}
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
 	cachedKeys = nil
+	cacheLoadedAt = time.Time{}
+}
+
+// SetReloadInterval sets the interval for automatic key reloading.
+// Set to 0 to disable automatic reloading (keys loaded once).
+// This should be called before the server starts.
+func SetReloadInterval(interval time.Duration) {
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+	reloadInterval = interval
+}
+
+// ForceReload immediately reloads API keys from all sources.
+// Returns the newly loaded keys.
+func ForceReload() []string {
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+	cachedKeys = loadAPIKeysInternal()
+	cacheLoadedAt = time.Now()
+	return cachedKeys
 }
 
 // HasAPIKeys returns true if any API keys are configured.
