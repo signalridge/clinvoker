@@ -626,7 +626,8 @@ func TestStore_ExternalModificationDetection(t *testing.T) {
 	}
 
 	// Wait a bit to ensure file modification time changes
-	time.Sleep(10 * time.Millisecond)
+	// Use 100ms to handle filesystems with lower time precision (e.g., overlayfs in containers)
+	time.Sleep(100 * time.Millisecond)
 
 	// Store1 should detect the external modification and see the new session
 	list1Updated, err := store1.ListMeta()
