@@ -425,3 +425,176 @@ func TestWorkingDirectoryHandling(t *testing.T) {
 		t.Errorf("original directory changed from %q to %q", originalDir, currentDir)
 	}
 }
+
+// ==================== OutputMode Tests ====================
+
+func TestDetermineOutputMode(t *testing.T) {
+	tests := []struct {
+		format   backend.OutputFormat
+		expected OutputMode
+	}{
+		{backend.OutputText, OutputModeText},
+		{backend.OutputDefault, OutputModeText},
+		{backend.OutputJSON, OutputModeJSON},
+		{backend.OutputStreamJSON, OutputModeStream},
+		{"", OutputModeText},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.format), func(t *testing.T) {
+			mode := DetermineOutputMode(tt.format)
+			if mode != tt.expected {
+				t.Errorf("DetermineOutputMode(%q) = %d, want %d", tt.format, mode, tt.expected)
+			}
+		})
+	}
+}
+
+func TestDetermineInternalFormat(t *testing.T) {
+	tests := []struct {
+		userFormat backend.OutputFormat
+		expected   backend.OutputFormat
+	}{
+		{backend.OutputText, backend.OutputJSON},
+		{backend.OutputDefault, backend.OutputJSON},
+		{"", backend.OutputJSON},
+		{backend.OutputJSON, backend.OutputJSON},
+		{backend.OutputStreamJSON, backend.OutputStreamJSON},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.userFormat), func(t *testing.T) {
+			internal := DetermineInternalFormat(tt.userFormat)
+			if internal != tt.expected {
+				t.Errorf("DetermineInternalFormat(%q) = %q, want %q", tt.userFormat, internal, tt.expected)
+			}
+		})
+	}
+}
+
+// ==================== ExecutionConfig Tests ====================
+
+func TestExecutionConfig_Defaults(t *testing.T) {
+	cfg := &ExecutionConfig{
+		Backend:    &mockBackend{name: "test"},
+		OutputMode: OutputModeText,
+		Stdin:      true,
+	}
+
+	if cfg.Backend == nil {
+		t.Error("Backend should not be nil")
+	}
+	if cfg.OutputMode != OutputModeText {
+		t.Errorf("OutputMode = %d, want %d", cfg.OutputMode, OutputModeText)
+	}
+	if !cfg.Stdin {
+		t.Error("Stdin should be true")
+	}
+	if cfg.Session != nil {
+		t.Error("Session should be nil by default")
+	}
+}
+
+// ==================== ExecutionResult Tests ====================
+
+func TestExecutionResult_Fields(t *testing.T) {
+	result := &ExecutionResult{
+		ExitCode:        0,
+		SessionID:       "test-session-123",
+		Content:         "Hello, world!",
+		Error:           "",
+		DurationSeconds: 1.5,
+	}
+
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d, want 0", result.ExitCode)
+	}
+	if result.SessionID != "test-session-123" {
+		t.Errorf("SessionID = %q, want 'test-session-123'", result.SessionID)
+	}
+	if result.Content != "Hello, world!" {
+		t.Errorf("Content = %q, want 'Hello, world!'", result.Content)
+	}
+	if result.DurationSeconds != 1.5 {
+		t.Errorf("DurationSeconds = %f, want 1.5", result.DurationSeconds)
+	}
+}
+
+func TestExecutionResult_WithError(t *testing.T) {
+	result := &ExecutionResult{
+		ExitCode: 1,
+		Error:    "command failed",
+	}
+
+	if result.ExitCode != 1 {
+		t.Errorf("ExitCode = %d, want 1", result.ExitCode)
+	}
+	if result.Error != "command failed" {
+		t.Errorf("Error = %q, want 'command failed'", result.Error)
+	}
+}
+
+// ==================== ExecuteCommand Tests ====================
+
+func TestExecuteCommand_TextMode(t *testing.T) {
+	b := &mockBackend{name: "test"}
+	cfg := &ExecutionConfig{
+		Backend:    b,
+		OutputMode: OutputModeText,
+		Stdin:      false,
+	}
+	cmd := exec.Command("echo", "test output")
+
+	result, err := ExecuteCommand(cfg, cmd)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d, want 0", result.ExitCode)
+	}
+}
+
+func TestExecuteCommand_StreamMode(t *testing.T) {
+	b := &mockBackend{name: "test"}
+	cfg := &ExecutionConfig{
+		Backend:    b,
+		OutputMode: OutputModeStream,
+		Stdin:      false,
+	}
+	cmd := exec.Command("echo", "streamed output")
+
+	result, err := ExecuteCommand(cfg, cmd)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d, want 0", result.ExitCode)
+	}
+}
+
+func TestExecuteCommand_JSONMode(t *testing.T) {
+	b := &mockBackend{
+		name: "test",
+		jsonResponse: &backend.UnifiedResponse{
+			Content:   "json content",
+			SessionID: "json-session-123",
+		},
+	}
+	cfg := &ExecutionConfig{
+		Backend:    b,
+		OutputMode: OutputModeJSON,
+		Stdin:      false,
+	}
+	cmd := exec.Command("echo", `{"content": "test"}`)
+
+	result, err := ExecuteCommand(cfg, cmd)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ExitCode != 0 {
+		t.Errorf("ExitCode = %d, want 0", result.ExitCode)
+	}
+}

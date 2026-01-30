@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server/middleware"
@@ -33,6 +35,7 @@ type Server struct {
 	executor *service.Executor
 	logger   *slog.Logger
 	server   *http.Server
+	limiter  *middleware.RateLimiter
 }
 
 // New creates a new server instance.
@@ -47,7 +50,7 @@ func New(cfg Config, logger *slog.Logger) *Server {
 	appCfg := config.Get()
 
 	// Add middleware in order:
-	// RequestID → RealIP → Recoverer → RequestLogger → RateLimit → APIKeyAuth → Timeout → CORS
+	// RequestID → RealIP → Recoverer → RequestLogger → RequestSize → RateLimit → APIKeyAuth → Timeout → CORS
 	router.Use(chiMiddleware.RequestID)
 	router.Use(chiMiddleware.RealIP)
 	router.Use(chiMiddleware.Recoverer)
@@ -55,19 +58,33 @@ func New(cfg Config, logger *slog.Logger) *Server {
 	// Add request logging
 	router.Use(RequestLogger(logger))
 
+	// Add request size limits (optional)
+	if appCfg.Server.MaxRequestBodyBytes > 0 {
+		router.Use(middleware.RequestSize(appCfg.Server.MaxRequestBodyBytes))
+	}
+
 	// Add rate limiting if enabled
+	var limiter *middleware.RateLimiter
 	if appCfg.Server.RateLimitEnabled && appCfg.Server.RateLimitRPS > 0 {
 		rps := appCfg.Server.RateLimitRPS
 		burst := appCfg.Server.RateLimitBurst
 		if burst <= 0 {
 			burst = rps * 2 // Default burst to 2x RPS
 		}
-		router.Use(middleware.RateLimit(rps, burst))
+		cleanup := time.Duration(appCfg.Server.RateLimitCleanupSecs) * time.Second
+		limiter = middleware.NewRateLimiterWithCleanup(rps, burst, cleanup)
+		router.Use(limiter.Middleware())
 		logger.Info("Rate limiting enabled", "rps", rps, "burst", burst)
 	}
 
-	// Add API key authentication (skips health and docs endpoints)
-	router.Use(middleware.SkipAuthPaths("/health", "/docs", "/openapi.json", "/schemas"))
+	// Add metrics middleware if enabled
+	if appCfg.Server.MetricsEnabled {
+		router.Use(middleware.Metrics)
+		logger.Info("Prometheus metrics enabled at /metrics")
+	}
+
+	// Add API key authentication (skips health, docs, and metrics endpoints)
+	router.Use(middleware.SkipAuthPaths("/health", "/docs", "/openapi.json", "/schemas", "/metrics"))
 
 	// Get timeout from config, with fallback to 5 minutes
 	requestTimeout := time.Duration(appCfg.Server.RequestTimeoutSecs) * time.Second
@@ -76,30 +93,58 @@ func New(cfg Config, logger *slog.Logger) *Server {
 	}
 	router.Use(chiMiddleware.Timeout(requestTimeout))
 
-	// Add CORS - configured for local development
-	// Note: AllowCredentials removed to work safely with permissive origins
-	// For production with credentials, specify explicit allowed origins
+	// Add CORS - configurable via config, defaults to localhost for security
+	corsOrigins := appCfg.Server.CORSAllowedOrigins
+	if len(corsOrigins) == 0 {
+		// Default to localhost only if no origins configured
+		corsOrigins = []string{"http://localhost:*", "http://127.0.0.1:*"}
+	}
+	corsMaxAge := appCfg.Server.CORSMaxAge
+	if corsMaxAge <= 0 {
+		corsMaxAge = 300 // Default 5 minutes
+	}
+
+	// Warn about insecure CORS configuration
+	// AllowCredentials + wildcard origins is a security risk and browsers may reject it
+	if appCfg.Server.CORSAllowCredentials {
+		for _, origin := range corsOrigins {
+			if origin == "*" || strings.Contains(origin, "*") {
+				logger.Warn("CORS configuration warning: AllowCredentials=true with wildcard origin may be rejected by browsers or create security risks",
+					"origin", origin,
+					"credentials", true)
+				break
+			}
+		}
+	}
+
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:*", "http://127.0.0.1:*"},
+		AllowedOrigins:   corsOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Api-Key", "anthropic-version"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
-		MaxAge:           300,
+		AllowCredentials: appCfg.Server.CORSAllowCredentials,
+		MaxAge:           corsMaxAge,
 	}))
+
+	// Add /metrics endpoint for Prometheus if enabled
+	if appCfg.Server.MetricsEnabled {
+		router.Handle("/metrics", promhttp.Handler())
+	}
 
 	// Create huma API
 	humaConfig := huma.DefaultConfig("clinvoker API", "1.0.0")
 	humaConfig.Info.Description = "Unified AI CLI wrapper API for multiple backends"
 	api := humachi.New(router, humaConfig)
 
-	return &Server{
+	srv := &Server{
 		config:   cfg,
 		router:   router,
 		api:      api,
 		executor: service.NewExecutor(),
 		logger:   logger,
+		limiter:  limiter,
 	}
+	return srv
 }
 
 // API returns the huma API for route registration.
@@ -160,5 +205,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		return nil
 	}
 	s.logger.Info("Shutting down server")
+	if s.limiter != nil {
+		s.limiter.Stop()
+	}
 	return s.server.Shutdown(ctx)
 }

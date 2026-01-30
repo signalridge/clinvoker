@@ -89,7 +89,8 @@ clinvk -b gemini "总结这个文档"
 ```yaml
 unified_flags:
   approval_mode: auto    # 自动批准所有操作
-  output_format: json    # 机器可读输出
+output:
+  format: json           # 机器可读输出
 ```
 
 !!! warning "安全说明"
@@ -315,7 +316,8 @@ default_backend: claude
 
 unified_flags:
   approval_mode: auto
-  output_format: json
+output:
+  format: json
 
 parallel:
   max_workers: 3

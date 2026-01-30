@@ -28,10 +28,6 @@ unified_flags:
   # Values: default, read-only, workspace, full
   sandbox_mode: default
 
-  # Output format
-  # Values: default, text, json, stream-json
-  output_format: default
-
   # Enable verbose output
   verbose: false
 
@@ -74,7 +70,7 @@ session:
 
 # Output settings
 output:
-  format: text
+  format: json
   show_tokens: false
   show_timing: false
   color: true
@@ -87,6 +83,12 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  rate_limit_enabled: false
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+  rate_limit_cleanup_secs: 180
+  trusted_proxies: []
+  max_request_body_bytes: 10485760
 
 # Parallel execution settings
 parallel:
@@ -121,7 +123,6 @@ Global options that apply to all backends:
 unified_flags:
   approval_mode: default
   sandbox_mode: default
-  output_format: default
   verbose: false
   dry_run: false
   max_turns: 0
@@ -162,17 +163,6 @@ unified_flags:
 - Claude: `sandbox_mode` is not mapped to a CLI flag (use `allowed_dirs` / approval settings instead).
 - Gemini: `read-only` and `workspace` both map to `--sandbox` (no distinction).
 - Codex: maps to `--sandbox read-only|workspace-write|danger-full-access`.
-
-#### output_format
-
-| Value | Description |
-|-------|-------------|
-| `default` | Use backend's default |
-| `text` | Plain text |
-| `json` | Structured JSON |
-| `stream-json` | Streaming JSON events |
-
----
 
 ### backends
 
@@ -249,7 +239,7 @@ Output display settings:
 
 ```yaml
 output:
-  format: text
+  format: json
   show_tokens: false
   show_timing: false
   color: true
@@ -257,7 +247,7 @@ output:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `format` | string | `text` | Default format |
+| `format` | string | `json` | Default format (`text`, `json`, `stream-json`) |
 | `show_tokens` | bool | `false` | Show token usage |
 | `show_timing` | bool | `false` | Show execution time |
 | `color` | bool | `true` | Colored output |
@@ -276,6 +266,12 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  rate_limit_enabled: false
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+  rate_limit_cleanup_secs: 180
+  trusted_proxies: []
+  max_request_body_bytes: 10485760
 ```
 
 | Field | Type | Default | Description |
@@ -286,6 +282,12 @@ server:
 | `read_timeout_secs` | int | `30` | Read timeout |
 | `write_timeout_secs` | int | `300` | Write timeout |
 | `idle_timeout_secs` | int | `120` | Idle connection timeout |
+| `rate_limit_enabled` | bool | `false` | Enable per-IP rate limiting |
+| `rate_limit_rps` | int | `10` | Requests per second per IP |
+| `rate_limit_burst` | int | `20` | Burst size for rate limiting |
+| `rate_limit_cleanup_secs` | int | `180` | Cleanup interval for rate limiter entries |
+| `trusted_proxies` | array | `[]` | Trusted proxies; if empty, proxy headers are ignored |
+| `max_request_body_bytes` | int | `10485760` | Max request body size (0 disables limit) |
 
 ---
 

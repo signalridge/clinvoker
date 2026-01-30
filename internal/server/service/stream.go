@@ -5,10 +5,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os/exec"
+	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/metrics"
 	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/session"
 	"github.com/signalridge/clinvoker/internal/util"
@@ -23,10 +27,13 @@ type StreamResult struct {
 }
 
 // StreamPrompt executes a prompt and emits unified events as they stream.
-func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, forceStateless bool, onEvent func(*output.UnifiedEvent) error) (*StreamResult, error) {
+// If store is provided and the request is not ephemeral, it persists a session.
+func StreamPrompt(ctx context.Context, req *PromptRequest, store *session.Store, logger *slog.Logger, forceStateless bool, onEvent func(*output.UnifiedEvent) error) (*StreamResult, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
+
+	start := time.Now()
 
 	prep, err := preparePrompt(req, forceStateless)
 	if err != nil {
@@ -37,8 +44,74 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 	opts := *prep.opts
 	opts.OutputFormat = backend.OutputStreamJSON
 
+	var sess *session.Session
+	sessionID := ""
+
+	if store != nil && !opts.Ephemeral {
+		cfg := config.Get()
+		tags := append([]string{}, cfg.Session.DefaultTags...)
+		tags = append(tags, "api")
+
+		var sessErr error
+		sess, sessErr = store.CreateWithOptions(req.Backend, req.WorkDir, &session.SessionOptions{
+			Model:         prep.model,
+			InitialPrompt: req.Prompt,
+			Tags:          tags,
+		})
+		if sessErr != nil {
+			logger.Warn("failed to create session", "backend", req.Backend, "error", sessErr)
+		} else {
+			sessionID = sess.ID
+			for k, v := range req.Metadata {
+				sess.SetMetadata(k, v)
+			}
+			if err := store.Save(sess); err != nil {
+				logger.Warn("failed to save session metadata", "session_id", sess.ID, "error", err)
+			} else if cfg.Server.MetricsEnabled {
+				metrics.IncrementSessionsCreated()
+			}
+		}
+	}
+
 	cmd := prep.backend.BuildCommandUnified(req.Prompt, &opts)
 	cmd = util.CommandWithContext(ctx, cmd)
+
+	if opts.DryRun {
+		msg := fmt.Sprintf("Would execute: %s %v", cmd.Path, cmd.Args[1:])
+		if onEvent != nil {
+			event := output.NewUnifiedEvent(output.EventMessage, prep.backend.Name(), sessionID)
+			if err := event.SetContent(&output.MessageContent{Text: msg, Role: "assistant"}); err == nil {
+				if err := onEvent(event); err != nil {
+					return &StreamResult{ExitCode: 1, Error: err.Error()}, err
+				}
+			}
+
+			done := output.NewUnifiedEvent(output.EventDone, prep.backend.Name(), sessionID)
+			if err := done.SetContent(&output.DoneContent{}); err == nil {
+				if err := onEvent(done); err != nil {
+					return &StreamResult{ExitCode: 1, Error: err.Error()}, err
+				}
+			}
+		}
+
+		result := &StreamResult{ExitCode: 0}
+
+		// Record backend execution metrics if enabled
+		execDuration := time.Since(start).Seconds()
+		if config.Get().Server.MetricsEnabled {
+			metrics.RecordBackendExecution(req.Backend, "success")
+			metrics.RecordBackendExecutionDuration(req.Backend, execDuration)
+		}
+
+		if sess != nil {
+			util.UpdateSessionFromResponse(sess, result.ExitCode, "", nil)
+			if err := store.Save(sess); err != nil && logger != nil {
+				logger.Warn("failed to save session", "session_id", sess.ID, "error", err)
+			}
+		}
+
+		return result, nil
+	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -57,7 +130,7 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 		return nil, err
 	}
 
-	parser := output.NewParser(prep.backend.Name(), "")
+	parser := output.NewParser(prep.backend.Name(), sessionID)
 	scanner := bufio.NewScanner(stdout)
 	buf := make([]byte, 0, 64*1024)
 	const maxStreamLine = 10 * 1024 * 1024
@@ -128,6 +201,17 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 		}
 	}
 
+	// Record backend execution metrics if enabled
+	execDuration := time.Since(start).Seconds()
+	if config.Get().Server.MetricsEnabled {
+		status := "success"
+		if streamErr != nil || exitCode != 0 {
+			status = "error"
+		}
+		metrics.RecordBackendExecution(req.Backend, status)
+		metrics.RecordBackendExecutionDuration(req.Backend, execDuration)
+	}
+
 	if opts.Ephemeral {
 		util.CleanupBackendSessionWithContext(ctx, req.Backend, backendSessionID)
 	}
@@ -140,14 +224,41 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, logger *slog.Logger, 
 
 	if handlerErr != nil {
 		result.Error = handlerErr.Error()
+		if result.ExitCode == 0 {
+			result.ExitCode = 1
+		}
 		return result, handlerErr
 	}
 
 	if streamErr != nil {
 		result.Error = streamErr.Error()
+		if result.ExitCode == 0 {
+			result.ExitCode = 1
+		}
 	} else if exitCode != 0 && stderrBuf.Len() > 0 {
 		// Use stderr as fallback error message when exit code is non-zero
 		result.Error = stderrBuf.String()
+	}
+
+	if sess != nil {
+		if backendSessionID != "" {
+			sess.BackendSessionID = backendSessionID
+		}
+		var respUsage *backend.TokenUsage
+		if tokenUsage != nil {
+			respUsage = &backend.TokenUsage{
+				InputTokens:  int(tokenUsage.InputTokens),
+				OutputTokens: int(tokenUsage.OutputTokens),
+			}
+		}
+		resp := &backend.UnifiedResponse{
+			Usage: respUsage,
+			Error: result.Error,
+		}
+		util.UpdateSessionFromResponse(sess, result.ExitCode, result.Error, resp)
+		if err := store.Save(sess); err != nil && logger != nil {
+			logger.Warn("failed to save session", "session_id", sess.ID, "error", err)
+		}
 	}
 
 	return result, nil

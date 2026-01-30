@@ -570,3 +570,16 @@ func TestStore_RaceDetection(t *testing.T) {
 		t.Errorf("final list failed: %v", err)
 	}
 }
+
+func TestMetaMatchesFilter_NilFilter(t *testing.T) {
+	store := NewStore()
+	meta := &SessionMeta{
+		Backend: "claude",
+		Model:   "model-x",
+		Tags:    []string{"tag-a"},
+	}
+
+	if !store.metaMatchesFilter(meta, nil) {
+		t.Fatal("expected nil filter to match any session meta")
+	}
+}

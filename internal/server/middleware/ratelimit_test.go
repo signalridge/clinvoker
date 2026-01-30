@@ -4,10 +4,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/signalridge/clinvoker/internal/config"
 )
 
 func TestRateLimiter_Allow(t *testing.T) {
 	limiter := NewRateLimiter(2, 2) // 2 RPS, burst of 2
+	defer limiter.Stop()
 
 	// First 2 requests should be allowed (burst)
 	if !limiter.Allow("192.168.1.1") {
@@ -25,6 +28,7 @@ func TestRateLimiter_Allow(t *testing.T) {
 
 func TestRateLimiter_DifferentIPs(t *testing.T) {
 	limiter := NewRateLimiter(1, 1) // 1 RPS, burst of 1
+	defer limiter.Stop()
 
 	// First request from IP1 should be allowed
 	if !limiter.Allow("192.168.1.1") {
@@ -49,7 +53,8 @@ func TestRateLimit_Middleware(t *testing.T) {
 	})
 
 	// Create middleware with low limit for testing
-	middleware := RateLimit(1, 1)
+	middleware, limiter := RateLimitWithLimiter(1, 1, 0)
+	defer limiter.Stop()
 	handler := middleware(next)
 
 	// First request should succeed
@@ -74,6 +79,9 @@ func TestRateLimit_Middleware(t *testing.T) {
 }
 
 func TestGetClientIP(t *testing.T) {
+	// NOTE: With trusted proxies feature, X-Forwarded-For and X-Real-IP
+	// are only trusted when the request comes from a configured trusted proxy.
+	// By default (no trusted proxies configured), direct RemoteAddr is always used.
 	tests := []struct {
 		name       string
 		remoteAddr string
@@ -87,25 +95,91 @@ func TestGetClientIP(t *testing.T) {
 			expectedIP: "192.168.1.1",
 		},
 		{
-			name:       "X-Forwarded-For single",
+			name:       "X-Forwarded-For ignored without trusted proxy",
+			remoteAddr: "10.0.0.1:12345",
+			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195"},
+			expectedIP: "10.0.0.1", // Direct IP used (not trusted proxy)
+		},
+		{
+			name:       "X-Forwarded-For multiple ignored without trusted proxy",
+			remoteAddr: "10.0.0.1:12345",
+			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195, 70.41.3.18, 150.172.238.178"},
+			expectedIP: "10.0.0.1", // Direct IP used (not trusted proxy)
+		},
+		{
+			name:       "X-Real-IP ignored without trusted proxy",
+			remoteAddr: "10.0.0.1:12345",
+			headers:    map[string]string{"X-Real-IP": "203.0.113.195"},
+			expectedIP: "10.0.0.1", // Direct IP used (not trusted proxy)
+		},
+		{
+			name:       "both headers ignored without trusted proxy",
+			remoteAddr: "10.0.0.1:12345",
+			headers: map[string]string{
+				"X-Forwarded-For": "203.0.113.195",
+				"X-Real-IP":       "198.51.100.178",
+			},
+			expectedIP: "10.0.0.1", // Direct IP used (not trusted proxy)
+		},
+		{
+			name:       "remote addr without port",
+			remoteAddr: "192.168.1.1",
+			headers:    nil,
+			expectedIP: "192.168.1.1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
+			req.RemoteAddr = tt.remoteAddr
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
+			}
+
+			ip := getClientIP(req)
+			if ip != tt.expectedIP {
+				t.Errorf("getClientIP() = %q, want %q", ip, tt.expectedIP)
+			}
+		})
+	}
+}
+
+func TestGetClientIP_WithTrustedProxy(t *testing.T) {
+	// Configure trusted proxies for this test
+	cfg := config.Get()
+	originalProxies := cfg.Server.TrustedProxies
+	cfg.Server.TrustedProxies = []string{"10.0.0.1", "10.0.0.0/8"}
+	defer func() {
+		cfg.Server.TrustedProxies = originalProxies
+	}()
+
+	tests := []struct {
+		name       string
+		remoteAddr string
+		headers    map[string]string
+		expectedIP string
+	}{
+		{
+			name:       "X-Forwarded-For honored from trusted proxy",
 			remoteAddr: "10.0.0.1:12345",
 			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195"},
 			expectedIP: "203.0.113.195",
 		},
 		{
-			name:       "X-Forwarded-For multiple",
-			remoteAddr: "10.0.0.1:12345",
-			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195, 70.41.3.18, 150.172.238.178"},
+			name:       "X-Forwarded-For multiple from trusted proxy",
+			remoteAddr: "10.0.0.50:12345",
+			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195, 70.41.3.18"},
 			expectedIP: "203.0.113.195",
 		},
 		{
-			name:       "X-Real-IP",
+			name:       "X-Real-IP honored from trusted proxy",
 			remoteAddr: "10.0.0.1:12345",
 			headers:    map[string]string{"X-Real-IP": "203.0.113.195"},
 			expectedIP: "203.0.113.195",
 		},
 		{
-			name:       "X-Forwarded-For takes precedence over X-Real-IP",
+			name:       "X-Forwarded-For precedence over X-Real-IP",
 			remoteAddr: "10.0.0.1:12345",
 			headers: map[string]string{
 				"X-Forwarded-For": "203.0.113.195",
@@ -114,16 +188,10 @@ func TestGetClientIP(t *testing.T) {
 			expectedIP: "203.0.113.195",
 		},
 		{
-			name:       "X-Forwarded-For with whitespace",
-			remoteAddr: "10.0.0.1:12345",
-			headers:    map[string]string{"X-Forwarded-For": "  203.0.113.195  "},
-			expectedIP: "203.0.113.195",
-		},
-		{
-			name:       "remote addr without port",
-			remoteAddr: "192.168.1.1",
-			headers:    nil,
-			expectedIP: "192.168.1.1",
+			name:       "untrusted proxy still uses direct IP",
+			remoteAddr: "192.168.1.1:12345",
+			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195"},
+			expectedIP: "192.168.1.1", // Not in trusted list
 		},
 	}
 

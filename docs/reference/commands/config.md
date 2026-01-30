@@ -34,7 +34,6 @@ default_backend: claude
 unified_flags:
   approval_mode: default
   sandbox_mode: default
-  output_format: text
   verbose: false
   max_turns: 0
   max_tokens: 0
@@ -57,13 +56,23 @@ session:
   retention_days: 30
   store_token_usage: true
 output:
-  format: text
+  format: json
   show_tokens: false
   show_timing: false
   color: true
 server:
   host: "127.0.0.1"
   port: 8080
+  request_timeout_secs: 300
+  read_timeout_secs: 30
+  write_timeout_secs: 300
+  idle_timeout_secs: 120
+  rate_limit_enabled: false
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+  rate_limit_cleanup_secs: 180
+  trusted_proxies: []
+  max_request_body_bytes: 10485760
 parallel:
   max_workers: 3
   fail_fast: false

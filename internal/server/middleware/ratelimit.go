@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"golang.org/x/time/rate"
+
+	"github.com/signalridge/clinvoker/internal/config"
 )
 
 // RateLimiter provides per-IP rate limiting.
@@ -17,6 +19,8 @@ type RateLimiter struct {
 	rps      rate.Limit
 	burst    int
 	cleanup  time.Duration
+	stopCh   chan struct{}
+	stopOnce sync.Once
 }
 
 type limiterEntry struct {
@@ -24,14 +28,28 @@ type limiterEntry struct {
 	lastSeen time.Time
 }
 
-// NewRateLimiter creates a new rate limiter.
+// DefaultRateLimiterCleanup is the default cleanup interval for stale entries.
+const DefaultRateLimiterCleanup = 3 * time.Minute
+
+// NewRateLimiter creates a new rate limiter using the default cleanup interval.
 // rps is requests per second, burst is the maximum burst size.
 func NewRateLimiter(rps, burst int) *RateLimiter {
+	return NewRateLimiterWithCleanup(rps, burst, DefaultRateLimiterCleanup)
+}
+
+// NewRateLimiterWithCleanup creates a new rate limiter with a custom cleanup interval.
+// If cleanup <= 0, DefaultRateLimiterCleanup is used.
+func NewRateLimiterWithCleanup(rps, burst int, cleanup time.Duration) *RateLimiter {
+	if cleanup <= 0 {
+		cleanup = DefaultRateLimiterCleanup
+	}
+
 	rl := &RateLimiter{
 		limiters: make(map[string]*limiterEntry),
 		rps:      rate.Limit(rps),
 		burst:    burst,
-		cleanup:  3 * time.Minute,
+		cleanup:  cleanup,
+		stopCh:   make(chan struct{}),
 	}
 
 	// Start cleanup goroutine
@@ -64,8 +82,13 @@ func (rl *RateLimiter) cleanupLoop() {
 	ticker := time.NewTicker(rl.cleanup)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		rl.cleanupStale()
+	for {
+		select {
+		case <-ticker.C:
+			rl.cleanupStale()
+		case <-rl.stopCh:
+			return
+		}
 	}
 }
 
@@ -82,16 +105,20 @@ func (rl *RateLimiter) cleanupStale() {
 	}
 }
 
-// RateLimit returns a middleware that limits requests per IP.
-// Returns 429 Too Many Requests when limit is exceeded.
-func RateLimit(rps, burst int) func(http.Handler) http.Handler {
-	limiter := NewRateLimiter(rps, burst)
+// Stop terminates the cleanup goroutine.
+func (rl *RateLimiter) Stop() {
+	rl.stopOnce.Do(func() {
+		close(rl.stopCh)
+	})
+}
 
+// Middleware returns a middleware that enforces rate limiting using this limiter.
+func (rl *RateLimiter) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := getClientIP(r)
 
-			if !limiter.Allow(ip) {
+			if !rl.Allow(ip) {
 				writeTooManyRequests(w)
 				return
 			}
@@ -101,9 +128,36 @@ func RateLimit(rps, burst int) func(http.Handler) http.Handler {
 	}
 }
 
+// RateLimit returns a middleware that limits requests per IP.
+// Returns 429 Too Many Requests when limit is exceeded.
+func RateLimit(rps, burst int) func(http.Handler) http.Handler {
+	middleware, _ := RateLimitWithLimiter(rps, burst, 0)
+	return middleware
+}
+
+// RateLimitWithLimiter returns a rate limiting middleware and the underlying limiter.
+// The caller is responsible for calling Stop() on the limiter when no longer needed.
+func RateLimitWithLimiter(rps, burst int, cleanup time.Duration) (func(http.Handler) http.Handler, *RateLimiter) {
+	limiter := NewRateLimiterWithCleanup(rps, burst, cleanup)
+	return limiter.Middleware(), limiter
+}
+
 // getClientIP extracts the client IP from the request.
-// Uses X-Forwarded-For and X-Real-IP headers if present.
+// Only trusts X-Forwarded-For and X-Real-IP headers if the request
+// comes from a trusted proxy (configured via trusted_proxies setting).
+// If trusted_proxies is empty, proxy headers are ignored (RemoteAddr only).
 func getClientIP(r *http.Request) string {
+	// Get the direct connection IP
+	directIP, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		directIP = r.RemoteAddr
+	}
+
+	// Only trust proxy headers if request comes from a trusted proxy
+	if !isTrustedProxy(directIP) {
+		return directIP
+	}
+
 	// Try X-Forwarded-For first (leftmost is original client)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		// Take the first IP in the chain
@@ -121,12 +175,41 @@ func getClientIP(r *http.Request) string {
 		return trimSpace(xrip)
 	}
 
-	// Fall back to RemoteAddr
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
+	// Fall back to direct IP
+	return directIP
+}
+
+// isTrustedProxy checks if the given IP is in the trusted proxies list.
+// Returns false if no trusted proxies are configured (secure by default).
+func isTrustedProxy(ip string) bool {
+	cfg := config.Get()
+	if cfg == nil || len(cfg.Server.TrustedProxies) == 0 {
+		return false
 	}
-	return ip
+
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+
+	for _, trusted := range cfg.Server.TrustedProxies {
+		// Try parsing as CIDR
+		if _, cidr, err := net.ParseCIDR(trusted); err == nil {
+			if cidr.Contains(parsedIP) {
+				return true
+			}
+			continue
+		}
+
+		// Try parsing as single IP
+		if trustedIP := net.ParseIP(trusted); trustedIP != nil {
+			if trustedIP.Equal(parsedIP) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // indexByte returns the index of the first occurrence of c in s, or -1 if not present.

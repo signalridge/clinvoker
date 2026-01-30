@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
 
+	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/server/service"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // CustomHandlers provides handlers for the custom RESTful API.
@@ -118,7 +123,7 @@ type PromptInput struct {
 }
 
 // HandlePrompt handles prompt execution requests.
-func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (*PromptResponse, error) {
+func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (*huma.StreamResponse, error) {
 	if input.Body.Backend == "" {
 		return nil, huma.Error400BadRequest("backend is required")
 	}
@@ -126,13 +131,66 @@ func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (
 		return nil, huma.Error400BadRequest("prompt is required")
 	}
 
+	cfg := config.Get()
+	requestedFormat := backend.OutputFormat(util.ApplyOutputFormatDefault(input.Body.OutputFormat, cfg))
+
+	if requestedFormat == backend.OutputStreamJSON {
+		streamReq := input.Body.ToServiceRequest()
+		return &huma.StreamResponse{
+			Body: func(hctx huma.Context) {
+				hctx.SetStatus(http.StatusOK)
+				hctx.SetHeader("Content-Type", "application/x-ndjson")
+				hctx.SetHeader("Cache-Control", "no-cache")
+
+				writer := output.NewWriter(hctx.BodyWriter(), output.WithFormat(output.FormatJSON))
+				flusher, _ := hctx.BodyWriter().(http.Flusher)
+				sawErrorEvent := false
+
+				streamResult, streamErr := h.executor.StreamPrompt(hctx.Context(), streamReq, func(event *output.UnifiedEvent) error {
+					if event.Type == output.EventError {
+						sawErrorEvent = true
+					}
+					if err := writer.WriteEvent(event); err != nil {
+						return err
+					}
+					if flusher != nil {
+						flusher.Flush()
+					}
+					return nil
+				})
+
+				if (streamErr != nil || (streamResult != nil && streamResult.Error != "")) && !sawErrorEvent {
+					errMsg := "stream failed"
+					if streamErr != nil {
+						errMsg = streamErr.Error()
+					} else if streamResult != nil && streamResult.Error != "" {
+						errMsg = streamResult.Error
+					}
+
+					errEvent := output.NewUnifiedEvent(output.EventError, streamReq.Backend, "")
+					if err := errEvent.SetContent(&output.ErrorContent{Message: errMsg}); err == nil {
+						_ = writer.WriteEvent(errEvent)
+						if flusher != nil {
+							flusher.Flush()
+						}
+					}
+				}
+			},
+		}, nil
+	}
+
 	result, err := h.executor.ExecutePrompt(ctx, input.Body.ToServiceRequest())
 	if err != nil {
 		return nil, huma.Error500InternalServerError("execution failed", err)
 	}
 
-	return &PromptResponse{
-		Body: FromServiceResult(result),
+	payload := FromServiceResult(result)
+	return &huma.StreamResponse{
+		Body: func(hctx huma.Context) {
+			hctx.SetStatus(http.StatusOK)
+			hctx.SetHeader("Content-Type", "application/json")
+			_ = json.NewEncoder(hctx.BodyWriter()).Encode(payload)
+		},
 	}, nil
 }
 
@@ -163,8 +221,14 @@ func (h *CustomHandlers) HandleParallel(ctx context.Context, input *ParallelInpu
 			WorkDir:      t.WorkDir,
 			ApprovalMode: t.ApprovalMode,
 			SandboxMode:  t.SandboxMode,
+			OutputFormat: t.OutputFormat,
+			MaxTokens:    t.MaxTokens,
 			MaxTurns:     t.MaxTurns,
+			SystemPrompt: t.SystemPrompt,
+			Verbose:      t.Verbose,
+			Ephemeral:    t.Ephemeral,
 			Extra:        t.Extra,
+			Metadata:     t.Metadata,
 		}
 	}
 
@@ -233,7 +297,11 @@ func (h *CustomHandlers) HandleChain(ctx context.Context, input *ChainInput) (*C
 			WorkDir:      s.WorkDir,
 			ApprovalMode: s.ApprovalMode,
 			SandboxMode:  s.SandboxMode,
+			MaxTokens:    s.MaxTokens,
 			MaxTurns:     s.MaxTurns,
+			SystemPrompt: s.SystemPrompt,
+			Verbose:      s.Verbose,
+			Extra:        s.Extra,
 			Name:         s.Name,
 		}
 	}

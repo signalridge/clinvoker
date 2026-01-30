@@ -33,7 +33,7 @@ clinvk [command] [flags]
 | `--backend` | `-b` | string | `claude` | 使用的 AI 后端 |
 | `--model` | `-m` | string | | 使用的模型 |
 | `--workdir` | `-w` | string | | 工作目录 |
-| `--output-format` | `-o` | string | `text` | 输出格式 |
+| `--output-format` | `-o` | string | `json` | 输出格式 |
 | `--config` | | string | | 配置文件路径 |
 | `--dry-run` | | bool | `false` | 只显示命令 |
 | `--ephemeral` | | bool | `false` | 无状态模式 |
@@ -76,8 +76,8 @@ clinvk --workdir /path/to/project "分析这个代码库"
 
 | 值 | 描述 |
 |---|------|
-| `text` | 纯文本（默认） |
-| `json` | 结构化 JSON |
+| `text` | 纯文本 |
+| `json` | 结构化 JSON（默认） |
 | `stream-json` | 流式 JSON 事件 |
 
 ### --dry-run

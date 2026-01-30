@@ -18,6 +18,9 @@ import (
 // sessionIDPattern validates session IDs (hex string, 16 characters).
 var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16}$`)
 
+// indexFileName is the name of the persisted index file.
+const indexFileName = "index.json"
+
 // SessionMeta holds lightweight metadata for indexing without loading full session.
 type SessionMeta struct {
 	ID        string
@@ -112,6 +115,63 @@ func (s *Store) removeFromIndex(id string) {
 	delete(s.index, id)
 }
 
+// persistedIndex is the JSON structure for the persisted index file.
+type persistedIndex struct {
+	Version int                     `json:"version"`
+	Index   map[string]*SessionMeta `json:"index"`
+}
+
+// persistIndex saves the index to disk for fast startup.
+// Caller must hold write lock.
+func (s *Store) persistIndex() error {
+	if err := s.ensureStoreDirLocked(); err != nil {
+		return err
+	}
+
+	data, err := json.Marshal(&persistedIndex{
+		Version: 1,
+		Index:   s.index,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to marshal index: %w", err)
+	}
+
+	indexPath := filepath.Join(s.dir, indexFileName)
+	if err := os.WriteFile(indexPath, data, 0600); err != nil {
+		return fmt.Errorf("failed to write index: %w", err)
+	}
+
+	return nil
+}
+
+// loadPersistedIndex loads the index from disk if it exists.
+// Returns true if index was successfully loaded, false otherwise.
+// Caller must hold write lock.
+func (s *Store) loadPersistedIndex() bool {
+	indexPath := filepath.Join(s.dir, indexFileName)
+	data, err := os.ReadFile(indexPath)
+	if err != nil {
+		return false // File doesn't exist or can't be read
+	}
+
+	var pi persistedIndex
+	if err := json.Unmarshal(data, &pi); err != nil {
+		return false // Invalid JSON
+	}
+
+	// Validate index version
+	if pi.Version != 1 {
+		return false // Unknown version
+	}
+
+	s.index = pi.Index
+	if s.index == nil {
+		s.index = make(map[string]*SessionMeta)
+	}
+	s.dirty = false
+	return true
+}
+
 // ensureIndexLoaded loads the index from disk if needed.
 // NOTE: This must be called with at least a read lock held.
 // If the index needs rebuilding, caller must upgrade to write lock first.
@@ -161,11 +221,19 @@ func (s *Store) ensureIndexLoadedForRead() error {
 }
 
 // rebuildIndex rebuilds the in-memory index from disk.
+// First tries to load from persisted index file for fast startup.
+// Falls back to scanning session files if index file is missing/invalid.
 func (s *Store) rebuildIndex() error {
 	if err := s.ensureStoreDirLocked(); err != nil {
 		return err
 	}
 
+	// Fast path: try to load persisted index
+	if s.loadPersistedIndex() {
+		return nil
+	}
+
+	// Slow path: scan session files
 	entries, err := os.ReadDir(s.dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -179,6 +247,11 @@ func (s *Store) rebuildIndex() error {
 	newIndex := make(map[string]*SessionMeta, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+
+		// Skip the index file itself
+		if entry.Name() == indexFileName {
 			continue
 		}
 
@@ -203,6 +276,10 @@ func (s *Store) rebuildIndex() error {
 
 	s.index = newIndex
 	s.dirty = false
+
+	// Persist the newly built index for next startup
+	_ = s.persistIndex()
+
 	return nil
 }
 
@@ -212,6 +289,57 @@ func (s *Store) InvalidateIndex() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dirty = true
+}
+
+// ValidateIndex checks all index entries against actual files and removes stale entries.
+// Returns the number of stale entries removed and any error encountered.
+// This should be called periodically or when ghost sessions are suspected.
+func (s *Store) ValidateIndex() (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.dirty {
+		// Index not loaded yet - rebuild will validate automatically
+		if err := s.rebuildIndex(); err != nil {
+			return 0, err
+		}
+		return 0, nil // rebuildIndex scans files, no stale entries possible
+	}
+
+	// Check each index entry against actual files
+	var staleIDs []string
+	for id := range s.index {
+		path := s.sessionPath(id)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			staleIDs = append(staleIDs, id)
+		}
+	}
+
+	// Remove stale entries
+	for _, id := range staleIDs {
+		delete(s.index, id)
+	}
+
+	// Persist cleaned index if any entries were removed
+	if len(staleIDs) > 0 {
+		_ = s.persistIndex()
+	}
+
+	return len(staleIDs), nil
+}
+
+// CountValidated returns the count of sessions that actually exist on disk.
+// Unlike Count(), this validates each index entry against the file system.
+// Use Count() for fast lookups when accuracy is less critical.
+func (s *Store) CountValidated() (int, error) {
+	removed, err := s.ValidateIndex()
+	if err != nil {
+		return 0, err
+	}
+	if removed > 0 {
+		// Log would go here if logger available
+	}
+	return s.Count()
 }
 
 // Create creates a new session and saves it.
@@ -233,6 +361,15 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 	}
 
 	s.updateIndex(sess)
+
+	// Persist index synchronously for Create to ensure consistency
+	// (new sessions should be visible immediately after restart)
+	if err := s.persistIndex(); err != nil {
+		// Log but don't fail - session is already saved to disk
+		// Index can be rebuilt on next startup
+		_ = err // Silent ignore, consider adding logging in future
+	}
+
 	return sess, nil
 }
 
@@ -246,6 +383,14 @@ func (s *Store) Save(sess *Session) error {
 	}
 
 	s.updateIndex(sess)
+
+	// Persist index asynchronously (don't block on index persistence errors)
+	go func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		_ = s.persistIndex()
+	}()
+
 	return nil
 }
 
@@ -314,6 +459,14 @@ func (s *Store) Delete(id string) error {
 	}
 
 	s.removeFromIndex(id)
+
+	// Persist index asynchronously (don't block on index persistence errors)
+	go func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		_ = s.persistIndex()
+	}()
+
 	return nil
 }
 
@@ -575,6 +728,9 @@ func (s *Store) ListPaginated(filter *ListFilter) (*ListResult, error) {
 
 // metaMatchesFilter checks if metadata matches the filter criteria.
 func (s *Store) metaMatchesFilter(meta *SessionMeta, filter *ListFilter) bool {
+	if filter == nil {
+		return true
+	}
 	if filter.Backend != "" && meta.Backend != filter.Backend {
 		return false
 	}

@@ -8,6 +8,23 @@ import (
 	"github.com/signalridge/clinvoker/internal/util"
 )
 
+// validOutputFormats contains the set of recognized output format values.
+var validOutputFormats = map[string]bool{
+	"":            true, // Empty string is valid (uses default)
+	"default":     true,
+	"text":        true,
+	"json":        true,
+	"stream-json": true,
+}
+
+// validateOutputFormat returns an error if the format is not recognized.
+func validateOutputFormat(format string) error {
+	if !validOutputFormats[format] {
+		return fmt.Errorf("invalid output_format %q: must be one of default, text, json, stream-json", format)
+	}
+	return nil
+}
+
 type preparedPrompt struct {
 	backend backend.Backend
 	model   string
@@ -21,16 +38,24 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 		return nil, fmt.Errorf("invalid request")
 	}
 
-	if err := validateWorkDir(req.WorkDir); err != nil {
+	// Validate output format before processing
+	if err := validateOutputFormat(req.OutputFormat); err != nil {
 		return nil, err
 	}
 
-	if err := backend.ValidateExtraFlags(req.Extra); err != nil {
+	// Use ValidateWorkDirFromConfig to enforce allowed/blocked path restrictions from config
+	if err := ValidateWorkDirFromConfig(req.WorkDir); err != nil {
 		return nil, err
 	}
 
 	b, err := backend.Get(req.Backend)
 	if err != nil {
+		return nil, err
+	}
+
+	// Use backend-specific flag validation for stricter isolation
+	// This prevents cross-backend flag injection (e.g., codex flags passed to claude)
+	if err := backend.ValidateExtraFlagsForBackend(req.Backend, req.Extra); err != nil {
 		return nil, err
 	}
 	if !b.IsAvailable() {
@@ -62,6 +87,7 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 	}
 
 	util.ApplyUnifiedDefaults(opts, cfg, cfg.UnifiedFlags.DryRun)
+	util.ApplyBackendDefaults(opts, req.Backend, cfg)
 
 	if forceStateless {
 		opts.Ephemeral = true

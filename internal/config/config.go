@@ -56,6 +56,49 @@ type ServerConfig struct {
 
 	// RateLimitBurst is the maximum burst size for rate limiting.
 	RateLimitBurst int `mapstructure:"rate_limit_burst"`
+
+	// RateLimitCleanupSecs controls how often stale rate limiter entries are purged.
+	// Default: 180 (3 minutes). Set to 0 to use the default.
+	RateLimitCleanupSecs int `mapstructure:"rate_limit_cleanup_secs"`
+
+	// TrustedProxies is a list of trusted proxy IP addresses or CIDR ranges.
+	// Only requests from these IPs will have X-Forwarded-For/X-Real-IP headers honored.
+	// If empty, proxy headers are never trusted (always use RemoteAddr).
+	// Examples: ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+	TrustedProxies []string `mapstructure:"trusted_proxies"`
+
+	// MaxRequestBodyBytes limits the maximum size of request bodies.
+	// Set to 0 to disable the limit.
+	MaxRequestBodyBytes int64 `mapstructure:"max_request_body_bytes"`
+
+	// CORS Configuration
+	// CORSAllowedOrigins specifies the allowed origins for CORS requests.
+	// If empty, defaults to localhost only for security.
+	// Examples: ["http://localhost:3000", "https://myapp.example.com"]
+	CORSAllowedOrigins []string `mapstructure:"cors_allowed_origins"`
+
+	// CORSAllowCredentials enables cookies/auth headers in CORS requests.
+	// Only enable this when CORSAllowedOrigins has explicit origins (not wildcards).
+	CORSAllowCredentials bool `mapstructure:"cors_allow_credentials"`
+
+	// CORSMaxAge is the max age in seconds for CORS preflight cache.
+	// Default: 300 (5 minutes)
+	CORSMaxAge int `mapstructure:"cors_max_age"`
+
+	// WorkDir Restrictions
+	// AllowedWorkDirPrefixes restricts work directories to paths starting with these prefixes.
+	// If empty, any path is allowed (subject to blocked paths check).
+	// Examples: ["/home/user/projects", "/var/www"]
+	AllowedWorkDirPrefixes []string `mapstructure:"allowed_workdir_prefixes"`
+
+	// BlockedWorkDirPrefixes blocks work directories starting with these prefixes.
+	// These are checked even if AllowedWorkDirPrefixes is set.
+	// Defaults include: /etc, /var/run, /root, /sys, /proc, /usr/bin, etc.
+	BlockedWorkDirPrefixes []string `mapstructure:"blocked_workdir_prefixes"`
+
+	// MetricsEnabled enables the /metrics endpoint for Prometheus scraping.
+	// Default: false
+	MetricsEnabled bool `mapstructure:"metrics_enabled"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -65,9 +108,6 @@ type UnifiedFlagsConfig struct {
 
 	// SandboxMode controls file/network access (default, read-only, workspace, full).
 	SandboxMode string `mapstructure:"sandbox_mode"`
-
-	// OutputFormat controls output format (default, text, json, stream-json).
-	OutputFormat string `mapstructure:"output_format"`
 
 	// Verbose enables verbose output.
 	Verbose bool `mapstructure:"verbose"`
@@ -171,7 +211,6 @@ func Init(cfgFile string) error {
 			UnifiedFlags: UnifiedFlagsConfig{
 				ApprovalMode: "default",
 				SandboxMode:  "default",
-				OutputFormat: "default",
 			},
 			Backends: make(map[string]BackendConfig),
 			Session: SessionConfig{
@@ -180,7 +219,7 @@ func Init(cfgFile string) error {
 				StoreTokenUsage: true,
 			},
 			Output: OutputConfig{
-				Format:     "text",
+				Format:     "json",
 				ShowTokens: false,
 				ShowTiming: false,
 				Color:      true,
@@ -191,15 +230,17 @@ func Init(cfgFile string) error {
 				AggregateOutput: true,
 			},
 			Server: ServerConfig{
-				Host:               "127.0.0.1",
-				Port:               8080,
-				RequestTimeoutSecs: 300, // 5 minutes
-				ReadTimeoutSecs:    30,
-				WriteTimeoutSecs:   300, // 5 minutes
-				IdleTimeoutSecs:    120,
-				RateLimitEnabled:   false,
-				RateLimitRPS:       10,
-				RateLimitBurst:     20,
+				Host:                 "127.0.0.1",
+				Port:                 8080,
+				RequestTimeoutSecs:   300, // 5 minutes
+				ReadTimeoutSecs:      30,
+				WriteTimeoutSecs:     300, // 5 minutes
+				IdleTimeoutSecs:      120,
+				RateLimitEnabled:     false,
+				RateLimitRPS:         10,
+				RateLimitBurst:       20,
+				RateLimitCleanupSecs: 180,
+				MaxRequestBodyBytes:  10 * 1024 * 1024, // 10MB
 			},
 		}
 

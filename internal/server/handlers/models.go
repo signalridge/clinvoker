@@ -45,14 +45,20 @@ type PromptResponseBody struct {
 
 // ParallelTask is a single task in parallel execution.
 type ParallelTask struct {
-	Backend      string   `json:"backend" doc:"Backend to use"`
-	Prompt       string   `json:"prompt" doc:"The prompt to execute"`
-	Model        string   `json:"model,omitempty" doc:"Model to use"`
-	WorkDir      string   `json:"workdir,omitempty" doc:"Working directory"`
-	ApprovalMode string   `json:"approval_mode,omitempty" doc:"Approval mode"`
-	SandboxMode  string   `json:"sandbox_mode,omitempty" doc:"Sandbox mode"`
-	MaxTurns     int      `json:"max_turns,omitempty" doc:"Maximum turns"`
-	Extra        []string `json:"extra,omitempty" doc:"Extra flags"`
+	Backend      string            `json:"backend" doc:"Backend to use"`
+	Prompt       string            `json:"prompt" doc:"The prompt to execute"`
+	Model        string            `json:"model,omitempty" doc:"Model to use"`
+	WorkDir      string            `json:"workdir,omitempty" doc:"Working directory"`
+	ApprovalMode string            `json:"approval_mode,omitempty" doc:"Approval mode"`
+	SandboxMode  string            `json:"sandbox_mode,omitempty" doc:"Sandbox mode"`
+	OutputFormat string            `json:"output_format,omitempty" doc:"Output format (text, json, stream-json)"`
+	MaxTokens    int               `json:"max_tokens,omitempty" doc:"Maximum tokens"`
+	MaxTurns     int               `json:"max_turns,omitempty" doc:"Maximum turns"`
+	SystemPrompt string            `json:"system_prompt,omitempty" doc:"System prompt override"`
+	Verbose      bool              `json:"verbose,omitempty" doc:"Enable verbose output"`
+	Ephemeral    bool              `json:"ephemeral,omitempty" doc:"Ephemeral mode (no session persistence)"`
+	Extra        []string          `json:"extra,omitempty" doc:"Extra flags"`
+	Metadata     map[string]string `json:"metadata,omitempty" doc:"Task metadata"`
 }
 
 // ParallelRequest is the API request for parallel execution.
@@ -79,14 +85,18 @@ type ParallelResponseBody struct {
 
 // ChainStep is a step in chain execution.
 type ChainStep struct {
-	Backend      string `json:"backend" doc:"Backend to use"`
-	Prompt       string `json:"prompt" doc:"The prompt (supports {{previous}} placeholder)"`
-	Model        string `json:"model,omitempty" doc:"Model to use"`
-	WorkDir      string `json:"workdir,omitempty" doc:"Working directory"`
-	ApprovalMode string `json:"approval_mode,omitempty" doc:"Approval mode"`
-	SandboxMode  string `json:"sandbox_mode,omitempty" doc:"Sandbox mode"`
-	MaxTurns     int    `json:"max_turns,omitempty" doc:"Maximum turns"`
-	Name         string `json:"name,omitempty" doc:"Step name for display"`
+	Backend      string   `json:"backend" doc:"Backend to use"`
+	Prompt       string   `json:"prompt" doc:"The prompt (supports {{previous}} placeholder)"`
+	Model        string   `json:"model,omitempty" doc:"Model to use"`
+	WorkDir      string   `json:"workdir,omitempty" doc:"Working directory"`
+	ApprovalMode string   `json:"approval_mode,omitempty" doc:"Approval mode"`
+	SandboxMode  string   `json:"sandbox_mode,omitempty" doc:"Sandbox mode"`
+	MaxTokens    int      `json:"max_tokens,omitempty" doc:"Maximum tokens"`
+	MaxTurns     int      `json:"max_turns,omitempty" doc:"Maximum turns"`
+	SystemPrompt string   `json:"system_prompt,omitempty" doc:"System prompt override"`
+	Verbose      bool     `json:"verbose,omitempty" doc:"Enable verbose output"`
+	Extra        []string `json:"extra,omitempty" doc:"Extra flags"`
+	Name         string   `json:"name,omitempty" doc:"Step name for display"`
 }
 
 // ChainRequest is the API request for chain execution.

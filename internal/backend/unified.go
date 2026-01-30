@@ -5,57 +5,166 @@ import (
 	"strings"
 )
 
-// dangerousFlags contains flags that could bypass security controls.
-// This list covers common dangerous patterns across multiple CLI tools.
-var dangerousFlags = map[string]bool{
-	// Permission/verification bypasses
-	"--dangerously-skip-permissions": true,
-	"--no-verify":                    true,
-	"--skip-hooks":                   true,
-	"--skip-verification":            true,
-	"--no-check":                     true,
-	"--unsafe":                       true,
-	"--insecure":                     true,
-
-	// Force operations
-	"--force":           true,
-	"-f":                true,
-	"--force-yes":       true,
-	"--yes":             true, // Auto-confirm dangerous operations
-	"-y":                true,
-	"--assume-yes":      true,
-	"--no-confirm":      true,
-	"--non-interactive": true, // May bypass safety prompts
-
-	// Sandbox/security bypasses
-	"--no-sandbox":         true,
-	"--disable-sandbox":    true,
-	"--dangerous":          true,
-	"--danger-full-access": true,
-
-	// Root/privilege escalation hints
-	"--run-as-root": true,
-	"--privileged":  true,
+// allowedFlagPatterns defines the allowlist of flags permitted for each backend.
+// Using allowlist is more secure than blocklist as it prevents bypass via unknown variants.
+var allowedFlagPatterns = map[string][]string{
+	"claude": {
+		"--model", "--print", "--output-format", "--verbose",
+		"--max-turns", "--system-prompt", "--permission-mode",
+		"--resume", "--add-dir", "--allowedtools", "--allowed-tools",
+		"--no-session-persistence", "--continue",
+	},
+	"codex": {
+		"--model", "--json", "--sandbox", "--ask-for-approval",
+		"--full-auto", "--quiet", "--config-dir",
+	},
+	"gemini": {
+		"--model", "--output-format", "--sandbox", "--approval-mode",
+		"--yolo", "--debug", "--color", "--disable-color",
+	},
+	// Common short flags allowed across all backends
+	"common": {"-v", "-m", "-o", "-q", "-h", "--help", "--version"},
 }
 
-// ValidateExtraFlags validates that extra flags don't contain dangerous options.
+// booleanFlags defines flags that do NOT take a value (boolean flags).
+// This prevents the flag validator from incorrectly consuming the next argument.
+// Note: flags not in this set are assumed to potentially take a value.
+var booleanFlags = map[string]bool{
+	// Claude boolean flags
+	"--verbose":                true,
+	"--print":                  true,
+	"--no-session-persistence": true,
+	"--continue":               true,
+	// Codex boolean flags
+	"--json":      true,
+	"--full-auto": true,
+	"--quiet":     true,
+	// Gemini boolean flags
+	"--yolo":          true,
+	"--debug":         true,
+	"--color":         true,
+	"--disable-color": true,
+	// Common boolean flags
+	"-v":        true,
+	"-q":        true,
+	"-h":        true,
+	"--help":    true,
+	"--version": true,
+}
+
+// buildAllowedSet builds a case-insensitive set of allowed flags for a backend.
+func buildAllowedSet(backend string) map[string]bool {
+	allowed := make(map[string]bool)
+
+	// Add common flags
+	for _, f := range allowedFlagPatterns["common"] {
+		allowed[strings.ToLower(f)] = true
+	}
+
+	// Add backend-specific flags
+	if patterns, ok := allowedFlagPatterns[backend]; ok {
+		for _, f := range patterns {
+			allowed[strings.ToLower(f)] = true
+		}
+	}
+
+	return allowed
+}
+
+// extractFlagName extracts the flag name from a flag string.
+// Handles formats: --flag, --flag=value, -f, -f=value
+func extractFlagName(flag string) string {
+	// Handle --flag=value format
+	if idx := strings.Index(flag, "="); idx != -1 {
+		flag = flag[:idx]
+	}
+	return flag
+}
+
+// ValidateExtraFlags validates that extra flags are in the allowlist.
+// This is a backend-agnostic validation that rejects any unknown flags.
+// It supports both --flag=value format and --flag value format (separate tokens).
+// A token is considered a value (not a flag) only if:
+//   - It doesn't start with "-", AND
+//   - The previous token was a non-boolean flag without "="
+//
+// Boolean flags (--verbose, --json, etc.) never consume the next token as a value.
 func ValidateExtraFlags(flags []string) error {
-	for _, flag := range flags {
-		// Normalize flag (handle --flag=value format)
-		normalizedFlag := flag
-		if idx := strings.Index(flag, "="); idx != -1 {
-			normalizedFlag = flag[:idx]
+	// Build a combined allowlist for all backends (for backward compatibility)
+	allowed := make(map[string]bool)
+	for _, patterns := range allowedFlagPatterns {
+		for _, f := range patterns {
+			allowed[strings.ToLower(f)] = true
+		}
+	}
+
+	// Track whether the previous token was a non-boolean flag without "=" (could accept a value)
+	prevFlagMayHaveValue := false
+
+	for _, token := range flags {
+		// Check if this token looks like a value (doesn't start with -)
+		isValueToken := !strings.HasPrefix(token, "-")
+
+		if isValueToken {
+			// Value tokens are only allowed after a non-boolean flag that may have a value
+			if prevFlagMayHaveValue {
+				prevFlagMayHaveValue = false // consumed the value
+				continue
+			}
+			// Standalone value token without preceding flag
+			return fmt.Errorf("invalid flag format: %s (must start with - or --)", token)
 		}
 
-		// Check for dangerous flags
-		if dangerousFlags[normalizedFlag] {
-			return fmt.Errorf("dangerous flag not allowed: %s", flag)
+		// This is a flag token (starts with -)
+		name := strings.ToLower(extractFlagName(token))
+		if !allowed[name] {
+			return fmt.Errorf("flag not allowed: %s (use backend-specific allowed flags only)", token)
 		}
 
-		// Flags must start with - or --
-		if !strings.HasPrefix(flag, "-") {
-			return fmt.Errorf("invalid flag format: %s (must start with - or --)", flag)
+		// Boolean flags never take values; only non-boolean flags without "=" may take a value
+		isBoolFlag := booleanFlags[name]
+		prevFlagMayHaveValue = !isBoolFlag && !strings.Contains(token, "=")
+	}
+	return nil
+}
+
+// ValidateExtraFlagsForBackend validates that extra flags are in the allowlist for a specific backend.
+// This provides stricter validation than ValidateExtraFlags by only allowing backend-specific flags.
+// It supports both --flag=value format and --flag value format (separate tokens).
+// A token is considered a value (not a flag) only if:
+//   - It doesn't start with "-", AND
+//   - The previous token was a non-boolean flag without "="
+//
+// Boolean flags (--verbose, --json, etc.) never consume the next token as a value.
+func ValidateExtraFlagsForBackend(backendName string, flags []string) error {
+	allowed := buildAllowedSet(backendName)
+
+	// Track whether the previous token was a non-boolean flag without "=" (could accept a value)
+	prevFlagMayHaveValue := false
+
+	for _, token := range flags {
+		// Check if this token looks like a value (doesn't start with -)
+		isValueToken := !strings.HasPrefix(token, "-")
+
+		if isValueToken {
+			// Value tokens are only allowed after a non-boolean flag that may have a value
+			if prevFlagMayHaveValue {
+				prevFlagMayHaveValue = false // consumed the value
+				continue
+			}
+			// Standalone value token without preceding flag
+			return fmt.Errorf("invalid flag format: %s (must start with - or --)", token)
 		}
+
+		// This is a flag token (starts with -)
+		name := strings.ToLower(extractFlagName(token))
+		if !allowed[name] {
+			return fmt.Errorf("flag not allowed for %s: %s", backendName, token)
+		}
+
+		// Boolean flags never take values; only non-boolean flags without "=" may take a value
+		isBoolFlag := booleanFlags[name]
+		prevFlagMayHaveValue = !isBoolFlag && !strings.Contains(token, "=")
 	}
 	return nil
 }
@@ -77,6 +186,9 @@ type UnifiedOptions struct {
 
 	// OutputFormat controls the output format.
 	OutputFormat OutputFormat
+
+	// AllowedTools specifies allowed tools (backend-specific format).
+	AllowedTools string
 
 	// AllowedDirs specifies directories the backend can access.
 	AllowedDirs []string
@@ -177,6 +289,7 @@ func (m *flagMapper) MapToOptions(unified *UnifiedOptions) *Options {
 		WorkDir:     unified.WorkDir,
 		Model:       m.mapModel(unified.Model),
 		AllowedDirs: unified.AllowedDirs,
+		AllowedTools: unified.AllowedTools,
 		ExtraFlags:  make([]string, 0),
 	}
 

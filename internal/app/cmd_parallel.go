@@ -3,8 +3,10 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +15,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/session"
 	"github.com/signalridge/clinvoker/internal/util"
 )
 
@@ -111,17 +112,24 @@ type ParallelTask struct {
 
 // TaskResult represents the result of a parallel task.
 type TaskResult struct {
-	Index     int       `json:"index"`
-	TaskID    string    `json:"task_id,omitempty"`
-	TaskName  string    `json:"task_name,omitempty"`
-	Backend   string    `json:"backend"`
-	ExitCode  int       `json:"exit_code"`
-	Error     string    `json:"error,omitempty"`
-	Output    string    `json:"output,omitempty"`
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
-	Duration  float64   `json:"duration_seconds"`
-	SessionID string    `json:"session_id,omitempty"`
+	Index     int               `json:"index"`
+	TaskID    string            `json:"task_id,omitempty"`
+	TaskName  string            `json:"task_name,omitempty"`
+	Tags      []string          `json:"tags,omitempty"`
+	Meta      map[string]string `json:"meta,omitempty"`
+	Backend   string            `json:"backend"`
+	ExitCode  int               `json:"exit_code"`
+	Error     string            `json:"error,omitempty"`
+	Output    string            `json:"output,omitempty"`
+	StartTime time.Time         `json:"start_time"`
+	EndTime   time.Time         `json:"end_time"`
+	Duration  float64           `json:"duration_seconds"`
+}
+
+// parallelTaskOutput represents a persisted task output payload.
+type parallelTaskOutput struct {
+	Task   ParallelTask `json:"task"`
+	Result TaskResult   `json:"result"`
 }
 
 // ParallelResults represents the aggregated results of parallel execution.
@@ -137,8 +145,8 @@ type ParallelResults struct {
 
 // parallelContext holds shared state for parallel execution.
 type parallelContext struct {
-	store    *session.Store
 	cfg      *config.Config
+	ctx      context.Context
 	failFast bool
 	quiet    bool
 }
@@ -150,8 +158,9 @@ func runParallel(cmd *cobra.Command, args []string) error {
 	}
 
 	maxP, failFast := resolveParallelConfig(tasks)
+	effectiveQuiet := parallelQuiet || parallelJSON
 
-	if !parallelQuiet && !parallelJSON {
+	if !effectiveQuiet {
 		printParallelHeader(len(tasks.Tasks), maxP, failFast)
 	}
 
@@ -227,10 +236,10 @@ func executeParallelTasks(tasks *ParallelTasks, maxP int, failFast bool) *Parall
 	defer cancel()
 
 	pCtx := &parallelContext{
-		store:    session.NewStore(),
 		cfg:      config.Get(),
+		ctx:      ctx,
 		failFast: failFast,
-		quiet:    parallelQuiet,
+		quiet:    parallelQuiet || parallelJSON,
 	}
 
 	sem := make(chan struct{}, maxP)
@@ -294,6 +303,8 @@ func createCanceledResult(idx int, t *ParallelTask) TaskResult {
 		Index:    idx,
 		TaskID:   t.ID,
 		TaskName: t.Name,
+		Tags:     cloneStringSlice(t.Tags),
+		Meta:     cloneStringMap(t.Meta),
 		Backend:  t.Backend,
 		ExitCode: -1,
 		Error:    "canceled (fail-fast)",
@@ -307,6 +318,8 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 		Index:     idx,
 		TaskID:    t.ID,
 		TaskName:  t.Name,
+		Tags:      cloneStringSlice(t.Tags),
+		Meta:      cloneStringMap(t.Meta),
 		Backend:   t.Backend,
 		StartTime: startTime,
 	}
@@ -321,15 +334,9 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 	// Build unified options
 	opts := buildParallelTaskOptions(t, pCtx.cfg)
 
-	// Create and save session
-	tags := append([]string{"parallel"}, t.Tags...)
-	sess := createAndSaveSession(pCtx.store, t.Backend, t.WorkDir, opts.Model, t.Prompt, tags, t.Name, pCtx.quiet)
-	if sess != nil {
-		result.SessionID = sess.ID
-	}
-
 	// Build command
 	execCmd := b.BuildCommandUnified(t.Prompt, opts)
+	execCmd = util.CommandWithContext(pCtx.ctx, execCmd)
 
 	if opts.DryRun {
 		if !pCtx.quiet {
@@ -341,23 +348,34 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 		return result
 	}
 
-	// Execute with output capture and parsing
-	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
-	if execErr != nil {
-		result.Error = execErr.Error()
+	// Execute with JSON output capture for proper error extraction
+	captureResult, execErr := ExecuteAndCaptureWithJSON(b, execCmd)
+	if execErr != nil && captureResult.Error == "" {
+		if errors.Is(execErr, context.Canceled) {
+			result.Error = "canceled (fail-fast)"
+			result.ExitCode = -1
+		} else {
+			result.Error = execErr.Error()
+		}
+	} else if captureResult.Error != "" {
+		result.Error = captureResult.Error
 	}
-	result.ExitCode = exitCode
-	result.Output = output
+	if result.ExitCode == 0 {
+		result.ExitCode = captureResult.ExitCode
+	}
+	result.Output = captureResult.Content
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
 
 	// Print output if not in quiet mode
-	if !pCtx.quiet && output != "" {
-		fmt.Printf("[%d] %s\n", idx+1, output)
+	if !pCtx.quiet && captureResult.Content != "" {
+		fmt.Printf("[%d] %s\n", idx+1, captureResult.Content)
 	}
 
-	// Update session
-	updateSessionAfterExecution(pCtx.store, sess, exitCode, result.Error, pCtx.quiet)
+	// Ensure ephemeral parallel runs remain clean on the backend.
+	if opts.Ephemeral {
+		cleanupBackendSession(t.Backend, captureResult.BackendSessionID)
+	}
 
 	return result
 }
@@ -384,27 +402,37 @@ func buildParallelTaskOptions(t *ParallelTask, cfg *config.Config) *backend.Unif
 		Model:        model,
 		ApprovalMode: backend.ApprovalMode(t.ApprovalMode),
 		SandboxMode:  backend.SandboxMode(t.SandboxMode),
-		OutputFormat: backend.OutputFormat(t.OutputFormat),
+		OutputFormat: backend.OutputJSON, // Force JSON for proper error capture
 		MaxTokens:    t.MaxTokens,
 		MaxTurns:     t.MaxTurns,
 		SystemPrompt: t.SystemPrompt,
 		Verbose:      t.Verbose,
 		DryRun:       t.DryRun,
 		ExtraFlags:   t.Extra,
+		Ephemeral:    true, // Parallel tasks are always ephemeral
 	}
 
 	// Apply config defaults using shared util function
 	effectiveDryRun := dryRun || (cfg != nil && cfg.UnifiedFlags.DryRun)
 	util.ApplyUnifiedDefaults(opts, cfg, effectiveDryRun)
+	util.ApplyBackendDefaults(opts, t.Backend, cfg)
 
-	// Apply output format default
-	opts.OutputFormat = backend.OutputFormat(util.ApplyOutputFormatDefault(string(opts.OutputFormat), cfg))
+	// Note: OutputFormat is intentionally kept as JSON for internal parsing
+	// The user's requested format is used for final output presentation
 
 	return opts
 }
 
 // outputParallelResults outputs the parallel execution results.
 func outputParallelResults(results *ParallelResults, tasks *ParallelTasks) {
+	cfg := config.Get()
+
+	if tasks.OutputDir != "" {
+		if err := persistParallelOutputs(results, tasks); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to write parallel outputs: %v\n", err)
+		}
+	}
+
 	if parallelJSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
@@ -412,22 +440,30 @@ func outputParallelResults(results *ParallelResults, tasks *ParallelTasks) {
 		return
 	}
 
+	// If aggregate output is disabled, just print results without table
+	if !cfg.Parallel.AggregateOutput {
+		for _, r := range results.Results {
+			if r.Error != "" {
+				fmt.Printf("Error [%d]: %s\n", r.Index+1, r.Error)
+			} else if r.Output != "" {
+				fmt.Printf("[%d] %s\n", r.Index+1, r.Output)
+			}
+		}
+		return
+	}
+
 	fmt.Println("\nResults:")
 	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
-	fmt.Printf("%-4s %-12s %-8s %-10s %-10s %s\n", "#", "BACKEND", "STATUS", "DURATION", "SESSION", "TASK")
+	fmt.Printf("%-4s %-12s %-8s %-10s %s\n", "#", "BACKEND", "STATUS", "DURATION", "TASK")
 	fmt.Println(strings.Repeat("-", tableSeparatorWidth))
 
 	for i := range results.Results {
 		r := &results.Results[i]
 		status := resolveTaskStatus(r)
 		taskName := resolveTaskDisplayName(r, tasks)
-		sessionID := "-"
-		if r.SessionID != "" {
-			sessionID = shortSessionID(r.SessionID)
-		}
 
-		fmt.Printf("%-4d %-12s %-8s %-10.2fs %-10s %s\n",
-			r.Index+1, r.Backend, status, r.Duration, sessionID, taskName)
+		fmt.Printf("%-4d %-12s %-8s %-10.2fs %s\n",
+			r.Index+1, r.Backend, status, r.Duration, taskName)
 
 		if r.Error != "" && r.Error != "canceled (fail-fast)" {
 			fmt.Printf("     Error: %s\n", r.Error)
@@ -457,4 +493,103 @@ func resolveTaskDisplayName(r *TaskResult, tasks *ParallelTasks) string {
 		name = tasks.Tasks[r.Index].Prompt
 	}
 	return truncateString(name, maxTaskNameLen)
+}
+
+func persistParallelOutputs(results *ParallelResults, tasks *ParallelTasks) error {
+	if tasks.OutputDir == "" {
+		return nil
+	}
+
+	if err := os.MkdirAll(tasks.OutputDir, 0o755); err != nil {
+		return err
+	}
+
+	summaryPath := filepath.Join(tasks.OutputDir, "summary.json")
+	if err := writeJSONFile(summaryPath, results); err != nil {
+		return err
+	}
+
+	for i := range tasks.Tasks {
+		output := parallelTaskOutput{
+			Task:   tasks.Tasks[i],
+			Result: results.Results[i],
+		}
+		filename := parallelOutputFilename(&tasks.Tasks[i], i)
+		if err := writeJSONFile(filepath.Join(tasks.OutputDir, filename), output); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func parallelOutputFilename(task *ParallelTask, index int) string {
+	base := task.ID
+	if base == "" {
+		base = task.Name
+	}
+	if base == "" {
+		base = fmt.Sprintf("task-%d", index+1)
+	}
+	base = sanitizeFilename(base)
+	if base == "" {
+		base = fmt.Sprintf("task-%d", index+1)
+	}
+	return fmt.Sprintf("%03d_%s.json", index+1, base)
+}
+
+func writeJSONFile(path string, v any) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	enc := json.NewEncoder(file)
+	enc.SetIndent("", "  ")
+	return enc.Encode(v)
+}
+
+func sanitizeFilename(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+
+	var b strings.Builder
+	b.Grow(len(name))
+	for _, r := range name {
+		switch {
+		case r <= 127 && (r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_'):
+			b.WriteRune(r)
+		default:
+			b.WriteByte('_')
+		}
+	}
+
+	sanitized := strings.Trim(b.String(), "_")
+	if len(sanitized) > 64 {
+		sanitized = sanitized[:64]
+	}
+	return sanitized
+}
+
+func cloneStringSlice(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
+}
+
+func cloneStringMap(in map[string]string) map[string]string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
 }

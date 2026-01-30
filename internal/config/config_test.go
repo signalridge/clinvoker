@@ -87,7 +87,6 @@ func TestUnifiedFlagsConfigDefaults(t *testing.T) {
 	}{
 		{"ApprovalMode", cfg.UnifiedFlags.ApprovalMode, "default"},
 		{"SandboxMode", cfg.UnifiedFlags.SandboxMode, "default"},
-		{"OutputFormat", cfg.UnifiedFlags.OutputFormat, "default"},
 		{"Verbose", cfg.UnifiedFlags.Verbose, false},
 		{"DryRun", cfg.UnifiedFlags.DryRun, false},
 		{"MaxTurns", cfg.UnifiedFlags.MaxTurns, 0},
@@ -506,7 +505,7 @@ func TestOutputConfigDefaults(t *testing.T) {
 		got      any
 		expected any
 	}{
-		{"Format", cfg.Output.Format, "text"},
+		{"Format", cfg.Output.Format, "json"},
 		{"ShowTokens", cfg.Output.ShowTokens, false},
 		{"ShowTiming", cfg.Output.ShowTiming, false},
 		{"Color", cfg.Output.Color, true},

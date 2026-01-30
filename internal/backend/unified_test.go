@@ -730,22 +730,22 @@ func TestValidateExtraFlags(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "dangerous flag --dangerously-skip-permissions",
+			name:    "unknown flag --dangerously-skip-permissions (not in allowlist)",
 			flags:   []string{"--dangerously-skip-permissions"},
 			wantErr: true,
 		},
 		{
-			name:    "dangerous flag --no-verify",
+			name:    "unknown flag --no-verify (not in allowlist)",
 			flags:   []string{"--no-verify"},
 			wantErr: true,
 		},
 		{
-			name:    "dangerous flag --force",
+			name:    "unknown flag --force (not in allowlist)",
 			flags:   []string{"--force"},
 			wantErr: true,
 		},
 		{
-			name:    "dangerous flag -f",
+			name:    "unknown flag -f (not in allowlist)",
 			flags:   []string{"-f"},
 			wantErr: true,
 		},
@@ -755,7 +755,7 @@ func TestValidateExtraFlags(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "dangerous flag with value",
+			name:    "unknown flag with value (not in allowlist)",
 			flags:   []string{"--force=true"},
 			wantErr: true,
 		},
@@ -764,6 +764,78 @@ func TestValidateExtraFlags(t *testing.T) {
 			flags:   []string{"--model=gpt-4", "--force"},
 			wantErr: true,
 		},
+		{
+			name:    "case insensitive - uppercase allowed",
+			flags:   []string{"--MODEL=gpt-4"},
+			wantErr: false,
+		},
+		{
+			name:    "case insensitive - mixed case allowed",
+			flags:   []string{"--Output-Format=json"},
+			wantErr: false,
+		},
+		// Tests for flag-value pair format (--flag value instead of --flag=value)
+		{
+			name:    "valid flag-value pair format",
+			flags:   []string{"--add-dir", "./docs"},
+			wantErr: false,
+		},
+		{
+			name:    "valid flag-value pair with absolute path",
+			flags:   []string{"--add-dir", "/home/user/project"},
+			wantErr: false,
+		},
+		{
+			name:    "valid model flag with value token",
+			flags:   []string{"--model", "gpt-4"},
+			wantErr: false,
+		},
+		{
+			name:    "multiple flag-value pairs",
+			flags:   []string{"--model", "gpt-4", "--add-dir", "./docs", "-v"},
+			wantErr: false,
+		},
+		{
+			name:    "mixed equals and space formats",
+			flags:   []string{"--model=gpt-4", "--add-dir", "./src"},
+			wantErr: false,
+		},
+		{
+			name:    "standalone non-flag token without preceding flag is rejected",
+			flags:   []string{"./docs"},
+			wantErr: true,
+		},
+		{
+			name:    "value tokens cannot be first",
+			flags:   []string{"value-first", "--model"},
+			wantErr: true,
+		},
+		// Tests for consecutive flags (no bypass via flag without value)
+		{
+			name:    "consecutive flags without values - verbose then model",
+			flags:   []string{"--verbose", "--model", "gpt-4"},
+			wantErr: false,
+		},
+		{
+			name:    "consecutive flags - dangerous flag after verbose should be rejected",
+			flags:   []string{"--verbose", "--dangerously-skip-permissions"},
+			wantErr: true,
+		},
+		{
+			name:    "flag starting with dash is always validated even after flag without =",
+			flags:   []string{"--model", "--force"},
+			wantErr: true, // --force is not allowed
+		},
+		{
+			name:    "short flag followed by long flag",
+			flags:   []string{"-v", "--model", "gpt-4"},
+			wantErr: false,
+		},
+		{
+			name:    "multiple consecutive flags without values",
+			flags:   []string{"-v", "-q", "-h"},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -771,6 +843,108 @@ func TestValidateExtraFlags(t *testing.T) {
 			err := ValidateExtraFlags(tt.flags)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateExtraFlags() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateExtraFlagsForBackend(t *testing.T) {
+	tests := []struct {
+		name    string
+		backend string
+		flags   []string
+		wantErr bool
+	}{
+		{
+			name:    "claude valid flags",
+			backend: "claude",
+			flags:   []string{"--model=opus", "--verbose", "--permission-mode=acceptEdits"},
+			wantErr: false,
+		},
+		{
+			name:    "claude invalid flag",
+			backend: "claude",
+			flags:   []string{"--json"}, // json is codex-only
+			wantErr: true,
+		},
+		{
+			name:    "codex valid flags",
+			backend: "codex",
+			flags:   []string{"--model=gpt-5", "--json", "--sandbox=read-only"},
+			wantErr: false,
+		},
+		{
+			name:    "codex invalid flag",
+			backend: "codex",
+			flags:   []string{"--permission-mode=acceptEdits"}, // permission-mode is claude-only
+			wantErr: true,
+		},
+		{
+			name:    "gemini valid flags",
+			backend: "gemini",
+			flags:   []string{"--model=gemini-2.5-pro", "--yolo", "--debug"},
+			wantErr: false,
+		},
+		{
+			name:    "common flags allowed for all backends",
+			backend: "claude",
+			flags:   []string{"-v", "-m", "--help"},
+			wantErr: false,
+		},
+		{
+			name:    "dangerous flag blocked via allowlist",
+			backend: "claude",
+			flags:   []string{"--DANGEROUSLY-skip-PERMISSIONS"},
+			wantErr: true,
+		},
+		{
+			name:    "case insensitive matching",
+			backend: "claude",
+			flags:   []string{"--VERBOSE", "--Model=opus"},
+			wantErr: false,
+		},
+		{
+			name:    "unknown backend uses common flags only",
+			backend: "unknown",
+			flags:   []string{"-v", "-h"},
+			wantErr: false,
+		},
+		{
+			name:    "unknown backend rejects backend-specific flags",
+			backend: "unknown",
+			flags:   []string{"--verbose"}, // verbose is backend-specific
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateExtraFlagsForBackend(tt.backend, tt.flags)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateExtraFlagsForBackend(%q, %v) error = %v, wantErr %v",
+					tt.backend, tt.flags, err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestExtractFlagName(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"--flag", "--flag"},
+		{"--flag=value", "--flag"},
+		{"-f", "-f"},
+		{"-f=value", "-f"},
+		{"--long-flag=some=value", "--long-flag"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := extractFlagName(tt.input)
+			if result != tt.expected {
+				t.Errorf("extractFlagName(%q) = %q, want %q", tt.input, result, tt.expected)
 			}
 		})
 	}
