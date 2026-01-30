@@ -47,7 +47,7 @@ func TestAPIKeyAuth_NoKeysConfigured(t *testing.T) {
 	handler := middleware(next)
 
 	// Test request without API key
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -79,7 +79,7 @@ func TestAPIKeyAuth_ValidKey_XApiKeyHeader(t *testing.T) {
 	handler := middleware(next)
 
 	// Test request with valid X-Api-Key
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("X-Api-Key", "test-key-123")
 	rr := httptest.NewRecorder()
 
@@ -112,7 +112,7 @@ func TestAPIKeyAuth_ValidKey_BearerToken(t *testing.T) {
 	handler := middleware(next)
 
 	// Test request with valid Bearer token
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer test-key-123")
 	rr := httptest.NewRecorder()
 
@@ -145,7 +145,7 @@ func TestAPIKeyAuth_InvalidKey(t *testing.T) {
 	handler := middleware(next)
 
 	// Test request with invalid key
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("X-Api-Key", "wrong-key")
 	rr := httptest.NewRecorder()
 
@@ -178,7 +178,7 @@ func TestAPIKeyAuth_MissingKey(t *testing.T) {
 	handler := middleware(next)
 
 	// Test request without key
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -209,7 +209,7 @@ func TestAPIKeyAuth_MultipleValidKeys(t *testing.T) {
 
 	// Test each key
 	for _, key := range []string{"key1", "key2", "key3"} {
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.Header.Set("X-Api-Key", key)
 		rr := httptest.NewRecorder()
 
@@ -261,7 +261,7 @@ func TestExtractAPIKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			for k, v := range tt.headers {
 				req.Header.Set(k, v)
 			}
@@ -292,7 +292,7 @@ func TestSkipAuthPaths(t *testing.T) {
 	handler := middleware(next)
 
 	// Test skipped path without key
-	req := httptest.NewRequest("GET", "/health", nil)
+	req := httptest.NewRequest("GET", "/health", http.NoBody)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
@@ -301,7 +301,7 @@ func TestSkipAuthPaths(t *testing.T) {
 	}
 
 	// Test non-skipped path without key
-	req = httptest.NewRequest("GET", "/api/test", nil)
+	req = httptest.NewRequest("GET", "/api/test", http.NoBody)
 	rr = httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
@@ -310,7 +310,7 @@ func TestSkipAuthPaths(t *testing.T) {
 	}
 
 	// Test non-skipped path with key
-	req = httptest.NewRequest("GET", "/api/test", nil)
+	req = httptest.NewRequest("GET", "/api/test", http.NoBody)
 	req.Header.Set("X-Api-Key", "test-key")
 	rr = httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)

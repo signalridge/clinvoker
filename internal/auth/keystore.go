@@ -2,20 +2,22 @@
 package auth
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/signalridge/clinvoker/internal/config"
 )
 
 const (
 	// EnvAPIKeys is the environment variable name for API keys.
-	EnvAPIKeys = "CLINVK_API_KEYS"
+	EnvAPIKeys = "CLINVK_API_KEYS" //nolint:gosec // Not a credential, just env var name
 
 	// GopassPath is the gopass path for API keys.
-	GopassPath = "clinvk/server/api-keys"
+	GopassPath = "clinvk/server/api-keys" //nolint:gosec // Not a credential, just path
 )
 
 var (
@@ -69,7 +71,11 @@ func loadFromGopass() []string {
 		return nil
 	}
 
-	cmd := exec.Command("gopass", "show", "--password", GopassPath)
+	// Use a timeout context for the gopass command
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "gopass", "show", "--password", GopassPath)
 	out, err := cmd.Output()
 	if err != nil {
 		// Silent fallback - gopass might not have this secret

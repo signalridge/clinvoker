@@ -11,20 +11,20 @@ import (
 	"github.com/creack/pty"
 )
 
-// cancelableReader wraps an io.Reader and returns io.EOF when cancelled.
+// cancelableReader wraps an io.Reader and returns io.EOF when canceled.
 // This is used to break out of blocking Read calls on stdin.
 type cancelableReader struct {
-	r         io.Reader
-	cancelled atomic.Bool
+	r        io.Reader
+	canceled atomic.Bool
 }
 
-// Read implements io.Reader. Returns io.EOF if cancelled.
+// Read implements io.Reader. Returns io.EOF if canceled.
 func (cr *cancelableReader) Read(p []byte) (n int, err error) {
-	if cr.cancelled.Load() {
+	if cr.canceled.Load() {
 		return 0, io.EOF
 	}
 	n, err = cr.r.Read(p)
-	if cr.cancelled.Load() {
+	if cr.canceled.Load() {
 		return 0, io.EOF
 	}
 	return n, err
@@ -32,7 +32,7 @@ func (cr *cancelableReader) Read(p []byte) (n int, err error) {
 
 // Cancel signals the reader to stop.
 func (cr *cancelableReader) Cancel() {
-	cr.cancelled.Store(true)
+	cr.canceled.Store(true)
 }
 
 // Executor handles process execution with terminal support.

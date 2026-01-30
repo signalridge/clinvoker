@@ -96,7 +96,7 @@ func TestCancelableReader_NormalRead(t *testing.T) {
 	if n != len(data) {
 		t.Errorf("expected %d bytes, got %d", len(data), n)
 	}
-	if string(buf) != string(data) {
+	if !bytes.Equal(buf, data) {
 		t.Errorf("expected %q, got %q", data, buf)
 	}
 }

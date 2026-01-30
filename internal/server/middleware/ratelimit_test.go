@@ -53,7 +53,7 @@ func TestRateLimit_Middleware(t *testing.T) {
 	handler := middleware(next)
 
 	// First request should succeed
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.RemoteAddr = "192.168.1.1:12345"
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -63,7 +63,7 @@ func TestRateLimit_Middleware(t *testing.T) {
 	}
 
 	// Second immediate request should be rate limited
-	req = httptest.NewRequest("GET", "/test", nil)
+	req = httptest.NewRequest("GET", "/test", http.NoBody)
 	req.RemoteAddr = "192.168.1.1:12345"
 	rr = httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -129,7 +129,7 @@ func TestGetClientIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			req.RemoteAddr = tt.remoteAddr
 			for k, v := range tt.headers {
 				req.Header.Set(k, v)
@@ -154,7 +154,7 @@ func TestRateLimit_BurstCapacity(t *testing.T) {
 
 	// First 5 requests should succeed (burst capacity)
 	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest("GET", "/test", http.NoBody)
 		req.RemoteAddr = "192.168.1.1:12345"
 		rr := httptest.NewRecorder()
 		handler.ServeHTTP(rr, req)
@@ -165,7 +165,7 @@ func TestRateLimit_BurstCapacity(t *testing.T) {
 	}
 
 	// 6th request should be rate limited
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.RemoteAddr = "192.168.1.1:12345"
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)

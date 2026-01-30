@@ -26,7 +26,7 @@ type limiterEntry struct {
 
 // NewRateLimiter creates a new rate limiter.
 // rps is requests per second, burst is the maximum burst size.
-func NewRateLimiter(rps int, burst int) *RateLimiter {
+func NewRateLimiter(rps, burst int) *RateLimiter {
 	rl := &RateLimiter{
 		limiters: make(map[string]*limiterEntry),
 		rps:      rate.Limit(rps),
@@ -65,12 +65,12 @@ func (rl *RateLimiter) cleanupLoop() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		rl.cleanup_stale()
+		rl.cleanupStale()
 	}
 }
 
-// cleanup_stale removes entries that haven't been seen recently.
-func (rl *RateLimiter) cleanup_stale() {
+// cleanupStale removes entries that haven't been seen recently.
+func (rl *RateLimiter) cleanupStale() {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
