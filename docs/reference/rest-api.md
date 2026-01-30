@@ -410,7 +410,97 @@ Server health status.
 
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "backends": [
+    {"name": "claude", "available": true},
+    {"name": "codex", "available": true},
+    {"name": "gemini", "available": false}
+  ]
+}
+```
+
+**Status Values:**
+
+| Status | Description |
+|--------|-------------|
+| `ok` | All systems operational |
+| `degraded` | Some backends unavailable |
+
+---
+
+## Metrics
+
+### GET /metrics
+
+Prometheus-compatible metrics endpoint (when `metrics_enabled: true` in config).
+
+**Response:** Prometheus exposition format
+
+```
+# HELP clinvk_requests_total Total HTTP requests
+# TYPE clinvk_requests_total counter
+clinvk_requests_total{method="POST",path="/api/v1/prompt",status="200"} 42
+
+# HELP clinvk_request_duration_seconds HTTP request duration
+# TYPE clinvk_request_duration_seconds histogram
+clinvk_request_duration_seconds_bucket{path="/api/v1/prompt",le="0.1"} 5
+...
+
+# HELP clinvk_rate_limit_hits_total Rate limit hits
+# TYPE clinvk_rate_limit_hits_total counter
+clinvk_rate_limit_hits_total{ip="192.168.1.1"} 3
+
+# HELP clinvk_sessions_total Total sessions
+# TYPE clinvk_sessions_total gauge
+clinvk_sessions_total 15
+```
+
+**Enable in config:**
+
+```yaml
+server:
+  metrics_enabled: true
+```
+
+---
+
+## Error Responses
+
+### Rate Limiting (429)
+
+When rate limiting is enabled and the limit is exceeded:
+
+**Status:** `429 Too Many Requests`
+
+**Headers:**
+
+| Header | Description |
+|--------|-------------|
+| `Retry-After` | Seconds to wait before retry |
+
+**Response:**
+
+```json
+{
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Rate limit exceeded. Retry after 5 seconds."
+}
+```
+
+### Request Size Limit (413)
+
+When request body exceeds `max_request_body_bytes`:
+
+**Status:** `413 Request Entity Too Large`
+
+**Response:**
+
+```json
+{
+  "title": "Request Entity Too Large",
+  "status": 413,
+  "detail": "Request body exceeds maximum size of 10485760 bytes"
 }
 ```
 

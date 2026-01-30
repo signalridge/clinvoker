@@ -154,6 +154,72 @@ parallel:
   aggregate_output: true
 ```
 
+### Scenario 7: Production API Server
+
+For production deployment with security and observability:
+
+```yaml
+server:
+  host: "127.0.0.1"
+  port: 8080
+  # Request size limiting prevents large payload attacks
+  max_request_body_bytes: 5242880  # 5MB limit
+  # Rate limiting prevents abuse
+  rate_limit_enabled: true
+  rate_limit_rps: 20
+  rate_limit_burst: 50
+  # CORS for web frontend
+  cors_allowed_origins:
+    - "https://myapp.example.com"
+    - "http://localhost:3000"
+  # Enable Prometheus metrics
+  metrics_enabled: true
+
+# Working directory restrictions
+server:
+  allowed_workdir_prefixes:
+    - "/home/user/projects"
+    - "/var/www"
+  blocked_workdir_prefixes:
+    - "/etc"
+    - "/root"
+    - "/usr/bin"
+```
+
+### Scenario 8: Rate Limiting Configuration
+
+For servers exposed to the internet:
+
+```yaml
+server:
+  # Basic rate limiting
+  rate_limit_enabled: true
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+
+  # Trusted proxies (if behind reverse proxy)
+  trusted_proxies:
+    - "127.0.0.1"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+```
+
+### Scenario 9: Metrics and Observability
+
+For monitoring with Prometheus:
+
+```yaml
+server:
+  # Enable Prometheus metrics endpoint
+  metrics_enabled: true
+
+  # Request size limits for resource protection
+  max_request_body_bytes: 10485760  # 10MB
+```
+
+Access metrics at `http://localhost:8080/metrics`
+
 ## Backend-Specific Settings
 
 ### Claude Code

@@ -112,11 +112,13 @@ sequenceDiagram
 |---------|-------------|
 | **Multi-Backend Support** | Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI |
 | **SDK Compatibility** | OpenAI and Anthropic compatible API endpoints |
-| **Session Persistence** | Automatic session tracking with resume capability |
+| **Session Persistence** | Automatic session tracking with resume capability and cross-process file locking |
 | **Parallel Execution** | Run multiple AI tasks concurrently with fail-fast support |
 | **Chain Execution** | Pipeline prompts through multiple backends sequentially |
 | **Backend Comparison** | Compare responses from multiple backends side-by-side |
-| **HTTP API Server** | RESTful API for integration with any tool or framework |
+| **HTTP API Server** | RESTful API with rate limiting, request size limiting, and CORS support |
+| **Security** | API key authentication, trusted proxy support, and working directory restrictions |
+| **Observability** | Distributed tracing, Prometheus metrics endpoint, and structured logging |
 
 ## Quick Start
 
