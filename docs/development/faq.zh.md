@@ -42,7 +42,7 @@ go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 
 # Nix
 nix run github:signalridge/clinvoker
-```bash
+```
 
 详见 [安装](../guide/installation.md)。
 
@@ -64,7 +64,7 @@ clinvk config show
 
 ```bash
 clinvk config set default_backend codex
-```bash
+```
 
 或设置环境变量：
 
@@ -82,7 +82,7 @@ clinvk -c "后续消息"
 
 # Resume 命令
 clinvk resume --last "后续消息"
-```bash
+```
 
 ### 可以使用不同的模型吗？
 
@@ -98,7 +98,7 @@ clinvk -b claude -m claude-sonnet-4-20250514 "快速任务"
 
 ```bash
 clinvk parallel --file tasks.json
-```bash
+```
 
 ### 如何比较后端响应？
 
@@ -123,7 +123,7 @@ clinvk compare --all-backends "您的提示"
 
 ```bash
 clinvk config show
-```text
+```
 
 ## HTTP 服务器
 

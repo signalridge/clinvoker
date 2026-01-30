@@ -32,7 +32,7 @@ http://localhost:8080/openai/v1
     }
   ]
 }
-```text
+```
 
 ### POST /openai/v1/chat/completions
 
@@ -75,7 +75,7 @@ http://localhost:8080/openai/v1
     "total_tokens": 25
   }
 }
-```bash
+```
 
 ## 客户端示例
 
@@ -128,7 +128,7 @@ async function main() {
 }
 
 main();
-```text
+```
 
 ### LangChain
 

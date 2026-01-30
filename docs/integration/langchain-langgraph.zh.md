@@ -16,7 +16,7 @@ flowchart LR
     style B fill:#fff3e0,stroke:#f57c00
     style C fill:#ffecb3,stroke:#ffa000
     style D fill:#f3e5f5,stroke:#7b1fa2
-```bash
+```
 
 ## OpenAI SDK 兼容性
 
@@ -67,7 +67,7 @@ messages = [
 
 response = llm.invoke(messages)
 print(response.content)
-```text
+```
 
 ### 使用 Chain
 
@@ -124,7 +124,7 @@ gemini_llm = ChatOpenAI(
 architecture_review = claude_llm.invoke("审查架构...")
 code_generation = codex_llm.invoke("生成一个函数...")
 data_analysis = gemini_llm.invoke("分析这个数据集...")
-```bash
+```
 
 ## LangGraph Agent 集成
 
@@ -276,7 +276,7 @@ app = workflow.compile()
 # 运行
 result = app.invoke({"code": "def process(data): return data * 2"})
 print(result["final_report"])
-```text
+```
 
 ## 流式响应
 
@@ -317,7 +317,7 @@ llm = ChatOpenAI(
 
 for chunk in llm.stream([HumanMessage(content="解释递归...")]):
     print(chunk.content, end="", flush=True)
-```text
+```
 
 ## 异步支持
 
@@ -371,7 +371,7 @@ except APIConnectionError:
     print("无法连接到 clinvk 服务器。它在运行吗？")
 except APIError as e:
     print(f"API 错误: {e.message}")
-```text
+```
 
 ## 最佳实践
 

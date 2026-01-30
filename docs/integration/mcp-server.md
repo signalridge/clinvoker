@@ -109,7 +109,7 @@ Execute multiple prompts in parallel.
     "required": ["tasks"]
   }
 }
-```text
+```
 
 ### `clinvk_chain`
 
@@ -155,7 +155,7 @@ Execute a chain of prompts sequentially.
     }
   }
 }
-```bash
+```
 
 ### Starting the MCP Server
 

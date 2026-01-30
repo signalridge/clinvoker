@@ -19,7 +19,7 @@ clinvk 退出码及其含义参考。
 ```bash
 clinvk "hello world"
 echo $?  # 0
-```bash
+```
 
 ### 1 - 错误
 

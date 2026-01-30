@@ -36,7 +36,7 @@ clinvk chain [flags]
     }
   ]
 }
-```bash
+```
 
 ### 步骤字段
 

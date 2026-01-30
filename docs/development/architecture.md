@@ -26,8 +26,7 @@ flowchart TD
 
 ## Project Structure
 
-```
-
+```text
 cmd/clinvk/           Entry point
 internal/
 ├── app/              CLI commands and orchestration
@@ -37,7 +36,7 @@ internal/
 ├── session/          Session persistence
 └── config/           Configuration loading
 
-```text
+```
 
 ## Layer Overview
 
@@ -116,7 +115,7 @@ type Session struct {
     UpdatedAt time.Time
     Metadata  map[string]any
 }
-```yaml
+```
 
 Storage: JSON files in `~/.clinvk/sessions/`
 

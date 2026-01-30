@@ -27,7 +27,7 @@ clinvk compare [prompt] [flags]
 
 ```bash
 clinvk compare --backends claude,codex "解释这段代码"
-```bash
+```
 
 ### 对比所有后端
 
@@ -39,7 +39,7 @@ clinvk compare --all-backends "这个函数是做什么的"
 
 ```bash
 clinvk compare --all-backends --sequential "审查这个 PR"
-```bash
+```
 
 ### JSON 输出
 

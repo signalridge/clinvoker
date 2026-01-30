@@ -30,7 +30,7 @@ Start an HTTP server that exposes clinvk functionality via REST APIs. The server
 ```bash
 clinvk serve
 # Server running at http://127.0.0.1:8080
-```bash
+```
 
 ### Custom Port
 
@@ -42,7 +42,7 @@ clinvk serve --port 3000
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 8080
-```yaml
+```
 
 !!! warning "Security"
     Binding to `0.0.0.0` exposes the server to the network. There is no built-in authentication.
@@ -111,7 +111,7 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
-```text
+```
 
 ## Output
 

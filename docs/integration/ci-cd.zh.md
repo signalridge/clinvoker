@@ -28,7 +28,7 @@ flowchart LR
     style Codex fill:#e8f5e9,stroke:#388e3c
     style Gemini fill:#ffebee,stroke:#c62828
     style Output fill:#e3f2fd,stroke:#1976d2
-```bash
+```
 
 ## 前提条件 - 认证
 
@@ -58,7 +58,7 @@ env:
 variables:
   ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY  # 在 CI/CD Settings 中设置
   OPENAI_API_KEY: $OPENAI_API_KEY
-```bash
+```
 
 ## GitHub Actions
 
@@ -211,7 +211,7 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-```bash
+```
 
 ### 文档生成
 
@@ -309,7 +309,7 @@ ai-review:
       - review.txt
   only:
     - merge_requests
-```bash
+```
 
 ## Jenkins
 
@@ -376,7 +376,7 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-```text
+```
 
 ```bash
 # 启用并启动
@@ -391,7 +391,7 @@ sudo systemctl start clinvk
 ```bash
 curl -X POST http://localhost:8080/api/v1/prompt \
   -d '{"backend": "claude", "prompt": "...", "ephemeral": true}'
-```bash
+```
 
 ### 2. 设置超时
 
@@ -407,7 +407,7 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 ```bash
 # 截断大型 diff
 DIFF=$(git diff HEAD~1 | head -c 50000)
-```bash
+```
 
 ### 4. 缓存 clinvk 镜像
 

@@ -8,7 +8,7 @@
 
 ```bash
 go test ./...
-```bash
+```
 
 ### 带竞态检测
 
@@ -21,7 +21,7 @@ go test -race ./...
 ```bash
 go test -coverprofile=coverage.txt ./...
 go tool cover -html=coverage.txt
-```bash
+```
 
 ### 简短测试
 
@@ -33,7 +33,7 @@ go test -short ./...
 
 ```bash
 go test -v ./...
-```text
+```
 
 ### 使用 Just
 
@@ -79,7 +79,7 @@ func TestParseOutput(t *testing.T) {
         })
     }
 }
-```text
+```
 
 ## Mock 包
 
@@ -114,7 +114,7 @@ func BenchmarkParseOutput(b *testing.B) {
         ParseOutput(input)
     }
 }
-```bash
+```
 
 运行基准测试：
 

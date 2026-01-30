@@ -49,7 +49,7 @@ Select the AI backend to use:
 clinvk --backend claude "prompt"
 clinvk -b codex "prompt"
 clinvk -b gemini "prompt"
-```yaml
+```
 
 Available backends: `claude`, `codex`, `gemini`
 
@@ -68,7 +68,7 @@ Set the working directory for the AI backend:
 
 ```bash
 clinvk --workdir /path/to/project "analyze this codebase"
-```bash
+```
 
 ### --output-format, -o
 
@@ -91,7 +91,7 @@ Use a custom configuration file:
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```bash
+```
 
 ### --dry-run
 
@@ -108,7 +108,7 @@ Run in stateless mode without creating a session:
 
 ```bash
 clinvk --ephemeral "quick question"
-```bash
+```
 
 ## Examples
 

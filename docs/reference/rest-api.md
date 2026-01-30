@@ -40,7 +40,7 @@ Execute a single prompt.
   "extra": ["--some-flag"],
   "metadata": {"project": "demo"}
 }
-```yaml
+```
 
 **Fields:**
 
@@ -89,7 +89,7 @@ Each line is a unified event:
 {"type":"init","backend":"claude","session_id":"...","content":{...}}
 {"type":"message","backend":"claude","session_id":"...","content":{...}}
 {"type":"done","backend":"claude","session_id":"...","content":{...}}
-```yaml
+```
 
 **Example:**
 
@@ -124,7 +124,7 @@ Execute multiple tasks in parallel.
   "max_parallel": 3,
   "fail_fast": false
 }
-```yaml
+```
 
 **Fields:**
 
@@ -187,7 +187,7 @@ Execute a sequential pipeline.
   "stop_on_failure": true,
   "pass_working_dir": false
 }
-```yaml
+```
 
 **Fields:**
 
@@ -245,7 +245,7 @@ Compare responses from multiple backends.
   "backends": ["claude", "codex", "gemini"],
   "sequential": false
 }
-```yaml
+```
 
 **Fields:**
 
@@ -311,7 +311,7 @@ List available backends.
     }
   ]
 }
-```yaml
+```
 
 ---
 
@@ -383,7 +383,7 @@ Get session details.
   "tags": ["api"],
   "title": "Review auth changes"
 }
-```text
+```
 
 ### DELETE /api/v1/sessions/{id}
 
@@ -417,7 +417,7 @@ Server health status.
     {"name": "gemini", "available": false}
   ]
 }
-```yaml
+```
 
 **Status Values:**
 
@@ -494,7 +494,7 @@ When rate limiting is enabled and the limit is exceeded:
   "status": 429,
   "detail": "Rate limit exceeded. Retry after 5 seconds."
 }
-```text
+```
 
 ### Request Size Limit (413)
 

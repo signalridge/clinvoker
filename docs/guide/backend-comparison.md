@@ -19,7 +19,7 @@ Run against all enabled backends:
 
 ```bash
 clinvk compare --all-backends "explain this algorithm"
-```bash
+```
 
 ### Compare Specific Backends
 
@@ -38,7 +38,7 @@ Run all backends simultaneously:
 
 ```bash
 clinvk compare --all-backends "explain this code"
-```bash
+```
 
 ### Sequential
 
@@ -88,7 +88,7 @@ Get structured data for programmatic processing:
 
 ```bash
 clinvk compare --all-backends --json "explain this code"
-```yaml
+```
 
 Output:
 
@@ -131,7 +131,7 @@ Get multiple perspectives on code quality:
 
 ```bash
 clinvk compare --all-backends "review this code for bugs and improvements"
-```bash
+```
 
 ### Architecture Decisions
 
@@ -147,7 +147,7 @@ See how different AI models explain concepts:
 
 ```bash
 clinvk compare --all-backends "explain how async/await works in JavaScript"
-```bash
+```
 
 ### Validation
 
