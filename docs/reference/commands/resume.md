@@ -5,105 +5,42 @@ Resume a previous session.
 ## Synopsis
 
 ```bash
-clinvk resume [session-id] [prompt] [flags]
+clinvk resume [session-id] [prompt]
 ```
 
 ## Description
 
-Resume a previous session to continue the conversation. Sessions maintain context from previous interactions.
+Resumes a previously saved session. A session must have a backend session ID to be resumable.
 
-## Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `session-id` | Session ID to resume (optional with `--last` or `--interactive`) |
-| `prompt` | Follow-up prompt (optional) |
+If no session ID is provided, clinvk opens an interactive picker.
 
 ## Flags
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--last` | | bool | `false` | Resume most recent session |
+| `--last` | | bool | `false` | Resume the most recent session |
+| `--backend` | `-b` | string | | Filter sessions by backend |
+| `--here` | | bool | `false` | Filter by current working directory |
 | `--interactive` | `-i` | bool | `false` | Interactive session picker |
-| `--here` | | bool | `false` | Filter by current directory |
-| `--backend` | `-b` | string | | Filter by backend |
+| `--output-format` | `-o` | string | config / `json` | `text`, `json`, `stream-json` |
 
 ## Examples
 
-### Resume Last Session
-
 ```bash
-clinvk resume --last
-```
-
-### Resume with Follow-up
-
-```bash
-clinvk resume --last "continue from where we left off"
-```
-
-### Interactive Picker
-
-```bash
-clinvk resume --interactive
-```
-
-This displays a list of recent sessions to choose from.
-
-### Resume from Current Directory
-
-```bash
-clinvk resume --here
-```
-
-Only shows sessions created in the current working directory.
-
-### Filter by Backend
-
-```bash
-clinvk resume --backend claude
-```
-
-### Resume Specific Session
-
-```bash
+# Resume by prefix or full ID
 clinvk resume abc123
-clinvk resume abc123 "now add tests"
+
+# Resume last session
+clinvk resume --last
+
+# Interactive picker
+clinvk resume --interactive
+
+# Resume with a prompt
+clinvk resume --last "continue from here"
 ```
 
-### Combine Filters
+## Notes
 
-```bash
-clinvk resume --here --backend claude --last
-```
-
-## Behavior
-
-1. If `--last` is specified, resumes the most recent session (filtered if other flags present)
-2. If `--interactive` is specified, shows a picker UI
-3. If a session ID is provided, resumes that specific session
-4. If a prompt is provided, it's sent as a follow-up message
-
-## Session Resolution
-
-Sessions are resolved in this priority:
-
-1. Explicit session ID argument
-2. `--last` flag (most recent matching session)
-3. `--interactive` flag (user selection)
-
-## Output
-
-Resumes the session and displays the AI's response. The same output format options as the root command apply.
-
-## Exit Codes
-
-| Code | Description |
-|------|-------------|
-| 0 | Success |
-| 1 | Session not found or error |
-
-## See Also
-
-- [sessions](sessions.md) - List and manage sessions
-- [prompt](prompt.md) - Execute a new prompt
+- Sessions without backend session IDs cannot be resumed.
+- If `--last` is used, the most recent **resumable** session is chosen.

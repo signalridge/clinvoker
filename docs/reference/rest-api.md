@@ -1,141 +1,83 @@
-# REST API Reference
+# Custom REST API ("/api/v1/*")
 
-Complete reference for the clinvk custom REST API.
+The custom REST API exposes all core clinvk capabilities with explicit backend selection.
 
-## Base URL
+Base URL (default): `http://localhost:8080`
 
-```yaml
-http://localhost:8080/api/v1
-```
+All durations in API responses are in **milliseconds** (`*_ms`).
 
 ## Authentication
 
-The API does not require authentication by default. For production use, place behind a reverse proxy with authentication.
+If API keys are configured, send one of:
 
----
+- `X-Api-Key: <key>`
+- `Authorization: Bearer <key>`
 
-## Prompt Execution
+If no keys are configured, auth is disabled.
 
-### POST /api/v1/prompt
+## POST /api/v1/prompt
 
-Execute a single prompt.
+Execute one prompt.
 
-**Request Body:**
+### Request
 
 ```json
 {
   "backend": "claude",
-  "prompt": "explain this code",
+  "prompt": "Explain this function",
   "model": "claude-opus-4-5-20251101",
-  "workdir": "/path/to/project",
-  "ephemeral": false,
+  "workdir": "/abs/path",
   "approval_mode": "auto",
   "sandbox_mode": "workspace",
   "output_format": "json",
-  "max_tokens": 4096,
-  "max_turns": 10,
-  "system_prompt": "You are a helpful assistant.",
+  "max_tokens": 0,
+  "max_turns": 0,
+  "system_prompt": "You are a strict reviewer",
   "verbose": false,
   "dry_run": false,
-  "extra": ["--some-flag"],
-  "metadata": {"project": "demo"}
+  "ephemeral": false,
+  "extra": ["--add-dir", "/abs/path"],
+  "metadata": {"request_id": "123"}
 }
 ```
 
-**Fields:**
+Notes:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `backend` | string | Yes | Backend to use |
-| `prompt` | string | Yes | The prompt |
-| `model` | string | No | Model override |
-| `workdir` | string | No | Working directory |
-| `ephemeral` | boolean | No | Stateless mode (no session) |
-| `approval_mode` | string | No | `default`, `auto`, `none`, `always` |
-| `sandbox_mode` | string | No | `default`, `read-only`, `workspace`, `full` |
-| `output_format` | string | No | `default`, `text`, `json`, `stream-json` |
-| `max_tokens` | integer | No | Maximum response tokens |
-| `max_turns` | integer | No | Maximum agentic turns |
-| `system_prompt` | string | No | System prompt |
-| `verbose` | boolean | No | Enable verbose output |
-| `dry_run` | boolean | No | Simulate execution |
-| `extra` | array | No | Extra backend-specific flags |
-| `metadata` | object | No | Custom metadata |
+- `output_format: stream-json` streams NDJSON **unified events**.
+- `workdir` must be an absolute path and pass server restrictions.
+- `extra` flags are validated per backend (allowlist).
 
-**Response:**
+### Response (JSON)
 
 ```json
 {
-  "session_id": "abc123",
+  "session_id": "...",
   "backend": "claude",
   "exit_code": 0,
-  "duration_ms": 2500,
-  "output": "The code explanation...",
-  "token_usage": {
-    "input_tokens": 123,
-    "output_tokens": 456,
-    "cached_tokens": 0,
-    "reasoning_tokens": 0
-  }
+  "duration_ms": 1234,
+  "output": "...",
+  "error": "",
+  "token_usage": {"input_tokens": 10, "output_tokens": 20}
 }
 ```
 
-**Streaming Response (`output_format: "stream-json"`):**
+## POST /api/v1/parallel
 
-When `output_format` is `stream-json`, the endpoint streams NDJSON (`application/x-ndjson`).
-Each line is a unified event:
-
-```json
-{"type":"init","backend":"claude","session_id":"...","content":{...}}
-{"type":"message","backend":"claude","session_id":"...","content":{...}}
-{"type":"done","backend":"claude","session_id":"...","content":{...}}
-```
-
-**Example:**
-
-```bash
-curl -X POST http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d '{"backend": "claude", "prompt": "hello world"}'
-```
-
----
-
-## Parallel Execution
-
-### POST /api/v1/parallel
-
-Execute multiple tasks in parallel.
-
-**Request Body:**
+Execute multiple prompts concurrently.
 
 ```json
 {
   "tasks": [
-    {
-      "backend": "claude",
-      "prompt": "task 1"
-    },
-    {
-      "backend": "codex",
-      "prompt": "task 2"
-    }
+    {"backend": "claude", "prompt": "Review"},
+    {"backend": "codex", "prompt": "Optimize"}
   ],
   "max_parallel": 3,
-  "fail_fast": false
+  "fail_fast": false,
+  "dry_run": false
 }
 ```
 
-**Fields:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `tasks` | array | Yes | List of task objects |
-| `max_parallel` | integer | No | Max concurrent tasks |
-| `fail_fast` | boolean | No | Stop on first failure |
-| `dry_run` | boolean | No | Simulate execution |
-
-**Response:**
+Parallel tasks are always ephemeral. Response:
 
 ```json
 {
@@ -143,397 +85,76 @@ Execute multiple tasks in parallel.
   "completed": 2,
   "failed": 0,
   "total_duration_ms": 2000,
-  "results": [
-    {
-      "backend": "claude",
-      "exit_code": 0,
-      "duration_ms": 2000,
-      "output": "result 1"
-    },
-    {
-      "backend": "codex",
-      "exit_code": 0,
-      "duration_ms": 1800,
-      "output": "result 2"
-    }
-  ]
+  "results": [ ... ]
 }
 ```
 
----
+## POST /api/v1/chain
 
-## Chain Execution
-
-### POST /api/v1/chain
-
-Execute a sequential pipeline.
-
-**Request Body:**
+Execute steps sequentially with `{{previous}}` substitution.
 
 ```json
 {
   "steps": [
-    {
-      "name": "analyze",
-      "backend": "claude",
-      "prompt": "analyze the code"
-    },
-    {
-      "name": "improve",
-      "backend": "codex",
-      "prompt": "improve based on: {{previous}}"
-    }
+    {"backend": "claude", "prompt": "Analyze"},
+    {"backend": "codex", "prompt": "Fix: {{previous}}"}
   ],
   "stop_on_failure": true,
-  "pass_working_dir": false
+  "pass_working_dir": false,
+  "dry_run": false
 }
 ```
 
-**Fields:**
+Notes:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `steps` | array | Yes | List of chain steps |
-| `stop_on_failure` | boolean | No | Stop on first failure (default true) |
-| `pass_working_dir` | boolean | No | Pass working directory between steps |
+- Chain is always ephemeral.
+- `pass_session_id` and `persist_sessions` are **not supported**.
+- `{{session}}` placeholders are rejected.
 
-!!! note "Ephemeral Only"
-    Chain execution is always ephemeral. Session linking and persistence are not supported.
+## POST /api/v1/compare
 
-**Response:**
+Compare a prompt across backends.
 
 ```json
 {
-  "total_steps": 2,
-  "completed_steps": 2,
-  "failed_step": 0,
-  "total_duration_ms": 3500,
-  "results": [
-    {
-      "step": 1,
-      "name": "analyze",
-      "backend": "claude",
-      "exit_code": 0,
-      "duration_ms": 2000,
-      "output": "analysis result"
-    },
-    {
-      "step": 2,
-      "name": "improve",
-      "backend": "codex",
-      "exit_code": 0,
-      "duration_ms": 1500,
-      "output": "improved code"
-    }
-  ]
+  "backends": ["claude", "gemini"],
+  "prompt": "Explain this code",
+  "model": "claude-opus-4-5-20251101",
+  "workdir": "/abs/path",
+  "sequential": false,
+  "dry_run": false
 }
 ```
 
----
+Compare is always ephemeral.
 
-## Backend Comparison
+## GET /api/v1/backends
 
-### POST /api/v1/compare
-
-Compare responses from multiple backends.
-
-**Request Body:**
+Returns available backends:
 
 ```json
-{
-  "prompt": "explain this algorithm",
-  "backends": ["claude", "codex", "gemini"],
-  "sequential": false
-}
+{ "backends": [{"name": "claude", "available": true}] }
 ```
-
-**Fields:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `prompt` | string | Yes | The prompt |
-| `backends` | array | Yes | Backends to compare |
-| `model` | string | No | Model to use (if applicable) |
-| `workdir` | string | No | Working directory |
-| `sequential` | boolean | No | Run one at a time |
-| `dry_run` | boolean | No | Simulate execution |
-
-**Response:**
-
-```json
-{
-  "prompt": "explain this algorithm",
-  "backends": ["claude", "codex", "gemini"],
-  "total_duration_ms": 3200,
-  "results": [
-    {
-      "backend": "claude",
-      "model": "claude-opus-4-5-20251101",
-      "exit_code": 0,
-      "duration_ms": 2500,
-      "output": "explanation from claude"
-    },
-    {
-      "backend": "codex",
-      "model": "o3",
-      "exit_code": 0,
-      "duration_ms": 3200,
-      "output": "explanation from codex"
-    }
-  ]
-}
-```
-
----
-
-## Backends
-
-### GET /api/v1/backends
-
-List available backends.
-
-**Response:**
-
-```json
-{
-  "backends": [
-    {
-      "name": "claude",
-      "available": true
-    },
-    {
-      "name": "codex",
-      "available": true
-    },
-    {
-      "name": "gemini",
-      "available": false
-    }
-  ]
-}
-```
-
----
 
 ## Sessions
 
-### GET /api/v1/sessions
+- `GET /api/v1/sessions` (supports `backend`, `status`, `limit`, `offset`)
+- `GET /api/v1/sessions/{id}`
+- `DELETE /api/v1/sessions/{id}`
 
-List sessions.
+## GET /health
 
-**Query Parameters:**
+Returns status, uptime, backend availability, and session store health.
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `backend` | string | Filter by backend |
-| `status` | string | Filter by status (`active`, `completed`, `error`) |
-| `limit` | integer | Maximum results |
-| `offset` | integer | Pagination offset |
-
-**Response:**
-
-```json
-{
-  "sessions": [
-    {
-      "id": "abc123",
-      "backend": "claude",
-      "created_at": "2025-01-27T10:00:00Z",
-      "last_used": "2025-01-27T11:30:00Z",
-      "working_dir": "/projects/myapp",
-      "model": "claude-opus-4-5-20251101",
-      "initial_prompt": "Review auth changes",
-      "status": "active",
-      "turn_count": 3,
-      "token_usage": {
-        "input_tokens": 123,
-        "output_tokens": 456
-      },
-      "tags": ["api"],
-      "title": "Review auth changes"
-    }
-  ],
-  "total": 42,
-  "limit": 100,
-  "offset": 0
-}
-```
-
-### GET /api/v1/sessions/{id}
-
-Get session details.
-
-**Response:**
-
-```json
-{
-  "id": "abc123",
-  "backend": "claude",
-  "created_at": "2025-01-27T10:00:00Z",
-  "last_used": "2025-01-27T11:30:00Z",
-  "working_dir": "/projects/myapp",
-  "model": "claude-opus-4-5-20251101",
-  "initial_prompt": "Review auth changes",
-  "status": "active",
-  "turn_count": 3,
-  "token_usage": {
-    "input_tokens": 123,
-    "output_tokens": 456
-  },
-  "tags": ["api"],
-  "title": "Review auth changes"
-}
-```
-
-### DELETE /api/v1/sessions/{id}
-
-Delete a session.
-
-**Response:**
-
-```json
-{
-  "deleted": true,
-  "id": "abc123"
-}
-```
-
----
-
-## Health Check
-
-### GET /health
-
-Server health status.
-
-**Response:**
+Example:
 
 ```json
 {
   "status": "ok",
-  "backends": [
-    {"name": "claude", "available": true},
-    {"name": "codex", "available": true},
-    {"name": "gemini", "available": false}
-  ]
-}
-```
-
-**Status Values:**
-
-| Status | Description |
-|--------|-------------|
-| `ok` | All systems operational |
-| `degraded` | Some backends unavailable |
-
----
-
-## Metrics
-
-### GET /metrics
-
-Prometheus-compatible metrics endpoint (when `metrics_enabled: true` in config).
-
-**Response:** Prometheus exposition format
-
-```text
-# HELP clinvk_requests_total Total HTTP requests
-
-# TYPE clinvk_requests_total counter
-
-clinvk_requests_total{method="POST",path="/api/v1/prompt",status="200"} 42
-
-# HELP clinvk_request_duration_seconds HTTP request duration
-
-# TYPE clinvk_request_duration_seconds histogram
-
-clinvk_request_duration_seconds_bucket{path="/api/v1/prompt",le="0.1"} 5
-...
-
-# HELP clinvk_rate_limit_hits_total Rate limit hits
-
-# TYPE clinvk_rate_limit_hits_total counter
-
-clinvk_rate_limit_hits_total{ip="192.168.1.1"} 3
-
-# HELP clinvk_sessions_total Total sessions
-
-# TYPE clinvk_sessions_total gauge
-
-clinvk_sessions_total 15
-```
-
-**Enable in config:**
-
-```yaml
-server:
-  metrics_enabled: true
-```
-
----
-
-## Error Responses
-
-### Rate Limiting (429)
-
-When rate limiting is enabled and the limit is exceeded:
-
-**Status:** `429 Too Many Requests`
-
-**Headers:**
-
-| Header | Description |
-|--------|-------------|
-| `Retry-After` | Seconds to wait before retry |
-
-**Response:**
-
-```json
-{
-  "title": "Too Many Requests",
-  "status": 429,
-  "detail": "Rate limit exceeded. Retry after 5 seconds."
-}
-```
-
-### Request Size Limit (413)
-
-When request body exceeds `max_request_body_bytes`:
-
-**Status:** `413 Request Entity Too Large`
-
-**Response:**
-
-```json
-{
-  "title": "Request Entity Too Large",
-  "status": 413,
-  "detail": "Request body exceeds maximum size of 10485760 bytes"
-}
-```
-
----
-
-## OpenAPI Specification
-
-### GET /openapi.json
-
-Get the OpenAPI specification.
-
-Returns the full OpenAPI 3.0 specification for the API.
-
----
-
-## Error Responses
-
-Execution failures are typically reported in the normal response body via `exit_code != 0` and the `error` field.
-
-For request validation errors (for example, missing required fields), the server responds with non-2xx and an RFC 7807 Problem Details body (via Huma). Example:
-
-```json
-{
-  "title": "Unprocessable Entity",
-  "status": 422,
-  "detail": "backend is required"
+  "version": "1.0.0",
+  "uptime": "10m5s",
+  "uptime_millis": 605000,
+  "backends": [{"name": "claude", "available": true}],
+  "session_store": {"available": true, "session_count": 42, "error": ""}
 }
 ```

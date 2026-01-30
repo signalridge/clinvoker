@@ -1,133 +1,30 @@
 # Backends
 
-clinvk supports multiple AI CLI backends, each with unique strengths and characteristics.
+clinvk wraps external CLIs. Install the backends you need and configure defaults per backend.
 
-## Supported Backends
+## Supported backends
 
-- **[Claude Code](claude.md)** - Anthropic's AI coding assistant with deep reasoning capabilities
-- **[Codex CLI](codex.md)** - OpenAI's code-focused CLI tool optimized for code generation
-- **[Gemini CLI](gemini.md)** - Google's Gemini AI with broad knowledge and capabilities
+| Backend | CLI command | Notes |
+|---------|-------------|-------|
+| Claude Code | `claude` | Best support for sessions and system prompts |
+| Codex CLI | `codex` | Uses `codex exec --json` for non‑interactive runs |
+| Gemini CLI | `gemini` | Supports `--output-format` and session cleanup |
 
-## Backend Comparison
-
-| Feature | Claude Code | Codex CLI | Gemini CLI |
-|---------|-------------|-----------|------------|
-| Binary | `claude` | `codex` | `gemini` |
-| Default Model | claude-opus-4-5-20251101 | o3 | gemini-2.5-pro |
-| Session Resume | `--resume` | `--session` | `-s` |
-| Strengths | Complex reasoning, safety | Code generation | Broad knowledge |
-
-## Backend Detection
-
-clinvk automatically detects available backends by checking for their binaries in your PATH:
-
-```bash
-clinvk config show
-```
-
-Output shows which backends are available:
+## Configure per backend
 
 ```yaml
 backends:
   claude:
-    enabled: true
-    available: true  # 'claude' found in PATH
+    model: claude-opus-4-5-20251101
+    allowed_tools: all
   codex:
-    enabled: true
-    available: false  # 'codex' not found
+    model: o3
   gemini:
-    enabled: true
-    available: true  # 'gemini' found in PATH
+    model: gemini-2.5-pro
 ```
 
-## Selecting Backends
+See:
 
-### Via CLI
-
-```bash
-clinvk --backend claude "prompt"
-clinvk -b codex "prompt"
-clinvk -b gemini "prompt"
-```
-
-### Via Configuration
-
-Set a default backend in `~/.clinvk/config.yaml`:
-
-```yaml
-default_backend: claude
-```
-
-### Via Environment Variable
-
-```bash
-export CLINVK_BACKEND=codex
-clinvk "prompt"  # Uses codex
-```
-
-## Backend-Specific Options
-
-Each backend supports the unified options, plus its own specific flags:
-
-### Unified Options
-
-These work across all backends:
-
-| Option | Description |
-|--------|-------------|
-| `model` | Model to use |
-| `approval_mode` | Approval behavior |
-| `sandbox_mode` | File access permissions |
-| `max_turns` | Maximum agentic turns |
-| `max_tokens` | Maximum response tokens |
-
-### Backend-Specific Flags
-
-Pass additional flags via `extra_flags` in config:
-
-```yaml
-backends:
-  claude:
-    extra_flags: ["--add-dir", "./docs"]
-  codex:
-    extra_flags: ["--quiet"]
-  gemini:
-    extra_flags: ["--sandbox"]
-```
-
-## Choosing a Backend
-
-### Use Claude Code when
-
-- Working on complex, multi-step tasks
-- Needing thorough code review and analysis
-- Safety and accuracy are paramount
-
-### Use Codex CLI when
-
-- Generating boilerplate code
-- Writing tests
-- Quick code transformations
-
-### Use Gemini CLI when
-
-- Needing broad knowledge context
-- Working with documentation
-- General explanations
-
-## Tips
-
-!!! tip "Try Multiple Backends"
-    Use `clinvk compare --all-backends` to see how different backends approach the same problem.
-
-!!! tip "Match Backend to Task"
-    Different backends excel at different tasks. Experiment to find the best fit for your workflow.
-
-!!! tip "Configure Defaults"
-    Set backend-specific models and options in your config file for a personalized experience.
-
-## Next Steps
-
-- [Claude Code Guide](claude.md)
-- [Codex CLI Guide](codex.md)
-- [Gemini CLI Guide](gemini.md)
+- [Claude Code](claude.md)
+- [Codex CLI](codex.md)
+- [Gemini CLI](gemini.md)

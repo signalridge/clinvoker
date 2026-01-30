@@ -1,172 +1,268 @@
-# clinvoker
+# clinvk
 
-Unified AI CLI wrapper for orchestrating multiple AI CLI backends with session persistence, parallel task execution, HTTP API server, and unified output formatting.
+<p align="center">
+  <strong>Unified AI CLI Orchestrator</strong><br>
+  One CLI to rule Claude, Codex, and Gemini
+</p>
 
-## Why clinvoker?
+<p align="center">
+  <a href="guide/installation.md">Installation</a> •
+  <a href="guide/quick-start.md">Quick Start</a> •
+  <a href="guide/use-cases.md">Use Cases</a> •
+  <a href="reference/rest-api.md">API Reference</a>
+</p>
 
-### The Challenge
+---
 
-When working with AI programming assistants, you often face these limitations:
+## What is clinvk?
 
-- **Single Model Lock-in**: Stuck with one AI's capabilities when different models excel at different tasks
-- **No SDK for CLI Tools**: Can't easily integrate Claude Code, Codex CLI, or Gemini CLI into your applications
-- **Manual Orchestration**: Complex workflows require switching between tools manually
-- **No Framework Integration**: Can't use familiar SDKs (OpenAI, Anthropic) with CLI tools
+**clinvk** is a unified wrapper that orchestrates multiple AI CLI backends—**Claude Code**, **Codex CLI**, and **Gemini CLI**—into a single, consistent interface.
 
-### The Solution
+Think of it as a **universal remote** for AI coding assistants. Instead of learning three different tools, you learn one. Instead of choosing one backend, use them all together.
 
-clinvk transforms AI CLI tools into a programmable infrastructure with three core capabilities:
-
-#### 1. Skills Integration - Extend AI Agent Capabilities
-
-Build Claude Code Skills that call other AI backends for specialized tasks:
-
-```bash
-# A Claude Code Skill calling Gemini for data analysis
-clinvk -b gemini --ephemeral "analyze this dataset..."
+```
+# Use any backend with the same command
+clinvk "explain this code"                    # Default backend
+clinvk -b codex "optimize this function"      # Switch to Codex
+clinvk -b gemini "review for security"        # Switch to Gemini
 ```
 
-**Use cases:**
+---
 
-- Claude analyzing code, then Codex generating fixes
-- Multi-model code review from different perspectives
-- Specialized tasks routed to the best-suited model
+## Core Capabilities
 
-#### 2. HTTP API Transformation - SDK Compatibility
+### 1. Unified Interface
 
-Use your favorite SDK while leveraging any CLI backend:
+Same commands, flags, and output format across all backends.
+
+| Feature | clinvk | Claude | Codex | Gemini |
+|---------|--------|--------|-------|--------|
+| Basic prompt | ✓ | `claude` | `codex exec` | `gemini` |
+| Session resume | ✓ | ✓ | ✗ | ✓ |
+| JSON output | ✓ | ✓ | ✓ | ✓ |
+| Approval modes | ✓ | ✓ | ✓ | ✗ |
+| Sandbox control | ✓ | ✓ | ✓ | ✗ |
+
+### 2. Session Management
+
+Persistent conversations with cross-process locking.
+
+```
+# Start a session
+clinvk "design a database schema for e-commerce"
+
+# Continue later (even from another terminal)
+clinvk -c "add user authentication to that schema"
+
+# List and manage sessions
+clinvk sessions list
+clinvk sessions export <id> -o schema.json
+```
+
+### 3. Parallel Execution
+
+Run multiple backends simultaneously for comprehensive analysis.
+
+```
+# Three perspectives, one command
+clinvk parallel -f security-review.json
+```
+
+```
+{
+  "tasks": [
+    {"backend": "claude", "prompt": "Review architecture and design patterns"},
+    {"backend": "codex", "prompt": "Check for performance bottlenecks"},
+    {"backend": "gemini", "prompt": "Identify security vulnerabilities"}
+  ]
+}
+```
+
+### 4. Chain Execution
+
+Pipeline outputs between backends for complex workflows.
+
+```
+# Analyze → Fix → Verify → Document
+clinvk chain -f bugfix-pipeline.json
+```
+
+```
+{
+  "steps": [
+    {"backend": "claude", "prompt": "Find the root cause of the bug"},
+    {"backend": "codex", "prompt": "Fix the issue: {{previous}}"},
+    {"backend": "gemini", "prompt": "Write tests for the fix: {{previous}}"}
+  ]
+}
+```
+
+### 5. Backend Comparison
+
+Compare responses side-by-side before making decisions.
+
+```
+# Get all opinions on a risky change
+clinvk compare --all-backends "Is this database migration safe?"
+```
+
+### 6. HTTP API Server
+
+Drop-in replacement for OpenAI/Anthropic APIs.
+
+```
+# Start the server
+clinvk serve --port 8080
+```
 
 ```python
+# Use with existing OpenAI SDK
 from openai import OpenAI
-
-# Use OpenAI SDK, actually calling Claude CLI
-client = OpenAI(base_url="http://localhost:8080/openai/v1")
+client = OpenAI(base_url="http://localhost:8080/openai/v1", api_key="any")
 response = client.chat.completions.create(
-    model="claude",  # Maps to Claude CLI backend
-    messages=[{"role": "user", "content": "Review this code"}]
+    model="claude-opus-4-5-20251101",
+    messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
 
-**Compatible with:**
-
-- OpenAI SDK (Python, TypeScript, Go)
-- Anthropic SDK
-- LangChain / LangGraph
-- Any HTTP client
-
-#### 3. Orchestration - Multi-Backend Workflows
-
-Coordinate multiple AI backends for complex tasks:
-
-=== "Parallel: Multi-Perspective Review"
-
-    ```bash
-    # Claude reviews architecture, Codex reviews performance, Gemini reviews security
-    clinvk parallel -f tasks.json
-    ```
-
-    ```json
-    {
-      "tasks": [
-        {"backend": "claude", "prompt": "Review architecture for this code:\n\n<PASTE CODE OR DIFF HERE>"},
-        {"backend": "codex", "prompt": "Review performance for this code:\n\n<PASTE CODE OR DIFF HERE>"},
-        {"backend": "gemini", "prompt": "Review security for this code:\n\n<PASTE CODE OR DIFF HERE>"}
-      ]
-    }
-    ```
-
-=== "Chain: Pipeline Processing"
-
-    ```bash
-    # Claude analyzes → Codex fixes → Claude reviews
-    clinvk chain -f pipeline.json
-    ```
-
-    ```json
-    {
-      "steps": [
-        {"name": "analyze", "backend": "claude", "prompt": "Analyze this code"},
-        {"name": "fix", "backend": "codex", "prompt": "Fix issues: {{previous}}"},
-        {"name": "review", "backend": "claude", "prompt": "Review fixes: {{previous}}"}
-      ]
-    }
-    ```
-
-### How It Works
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Client as Client (SDK/Agent/Skill)
-    participant Server as clinvk server
-    participant Backend as Backend CLI (claude/codex/gemini)
-
-    Client->>+Server: HTTP request (OpenAI/Anthropic/REST)
-    Server->>Server: Normalize + route
-    Server->>+Backend: Execute CLI command
-    Backend-->>-Server: Output (text/JSON)
-    Server-->>-Client: SDK-compatible response
-```
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Multi-Backend Support** | Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI |
-| **SDK Compatibility** | OpenAI and Anthropic compatible API endpoints |
-| **Session Persistence** | Automatic session tracking with resume capability and cross-process file locking |
-| **Parallel Execution** | Run multiple AI tasks concurrently with fail-fast support |
-| **Chain Execution** | Pipeline prompts through multiple backends sequentially |
-| **Backend Comparison** | Compare responses from multiple backends side-by-side |
-| **HTTP API Server** | RESTful API with rate limiting, request size limiting, and CORS support |
-| **Security** | API key authentication, trusted proxy support, and working directory restrictions |
-| **Observability** | Distributed tracing, Prometheus metrics endpoint, and structured logging |
+---
 
 ## Quick Start
 
-```bash
-# Run with default backend (Claude Code)
-clinvk "fix the bug in auth.go"
+### Install
 
-# Specify a backend
-clinvk --backend codex "implement user registration"
+```
+# macOS / Linux
+brew install signalridge/tap/clinvk
 
-# Start HTTP API server
-clinvk serve --port 8080
+# Windows
+scoop bucket add signalridge https://github.com/signalridge/scoop-bucket
+scoop install clinvk
 
-# Compare backends
-clinvk compare --all-backends "explain this code"
-
-# Parallel execution
-clinvk parallel -f tasks.json
-
-# Chain execution
-clinvk chain -f pipeline.json
+# Go
+go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 ```
 
-## Use Case Comparison
+### First Steps
 
-| Scenario | Traditional Approach | clinvk Approach |
-|----------|---------------------|-----------------|
-| AI Skill calling other AIs | Not supported | HTTP API call |
-| LangChain integration | Custom code per model | OpenAI-compatible endpoint |
-| CI/CD code review | Shell scripts | REST API + parallel execution |
-| Multi-model comparison | Manual execution | `clinvk compare` |
-| Agent orchestration | Complex wiring | Chain/parallel execution |
+```
+# 1. Verify installation
+clinvk version
 
-## Supported Backends
+# 2. Run your first prompt
+clinvk "explain what this codebase does"
 
-| Backend | CLI Tool | Description |
-|---------|----------|-------------|
-| Claude Code | `claude` | Anthropic's AI coding assistant |
-| Codex CLI | `codex` | OpenAI's code-focused CLI |
-| Gemini CLI | `gemini` | Google's Gemini AI CLI |
+# 3. Try a different backend
+clinvk -b codex "generate unit tests for auth.go"
 
-## Next Steps
+# 4. Start the API server
+clinvk serve --port 8080
+```
 
-- [Installation](guide/installation.md) - Install clinvk on your system
-- [Quick Start](guide/quick-start.md) - Get up and running in minutes
-- [Architecture](about/architecture.md) - Learn about clinvk's architecture and design
-- [Integration Guide](integration/index.md) - Connect clinvk to your tools
-- [Parallel & Chain Execution](guide/parallel-execution.md) - Multi-backend workflow patterns
-- [HTTP API](guide/http-server.md) - Use the REST API server
+---
+
+## Architecture
+
+```
+flowchart TB
+    subgraph Client["Client Layer"]
+        CLI["CLI Commands<br/>prompt, parallel, chain, compare"]
+        API["HTTP API<br/>OpenAI/Anthropic Compatible"]
+    end
+
+    subgraph Core["Core Layer"]
+        SESSION["Session Manager<br/>JSON Store + File Lock"]
+        CONFIG["Config Manager<br/>Viper-based"]
+        EXEC["Command Executor<br/>PTY Support"]
+    end
+
+    subgraph Backends["Backend Layer"]
+        CLAUDE["Claude Code"]
+        CODEX["Codex CLI"]
+        GEMINI["Gemini CLI"]
+    end
+
+    CLI --> SESSION
+    CLI --> CONFIG
+    CLI --> EXEC
+    API --> EXEC
+    EXEC --> CLAUDE
+    EXEC --> CODEX
+    EXEC --> GEMINI
+```
+
+---
+
+## When to Use clinvk
+
+| Scenario | clinvk Solution |
+|----------|----------------|
+| **Multi-model code review** | `parallel` with architecture + security + performance tasks |
+| **Refactoring pipeline** | `chain` with analyze → fix → verify → document steps |
+| **High-risk decisions** | `compare` across all backends before acting |
+| **CI/CD automation** | HTTP API with OpenAI-compatible endpoints |
+| **A/B testing models** | Same prompt, different backends, consistent output |
+| **Vendor flexibility** | Switch backends without changing your workflow |
+
+---
+
+## Documentation Map
+
+### Getting Started
+- [Installation](guide/installation.md) - Platform-specific setup
+- [Quick Start](guide/quick-start.md) - 5-minute tutorial
+- [Basic Usage](guide/basic-usage.md) - Core CLI workflows
+
+### User Guides
+- [Configuration](guide/configuration.md) - Hierarchical config system
+- [Session Management](guide/session-management.md) - Persistence and lifecycle
+- [Parallel Execution](guide/parallel-execution.md) - Multi-backend concurrency
+- [Chain Execution](guide/chain-execution.md) - Context-passing pipelines
+- [Backend Comparison](guide/backend-comparison.md) - Side-by-side analysis
+- [HTTP Server](guide/http-server.md) - API deployment and security
+
+### Use Cases
+- [Real-World Scenarios](guide/use-cases.md) - 20+ practical workflows
+
+### Backend-Specific
+- [Claude Code](guide/backends/claude.md)
+- [Codex CLI](guide/backends/codex.md)
+- [Gemini CLI](guide/backends/gemini.md)
+
+### Reference
+- [CLI Commands](reference/commands/)
+- [REST API](reference/rest-api.md)
+- [OpenAI Compatible](reference/openai-compatible.md)
+- [Anthropic Compatible](reference/anthropic-compatible.md)
+- [Configuration Reference](reference/configuration.md)
+- [Environment Variables](reference/environment.md)
+
+### Integration
+- [CI/CD Integration](integration/ci-cd.md)
+- [LangChain/LangGraph](integration/langchain-langgraph.md)
+- [Claude Code Skills](integration/claude-code-skills.md)
+
+### Development
+- [Architecture](about/architecture.md)
+- [Contributing](development/contributing.md)
+- [Design Decisions](about/design-decisions.md)
+
+---
+
+## Philosophy
+
+> **Wrapper, Not Replacement**
+>
+> clinvk doesn't replace your AI backends—it unifies them. You get all the power of Claude Code, Codex CLI, and Gemini CLI, plus orchestration capabilities they don't provide individually.
+
+---
+
+## License
+
+MIT License - see [LICENSE](https://github.com/signalridge/clinvoker/blob/main/LICENSE) for details.
+
+---
+
+<p align="center">
+  Built with ❤️ by <a href="https://github.com/signalridge">signalridge</a>
+</p>

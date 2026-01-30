@@ -1,60 +1,129 @@
 # User Guide
 
-Complete guide to using clinvk, from installation to advanced workflows.
+Complete guides for using clinvk effectively.
 
-## Quick Navigation
+---
 
-| Section | Description |
-|---------|-------------|
-| [Installation](installation.md) | Install clinvk on your system |
-| [Quick Start](quick-start.md) | Get started in 5 minutes |
-| [Configuration](configuration.md) | Configure clinvk for your workflow |
-| [Basic Usage](basic-usage.md) | Core CLI commands |
-| [Session Management](session-management.md) | Track and resume conversations |
-| [Parallel Execution](parallel-execution.md) | Run concurrent tasks |
-| [Chain Execution](chain-execution.md) | Build multi-step pipelines |
-| [Backend Comparison](backend-comparison.md) | Compare AI backend responses |
-| [HTTP Server](http-server.md) | REST API server |
-| [Backends](backends/index.md) | Claude, Codex, Gemini guides |
+## Learning Paths
 
-## Learning Path
+### Quick Start Path (15 minutes)
+
+New to clinvk? Follow this path:
+
+1. [Installation](installation.md) - Get clinvk on your system
+2. [Quick Start](quick-start.md) - Run your first commands
+3. [Basic Usage](basic-usage.md) - Understand core workflows
+
+### Power User Path (1 hour)
+
+Ready to unlock clinvk's full potential?
+
+1. [Configuration](configuration.md) - Master the config system
+2. [Session Management](session-management.md) - Persistent conversations
+3. [Parallel Execution](parallel-execution.md) - Multi-backend workflows
+4. [Chain Execution](chain-execution.md) - Context-passing pipelines
+5. [Use Cases](use-cases.md) - Real-world scenarios
+
+### Integration Path (30 minutes)
+
+Integrating clinvk into your toolchain?
+
+1. [HTTP Server](http-server.md) - API deployment
+2. [Backend Comparison](backend-comparison.md) - Choose the right backend
+3. [CI/CD Integration](../integration/ci-cd.md) - Automated workflows
+
+---
+
+## Guide Categories
 
 ### Getting Started
 
-1. **[Installation](installation.md)** - Multiple installation methods for all platforms
-2. **[Quick Start](quick-start.md)** - Your first commands with clinvk
-3. **[Configuration](configuration.md)** - Customize clinvk for your workflow
+| Guide | Description | Time |
+|-------|-------------|------|
+| [Installation](installation.md) | Platform-specific installation | 5 min |
+| [Quick Start](quick-start.md) | First commands and concepts | 10 min |
+| [Basic Usage](basic-usage.md) | Core CLI patterns | 15 min |
 
-### Core Usage
+### Core Concepts
 
-4. **[Basic Usage](basic-usage.md)** - Essential CLI commands and options
-5. **[Session Management](session-management.md)** - Persist and resume conversations
+| Guide | Description | Time |
+|-------|-------------|------|
+| [Configuration](configuration.md) | Hierarchical config system | 15 min |
+| [Session Management](session-management.md) | Persistence and lifecycle | 10 min |
+| [Backend Comparison](backend-comparison.md) | Comparing responses | 10 min |
 
-### Advanced Features
+### Advanced Workflows
 
-6. **[Parallel Execution](parallel-execution.md)** - Run multiple tasks concurrently
-7. **[Chain Execution](chain-execution.md)** - Sequential multi-stage pipelines
-8. **[Backend Comparison](backend-comparison.md)** - Compare responses side-by-side
+| Guide | Description | Time |
+|-------|-------------|------|
+| [Parallel Execution](parallel-execution.md) | Concurrent multi-backend tasks | 15 min |
+| [Chain Execution](chain-execution.md) | Sequential pipelines | 15 min |
+| [HTTP Server](http-server.md) | OpenAI-compatible API | 20 min |
 
-### Integration
+### Backend-Specific
 
-9. **[HTTP Server](http-server.md)** - REST API for programmatic access
-10. **[Backends](backends/index.md)** - Backend-specific configuration
+| Guide | Description |
+|-------|-------------|
+| [Claude Code](backends/claude.md) | Claude-specific features |
+| [Codex CLI](backends/codex.md) | Codex-specific features |
+| [Gemini CLI](backends/gemini.md) | Gemini-specific features |
 
-## Platform Support
+---
 
-clinvk supports the following platforms:
+## Common Tasks
 
-| Platform | Architecture | Package Formats |
-|----------|--------------|-----------------|
-| Linux | amd64, arm64 | Binary, Deb, RPM, Nix |
-| macOS | amd64, arm64 | Binary, Homebrew, Nix |
-| Windows | amd64 | Binary, Scoop |
+### Running Prompts
 
-## Prerequisites
+```
+# Basic prompt
+clinvk "explain this code"
 
-Before using clinvk, ensure you have at least one AI CLI tool installed:
+# With specific backend
+clinvk -b codex "optimize this function"
 
-- **Claude Code** - Install from [Anthropic](https://claude.ai/claude-code)
-- **Codex CLI** - Install from [OpenAI](https://github.com/openai/codex-cli)
-- **Gemini CLI** - Install from [Google](https://github.com/google/gemini-cli)
+# With output format
+clinvk -o json "generate test cases"
+```
+
+### Managing Sessions
+
+```
+# Continue last session
+clinvk -c "add error handling"
+
+# List sessions
+clinvk sessions list
+
+# Resume specific session
+clinvk resume abc123
+```
+
+### Multi-Backend Workflows
+
+```
+# Parallel execution
+clinvk parallel -f tasks.json
+
+# Chain execution
+clinvk chain -f pipeline.json
+
+# Compare backends
+clinvk compare --all-backends "review this code"
+```
+
+---
+
+## Tips
+
+- Use `--dry-run` to preview commands without executing
+- Set `default_backend` in config to avoid typing `-b` every time
+- Use `--ephemeral` for one-off tasks that don't need sessions
+- Chain commands with `&&` for sequential workflows
+
+---
+
+## Getting Help
+
+- [FAQ](../development/faq.md) - Frequently asked questions
+- [Troubleshooting](../development/troubleshooting.md) - Common issues and solutions
+- [Reference](../reference/) - Complete command and API reference

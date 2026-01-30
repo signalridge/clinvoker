@@ -1,6 +1,6 @@
 # clinvk [prompt]
 
-Execute a prompt with an AI backend.
+Execute a prompt with the selected backend. This is the root command.
 
 ## Synopsis
 
@@ -10,120 +10,74 @@ clinvk [flags] [prompt]
 
 ## Description
 
-The root command executes a prompt using the configured AI backend. This is the primary way to interact with clinvk.
+Runs a single prompt on the chosen backend. By default, a session is created and saved (unless `--ephemeral` is set).
+
+If `session.auto_resume` is enabled and a resumable session exists, clinvk will continue it when appropriate.
 
 ## Flags
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--backend` | `-b` | string | `claude` | AI backend to use |
-| `--model` | `-m` | string | | Model to use |
-| `--workdir` | `-w` | string | cwd | Working directory |
-| `--output-format` | `-o` | string | `text` | Output format |
-| `--continue` | `-c` | bool | `false` | Continue last session |
-| `--dry-run` | | bool | `false` | Show command only |
-| `--ephemeral` | | bool | `false` | Stateless mode |
+| `--backend` | `-b` | string | config / `claude` | Backend to use |
+| `--model` | `-m` | string | | Model override |
+| `--workdir` | `-w` | string | current dir | Working directory |
+| `--output-format` | `-o` | string | config / `json` | `text`, `json`, `stream-json` |
+| `--continue` | `-c` | bool | `false` | Continue most recent session |
+| `--dry-run` | | bool | `false` | Print command without executing |
+| `--ephemeral` | | bool | `false` | Stateless mode (no session) |
+| `--config` | | string | `~/.clinvk/config.yaml` | Config file path |
 
 ## Examples
 
-### Basic Usage
-
 ```bash
 clinvk "fix the bug in auth.go"
-```
-
-### Specify Backend
-
-```bash
-clinvk --backend codex "implement user registration"
-clinvk -b gemini "explain this algorithm"
-```
-
-### Specify Model
-
-```bash
-clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
-```
-
-### Continue Session
-
-```bash
-clinvk "implement the login feature"
-clinvk -c "now add password validation"
-clinvk -c "add rate limiting"
-```
-
-### JSON Output
-
-```bash
-clinvk --output-format json "explain this code"
-```
-
-### Dry Run
-
-```bash
-clinvk --dry-run "implement feature X"
-# Output: Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
-```
-
-### Ephemeral Mode
-
-```bash
-clinvk --ephemeral "what is 2+2"
-```
-
-### Set Working Directory
-
-```bash
-clinvk --workdir /path/to/project "review the codebase"
+clinvk -b codex "optimize this function"
+clinvk -b gemini -m gemini-2.5-pro "summarize this"
+clinvk -c "continue from last session"
 ```
 
 ## Output
 
-### Text Format (Default)
-
-The AI's response is printed to stdout.
-
-### JSON Format
+### JSON (default)
 
 ```json
 {
   "backend": "claude",
-  "content": "The response text...",
-  "session_id": "abc123",
+  "content": "...",
+  "session_id": "abc123...",
   "model": "claude-opus-4-5-20251101",
   "duration_seconds": 2.5,
   "exit_code": 0,
+  "error": "",
   "usage": {
     "input_tokens": 123,
     "output_tokens": 456,
     "total_tokens": 579
-  }
+  },
+  "raw": {}
 }
 ```
 
-### Stream JSON Format
+### Text
 
-Stream JSON passes through the backend's native streaming format (NDJSON/JSONL).
-The exact event shape depends on the backend.
-
-```json
-{"type": "start", "backend": "claude"}
-{"type": "content", "text": "chunk of response"}
-{"type": "end", "session_id": "abc123"}
+```bash
+clinvk --output-format text "explain this"
 ```
 
-## Exit Codes
+### Stream JSON (CLI)
 
-| Code | Description |
-|------|-------------|
-| 0 | Success |
-| 1 | Error |
-| (backend) | Backend exit code (propagated when the backend process exits non-zero) |
+```bash
+clinvk --output-format stream-json "stream output"
+```
 
-See [Exit Codes](../exit-codes.md) for details.
+Notes:
 
-## See Also
+- CLI streaming passes through backend‑native stream lines.
+- Server streaming uses unified events (see HTTP Server docs).
 
-- [resume](resume.md) - Resume a session
-- [Configuration](../configuration.md) - Configure defaults
+## Exit codes
+
+- `0` on success
+- `1` on errors
+- Backend exit code is propagated if non‑zero
+- `124` when a command timeout occurs (if configured)

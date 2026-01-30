@@ -1,263 +1,61 @@
-# OpenAI Compatible API
+# OpenAI‑compatible API
 
-Use clinvk with existing OpenAI client libraries and tools.
+Base path: `/openai/v1`
 
-## Overview
+## Supported endpoints
 
-clinvk provides OpenAI-compatible endpoints that allow you to use any OpenAI client library to interact with your AI backends.
+- `GET /openai/v1/models`
+- `POST /openai/v1/chat/completions`
 
-## Base URL
+## Routing behavior
 
-```yaml
-http://localhost:8080/openai/v1
-```
+`model` is used to **select a backend** and is also forwarded as the backend model name.
 
-## Endpoints
+Routing rules:
 
-### GET /openai/v1/models
+1. If `model` equals `claude`, `codex`, or `gemini`, use that backend.
+2. Else if it contains `claude` → Claude backend.
+3. Else if it contains `gpt` → Codex backend.
+4. Else if it contains `gemini` → Gemini backend.
+5. Otherwise → Claude backend.
 
-List available models (backends mapped as models).
+**Important:** choose a model string that is valid for the target backend. If you want explicit backend+model control, use the custom REST API (`/api/v1/prompt`).
 
-**Response:**
+## Chat completions
 
-```json
-{
-  "object": "list",
-  "data": [
-    {
-      "id": "claude",
-      "object": "model",
-      "created": 1704067200,
-      "owned_by": "clinvk"
-    },
-    {
-      "id": "codex",
-      "object": "model",
-      "created": 1704067200,
-      "owned_by": "clinvk"
-    },
-    {
-      "id": "gemini",
-      "object": "model",
-      "created": 1704067200,
-      "owned_by": "clinvk"
-    }
-  ]
-}
-```
-
-### POST /openai/v1/chat/completions
-
-Create a chat completion.
-
-**Request Body:**
+### Request (subset)
 
 ```json
 {
-  "model": "claude",
+  "model": "claude-opus-4-5-20251101",
   "messages": [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Hello!"}
+    {"role": "system", "content": "You are helpful"},
+    {"role": "user", "content": "Hello"}
   ],
-  "max_tokens": 4096,
-  "temperature": 0.7,
   "stream": false
 }
 ```
 
-**Fields:**
+### Behavior
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `model` | string | Yes | Backend name (claude, codex, gemini) |
-| `messages` | array | Yes | Chat messages |
-| `max_tokens` | integer | No | Maximum response tokens |
-| `temperature` | number | No | Sampling temperature (ignored) |
-| `stream` | boolean | No | Enable streaming (SSE) when `true` |
+- All **user** messages are concatenated into a single prompt.
+- The **system** message is passed as `system_prompt` (backend‑dependent support).
+- Assistant messages are added as context markers.
 
-**Response:**
+### Streaming
 
-```json
-{
-  "id": "chatcmpl-abc123",
-  "object": "chat.completion",
-  "created": 1704067200,
-  "model": "claude",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "Hello! How can I help you today?"
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 10,
-    "completion_tokens": 15,
-    "total_tokens": 25
-  }
-}
-```
+If `stream=true`, the server emits SSE chunks compatible with OpenAI chat streaming.
 
-## Client Examples
+## Models list
 
-### Python (openai package)
+`GET /openai/v1/models` returns **backend names** (`claude`, `codex`, `gemini`) as models.
 
-```python
-from openai import OpenAI
+## Stateless behavior
 
-client = OpenAI(
-    base_url="http://localhost:8080/openai/v1",
-    api_key="not-needed"  # clinvk doesn't require API key
-)
+OpenAI‑compatible requests are **stateless**. Sessions are not persisted.
 
-# List models (backends)
-models = client.models.list()
-for model in models:
-    print(model.id)
+## Limitations
 
-# Chat completion
-response = client.chat.completions.create(
-    model="claude",
-    messages=[
-        {"role": "system", "content": "You are a helpful coding assistant."},
-        {"role": "user", "content": "Write a hello world in Python"}
-    ]
-)
-
-print(response.choices[0].message.content)
-
-# Streaming (SSE)
-stream = client.chat.completions.create(
-    model="claude",
-    messages=[{"role": "user", "content": "Write a poem"}],
-    stream=True
-)
-for chunk in stream:
-    if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")
-```
-
-### TypeScript/JavaScript
-
-```typescript
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  baseURL: 'http://localhost:8080/openai/v1',
-  apiKey: 'not-needed'
-});
-
-async function main() {
-  const response = await client.chat.completions.create({
-    model: 'claude',
-    messages: [
-      { role: 'user', content: 'Hello!' }
-    ]
-  });
-
-  console.log(response.choices[0].message.content);
-}
-
-main();
-```
-
-### cURL
-
-```bash
-# List models
-curl http://localhost:8080/openai/v1/models
-
-# Chat completion
-curl -X POST http://localhost:8080/openai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-```
-
-### LangChain
-
-```python
-from langchain_openai import ChatOpenAI
-
-llm = ChatOpenAI(
-    base_url="http://localhost:8080/openai/v1",
-    api_key="not-needed",
-    model="claude"
-)
-
-response = llm.invoke("Explain Python decorators")
-print(response.content)
-```
-
-## Model Mapping
-
-OpenAI's `model` parameter maps to clinvk backends:
-
-| OpenAI Model | clinvk Backend |
-|--------------|----------------|
-| `claude` | Claude Code |
-| `codex` | Codex CLI |
-| `gemini` | Gemini CLI |
-
-You can also use specific model names:
-
-```python
-# Uses claude backend with specific model
-response = client.chat.completions.create(
-    model="claude-opus-4-5-20251101",
-    messages=[...]
-)
-```
-
-## Differences from OpenAI API
-
-!!! note "Feature Support"
-    Not all OpenAI API features are supported. Currently implemented:
-
-    - Chat completions
-    - Model listing
-    - Basic message format
-    - Streaming (`stream: true`, SSE)
-
-    Not yet supported:
-
-    - Function calling
-    - Vision/images
-    - Embeddings
-    - File uploads
-
-!!! note "Session Behavior"
-    By default, each request creates a new session. Use the REST API's session features for conversation continuity.
-
-## Configuration
-
-The OpenAI-compatible API uses the same server configuration:
-
-```yaml
-server:
-  host: "127.0.0.1"
-  port: 8080
-  request_timeout_secs: 300
-```
-
-## Error Handling
-
-Errors are returned as RFC 7807 Problem Details (via Huma), not OpenAI's error schema. For example, schema validation errors may return HTTP 422:
-
-```json
-{
-  "title": "Unprocessable Entity",
-  "status": 422,
-  "detail": "model is required"
-}
-```
-
-## Next Steps
-
-- [Anthropic Compatible](anthropic-compatible.md) - Anthropic client support
-- [REST API](rest-api.md) - Full clinvk API access
+- Only `chat.completions` is implemented.
+- Tool/function calling and images are not supported.
+- Some OpenAI parameters are accepted but ignored by backends.

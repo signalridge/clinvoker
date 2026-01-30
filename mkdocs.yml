@@ -103,6 +103,7 @@ nav:
       - Configuration: guide/configuration.md
       - Basic Usage: guide/basic-usage.md
       - Session Management: guide/session-management.md
+      - Use Cases: guide/use-cases.md
       - Parallel Execution: guide/parallel-execution.md
       - Chain Execution: guide/chain-execution.md
       - Backend Comparison: guide/backend-comparison.md

@@ -1,88 +1,83 @@
 # clinvk [prompt]
 
-使用 AI 后端执行提示。
+执行一条 prompt（根命令）。
 
-## 概要
+## 语法
 
 ```bash
 clinvk [flags] [prompt]
 ```
 
-## 描述
+## 说明
 
-根命令使用配置的 AI 后端执行提示。这是与 clinvk 交互的主要方式。
+对选定后端执行一条 prompt。默认会创建并保存会话（除非 `--ephemeral`）。
+
+如果启用了 `session.auto_resume` 且存在可恢复会话，clinvk 会在合适时机自动继续。
 
 ## 参数
 
-| 参数 | 简写 | 类型 | 默认值 | 描述 |
-|------|------|------|--------|------|
-| `--backend` | `-b` | string | `claude` | 使用的 AI 后端 |
-| `--model` | `-m` | string | | 使用的模型 |
-| `--workdir` | `-w` | string | cwd | 工作目录 |
-| `--output-format` | `-o` | string | `text` | 输出格式 |
-| `--continue` | `-c` | bool | `false` | 继续上一个会话 |
-| `--dry-run` | | bool | `false` | 只显示命令 |
-| `--ephemeral` | | bool | `false` | 无状态模式 |
+| 参数 | 简写 | 类型 | 默认值 | 说明 |
+|------|-------|------|---------|-------------|
+| `--backend` | `-b` | string | 配置 / `claude` | 后端选择 |
+| `--model` | `-m` | string | | 模型覆盖 |
+| `--workdir` | `-w` | string | 当前目录 | 工作目录 |
+| `--output-format` | `-o` | string | 配置 / `json` | `text` / `json` / `stream-json` |
+| `--continue` | `-c` | bool | `false` | 继续最近会话 |
+| `--dry-run` | | bool | `false` | 仅打印命令，不执行 |
+| `--ephemeral` | | bool | `false` | 无状态执行（不保存会话） |
+| `--config` | | string | `~/.clinvk/config.yaml` | 配置文件路径 |
 
 ## 示例
 
-### 基本用法
-
 ```bash
-clinvk "修复 auth.go 中的 bug"
+clinvk "修复 auth.go 的 bug"
+clinvk -b codex "优化这个函数"
+clinvk -b gemini -m gemini-2.5-pro "总结这段内容"
+clinvk -c "继续最近会话"
 ```
 
-### 指定后端
+## 输出
 
-```bash
-clinvk --backend codex "实现用户注册"
-clinvk -b gemini "解释这个算法"
+### JSON（默认）
+
+```json
+{
+  "backend": "claude",
+  "content": "...",
+  "session_id": "abc123...",
+  "model": "claude-opus-4-5-20251101",
+  "duration_seconds": 2.5,
+  "exit_code": 0,
+  "error": "",
+  "usage": {
+    "input_tokens": 123,
+    "output_tokens": 456,
+    "total_tokens": 579
+  },
+  "raw": {}
+}
 ```
 
-### 指定模型
+### Text
 
 ```bash
-clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
+clinvk --output-format text "解释这个"
 ```
 
-### 继续会话
+### Stream JSON（CLI）
 
 ```bash
-clinvk "实现登录功能"
-clinvk -c "现在添加密码验证"
-clinvk -c "添加速率限制"
+clinvk --output-format stream-json "流式输出"
 ```
 
-### JSON 输出
+说明：
 
-```bash
-clinvk --output-format json "解释这段代码"
-```
-
-### 试运行
-
-```bash
-clinvk --dry-run "实现功能 X"
-# 输出：Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
-```
-
-### 临时模式
-
-```bash
-clinvk --ephemeral "2+2 等于多少"
-```
+- CLI 流式输出为后端原生格式。
+- 服务器流式输出使用统一事件（见 HTTP 服务器文档）。
 
 ## 退出码
 
-| 代码 | 描述 |
-|------|------|
-| 0 | 成功 |
-| 1 | 错误 |
-|（后端）| 后端退出码（后端进程以非零退出码结束时会透传） |
-
-详见：[退出码](../exit-codes.md)。
-
-## 另请参阅
-
-- [resume](resume.md) - 恢复会话
-- [配置](../configuration.md) - 配置默认值
+- 成功为 `0`
+- 错误为 `1`
+- 后端非零退出码会被透传
+- 若配置了超时，超时退出码为 `124`

@@ -1,126 +1,55 @@
 # clinvk parallel
 
-并行执行多个任务。
+从 JSON 文件或 stdin 并行执行多个任务。
 
-## 概要
+## 语法
 
 ```bash
-clinvk parallel [flags]
+clinvk parallel --file tasks.json [--max-parallel N] [--fail-fast] [--json] [--quiet]
+cat tasks.json | clinvk parallel
 ```
 
-## 描述
+## 参数
 
-并发运行多个 AI 任务。任务定义在 JSON 文件中或通过 stdin 管道传入。
+| 参数 | 简写 | 默认值 | 说明 |
+|------|-------|---------|-------------|
+| `--file` | `-f` | | 任务文件（JSON） |
+| `--max-parallel` | | 3 | 最大并发数 |
+| `--fail-fast` | | false | 首错即停 |
+| `--json` | | false | 输出 JSON 汇总 |
+| `--quiet` | `-q` | false | 不输出任务内容 |
 
-## 标志
-
-| 标志 | 简写 | 类型 | 默认值 | 描述 |
-|------|------|------|--------|------|
-| `--file` | `-f` | string | | 任务文件 (JSON) |
-| `--max-parallel` | | int | 3 | 最大并发任务数 |
-| `--fail-fast` | | bool | `false` | 第一个失败时停止 |
-| `--json` | | bool | `false` | JSON 输出 |
-| `--quiet` | `-q` | bool | `false` | 抑制任务输出 |
-
-## 任务文件格式
+## 输入格式
 
 ```json
 {
   "tasks": [
-    {
-      "backend": "claude",
-      "prompt": "任务提示",
-      "model": "可选模型",
-      "workdir": "/可选/路径"
-    }
+    {"backend": "claude", "prompt": "评审 auth 模块"}
   ],
   "max_parallel": 3,
-  "fail_fast": true
+  "fail_fast": false,
+  "output_dir": "./parallel-results"
 }
 ```
 
-### 任务字段
+### Task 字段（CLI）
 
-| 字段 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `backend` | string | 是 | 使用的后端 |
-| `prompt` | string | 是 | 提示内容 |
-| `model` | string | 否 | 模型覆盖 |
-| `workdir` | string | 否 | 工作目录 |
-| `approval_mode` | string | 否 | 审批模式 |
-| `sandbox_mode` | string | 否 | 沙箱模式 |
-| `output_format` | string | 否 | `text`, `json`, `stream-json` |
-| `max_tokens` | int | 否 | 最大响应 token 数 |
-| `max_turns` | int | 否 | 最大代理轮次 |
-| `system_prompt` | string | 否 | 系统提示 |
-| `extra` | array | 否 | 额外后端参数 |
-| `verbose` | bool | 否 | 启用详细输出 |
-| `dry_run` | bool | 否 | 仅模拟执行 |
-| `id` | string | 否 | 任务标识 |
-| `name` | string | 否 | 任务显示名 |
-| `tags` | array | 否 | 写入 JSON 输出 / `output_dir` 产物 |
-| `meta` | object | 否 | 写入 JSON 输出 / `output_dir` 产物 |
+- `backend`（必填）
+- `prompt`（必填）
+- `workdir`, `model`, `approval_mode`, `sandbox_mode`, `max_turns`, `max_tokens`, `system_prompt`, `verbose`, `dry_run`, `extra`
+- `id`, `name`, `tags`, `meta`
 
-### 顶层字段
+说明：
 
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| `tasks` | array | 任务列表 |
-| `max_parallel` | int | 最大并发数 |
-| `fail_fast` | bool | 失败即停止 |
-| `output_dir` | string | 可选输出目录，写入 `summary.json` 和每个任务的 JSON |
+- 并行执行 **始终无状态**（不保存会话）。
+- CLI 模式下 `output_format` 当前被忽略。
+- `parallel.aggregate_output=false` 会隐藏汇总表格。
 
-## 示例
+## 输出文件
 
-### 从文件
-
-```bash
-clinvk parallel --file tasks.json
-```
-
-### 从标准输入
-
-```bash
-cat tasks.json | clinvk parallel
-```
-
-### 限制工作器
-
-```bash
-clinvk parallel --file tasks.json --max-parallel 2
-```
-
-### 快速失败模式
-
-```bash
-clinvk parallel --file tasks.json --fail-fast
-```
-
-### JSON 输出
-
-```bash
-clinvk parallel --file tasks.json --json
-```
-
-### 持久化输出
-
-```bash
-cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk parallel
-```
-
-写入内容：
-
-- `summary.json`（汇总结果）
-- 每个任务的 JSON 文件（包含 task + result）
+若设置 `output_dir`，会写入 `summary.json` 与每个任务的输出文件。
 
 ## 退出码
 
-| 代码 | 描述 |
-|------|------|
-| 0 | 所有任务成功 |
-| 1 | 一个或多个任务失败 |
-
-## 另请参阅
-
-- [chain](chain.md) - 顺序执行
-- [compare](compare.md) - 后端对比
+- `0` 全部成功
+- `1` 存在失败

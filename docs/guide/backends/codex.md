@@ -1,200 +1,331 @@
-# Codex CLI
+# Codex CLI Backend
 
-OpenAI's code-focused CLI tool optimized for code generation and programming tasks.
+Codex CLI (OpenAI) is optimized for code generation and refactoring tasks, with strong JSON structured output support.
+
+---
 
 ## Overview
 
-Codex CLI is OpenAI's command-line tool focused on code generation and programming assistance. It excels at:
+| Feature | Support |
+|---------|---------|
+| **JSON Output** | ✓ Native JSONL support |
+| **Sandbox Control** | ✓ Full mapping |
+| **Approval Mode** | ✓ Full mapping |
+| **Session Resume** | ✗ Not supported by Codex CLI |
+| **Output Formats** | json, stream-json (text rendered by clinvk) |
+| **Ephemeral Mode** | ✓ Session cleanup |
 
-- Rapid code generation
-- Writing tests and boilerplate
-- Code transformations
-- Quick programming tasks
+---
 
-## Installation
+## Requirements
 
-Install Codex CLI from [OpenAI](https://github.com/openai/codex-cli):
+1. **Install Codex CLI**
 
-```bash
-# Verify installation
-which codex
-codex --version
+   ```bash
+   npm install -g @openai/codex
+   ```
+
+2. **Set API Key**
+
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   ```
+
+   Or configure in Codex:
+
+   ```bash
+   codex config set apiKey sk-...
+   ```
+
+3. **Verify Installation**
+
+   ```bash
+   codex --version
+   clinvk -b codex "test connection"
+   ```
+
+---
+
+## How clinvk Uses Codex
+
+### Non-Interactive Execution
+
+```
+# clinvk builds this command:
+codex exec --json \
+  --model o3 \
+  --ask-for-approval on-request \
+  --sandbox workspace-write \
+  "your prompt here"
 ```
 
-## Basic Usage
+### Session Handling
 
-```bash
-# Use Codex with clinvk
-clinvk --backend codex "implement a REST API handler"
-clinvk -b codex "generate unit tests for user.go"
+```
+# Resume (if supported by backend):
+codex exec resume <session_id> --json ...
 ```
 
-## Models
+**Note:** Codex CLI has limited session persistence. clinvk handles cleanup for ephemeral mode.
 
-| Model | Description |
-|-------|-------------|
-| `o3` | Latest and most capable model |
-| `o3-mini` | Faster, lighter model |
+### JSON Parsing
 
-Specify a model:
+clinvk always requests JSON output internally:
 
-```bash
-clinvk -b codex -m o3-mini "quick code generation"
+```
+# clinvk parses JSONL responses for:
+# - Content extraction
+# - Session ID tracking
+# - Error detection
 ```
 
-## Configuration
+---
 
-Configure Codex in `~/.clinvk/config.yaml`:
+## Configuration Options
 
-```yaml
+### Full Configuration Example
+
+```
 backends:
   codex:
-    # Default model
+    # Model selection
     model: o3
+
+    # Default approval mode
+    approval_mode: auto
+
+    # Default sandbox mode
+    sandbox_mode: workspace
 
     # Enable/disable this backend
     enabled: true
-
-    # Extra CLI flags
-    extra_flags: []
 ```
 
-### Environment Variable
+### Model Aliases
 
-```bash
-export CLINVK_CODEX_MODEL=o3-mini
+clinvk provides convenient aliases:
+
+| Alias | Resolves To | Best For |
+|-------|-------------|----------|
+| `fast`, `quick` | `gpt-4.1-mini` | Quick tasks, simple edits |
+| `balanced`, `default` | `gpt-5.2` | General development |
+| `best`, `powerful` | `gpt-5-codex` | Complex refactoring |
+
+```
+# Use aliases
+clinvk -b codex -m fast "fix typo"
+clinvk -b codex -m balanced "add logging"
+clinvk -b codex -m best "refactor architecture"
+
+# Or full model names
+clinvk -b codex -m o3 "complex task"
 ```
 
-## Session Management
+---
 
-Codex resumes sessions via the `codex exec resume` subcommand (handled automatically by `clinvk`):
+## Approval Mode Mapping
 
-```bash
-# Resume with clinvk
-clinvk resume --last --backend codex
-clinvk resume <session-id>
+| clinvk `approval_mode` | Codex Flag | Behavior |
+|------------------------|------------|----------|
+| `auto` | `--ask-for-approval on-request` | Ask only for non-read operations |
+| `none` | `--ask-for-approval never` | Never ask (dangerous) |
+| `always` | `--ask-for-approval untrusted` | Always ask for confirmation |
+| `default` | (none) | Use Codex default |
+
+```
+# Safe for trusted code
+clinvk -b codex --approval-mode auto "refactor this module"
+
+# CI/CD automation (use with caution)
+clinvk -b codex --approval-mode none --ephemeral "apply all fixes"
 ```
 
-## Unified Options
+---
 
-These options work with Codex:
+## Sandbox Mode Mapping
 
-| Option | Description |
-|--------|-------------|
-| `model` | Model to use |
-| `max_tokens` | Maximum response tokens |
-| `max_turns` | Maximum agentic turns |
+| clinvk `sandbox_mode` | Codex Flag | Behavior |
+|-----------------------|------------|----------|
+| `read-only` | `--sandbox read-only` | Read files only |
+| `workspace` | `--sandbox workspace-write` | Write within workspace |
+| `full` | `--sandbox danger-full-access` | Full filesystem access |
+| `default` | (none) | Use Codex default |
 
-## Extra Flags
+```
+# Safe sandbox for CI
+clinvk -b codex --sandbox read-only "analyze this code"
 
-Pass additional flags to Codex:
+# Normal development
+clinvk -b codex --sandbox workspace "implement feature"
 
-```yaml
-backends:
-  codex:
-    extra_flags:
-      - "--quiet"
+# Careful - full access
+clinvk -b codex --sandbox full "system-wide changes"
 ```
 
-Common flags:
+---
 
-| Flag | Description |
-|------|-------------|
-| `--quiet` | Reduce output verbosity |
+## Unique Features
 
-## Best Practices
+### 1. Structured JSON Output
 
-!!! tip "Use for Code Generation"
-    Codex is optimized for generating code quickly. It's great for boilerplate and repetitive tasks.
+Codex excels at producing parseable JSON:
 
-!!! tip "Combine with Other Backends"
-    Use Codex to generate code, then Claude to review it - leverage the chain command.
+```
+clinvk -b codex -o json "Generate a list of TODOs from this code" < src/app.js
+```
 
-!!! tip "Batch Similar Tasks"
-    Run multiple code generation tasks in parallel for efficiency.
+Output:
+
+```
+{
+  "backend": "codex",
+  "content": "1. Add error handling...",
+  "exit_code": 0,
+  "duration_seconds": 4.32
+}
+```
+
+### 2. Fast Code Generation
+
+Best for:
+
+- Quick edits and fixes
+- Boilerplate generation
+- Test file creation
+- Documentation comments
+
+```
+clinvk -b codex "Generate Jest tests for auth.js"
+```
+
+### 3. Inline Code Changes
+
+Codex is optimized for in-place code modifications:
+
+```
+clinvk -b codex --approval-mode auto "Add TypeScript types to this file" < utils.ts
+```
+
+---
 
 ## Use Cases
 
-### Generate Boilerplate
+### When to Choose Codex
 
-```bash
-clinvk -b codex "create a CRUD API for the User model"
+| Scenario | Why Codex? |
+|----------|------------|
+| **Quick edits** | Fast response times |
+| **Code generation** | Strong at boilerplate |
+| **Refactoring** | Good at pattern matching |
+| **JSON processing** | Native structured output |
+| **CI/CD automation** | Reliable non-interactive mode |
+| **Test generation** | Good test coverage |
+
+### Codex-Optimized Workflows
+
 ```
-
-### Write Tests
-
-```bash
-clinvk -b codex "generate comprehensive unit tests for the auth module"
-```
-
-### Code Transformation
-
-```bash
-clinvk -b codex "convert this callback-based code to async/await"
-```
-
-### Quick Implementations
-
-```bash
-clinvk -b codex "implement a binary search function"
-```
-
-## Comparison with Claude
-
-| Aspect | Codex | Claude |
-|--------|-------|--------|
-| Speed | Faster | More thorough |
-| Best for | Code generation | Complex reasoning |
-| Context | Good | Excellent |
-| Safety focus | Standard | High |
-
-## Workflow Example
-
-Use Codex and Claude together:
-
-```json
+// Quick fixes in parallel
 {
-  "steps": [
+  "tasks": [
     {
-      "name": "generate",
       "backend": "codex",
-      "prompt": "implement user authentication"
+      "prompt": "Fix linting errors",
+      "approval_mode": "auto"
     },
     {
-      "name": "review",
-      "backend": "claude",
-      "prompt": "review this code for security: {{previous}}"
+      "backend": "codex",
+      "prompt": "Add missing imports",
+      "approval_mode": "auto"
     }
   ]
 }
 ```
 
+```
+// Code generation chain
+{
+  "steps": [
+    {
+      "name": "generate",
+      "backend": "codex",
+      "prompt": "Generate API client code",
+      "approval_mode": "auto"
+    },
+    {
+      "name": "test",
+      "backend": "codex",
+      "prompt": "Generate tests for: {{previous}}",
+      "approval_mode": "auto"
+    }
+  ]
+}
+```
+
+---
+
+## Limitations
+
+1. **No Session Persistence** - Codex CLI sessions cannot be resumed across invocations
+2. **No System Prompts** - Cannot customize system behavior like Claude
+3. **Limited Tool Control** - No fine-grained tool restrictions
+4. **OpenAI Dependency** - Requires OpenAI API key and rate limits
+
+---
+
 ## Troubleshooting
 
-### Backend Not Available
+### "Backend 'codex' is not available"
 
-```bash
-# Check if Codex is installed
+```
+# Check if codex CLI is installed
 which codex
+codex --version
 
-# Check clinvk detection
-clinvk config show | grep codex
+# If not found, install:
+npm install -g @openai/codex
 ```
 
-### Model Errors
+### "Authentication failed"
 
-If a model isn't available:
+```
+# Set your OpenAI API key
+export OPENAI_API_KEY="sk-..."
 
-```bash
-# List available models
-codex models list
-
-# Update config to use available model
-clinvk config set backends.codex.model o3
+# Or configure via codex CLI
+codex config set apiKey sk-...
 ```
 
-## Next Steps
+### "Rate limit exceeded"
 
-- [Claude Code Guide](claude.md)
-- [Gemini CLI Guide](gemini.md)
-- [Backend Comparison](../backend-comparison.md)
+You're hitting OpenAI's rate limits:
+
+```
+# Slow down in config
+parallel:
+  max_workers: 2  # Reduce concurrent requests
+```
+
+Or use a different backend temporarily:
+
+```
+clinvk -b claude "same prompt"
+```
+
+---
+
+## Configuration Reference
+
+| Config Key | Type | Default | Description |
+|------------|------|---------|-------------|
+| `model` | string | `o3` | Default model |
+| `approval_mode` | string | `default` | Permission behavior |
+| `sandbox_mode` | string | `default` | Sandbox restrictions |
+| `enabled` | bool | `true` | Enable this backend |
+
+---
+
+## Related
+
+- [Backend Comparison](../backend-comparison.md) - Compare all backends
+- [Configuration](../../reference/configuration.md) - Full config reference
+- [OpenAI Codex Documentation](https://platform.openai.com/docs/guides/codex) - Official docs

@@ -1,46 +1,27 @@
 # Configuration Reference
 
-Complete reference for clinvk configuration options.
+Full reference for `~/.clinvk/config.yaml`.
 
-## Configuration File
+## Location
 
-Default location: `~/.clinvk/config.yaml`
+Default: `~/.clinvk/config.yaml`
 
-Use a custom path with `--config`:
+Override with `--config`.
 
-```bash
-clinvk --config /path/to/config.yaml "prompt"
-```
-
-## Full Configuration Example
+## Full example
 
 ```yaml
-# Default backend to use
 default_backend: claude
 
-# Unified flags apply to all backends
 unified_flags:
-  # Approval mode for tool/action execution
-  # Values: default, auto, none, always
-  approval_mode: default
-
-  # Sandbox mode for file/network access
-  # Values: default, read-only, workspace, full
-  sandbox_mode: default
-
-  # Enable verbose output
+  approval_mode: default   # default | auto | none | always
+  sandbox_mode: default    # default | read-only | workspace | full
   verbose: false
-
-  # Dry run mode
   dry_run: false
-
-  # Maximum agentic turns (0 = unlimited)
   max_turns: 0
-
-  # Maximum response tokens (0 = backend default)
   max_tokens: 0
+  command_timeout_secs: 0
 
-# Backend-specific configuration
 backends:
   claude:
     model: claude-opus-4-5-20251101
@@ -50,32 +31,32 @@ backends:
     enabled: true
     system_prompt: ""
     extra_flags: []
-
   codex:
     model: o3
     enabled: true
     extra_flags: []
-
   gemini:
     model: gemini-2.5-pro
     enabled: true
     extra_flags: []
 
-# Session management
 session:
   auto_resume: true
   retention_days: 30
   store_token_usage: true
   default_tags: []
 
-# Output settings
 output:
   format: json
   show_tokens: false
   show_timing: false
   color: true
 
-# HTTP server settings
+parallel:
+  max_workers: 3
+  fail_fast: false
+  aggregate_output: true
+
 server:
   host: "127.0.0.1"
   port: 8080
@@ -83,262 +64,94 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
-  # Rate limiting
+  api_keys_gopass_path: ""
   rate_limit_enabled: false
   rate_limit_rps: 10
   rate_limit_burst: 20
   rate_limit_cleanup_secs: 180
-  # Security
   trusted_proxies: []
   max_request_body_bytes: 10485760
-  # CORS
   cors_allowed_origins: []
   cors_allow_credentials: false
   cors_max_age: 300
-  # Working directory restrictions
   allowed_workdir_prefixes: []
   blocked_workdir_prefixes: []
-  # Observability
   metrics_enabled: false
-
-# Parallel execution settings
-parallel:
-  max_workers: 3
-  fail_fast: false
-  aggregate_output: true
 ```
 
-## Section Reference
+## Key notes
 
-### default_backend
+### approval_mode
 
-```yaml
-default_backend: claude
-```
+Mapped per backend (best‑effort):
 
-The backend to use when `--backend` is not specified.
-
-| Value | Description |
-|-------|-------------|
-| `claude` | Claude Code (default) |
-| `codex` | Codex CLI |
-| `gemini` | Gemini CLI |
-
----
-
-### unified_flags
-
-Global options that apply to all backends:
-
-```yaml
-unified_flags:
-  approval_mode: default
-  sandbox_mode: default
-  verbose: false
-  dry_run: false
-  max_turns: 0
-  max_tokens: 0
-```
-
-#### approval_mode
-
-| Value | Description |
-|-------|-------------|
-| `default` | Let backend decide |
-| `auto` | Reduce prompts / auto-approve (backend-specific) |
-| `none` | Never ask for approval prompts (**dangerous**) |
-| `always` | Always ask for approval (when supported) |
-
-**Backend mappings** (best-effort):
-
-| Backend | `auto` | `none` | `always` |
-|---------|--------|--------|----------|
+| Backend | auto | none | always |
+|---------|------|------|--------|
 | Claude | `--permission-mode acceptEdits` | `--permission-mode dontAsk` | `--permission-mode default` |
 | Codex | `--ask-for-approval on-request` | `--ask-for-approval never` | `--ask-for-approval untrusted` |
 | Gemini | `--approval-mode auto_edit` | `--yolo` | `--approval-mode default` |
 
-!!! warning "Safety"
-    `approval_mode: none` disables approval prompts and may allow edits/commands without confirmation (depending on the backend). Prefer `sandbox_mode: read-only` and `approval_mode: always` for audits.
+### sandbox_mode
 
-#### sandbox_mode
+- Claude: no direct sandbox flag
+- Codex: `--sandbox read-only|workspace-write|danger-full-access`
+- Gemini: `--sandbox` (read-only/workspace), none for full
 
-| Value | Description |
-|-------|-------------|
-| `default` | Let backend decide |
-| `read-only` | Read-only file access |
-| `workspace` | Access to project directory only |
-| `full` | Full file system access |
+### allowed_tools
 
-**Backend notes**:
+Only supported by Claude (`--allowedTools`). For other backends it is ignored.
 
-- Claude: `sandbox_mode` is not mapped to a CLI flag (use `allowed_dirs` / approval settings instead).
-- Gemini: `read-only` and `workspace` both map to `--sandbox` (no distinction).
-- Codex: maps to `--sandbox read-only|workspace-write|danger-full-access`.
+### system_prompt
 
-### backends
+Only mapped for Claude (`--system-prompt`). Other backends ignore it.
 
-Backend-specific configuration:
+### extra_flags
 
-```yaml
-backends:
-  claude:
-    model: claude-opus-4-5-20251101
-    allowed_tools: all
-    approval_mode: ""
-    sandbox_mode: ""
-    enabled: true
-    system_prompt: ""
-    extra_flags: []
-```
+Extra flags are appended to the backend CLI invocation. For API requests, flags are validated against an allowlist.
 
-#### Backend Fields
+Allowlisted flags (case‑insensitive):
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `model` | string | Default model |
-| `allowed_tools` | string | `all` or comma-separated list (**Claude only**) |
-| `approval_mode` | string | Override unified setting |
-| `sandbox_mode` | string | Override unified setting |
-| `enabled` | bool | Enable/disable backend |
-| `system_prompt` | string | Default system prompt |
-| `extra_flags` | array | Additional CLI flags |
+- **Claude**: `--model`, `--print`, `--output-format`, `--verbose`, `--max-turns`, `--system-prompt`, `--permission-mode`, `--resume`, `--add-dir`, `--allowedtools`, `--allowed-tools`, `--no-session-persistence`, `--continue`
+- **Codex**: `--model`, `--json`, `--sandbox`, `--ask-for-approval`, `--full-auto`, `--quiet`, `--config-dir`
+- **Gemini**: `--model`, `--output-format`, `--sandbox`, `--approval-mode`, `--yolo`, `--debug`, `--color`, `--disable-color`
+- **Common**: `-v`, `-m`, `-o`, `-q`, `-h`, `--help`, `--version`
 
-> **Note**: The `allowed_tools` option is currently only supported by the Claude backend. Setting it for Codex or Gemini will have no effect. A warning will be logged if configured for unsupported backends.
+### command_timeout_secs
 
-#### extra_flags Examples
+Applies to CLI executions; timeout exits with code `124`.
 
-```yaml
-backends:
-  claude:
-    extra_flags:
-      - "--add-dir"
-      - "./docs"
+### parallel.max_workers
 
-  codex:
-    extra_flags:
-      - "--quiet"
+Used by the HTTP API when `max_parallel` is not provided. The CLI `parallel` command defaults to `3` unless overridden by `--max-parallel` or file `max_parallel`.
 
-  gemini:
-    extra_flags:
-      - "--sandbox"
-```
+### output.color
 
----
+Currently not used by the CLI output renderer.
 
-### session
+### output.show_tokens / output.show_timing
 
-Session management settings:
+These are displayed **only for text output**. JSON output is not modified.
 
-```yaml
-session:
-  auto_resume: true
-  retention_days: 30
-  store_token_usage: true
-  default_tags: []
-```
+## Environment variables
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `auto_resume` | bool | `true` | Auto-resume in same directory |
-| `retention_days` | int | `30` | Days to keep sessions (0 = forever) |
-| `store_token_usage` | bool | `true` | Track token usage |
-| `default_tags` | array | `[]` | Tags for new sessions |
+These are read automatically by clinvk:
 
----
+- `CLINVK_BACKEND`
+- `CLINVK_CLAUDE_MODEL`
+- `CLINVK_CODEX_MODEL`
+- `CLINVK_GEMINI_MODEL`
+- `CLINVK_API_KEYS`
+- `CLINVK_API_KEYS_GOPASS_PATH`
 
-### output
+## API keys
 
-Output display settings:
+API keys are **not** stored in config for security reasons.
 
-```yaml
-output:
-  format: json
-  show_tokens: false
-  show_timing: false
-  color: true
-```
+Use:
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `format` | string | `json` | Default format (`text`, `json`, `stream-json`) |
-| `show_tokens` | bool | `false` | Show token usage |
-| `show_timing` | bool | `false` | Show execution time |
-| `color` | bool | `true` | Colored output |
+- `CLINVK_API_KEYS` (comma‑separated)
+- `CLINVK_API_KEYS_GOPASS_PATH`
 
----
+## Workdir restrictions (server)
 
-### server
-
-HTTP server settings:
-
-```yaml
-server:
-  host: "127.0.0.1"
-  port: 8080
-  request_timeout_secs: 300
-  read_timeout_secs: 30
-  write_timeout_secs: 300
-  idle_timeout_secs: 120
-  rate_limit_enabled: false
-  rate_limit_rps: 10
-  rate_limit_burst: 20
-  rate_limit_cleanup_secs: 180
-  trusted_proxies: []
-  max_request_body_bytes: 10485760
-```
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `host` | string | `127.0.0.1` | Bind address |
-| `port` | int | `8080` | Listen port |
-| `request_timeout_secs` | int | `300` | Request processing timeout |
-| `read_timeout_secs` | int | `30` | Read timeout |
-| `write_timeout_secs` | int | `300` | Write timeout |
-| `idle_timeout_secs` | int | `120` | Idle connection timeout |
-| `rate_limit_enabled` | bool | `false` | Enable per-IP rate limiting |
-| `rate_limit_rps` | int | `10` | Requests per second per IP |
-| `rate_limit_burst` | int | `20` | Burst size for rate limiting |
-| `rate_limit_cleanup_secs` | int | `180` | Cleanup interval for rate limiter entries |
-| `trusted_proxies` | array | `[]` | Trusted proxies; if empty, proxy headers are ignored |
-| `max_request_body_bytes` | int | `10485760` | Max request body size (0 disables limit) |
-| `cors_allowed_origins` | array | `[]` | Allowed CORS origins (empty = localhost only) |
-| `cors_allow_credentials` | bool | `false` | Allow credentials in CORS requests |
-| `cors_max_age` | int | `300` | CORS preflight cache max age in seconds |
-| `allowed_workdir_prefixes` | array | `[]` | Allowed working directory prefixes |
-| `blocked_workdir_prefixes` | array | `[]` | Blocked working directory prefixes |
-| `metrics_enabled` | bool | `false` | Enable Prometheus `/metrics` endpoint |
-
----
-
-### parallel
-
-Parallel execution settings:
-
-```yaml
-parallel:
-  max_workers: 3
-  fail_fast: false
-  aggregate_output: true
-```
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `max_workers` | int | `3` | Max concurrent tasks |
-| `fail_fast` | bool | `false` | Stop on first failure |
-| `aggregate_output` | bool | `true` | Combine task output |
-
----
-
-## Configuration Priority
-
-Values are resolved in this order (highest to lowest):
-
-1. **CLI Flags** - `clinvk --backend codex`
-2. **Environment Variables** - `CLINVK_BACKEND=codex`
-3. **Config File** - `~/.clinvk/config.yaml`
-4. **Defaults** - Built-in defaults
-
-## See Also
-
-- [Environment Variables](environment.md)
-- [config command](commands/config.md)
+`allowed_workdir_prefixes` and `blocked_workdir_prefixes` are matched by **path prefix**. Use prefixes **without** trailing slashes to match both the directory and its children (e.g., use `/var/www`, not `/var/www/`).

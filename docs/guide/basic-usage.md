@@ -1,160 +1,107 @@
 # Basic Usage
 
-Learn the fundamentals of using clinvk for everyday tasks.
+The daily workflow for `clinvk`.
 
-## Running Prompts
-
-The simplest way to use clinvk is to run a prompt with the default backend:
-
-```bash
-clinvk "your prompt here"
-```
-
-### Specifying a Backend
-
-Use the `--backend` (or `-b`) flag to choose a specific backend:
-
-```bash
-clinvk --backend claude "fix the bug in auth.go"
-clinvk -b codex "implement user registration"
-clinvk -b gemini "explain this algorithm"
-```
-
-### Specifying a Model
-
-Override the default model with `--model` (or `-m`):
-
-```bash
-clinvk --model claude-opus-4-5-20251101 "complex task"
-clinvk -b codex -m o3 "implement feature"
-```
-
-### Working Directory
-
-Set the working directory for the AI to operate in:
-
-```bash
-clinvk --workdir /path/to/project "review the codebase"
-clinvk -w ./subproject "fix tests"
-```
-
-## Output Formats
-
-Control how output is displayed:
-
-### Text (Default)
+## Run a prompt
 
 ```bash
 clinvk "explain this code"
 ```
 
-### JSON
+If no backend is specified, clinvk uses:
+
+1. `default_backend` from config
+2. fallback to `claude`
+
+## Choose a backend
 
 ```bash
-clinvk --output-format json "explain this code"
+clinvk -b claude "review this module"
+clinvk -b codex "optimize this function"
+clinvk -b gemini "summarize this document"
 ```
 
-### Streaming JSON
+## Pick a model
 
 ```bash
-clinvk -o stream-json "explain this code"
+clinvk -b claude -m claude-opus-4-5-20251101 "deep review"
+clinvk -b codex -m o3 "refactor this"
 ```
 
-## Continuing Conversations
-
-### Quick Continue
-
-Use `--continue` (or `-c`) to continue the last session:
+## Working directory
 
 ```bash
-clinvk "implement the login feature"
-clinvk -c "now add password validation"
-clinvk -c "add rate limiting"
+clinvk --workdir /path/to/project "scan for TODOs"
 ```
 
-### Resume Command
+If `--workdir` is omitted, the current directory is used.
 
-For more control, use the `resume` command:
+## Output formats
+
+Output format can be set per command or via config (`output.format`).
+
+### Text
 
 ```bash
-# Resume last session
-clinvk resume --last
-
-# Interactive session picker
-clinvk resume --interactive
-
-# Resume with a specific prompt
-clinvk resume --last "continue from where we left off"
+clinvk --output-format text "quick summary"
 ```
 
-See [Session Management](session-management.md) for more details.
-
-## Dry Run Mode
-
-Preview the command without executing:
+### JSON (default)
 
 ```bash
-clinvk --dry-run "implement feature X"
+clinvk --output-format json "quick summary"
 ```
 
-Output shows the exact command that would be run:
+### Stream JSON (CLI)
+
+```bash
+clinvk --output-format stream-json "stream output"
+```
+
+Notes:
+
+- CLI streaming passes through the **backend’s native stream format**.
+- For server streaming, see [HTTP Server](http-server.md) (unified events).
+
+## Continue the last session
+
+```bash
+clinvk "draft a migration plan"
+clinvk -c "add rollback strategy"
+```
+
+`-c/--continue` resumes the **most recent resumable session**. If no resumable session exists, a new one is created.
+
+## Dry run
+
+```bash
+clinvk --dry-run "generate release notes"
+```
+
+Dry run prints the exact backend command without executing it.
+
+## Ephemeral mode (stateless)
+
+```bash
+clinvk --ephemeral "one-off question"
+```
+
+No session is created. For backends that do not support native stateless mode, clinvk attempts cleanup after execution.
+
+## Output extras
+
+Text output can optionally include token usage and timing:
 
 ```yaml
-Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
+output:
+  show_tokens: true
+  show_timing: true
 ```
 
-## Ephemeral Mode
+(Only applies to text output.)
 
-Run in stateless mode without creating a session:
+## Next steps
 
-```bash
-clinvk --ephemeral "what is 2+2"
-```
-
-This is useful for quick one-off queries where you don't need conversation history.
-
-## Global Flags Summary
-
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--backend` | `-b` | AI backend to use | `claude` |
-| `--model` | `-m` | Model to use | (backend default) |
-| `--workdir` | `-w` | Working directory | (current dir) |
-| `--output-format` | `-o` | Output format | `json` |
-| `--continue` | `-c` | Continue last session | `false` |
-| `--dry-run` | | Show command only | `false` |
-| `--ephemeral` | | Stateless mode | `false` |
-| `--config` | | Config file path | `~/.clinvk/config.yaml` |
-
-## Examples
-
-### Quick Bug Fix
-
-```bash
-clinvk "there's a null pointer exception in utils.go line 45"
-```
-
-### Code Generation
-
-```bash
-clinvk -b codex "generate a REST API handler for user CRUD operations"
-```
-
-### Code Explanation
-
-```bash
-clinvk -b gemini "explain what the main function in cmd/server/main.go does"
-```
-
-### Refactoring
-
-```bash
-clinvk "refactor the database module to use connection pooling"
-clinvk -c "now add unit tests for the changes"
-```
-
-## Next Steps
-
-- [Session Management](session-management.md) - Work with sessions effectively
-- [Backend Comparison](backend-comparison.md) - Get multiple perspectives
-- [Configuration](../reference/configuration.md) - Customize your setup
+- [Session Management](session-management.md)
+- [Parallel Execution](parallel-execution.md)
+- [Backend Comparison](backend-comparison.md)

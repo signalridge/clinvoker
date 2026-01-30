@@ -1,73 +1,46 @@
 # clinvk resume
 
-恢复之前的会话。
+恢复已保存的会话。
 
-## 概要
+## 语法
 
 ```bash
-clinvk resume [session-id] [prompt] [flags]
+clinvk resume [session-id] [prompt]
 ```
 
-## 描述
+## 说明
 
-恢复之前的会话以继续对话。会话保持之前交互的上下文。
+恢复历史会话。会话必须包含后端 session id 才能恢复。
+
+不提供会话 ID 时会进入交互选择。
 
 ## 参数
 
-| 参数 | 描述 |
-|------|------|
-| `session-id` | 要恢复的会话 ID（使用 `--last` 或 `--interactive` 时可选） |
-| `prompt` | 后续提示（可选） |
-
-## 标志
-
-| 标志 | 简写 | 类型 | 默认值 | 描述 |
-|------|------|------|--------|------|
-| `--last` | | bool | `false` | 恢复最近的会话 |
-| `--interactive` | `-i` | bool | `false` | 交互式会话选择器 |
-| `--here` | | bool | `false` | 按当前目录筛选 |
-| `--backend` | `-b` | string | | 按后端筛选 |
+| 参数 | 简写 | 类型 | 默认值 | 说明 |
+|------|-------|------|---------|-------------|
+| `--last` | | bool | `false` | 恢复最近会话 |
+| `--backend` | `-b` | string | | 按后端过滤 |
+| `--here` | | bool | `false` | 按当前工作目录过滤 |
+| `--interactive` | `-i` | bool | `false` | 交互式选择器 |
+| `--output-format` | `-o` | string | 配置 / `json` | `text` / `json` / `stream-json` |
 
 ## 示例
 
-### 恢复上一个会话
-
 ```bash
-clinvk resume --last
-```
-
-### 恢复并带上后续提示
-
-```bash
-clinvk resume --last "从上次中断的地方继续"
-```
-
-### 交互式选择器
-
-```bash
-clinvk resume --interactive
-```
-
-### 从当前目录恢复
-
-```bash
-clinvk resume --here
-```
-
-### 按后端筛选
-
-```bash
-clinvk resume --backend claude
-```
-
-### 恢复特定会话
-
-```bash
+# 使用前缀或完整 ID
 clinvk resume abc123
-clinvk resume abc123 "现在添加测试"
+
+# 继续最近会话
+clinvk resume --last
+
+# 交互式选择
+clinvk resume --interactive
+
+# 继续时附带 prompt
+clinvk resume --last "继续处理"
 ```
 
-## 另请参阅
+## 说明
 
-- [sessions](sessions.md) - 列出和管理会话
-- [prompt](prompt.md) - 执行新提示
+- 没有后端 session id 的会话无法恢复。
+- 使用 `--last` 时会选择最近**可恢复**会话。
