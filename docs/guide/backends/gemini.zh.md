@@ -19,7 +19,7 @@ Gemini CLI 是 Google 的 Gemini AI 模型命令行接口。它擅长：
 # 验证安装
 which gemini
 gemini --version
-```bash
+```
 
 ## 基本用法
 
@@ -40,7 +40,7 @@ clinvk -b gemini "为这个 API 编写文档"
 
 ```bash
 clinvk -b gemini -m gemini-2.5-flash "快速解释"
-```text
+```
 
 ## 配置
 
@@ -63,7 +63,7 @@ backends:
 
 ```bash
 export CLINVK_GEMINI_MODEL=gemini-2.5-flash
-```bash
+```
 
 ## 会话管理
 
@@ -84,7 +84,7 @@ backends:
   gemini:
     extra_flags:
       - "--sandbox"
-```bash
+```
 
 ## 统一选项
 
@@ -119,7 +119,7 @@ clinvk -b gemini "为这个模块编写全面的文档"
 
 ```bash
 clinvk -b gemini "解释这个微服务的架构"
-```bash
+```
 
 ### 研究
 
@@ -131,7 +131,7 @@ clinvk -b gemini "实现速率限制的最佳实践是什么"
 
 ```bash
 clinvk -b gemini "审查这段代码并解释潜在问题"
-```text
+```
 
 ## 与其他后端的对比
 

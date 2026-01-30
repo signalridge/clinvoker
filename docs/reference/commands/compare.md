@@ -27,7 +27,7 @@ Send the same prompt to multiple AI backends and compare their responses side-by
 
 ```bash
 clinvk compare --backends claude,codex "explain this code"
-```bash
+```
 
 ### Compare All Backends
 
@@ -39,7 +39,7 @@ clinvk compare --all-backends "what does this function do"
 
 ```bash
 clinvk compare --all-backends --sequential "review this PR"
-```bash
+```
 
 ### JSON Output
 
@@ -89,7 +89,7 @@ Total time: 3.20s
   ],
   "total_duration_seconds": 3.2
 }
-```bash
+```
 
 ## Execution Modes
 
@@ -112,7 +112,7 @@ Run backends one at a time:
 
 ```bash
 clinvk compare --all-backends --sequential "prompt"
-```yaml
+```
 
 Benefits:
 

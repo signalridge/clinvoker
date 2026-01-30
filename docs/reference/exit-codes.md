@@ -19,7 +19,7 @@ The command completed successfully.
 ```bash
 clinvk "hello world"
 echo $?  # 0
-```bash
+```
 
 ### 1 - Error
 
@@ -77,7 +77,7 @@ if clinvk "implement feature"; then
 else
   echo "Failed"
 fi
-```bash
+```
 
 ### Handle Specific Codes
 
@@ -109,7 +109,7 @@ while [ $attempt -le $max_attempts ]; do
   attempt=$((attempt + 1))
   sleep 2
 done
-```bash
+```
 
 ## CI/CD Integration
 

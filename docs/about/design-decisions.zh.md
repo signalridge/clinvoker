@@ -90,7 +90,7 @@ clinvk 提供三类 API 端点：OpenAI 兼容、Anthropic 兼容和自定义 RE
 任务 A ─┬─→ 后端 1 ──┬─→ 结果 A
         ├─→ 后端 2 ──┤   结果 B
         └─→ 后端 3 ──┘   结果 C
-```text
+```
 
 - 独立任务并发运行
 - 快速失败选项提高效率
@@ -133,7 +133,7 @@ CLINVK_TIMEOUT=120
 clinvk --backend codex "prompt"
 
 # 结果：backend=codex (CLI), timeout=120 (env)
-```bash
+```
 
 ## HTTP 服务器设计
 

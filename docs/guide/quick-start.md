@@ -8,7 +8,7 @@ Run a simple prompt using the default backend (Claude Code):
 
 ```bash
 clinvk "explain what this project does"
-```bash
+```
 
 ## Specify a Backend
 
@@ -35,7 +35,7 @@ clinvk --continue "now add error handling"
 
 # Or use the resume command
 clinvk resume --last "add tests for the changes"
-```bash
+```
 
 ## Compare Backends
 
@@ -61,7 +61,7 @@ Execute multiple tasks concurrently. Create a `tasks.json` file:
     {"backend": "gemini", "prompt": "generate tests for utils"}
   ]
 }
-```yaml
+```
 
 Run the tasks:
 
@@ -81,7 +81,7 @@ Pass output through multiple backends sequentially. Create a `pipeline.json`:
     {"name": "summary", "backend": "codex", "prompt": "summarize the findings: {{previous}}"}
   ]
 }
-```yaml
+```
 
 Run the chain:
 
@@ -99,7 +99,7 @@ clinvk serve
 
 # Custom port
 clinvk serve --port 3000
-```yaml
+```
 
 Then make API requests:
 

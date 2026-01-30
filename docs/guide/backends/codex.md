@@ -19,7 +19,7 @@ Install Codex CLI from [OpenAI](https://github.com/openai/codex-cli):
 # Verify installation
 which codex
 codex --version
-```bash
+```
 
 ## Basic Usage
 
@@ -40,7 +40,7 @@ Specify a model:
 
 ```bash
 clinvk -b codex -m o3-mini "quick code generation"
-```text
+```
 
 ## Configuration
 
@@ -63,7 +63,7 @@ backends:
 
 ```bash
 export CLINVK_CODEX_MODEL=o3-mini
-```bash
+```
 
 ## Session Management
 
@@ -94,7 +94,7 @@ backends:
   codex:
     extra_flags:
       - "--quiet"
-```yaml
+```
 
 Common flags:
 
@@ -125,7 +125,7 @@ clinvk -b codex "create a CRUD API for the User model"
 
 ```bash
 clinvk -b codex "generate comprehensive unit tests for the auth module"
-```bash
+```
 
 ### Code Transformation
 
@@ -137,7 +137,7 @@ clinvk -b codex "convert this callback-based code to async/await"
 
 ```bash
 clinvk -b codex "implement a binary search function"
-```text
+```
 
 ## Comparison with Claude
 
@@ -179,7 +179,7 @@ which codex
 
 # Check clinvk detection
 clinvk config show | grep codex
-```bash
+```
 
 ### Model Errors
 

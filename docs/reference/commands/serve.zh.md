@@ -30,7 +30,7 @@ clinvk serve [flags]
 ```bash
 clinvk serve
 # 服务器运行在 http://127.0.0.1:8080
-```bash
+```
 
 ### 自定义端口
 

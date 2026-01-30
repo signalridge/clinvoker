@@ -19,7 +19,7 @@ Install Claude Code from [Anthropic](https://claude.ai/claude-code):
 # Verify installation
 which claude
 claude --version
-```bash
+```
 
 ## Basic Usage
 
@@ -40,7 +40,7 @@ Specify a model:
 
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
-```text
+```
 
 ## Configuration
 
@@ -75,7 +75,7 @@ backends:
 
 ```bash
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
-```text
+```
 
 ## Approval Modes
 
@@ -104,7 +104,7 @@ Or per-command (in tasks/chains):
   "prompt": "refactor the module",
   "approval_mode": "auto"
 }
-```bash
+```
 
 ## Sandbox Modes
 
@@ -142,7 +142,7 @@ Claude Code stores sessions and supports resuming:
 # Resume with clinvk
 clinvk resume --last --backend claude
 clinvk resume <session-id>
-```yaml
+```
 
 Internally uses Claude's `--resume` flag.
 
@@ -182,7 +182,7 @@ Common flags:
 
 ```bash
 clinvk -b claude "review this PR for security issues and code quality"
-```bash
+```
 
 ### Complex Refactoring
 
@@ -194,7 +194,7 @@ clinvk -b claude "refactor the authentication system to use JWT tokens"
 
 ```bash
 clinvk -b claude "analyze this codebase architecture and suggest improvements"
-```bash
+```
 
 ### Bug Investigation
 

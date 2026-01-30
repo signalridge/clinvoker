@@ -34,7 +34,7 @@ Resume a previous session to continue the conversation. Sessions maintain contex
 
 ```bash
 clinvk resume --last
-```bash
+```
 
 ### Resume with Follow-up
 
@@ -46,7 +46,7 @@ clinvk resume --last "continue from where we left off"
 
 ```bash
 clinvk resume --interactive
-```bash
+```
 
 This displays a list of recent sessions to choose from.
 
@@ -62,7 +62,7 @@ Only shows sessions created in the current working directory.
 
 ```bash
 clinvk resume --backend claude
-```bash
+```
 
 ### Resume Specific Session
 
