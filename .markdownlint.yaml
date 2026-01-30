@@ -1,0 +1,20 @@
+# Markdownlint configuration
+# https://github.com/DavidAnson/markdownlint-cli2#configuration
+
+# Default state for all rules
+default: true
+# Disable rules that conflict with GitHub Flavored Markdown or common practices
+MD013: false # Line length - too strict for READMEs
+MD024: false # Duplicate headings - allows multiple "Examples" sections
+MD029: false # Ordered list prefix - allows any numbering style
+MD033: false # Inline HTML - needed for badges and centered content
+MD041: false # First line heading - READMEs often have HTML first
+MD046: false # Code block style - allows indented blocks
+MD060: false # Table column style - too strict for compact tables
+# Configure specific rules
+MD007:
+  indent: 2 # List indentation
+MD012:
+  maximum: 2 # Multiple consecutive blank lines
+MD035:
+  style: '---' # Horizontal rule style

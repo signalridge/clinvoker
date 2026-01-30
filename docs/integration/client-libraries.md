@@ -49,7 +49,7 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="")
-```
+```text
 
 ### Anthropic SDK
 
@@ -113,7 +113,7 @@ response = httpx.post(
     timeout=120
 )
 print(response.json()["results"][-1]["output"])
-```
+```text
 
 ### Async Python
 
@@ -168,7 +168,7 @@ const stream = await client.chat.completions.create({
 for await (const chunk of stream) {
   process.stdout.write(chunk.choices[0]?.delta?.content || '');
 }
-```
+```text
 
 ### Anthropic SDK
 
@@ -218,7 +218,7 @@ const parallelData = await parallelResponse.json();
 parallelData.results.forEach((r: any) => {
   console.log(`${r.backend}: ${r.output}`);
 });
-```
+```text
 
 ## Go
 
@@ -301,7 +301,7 @@ func main() {
 
     fmt.Println(result.Output)
 }
-```
+```text
 
 ## Rust
 
@@ -375,7 +375,7 @@ curl -X POST http://localhost:8080/api/v1/chain \
       {"name": "improve", "backend": "codex", "prompt": "Improve: {{previous}}"}
     ]
   }'
-```
+```bash
 
 ## Error Handling
 

@@ -146,7 +146,7 @@ skip_if_missing_backends() {
 			missing+=("$backend")
 		fi
 	done
-	if (( ${#missing[@]} > 0 )); then
+	if ((${#missing[@]} > 0)); then
 		skip_test "${CURRENT_TEST_NAME:-unnamed test}" "backends not available: ${missing[*]}"
 		return 1
 	fi
@@ -500,7 +500,8 @@ generate_test_id() {
 # Create a temporary JSON file
 create_temp_json() {
 	local content="$1"
-	local temp_file="${TEST_TEMP_DIR}/$(generate_test_id).json"
+	local temp_file
+	temp_file="${TEST_TEMP_DIR}/$(generate_test_id).json"
 	echo "$content" >"$temp_file"
 	echo "$temp_file"
 }

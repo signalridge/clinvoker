@@ -4,7 +4,7 @@
 
 ## 概要
 
-```
+```bash
 clinvk resume [session-id] [prompt] [flags]
 ```
 
@@ -34,7 +34,7 @@ clinvk resume [session-id] [prompt] [flags]
 
 ```bash
 clinvk resume --last
-```
+```bash
 
 ### 恢复并带上后续提示
 
@@ -46,7 +46,7 @@ clinvk resume --last "从上次中断的地方继续"
 
 ```bash
 clinvk resume --interactive
-```
+```bash
 
 ### 从当前目录恢复
 
@@ -58,7 +58,7 @@ clinvk resume --here
 
 ```bash
 clinvk resume --backend claude
-```
+```bash
 
 ### 恢复特定会话
 

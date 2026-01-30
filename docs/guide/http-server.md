@@ -16,7 +16,7 @@ The `clinvk serve` command starts an HTTP server that provides:
 
 ```bash
 clinvk serve
-```
+```yaml
 
 The server starts on `http://127.0.0.1:8080` by default.
 
@@ -30,7 +30,7 @@ clinvk serve --port 3000
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 8080
-```
+```yaml
 
 !!! warning "Security"
     Binding to `0.0.0.0` exposes the server to the network. There is no built-in authentication.
@@ -47,7 +47,7 @@ Response:
 
 ```json
 {"status": "ok"}
-```
+```bash
 
 ### List Backends
 
@@ -61,7 +61,7 @@ curl http://localhost:8080/api/v1/backends
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "hello world"}'
-```
+```bash
 
 ## Endpoints Overview
 
@@ -133,7 +133,7 @@ message = client.messages.create(
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(message.content[0].text)
-```
+```text
 
 ### JavaScript/TypeScript
 
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8080/api/v1/parallel \
       {"backend": "codex", "prompt": "task 2"}
     ]
   }'
-```
+```text
 
 ## Configuration
 
@@ -201,7 +201,7 @@ server:
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 3000
-```
+```yaml
 
 CLI flags override config file settings.
 
@@ -232,7 +232,7 @@ Enable and start:
 ```bash
 sudo systemctl enable clinvk
 sudo systemctl start clinvk
-```
+```bash
 
 ### Docker
 
@@ -267,7 +267,7 @@ Create `~/Library/LaunchAgents/com.clinvk.server.plist`:
     <true/>
 </dict>
 </plist>
-```
+```yaml
 
 Load the service:
 

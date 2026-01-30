@@ -9,10 +9,9 @@ source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Test: Request without trace headers gets trace ID in response
 test_trace_header_in_response() {
-	local response trace_id
+	local response
 
 	response=$(http_get "/health")
-	trace_id=$(echo "$response" | jq -r '.trace_id // empty' 2>/dev/null || true)
 
 	# Trace ID might not be in response body, check headers instead
 	local headers
@@ -77,7 +76,7 @@ test_invalid_traceparent_handled() {
 
 # Test: Multiple requests generate different trace contexts
 test_different_traces() {
-	local response1 response2 trace1 trace2
+	local trace1 trace2
 
 	# Make two requests and check if response headers differ
 	local headers1 headers2

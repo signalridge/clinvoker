@@ -4,7 +4,7 @@
 
 ## 概要
 
-```
+```bash
 clinvk config [command]
 ```
 
@@ -25,7 +25,7 @@ clinvk config [command]
 
 ```bash
 clinvk config show
-```
+```bash
 
 ---
 

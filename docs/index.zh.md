@@ -27,6 +27,7 @@ clinvk -b gemini --ephemeral "分析这个数据集..."
 ```
 
 **使用场景：**
+
 - Claude 分析代码，然后 Codex 生成修复
 - 多模型从不同视角进行代码审查
 - 将专业任务路由到最适合的模型
@@ -47,6 +48,7 @@ response = client.chat.completions.create(
 ```
 
 **兼容：**
+
 - OpenAI SDK（Python、TypeScript、Go）
 - Anthropic SDK
 - LangChain / LangGraph

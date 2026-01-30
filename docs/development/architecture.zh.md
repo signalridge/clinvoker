@@ -22,11 +22,12 @@ flowchart TD
     Claude --> ExtClaude["claude 二进制"]
     Codex --> ExtCodex["codex 二进制"]
     Gemini --> ExtGemini["gemini 二进制"]
-```
+```text
 
 ## 项目结构
 
 ```
+
 cmd/clinvk/           入口点
 internal/
 ├── app/              CLI 命令和编排
@@ -35,7 +36,8 @@ internal/
 ├── server/           HTTP API 服务器
 ├── session/          会话持久化
 └── config/           配置加载
-```
+
+```text
 
 ## 层级概述
 
@@ -89,13 +91,14 @@ type Backend interface {
 
 HTTP API，支持多种风格：
 
-```
+```text
 /api/v1/          自定义 RESTful API
 /openai/v1/       OpenAI 兼容 API
 /anthropic/v1/    Anthropic 兼容 API
 ```
 
 组件：
+
 - `server.go` - 服务器设置和路由
 - `handlers/` - 请求处理器
 - `service/` - 业务逻辑
@@ -113,7 +116,7 @@ type Session struct {
     UpdatedAt time.Time
     Metadata  map[string]any
 }
-```
+```yaml
 
 存储：`~/.clinvk/sessions/` 中的 JSON 文件
 
@@ -172,7 +175,7 @@ sequenceDiagram
     W1-->>Agg: 结果 1
     W2-->>Agg: 结果 2
     Agg-->>User: 合并结果
-```
+```text
 
 ### 链式执行
 
@@ -199,6 +202,7 @@ sequenceDiagram
 ### 1. 后端抽象
 
 所有后端实现通用接口：
+
 - 轻松添加新后端
 - 跨后端一致行为
 - 与后端无关的编排
@@ -206,6 +210,7 @@ sequenceDiagram
 ### 2. 会话持久化
 
 会话存储为 JSON 文件：
+
 - 跨调用可恢复
 - 易于调试和检查
 - 无数据库依赖
@@ -213,6 +218,7 @@ sequenceDiagram
 ### 3. HTTP API 兼容性
 
 多种 API 风格用于集成：
+
 - 自定义 API 用于完整功能
 - OpenAI 兼容用于现有工具
 - Anthropic 兼容用于 Claude 客户端
@@ -224,16 +230,19 @@ sequenceDiagram
 ## 安全考虑
 
 ### 子进程执行
+
 - 命令以编程方式构建，非 shell 解释
 - 工作目录经过验证
 - 超时防止进程失控
 
 ### 配置
+
 - 配置文件使用严格权限
 - 会话中不存储敏感数据
 - API 密钥由底层 CLI 工具处理
 
 ### HTTP 服务器
+
 - 默认绑定到 localhost
 - 无内置认证（用于本地使用）
 - 通过 huma/v2 进行请求验证
@@ -241,11 +250,13 @@ sequenceDiagram
 ## 性能
 
 ### 并行执行
+
 - 可配置的工作池大小
 - 快速失败选项提前终止
 - 内存高效的结果聚合
 
 ### 会话存储
+
 - 常见查询的索引查找
 - 大会话列表分页
 - 会话内容延迟加载

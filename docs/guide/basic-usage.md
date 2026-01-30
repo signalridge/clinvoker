@@ -8,7 +8,7 @@ The simplest way to use clinvk is to run a prompt with the default backend:
 
 ```bash
 clinvk "your prompt here"
-```
+```bash
 
 ### Specifying a Backend
 
@@ -27,7 +27,7 @@ Override the default model with `--model` (or `-m`):
 ```bash
 clinvk --model claude-opus-4-5-20251101 "complex task"
 clinvk -b codex -m o3 "implement feature"
-```
+```bash
 
 ### Working Directory
 
@@ -46,7 +46,7 @@ Control how output is displayed:
 
 ```bash
 clinvk "explain this code"
-```
+```bash
 
 ### JSON
 
@@ -58,7 +58,7 @@ clinvk --output-format json "explain this code"
 
 ```bash
 clinvk -o stream-json "explain this code"
-```
+```bash
 
 ## Continuing Conversations
 
@@ -85,7 +85,7 @@ clinvk resume --interactive
 
 # Resume with a specific prompt
 clinvk resume --last "continue from where we left off"
-```
+```yaml
 
 See [Session Management](session-management.md) for more details.
 
@@ -99,7 +99,7 @@ clinvk --dry-run "implement feature X"
 
 Output shows the exact command that would be run:
 
-```
+```yaml
 Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
 ```
 
@@ -109,7 +109,7 @@ Run in stateless mode without creating a session:
 
 ```bash
 clinvk --ephemeral "what is 2+2"
-```
+```bash
 
 This is useful for quick one-off queries where you don't need conversation history.
 
@@ -138,7 +138,7 @@ clinvk "there's a null pointer exception in utils.go line 45"
 
 ```bash
 clinvk -b codex "generate a REST API handler for user CRUD operations"
-```
+```bash
 
 ### Code Explanation
 

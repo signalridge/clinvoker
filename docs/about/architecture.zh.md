@@ -28,7 +28,7 @@ flowchart TB
     Exec --> Codex
     Exec --> Gemini
     Exec <--> Session
-```
+```bash
 
 ## 核心原则
 
@@ -70,7 +70,7 @@ clinvk 不替代 AI CLI 工具——而是封装它们：
 
 ### 单个提示
 
-```
+```text
 用户 → CLI → 执行器 → 后端 CLI → AI 响应 → 用户
 ```
 
@@ -86,7 +86,7 @@ flowchart LR
     B2 --> Agg
     B3 --> Agg
     Agg --> User2["用户"]
-```
+```text
 
 ### 链式执行
 
@@ -120,7 +120,7 @@ sequenceDiagram
 
 会话以 JSON 文件形式存储：
 
-```
+```text
 ~/.clinvk/sessions/
 ├── 4f3a2c1d.json
 ├── 9a8b7c6d.json

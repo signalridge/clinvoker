@@ -8,7 +8,7 @@ Learn how to configure clinvk for your workflow. This guide covers common scenar
 
 ```bash
 clinvk config show
-```
+```bash
 
 This shows all settings including which backends are available on your system.
 
@@ -22,7 +22,7 @@ clinvk config set default_backend claude
 clinvk config set default_backend gemini
 ```
 
-### 3. Done!
+### 3. Done
 
 That's it for basic setup. clinvk works out of the box with sensible defaults.
 
@@ -35,7 +35,7 @@ clinvk stores configuration in `~/.clinvk/config.yaml`. You can edit it directly
 ```yaml
 # ~/.clinvk/config.yaml
 default_backend: claude
-```
+```text
 
 ### Recommended Configuration
 
@@ -69,7 +69,7 @@ backends:
     model: o3                           # For code generation
   gemini:
     model: gemini-2.5-pro              # For general tasks
-```
+```yaml
 
 **Usage:**
 
@@ -91,7 +91,7 @@ unified_flags:
   approval_mode: auto    # Auto-approve all actions
 output:
   format: json           # Machine-readable output
-```
+```yaml
 
 !!! warning "Security Note"
     Only use `auto` approval mode in trusted environments. The AI can execute file operations and commands.
@@ -125,7 +125,7 @@ EOF
 
 # Use project config
 clinvk --config .clinvk.yaml "review the auth module"
-```
+```bash
 
 ### Scenario 5: HTTP Server for Integration
 
@@ -152,7 +152,73 @@ parallel:
   max_workers: 5       # Run up to 5 tasks simultaneously
   fail_fast: false     # Continue even if some tasks fail
   aggregate_output: true
+```text
+
+### Scenario 7: Production API Server
+
+For production deployment with security and observability:
+
+```yaml
+server:
+  host: "127.0.0.1"
+  port: 8080
+  # Request size limiting prevents large payload attacks
+  max_request_body_bytes: 5242880  # 5MB limit
+  # Rate limiting prevents abuse
+  rate_limit_enabled: true
+  rate_limit_rps: 20
+  rate_limit_burst: 50
+  # CORS for web frontend
+  cors_allowed_origins:
+    - "https://myapp.example.com"
+    - "http://localhost:3000"
+  # Enable Prometheus metrics
+  metrics_enabled: true
+
+# Working directory restrictions
+server:
+  allowed_workdir_prefixes:
+    - "/home/user/projects"
+    - "/var/www"
+  blocked_workdir_prefixes:
+    - "/etc"
+    - "/root"
+    - "/usr/bin"
 ```
+
+### Scenario 8: Rate Limiting Configuration
+
+For servers exposed to the internet:
+
+```yaml
+server:
+  # Basic rate limiting
+  rate_limit_enabled: true
+  rate_limit_rps: 10
+  rate_limit_burst: 20
+
+  # Trusted proxies (if behind reverse proxy)
+  trusted_proxies:
+    - "127.0.0.1"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+```text
+
+### Scenario 9: Metrics and Observability
+
+For monitoring with Prometheus:
+
+```yaml
+server:
+  # Enable Prometheus metrics endpoint
+  metrics_enabled: true
+
+  # Request size limits for resource protection
+  max_request_body_bytes: 10485760  # 10MB
+```
+
+Access metrics at `http://localhost:8080/metrics`
 
 ## Backend-Specific Settings
 
@@ -167,7 +233,7 @@ backends:
     extra_flags:
       - "--add-dir"
       - "./docs"                    # Include docs in context
-```
+```yaml
 
 **Available models:**
 
@@ -194,7 +260,7 @@ backends:
     model: gemini-2.5-pro
     extra_flags:
       - "--sandbox"
-```
+```bash
 
 ## Environment Variables
 
@@ -229,7 +295,7 @@ Keep project-specific settings in `.clinvk.yaml` in your repo:
 
 ```bash
 clinvk --config .clinvk.yaml "your prompt"
-```
+```text
 
 ### 3. Secure Your Server
 
@@ -247,7 +313,7 @@ For long-running tasks:
 ```yaml
 server:
   request_timeout_secs: 600    # 10 minutes
-```
+```text
 
 ### 5. Use Read-Only for Reviews
 
@@ -268,7 +334,7 @@ clinvk config show
 
 # Verify config file location
 ls -la ~/.clinvk/config.yaml
-```
+```bash
 
 ### Backend Not Available
 
@@ -288,7 +354,7 @@ rm ~/.clinvk/config.yaml
 
 # Verify defaults
 clinvk config show
-```
+```text
 
 ## Configuration Templates
 
@@ -322,7 +388,7 @@ output:
 parallel:
   max_workers: 3
   fail_fast: true
-```
+```text
 
 ### API Server
 

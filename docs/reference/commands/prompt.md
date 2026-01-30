@@ -4,7 +4,7 @@ Execute a prompt with an AI backend.
 
 ## Synopsis
 
-```
+```bash
 clinvk [flags] [prompt]
 ```
 
@@ -30,7 +30,7 @@ The root command executes a prompt using the configured AI backend. This is the 
 
 ```bash
 clinvk "fix the bug in auth.go"
-```
+```bash
 
 ### Specify Backend
 
@@ -43,7 +43,7 @@ clinvk -b gemini "explain this algorithm"
 
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
-```
+```bash
 
 ### Continue Session
 
@@ -57,7 +57,7 @@ clinvk -c "add rate limiting"
 
 ```bash
 clinvk --output-format json "explain this code"
-```
+```bash
 
 ### Dry Run
 
@@ -70,7 +70,7 @@ clinvk --dry-run "implement feature X"
 
 ```bash
 clinvk --ephemeral "what is 2+2"
-```
+```bash
 
 ### Set Working Directory
 
@@ -100,7 +100,7 @@ The AI's response is printed to stdout.
     "total_tokens": 579
   }
 }
-```
+```text
 
 ### Stream JSON Format
 

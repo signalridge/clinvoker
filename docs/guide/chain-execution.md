@@ -32,7 +32,7 @@ Create a `pipeline.json` file:
     }
   ]
 }
-```
+```bash
 
 ### Run the Chain
 
@@ -70,7 +70,7 @@ Use these placeholders in prompts to reference previous outputs:
     }
   ]
 }
-```
+```text
 
 ## Step Options
 
@@ -126,7 +126,7 @@ Get structured results for programmatic use:
 
 ```bash
 clinvk chain --file pipeline.json --json
-```
+```yaml
 
 Output:
 
@@ -186,7 +186,7 @@ Output:
     }
   ]
 }
-```
+```text
 
 ### Documentation Generation
 
@@ -234,18 +234,20 @@ Output:
     }
   ]
 }
-```
+```text
 
 ## Error Handling
 
 If a step fails, the chain stops and reports the error:
 
 ```
+
 Step 1 (analyze): Completed (2.1s)
 Step 2 (implement): Failed - Backend error: rate limit exceeded
 
 Chain failed at step 2
-```
+
+```yaml
 
 With `--json`, failed steps include error information:
 

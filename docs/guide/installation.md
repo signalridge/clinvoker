@@ -14,7 +14,8 @@ Download the latest release for your platform from [GitHub Releases](https://git
     curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
     tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
-    ```
+
+```yaml
 
 === "macOS (arm64)"
 
@@ -24,7 +25,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
     curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
     tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
-    ```
+```
 
 === "Windows"
 
@@ -36,7 +37,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 ```bash
 brew install signalridge/tap/clinvk
-```
+```text
 
 ### Scoop (Windows)
 
@@ -56,7 +57,7 @@ nix profile install github:signalridge/clinvoker
 
 # Development shell
 nix develop github:signalridge/clinvoker
-```
+```yaml
 
 Add to your flake:
 
@@ -77,7 +78,7 @@ yay -S clinvk-bin
 
 # Or build from source
 yay -S clinvk
-```
+```text
 
 ### Debian/Ubuntu
 
@@ -91,7 +92,7 @@ sudo dpkg -i clinvk_*.deb
 ```bash
 # Download the .rpm package from releases
 sudo rpm -i clinvk_*.rpm
-```
+```bash
 
 ## From Source
 
@@ -110,7 +111,7 @@ git clone https://github.com/signalridge/clinvoker.git
 cd clinvoker
 go build -o clinvk ./cmd/clinvk
 sudo mv clinvk /usr/local/bin/
-```
+```bash
 
 ## Verify Installation
 
@@ -122,7 +123,7 @@ clinvk version
 
 Expected output:
 
-```
+```yaml
 clinvk version v0.x.x
   commit: abc1234
   built:  2025-01-27T00:00:00Z

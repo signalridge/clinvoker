@@ -22,7 +22,7 @@ By participating, you agree to maintain a respectful and inclusive environment f
 git clone https://github.com/YOUR_USERNAME/clinvoker.git
 cd clinvoker
 git remote add upstream https://github.com/signalridge/clinvoker.git
-```
+```text
 
 ## Development Setup
 
@@ -30,7 +30,7 @@ git remote add upstream https://github.com/signalridge/clinvoker.git
 
 ```bash
 nix develop
-```
+```bash
 
 Provides all required tools in a reproducible environment.
 
@@ -40,7 +40,7 @@ Provides all required tools in a reproducible environment.
 go mod download
 go build ./cmd/clinvk
 ./clinvk version
-```
+```text
 
 ### Pre-commit Hooks
 
@@ -68,19 +68,19 @@ Use conventional branch names:
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```yaml
 type(scope): description
 
 [optional body]
 
 [optional footer]
-```
+```yaml
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 Examples:
 
-```
+```yaml
 feat(backend): add support for new AI provider
 fix(session): handle concurrent access correctly
 docs(readme): update installation instructions
@@ -102,7 +102,7 @@ go test -coverprofile=coverage.txt ./...
 
 # Short tests only
 go test -short ./...
-```
+```text
 
 ### Writing Tests
 
@@ -139,7 +139,7 @@ func TestMyFunction(t *testing.T) {
         })
     }
 }
-```
+```text
 
 ## Code Style
 
@@ -163,7 +163,7 @@ return apperrors.BackendError("claude", err)
 if apperrors.IsCode(err, apperrors.ErrCodeBackendUnavailable) {
     // Handle specific error
 }
-```
+```text
 
 ## Submitting Changes
 

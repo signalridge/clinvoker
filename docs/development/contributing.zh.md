@@ -22,7 +22,7 @@
 git clone https://github.com/YOUR_USERNAME/clinvoker.git
 cd clinvoker
 git remote add upstream https://github.com/signalridge/clinvoker.git
-```
+```text
 
 ## 开发设置
 
@@ -38,7 +38,7 @@ nix develop
 go mod download
 go build ./cmd/clinvk
 ./clinvk version
-```
+```text
 
 ## 进行更改
 
@@ -60,12 +60,14 @@ go build ./cmd/clinvk
 遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
 
 ```
+
 type(scope): description
 
 [可选正文]
 
 [可选页脚]
-```
+
+```bash
 
 类型：`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 

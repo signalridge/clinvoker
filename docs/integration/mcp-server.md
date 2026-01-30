@@ -50,7 +50,7 @@ flowchart TB
     style clients fill:#e3f2fd,stroke:#1976d2
     style server fill:#fff3e0,stroke:#f57c00
     style backends fill:#f3e5f5,stroke:#7b1fa2
-```
+```text
 
 ## Planned Tools
 
@@ -109,7 +109,7 @@ Execute multiple prompts in parallel.
     "required": ["tasks"]
   }
 }
-```
+```text
 
 ### `clinvk_chain`
 
@@ -155,7 +155,7 @@ Execute a chain of prompts sequentially.
     }
   }
 }
-```
+```bash
 
 ### Starting the MCP Server
 
@@ -173,7 +173,7 @@ clinvk mcp --transport http --port 3000
 
 Claude Desktop could use clinvk to get perspectives from multiple AI models:
 
-```
+```yaml
 User: Review this code from multiple perspectives
 
 Claude: I'll use the clinvk_parallel tool to get reviews from different AI models.
@@ -188,7 +188,7 @@ Here are the combined perspectives:
 
 ### 2. Documentation Pipeline
 
-```
+```yaml
 User: Generate documentation for this codebase
 
 Claude: I'll use the clinvk_chain tool to create documentation through a pipeline.
@@ -200,7 +200,7 @@ Here's the polished documentation: ...
 
 ### 3. Specialized Task Routing
 
-```
+```yaml
 User: Optimize this SQL query
 
 Claude: I'll route this to Gemini, which excels at data analysis.

@@ -85,18 +85,20 @@ Provide both parallel (concurrent) and chain (sequential) execution modes.
 ### Design Principles
 
 **Parallel Execution:**
-```
+
+```text
 Task A ─┬─→ Backend 1 ──┬─→ Result A
         ├─→ Backend 2 ──┤   Result B
         └─→ Backend 3 ──┘   Result C
-```
+```yaml
 
 - Independent tasks run concurrently
 - Fail-fast option for efficiency
 - Results aggregated at completion
 
 **Chain Execution:**
-```
+
+```text
 Input → Backend 1 → {{previous}} → Backend 2 → {{previous}} → Backend 3 → Output
 ```
 
@@ -131,7 +133,7 @@ CLINVK_TIMEOUT=120
 clinvk --backend codex "prompt"
 
 # Result: backend=codex (CLI), timeout=120 (env)
-```
+```text
 
 ## HTTP Server Design
 
@@ -184,6 +186,7 @@ Propagate errors with context, fail gracefully.
 ### MCP Server Support
 
 We're evaluating adding Model Context Protocol (MCP) server support to enable:
+
 - Direct integration with Claude Desktop
 - Standardized tool calling interface
 - Ecosystem compatibility
@@ -191,6 +194,7 @@ We're evaluating adding Model Context Protocol (MCP) server support to enable:
 ### Additional Backends
 
 The backend abstraction allows adding new AI CLIs as they become available. Requirements for new backends:
+
 - CLI supports non-interactive mode
 - Structured output (JSON preferred)
 - Session management (optional but preferred)

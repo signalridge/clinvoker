@@ -1,0 +1,14 @@
+# Dependencies
+**/node_modules/**
+**/vendor/
+
+# Git
+.git/
+
+# Generated files
+CHANGELOG.md
+
+# Build artifacts
+dist/
+build/
+bin/

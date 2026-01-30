@@ -7,11 +7,13 @@ clinvk 的所有重要更改都记录在此。
 ## [未发布]
 
 ### 新增
+
 - MkDocs 文档站点，使用 Material 主题
 - 双语支持（英文和中文）
 - 全面的用户指南和参考文档
 
 ### 变更
+
 - 文档重构为 getting-started、user-guide、server、reference、development 和 appendix 部分
 
 ## [0.1.0] - 2025-01-27

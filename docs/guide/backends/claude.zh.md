@@ -19,7 +19,7 @@ Claude Code 是 Anthropic 的强大 AI 编程助手。它擅长：
 # 验证安装
 which claude
 claude --version
-```
+```bash
 
 ## 基本用法
 
@@ -40,7 +40,7 @@ clinvk -b claude "解释这个代码库"
 
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
-```
+```text
 
 ## 配置
 
@@ -75,7 +75,7 @@ backends:
 
 ```bash
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
-```
+```text
 
 ## 审批模式
 
@@ -104,7 +104,7 @@ backends:
   "prompt": "重构模块",
   "approval_mode": "auto"
 }
-```
+```text
 
 ## 沙箱模式
 
@@ -151,7 +151,7 @@ backends:
 
 ```bash
 clinvk -b claude "审查这个 PR 的安全问题和代码质量"
-```
+```bash
 
 ### 复杂重构
 
@@ -163,7 +163,7 @@ clinvk -b claude "重构认证系统以使用 JWT token"
 
 ```bash
 clinvk -b claude "分析这个代码库架构并建议改进"
-```
+```bash
 
 ### Bug 调查
 

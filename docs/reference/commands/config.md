@@ -4,7 +4,7 @@ Manage configuration.
 
 ## Synopsis
 
-```
+```bash
 clinvk config [command]
 ```
 
@@ -25,7 +25,7 @@ Display the current configuration with all sources resolved.
 
 ```bash
 clinvk config show
-```
+```text
 
 ### Output
 
@@ -90,7 +90,7 @@ Set a configuration value.
 
 ```bash
 clinvk config set <key> <value>
-```
+```bash
 
 ### Examples
 

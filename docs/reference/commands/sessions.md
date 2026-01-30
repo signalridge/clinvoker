@@ -4,7 +4,7 @@ Manage sessions.
 
 ## Synopsis
 
-```
+```bash
 clinvk sessions [command] [flags]
 ```
 
@@ -48,16 +48,18 @@ clinvk sessions list --status active
 
 # Combine filters
 clinvk sessions list --backend claude --status active --limit 5
-```
+```text
 
 ### Output
 
 ```
+
 ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1,234        fix the bug in auth.go
 def456    codex     completed  2 hours ago     5,678        implement user registration
 ghi789    gemini    error      1 day ago       0            failed task
-```
+
+```bash
 
 ---
 
@@ -75,11 +77,12 @@ clinvk sessions show <session-id>
 
 ```bash
 clinvk sessions show abc123
-```
+```text
 
 ### Output
 
 ```
+
 ID:                abc123
 Backend:           claude
 Model:             claude-opus-4-5-20251101
@@ -92,7 +95,8 @@ Token Usage:
   Output:          5,678
   Cached:          500
   Total:           6,912
-```
+
+```bash
 
 ---
 
@@ -110,13 +114,15 @@ clinvk sessions delete <session-id>
 
 ```bash
 clinvk sessions delete abc123
-```
+```text
 
 ### Output
 
 ```
+
 Session abc123 deleted
-```
+
+```yaml
 
 ---
 
@@ -153,7 +159,7 @@ clinvk sessions clean
 
 ### Output
 
-```
+```text
 Cleaned 15 sessions older than 30 days
 ```
 

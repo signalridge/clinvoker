@@ -4,7 +4,7 @@
 
 ## 概要
 
-```
+```bash
 clinvk parallel [flags]
 ```
 
@@ -37,7 +37,7 @@ clinvk parallel [flags]
   "max_parallel": 3,
   "fail_fast": true
 }
-```
+```bash
 
 ### 任务字段
 
@@ -82,7 +82,7 @@ clinvk parallel --file tasks.json
 
 ```bash
 cat tasks.json | clinvk parallel
-```
+```bash
 
 ### 限制工作器
 
@@ -94,7 +94,7 @@ clinvk parallel --file tasks.json --max-parallel 2
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```
+```bash
 
 ### JSON 输出
 
@@ -109,6 +109,7 @@ cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk paral
 ```
 
 写入内容：
+
 - `summary.json`（汇总结果）
 - 每个任务的 JSON 文件（包含 task + result）
 

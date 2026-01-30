@@ -22,11 +22,12 @@ flowchart TD
     Claude --> ExtClaude["claude binary"]
     Codex --> ExtCodex["codex binary"]
     Gemini --> ExtGemini["gemini binary"]
-```
+```text
 
 ## Project Structure
 
 ```
+
 cmd/clinvk/           Entry point
 internal/
 ├── app/              CLI commands and orchestration
@@ -35,7 +36,8 @@ internal/
 ├── server/           HTTP API server
 ├── session/          Session persistence
 └── config/           Configuration loading
-```
+
+```text
 
 ## Layer Overview
 
@@ -89,13 +91,14 @@ Handles command execution:
 
 HTTP API with multiple styles:
 
-```
+```text
 /api/v1/          Custom RESTful API
 /openai/v1/       OpenAI-compatible API
 /anthropic/v1/    Anthropic-compatible API
 ```
 
 Components:
+
 - `server.go` - Server setup and routing
 - `handlers/` - Request handlers
 - `service/` - Business logic
@@ -113,7 +116,7 @@ type Session struct {
     UpdatedAt time.Time
     Metadata  map[string]any
 }
-```
+```yaml
 
 Storage: JSON files in `~/.clinvk/sessions/`
 
@@ -172,7 +175,7 @@ sequenceDiagram
     W1-->>Agg: result 1
     W2-->>Agg: result 2
     Agg-->>User: combined results
-```
+```text
 
 ### Chain Execution
 
@@ -199,6 +202,7 @@ sequenceDiagram
 ### 1. Backend Abstraction
 
 All backends implement a common interface, enabling:
+
 - Easy addition of new backends
 - Consistent behavior across backends
 - Backend-agnostic orchestration
@@ -206,6 +210,7 @@ All backends implement a common interface, enabling:
 ### 2. Session Persistence
 
 Sessions stored as JSON files for:
+
 - Resumability across invocations
 - Easy debugging and inspection
 - No database dependency
@@ -213,6 +218,7 @@ Sessions stored as JSON files for:
 ### 3. HTTP API Compatibility
 
 Multiple API styles for integration:
+
 - Custom API for full functionality
 - OpenAI-compatible for existing tooling
 - Anthropic-compatible for Claude clients
@@ -224,16 +230,19 @@ Real-time output via subprocess stdout/stderr pipes with chunk-based parsing.
 ## Security Considerations
 
 ### Subprocess Execution
+
 - Commands built programmatically, not shell-interpreted
 - Working directory validated
 - Timeouts prevent runaway processes
 
 ### Configuration
+
 - Config file uses restrictive permissions
 - No sensitive data in sessions
 - API keys handled by underlying CLI tools
 
 ### HTTP Server
+
 - Binds to localhost by default
 - No built-in authentication (intended for local use)
 - Request validation via huma/v2
@@ -241,11 +250,13 @@ Real-time output via subprocess stdout/stderr pipes with chunk-based parsing.
 ## Performance
 
 ### Parallel Execution
+
 - Configurable worker pool size
 - Fail-fast option for early termination
 - Memory-efficient result aggregation
 
 ### Session Store
+
 - Indexed lookups for common queries
 - Pagination for large session lists
 - Lazy loading of session content

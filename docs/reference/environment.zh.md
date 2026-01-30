@@ -21,7 +21,7 @@ clinvk 支持的所有环境变量参考。
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "实现功能"  # 使用 codex
-```
+```bash
 
 ### 设置每个后端的模型
 
@@ -37,7 +37,7 @@ clinvk -b codex "快速任务"   # 使用 o3-mini
 
 ```bash
 CLINVK_BACKEND=gemini clinvk "解释这个"
-```
+```bash
 
 ## 优先级
 
@@ -64,7 +64,7 @@ clinvk -b claude "提示"  # 使用 claude（CLI 参数优先）
 ```bash
 export CLINVK_BACKEND=claude
 export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-```
+```bash
 
 ### Zsh
 
@@ -82,7 +82,7 @@ export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 ```fish
 set -gx CLINVK_BACKEND claude
 set -gx CLINVK_CLAUDE_MODEL claude-opus-4-5-20251101
-```
+```bash
 
 ## 项目级配置
 

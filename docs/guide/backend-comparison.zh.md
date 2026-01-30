@@ -19,7 +19,7 @@
 
 ```bash
 clinvk compare --all-backends "解释这个算法"
-```
+```bash
 
 ### 对比特定后端
 
@@ -38,7 +38,7 @@ clinvk compare --backends claude,gemini "审查这个 PR"
 
 ```bash
 clinvk compare --all-backends "解释这段代码"
-```
+```bash
 
 ### 顺序
 
@@ -60,7 +60,7 @@ clinvk compare --all-backends --sequential "审查这个实现"
 
 显示每个后端的响应，带有清晰的分隔：
 
-```
+```yaml
 Prompt: 解释这个算法
 
 ━━━ claude ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -88,7 +88,7 @@ Duration: 2.8s
 
 ```bash
 clinvk compare --all-backends --json "解释这段代码"
-```
+```yaml
 
 输出：
 
@@ -131,7 +131,7 @@ clinvk compare --all-backends --json "解释这段代码"
 
 ```bash
 clinvk compare --all-backends "审查这段代码的 bug 和改进建议"
-```
+```bash
 
 ### 架构决策
 
@@ -147,7 +147,7 @@ clinvk compare --backends claude,gemini "这里实现缓存的最佳方式是什
 
 ```bash
 clinvk compare --all-backends "解释 JavaScript 中的 async/await 工作原理"
-```
+```bash
 
 ### 验证
 
@@ -161,7 +161,7 @@ clinvk compare --all-backends "这个实现安全吗？"
 
 如果后端失败，对比会继续处理剩余的后端：
 
-```
+```yaml
 Comparing 3 backends: claude, codex, gemini
 Prompt: explain this code
 ============================================================

@@ -19,15 +19,17 @@ clinvk 自动跟踪会话，以便您可以恢复对话并在调用之间保持�
 
 ```bash
 clinvk sessions list
-```
+```text
 
 输出：
 
 ```
+
 ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 分钟前        1,234        修复 auth.go 中的 bug
 def456    codex     completed  2 小时前        5,678        实现用户注册
-```
+
+```bash
 
 ### 筛选会话
 
@@ -53,7 +55,7 @@ clinvk sessions list --backend claude --status active --limit 5
 
 ```bash
 clinvk resume --last
-```
+```bash
 
 或带上后续提示：
 
@@ -67,7 +69,7 @@ clinvk resume --last "添加错误处理"
 
 ```bash
 clinvk resume --interactive
-```
+```bash
 
 ### 按 ID 恢复
 
@@ -84,7 +86,7 @@ clinvk resume abc123 "继续测试"
 
 ```bash
 clinvk resume --here
-```
+```bash
 
 ### 按后端筛选
 
@@ -100,7 +102,7 @@ clinvk resume --backend claude
 clinvk "实现功能"
 clinvk -c "现在添加测试"
 clinvk -c "更新文档"
-```
+```bash
 
 这会自动恢复最近的会话。
 
@@ -114,7 +116,7 @@ clinvk sessions show abc123
 
 输出：
 
-```
+```yaml
 ID:                abc123
 Backend:           claude
 Model:             claude-opus-4-5-20251101
@@ -135,7 +137,7 @@ Token Usage:
 
 ```bash
 clinvk sessions delete abc123
-```
+```bash
 
 ### 清理旧会话
 
@@ -169,7 +171,7 @@ session:
 
   # 自动添加到新会话的标签
   default_tags: []
-```
+```bash
 
 ## 无状态模式
 

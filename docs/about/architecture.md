@@ -28,7 +28,7 @@ flowchart TB
     Exec --> Codex
     Exec --> Gemini
     Exec <--> Session
-```
+```bash
 
 ## Key Principles
 
@@ -70,7 +70,7 @@ Complex workflows are built from simple primitives:
 
 ### Single Prompt
 
-```
+```text
 User → CLI → Executor → Backend CLI → AI Response → User
 ```
 
@@ -86,7 +86,7 @@ flowchart LR
     B2 --> Agg
     B3 --> Agg
     Agg --> User2["User"]
-```
+```text
 
 ### Chain Execution
 
@@ -120,7 +120,7 @@ Settings are resolved in priority order:
 
 Sessions are stored as JSON files:
 
-```
+```text
 ~/.clinvk/sessions/
 ├── 4f3a2c1d.json
 ├── 9a8b7c6d.json
