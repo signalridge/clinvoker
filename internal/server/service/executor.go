@@ -60,12 +60,16 @@ var defaultBlockedWorkDirPrefixes = []string{
 // Note: When configuring allowed/blocked prefixes, use paths WITHOUT trailing slashes
 // to match both the directory itself and its children (e.g., use "/etc" not "/etc/").
 func hasPathPrefix(path, prefix string) bool {
+	// Normalize paths to use forward slashes for cross-platform comparison
+	path = filepath.ToSlash(path)
+	prefix = filepath.ToSlash(prefix)
+
 	if path == prefix {
 		return true
 	}
 	// Ensure prefix ends with separator for proper boundary check
-	if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-		prefix += string(filepath.Separator)
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
 	}
 	return strings.HasPrefix(path, prefix)
 }
