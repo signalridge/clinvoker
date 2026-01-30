@@ -237,8 +237,14 @@ func TestHandleHealth(t *testing.T) {
 		t.Fatalf("HandleHealth failed: %v", err)
 	}
 
-	if resp.Body.Status != "ok" {
-		t.Errorf("expected status 'ok', got %q", resp.Body.Status)
+	// Status can be "ok" or "degraded" depending on backend availability
+	if resp.Body.Status != "ok" && resp.Body.Status != "degraded" {
+		t.Errorf("expected status 'ok' or 'degraded', got %q", resp.Body.Status)
+	}
+
+	// Verify backends field is populated
+	if resp.Body.Backends == nil {
+		t.Error("expected non-nil backends field in response")
 	}
 }
 

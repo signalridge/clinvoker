@@ -2,6 +2,7 @@ package executor
 
 import (
 	"bytes"
+	"io"
 	"os/exec"
 	"runtime"
 	"testing"
@@ -79,5 +80,56 @@ func TestExecutor_RunSimple_CommandNotFound(t *testing.T) {
 func TestGracefulShutdownTimeout(t *testing.T) {
 	if GracefulShutdownTimeout.Seconds() != 5 {
 		t.Errorf("expected 5 second timeout, got %v", GracefulShutdownTimeout)
+	}
+}
+
+func TestCancelableReader_NormalRead(t *testing.T) {
+	data := []byte("hello world")
+	inner := bytes.NewReader(data)
+	cr := &cancelableReader{r: inner}
+
+	buf := make([]byte, len(data))
+	n, err := cr.Read(buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if n != len(data) {
+		t.Errorf("expected %d bytes, got %d", len(data), n)
+	}
+	if !bytes.Equal(buf, data) {
+		t.Errorf("expected %q, got %q", data, buf)
+	}
+}
+
+func TestCancelableReader_CancelBeforeRead(t *testing.T) {
+	inner := bytes.NewReader([]byte("hello"))
+	cr := &cancelableReader{r: inner}
+
+	// Cancel before reading
+	cr.Cancel()
+
+	buf := make([]byte, 10)
+	n, err := cr.Read(buf)
+	if err != io.EOF {
+		t.Errorf("expected io.EOF after cancel, got %v", err)
+	}
+	if n != 0 {
+		t.Errorf("expected 0 bytes after cancel, got %d", n)
+	}
+}
+
+func TestCancelableReader_MultipleCancelSafe(t *testing.T) {
+	inner := bytes.NewReader([]byte("hello"))
+	cr := &cancelableReader{r: inner}
+
+	// Multiple cancels should be safe
+	cr.Cancel()
+	cr.Cancel()
+	cr.Cancel()
+
+	buf := make([]byte, 10)
+	_, err := cr.Read(buf)
+	if err != io.EOF {
+		t.Errorf("expected io.EOF, got %v", err)
 	}
 }

@@ -43,9 +43,9 @@ backends:
     enabled: true
     # Default system prompt for this backend.
     # system_prompt: "You are a helpful coding assistant."
+  # Extra flags to pass to the backend CLI.
+  # extra_flags: ["--add-dir", "./docs"]
 
-    # Extra flags to pass to the backend CLI.
-    # extra_flags: ["--add-dir", "./docs"]
   codex:
     # Default model for Codex CLI.
     model: o3
@@ -89,6 +89,25 @@ server:
   write_timeout_secs: 300
   # Maximum time in seconds to wait for the next request.
   idle_timeout_secs: 120
+  # API Key Authentication (optional)
+  # When no keys are configured, authentication is disabled.
+  # Keys can be provided via (in priority order):
+  #   1. CLINVK_API_KEYS environment variable (comma-separated)
+  #   2. gopass (if api_keys_gopass_path is configured below)
+  # Note: Config file key storage is NOT supported for security reasons.
+
+  # Gopass path for API keys (optional)
+  # If set, keys will be loaded from gopass (GPG encrypted).
+  # Can also be set via CLINVK_API_KEYS_GOPASS_PATH environment variable.
+  # api_keys_gopass_path: "myproject/server/api-keys"
+
+  # Rate Limiting (optional)
+  # When disabled (default), no rate limiting is applied.
+  rate_limit_enabled: false
+  # Requests per second per IP address.
+  rate_limit_rps: 10
+  # Maximum burst size (requests allowed in a burst).
+  rate_limit_burst: 20
 # Parallel execution settings (for `clinvk parallel` command).
 parallel:
   # Maximum number of parallel workers.
@@ -99,9 +118,11 @@ parallel:
   aggregate_output: true
 # Environment variables can also be used:
 #
-# CLINVK_BACKEND         - Default backend
-# CLINVK_CLAUDE_MODEL    - Claude model
-# CLINVK_CODEX_MODEL     - Codex model
-# CLINVK_GEMINI_MODEL    - Gemini model
+# CLINVK_BACKEND              - Default backend
+# CLINVK_CLAUDE_MODEL         - Claude model
+# CLINVK_CODEX_MODEL          - Codex model
+# CLINVK_GEMINI_MODEL         - Gemini model
+# CLINVK_API_KEYS             - API keys for server auth (comma-separated)
+# CLINVK_API_KEYS_GOPASS_PATH - Gopass path for API keys
 #
 # Priority: CLI flags > Environment variables > Config file > Defaults

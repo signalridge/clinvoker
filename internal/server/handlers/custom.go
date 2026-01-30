@@ -447,10 +447,33 @@ func (h *CustomHandlers) HandleDeleteSession(ctx context.Context, input *DeleteS
 type HealthInput struct{}
 
 // HandleHealth handles health check requests.
+// Returns overall status and individual backend availability.
 func (h *CustomHandlers) HandleHealth(ctx context.Context, _ *HealthInput) (*HealthResponse, error) {
+	// Get backend status
+	backends := h.executor.ListBackends(ctx)
+
+	backendStatus := make([]BackendHealthStatus, len(backends))
+	allAvailable := true
+	for i, b := range backends {
+		backendStatus[i] = BackendHealthStatus{
+			Name:      b.Name,
+			Available: b.Available,
+		}
+		if !b.Available {
+			allAvailable = false
+		}
+	}
+
+	// Determine overall status
+	status := "ok"
+	if !allAvailable {
+		status = "degraded"
+	}
+
 	return &HealthResponse{
 		Body: HealthResponseBody{
-			Status: "ok",
+			Status:   status,
+			Backends: backendStatus,
 		},
 	}, nil
 }

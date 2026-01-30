@@ -62,8 +62,15 @@ func TestHealthEndpoint(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if resp["status"] != "ok" {
-		t.Errorf("expected status 'ok', got %v", resp["status"])
+	// Status can be "ok" or "degraded" depending on backend availability
+	status, ok := resp["status"].(string)
+	if !ok || (status != "ok" && status != "degraded") {
+		t.Errorf("expected status 'ok' or 'degraded', got %v", resp["status"])
+	}
+
+	// Verify backends field exists
+	if _, ok := resp["backends"]; !ok {
+		t.Error("expected 'backends' field in response")
 	}
 }
 

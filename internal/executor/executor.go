@@ -6,9 +6,34 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync/atomic"
 
 	"github.com/creack/pty"
 )
+
+// cancelableReader wraps an io.Reader and returns io.EOF when canceled.
+// This is used to break out of blocking Read calls on stdin.
+type cancelableReader struct {
+	r        io.Reader
+	canceled atomic.Bool
+}
+
+// Read implements io.Reader. Returns io.EOF if canceled.
+func (cr *cancelableReader) Read(p []byte) (n int, err error) {
+	if cr.canceled.Load() {
+		return 0, io.EOF
+	}
+	n, err = cr.r.Read(p)
+	if cr.canceled.Load() {
+		return 0, io.EOF
+	}
+	return n, err
+}
+
+// Cancel signals the reader to stop.
+func (cr *cancelableReader) Cancel() {
+	cr.canceled.Store(true)
+}
 
 // Executor handles process execution with terminal support.
 type Executor struct {
@@ -50,9 +75,13 @@ func (e *Executor) Run(cmd *exec.Cmd) (int, error) {
 		// Non-fatal, continue without resize handling
 	}
 
+	// Create a cancelable reader to stop stdin copy when command exits
+	stdinReader := &cancelableReader{r: e.Stdin}
+	defer stdinReader.Cancel()
+
 	// Copy stdin to PTY in a goroutine
 	go func() {
-		_, err := io.Copy(ptmx, e.Stdin)
+		_, err := io.Copy(ptmx, stdinReader)
 		// Ignore EOF and ErrClosedPipe as they're expected when PTY closes
 		if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, os.ErrClosed) {
 			// Non-critical: stdin copy failure doesn't affect command execution
