@@ -80,7 +80,11 @@ func runResume(cmd *cobra.Command, args []string) error {
 		if len(sessions) == 0 {
 			return fmt.Errorf("no sessions found matching criteria")
 		}
-		sess = sessions[0]
+		resumable := filterResumableSessions(sessions)
+		if len(resumable) == 0 {
+			return fmt.Errorf("no resumable sessions found (missing backend session id)")
+		}
+		sess = resumable[0]
 		if len(args) > 0 {
 			prompt = args[0]
 		}
@@ -192,8 +196,9 @@ func interactiveSessionPicker(store *session.Store, filter *session.ListFilter) 
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
 
-	if len(sessions) == 0 {
-		return nil, fmt.Errorf("no sessions found")
+	resumable := filterResumableSessions(sessions)
+	if len(resumable) == 0 {
+		return nil, fmt.Errorf("no resumable sessions found")
 	}
 
 	// Display sessions with numbers
@@ -202,10 +207,10 @@ func interactiveSessionPicker(store *session.Store, filter *session.ListFilter) 
 	fmt.Printf("  %-3s %-8s %-8s %-20s %s\n", "#", "ID", "BACKEND", "LAST USED", "TITLE/PROMPT")
 	fmt.Println("  " + strings.Repeat("-", 70))
 
-	for i, s := range sessions {
+	for i, s := range resumable {
 		// Limit display to 20 sessions
 		if i >= maxSessionsDisplay {
-			fmt.Printf("  ... and %d more sessions\n", len(sessions)-maxSessionsDisplay)
+			fmt.Printf("  ... and %d more sessions\n", len(resumable)-maxSessionsDisplay)
 			break
 		}
 
@@ -235,11 +240,11 @@ func interactiveSessionPicker(store *session.Store, filter *session.ListFilter) 
 
 	var idx int
 	_, err = fmt.Sscanf(input, "%d", &idx)
-	if err != nil || idx < 1 || idx > len(sessions) {
+	if err != nil || idx < 1 || idx > len(resumable) {
 		return nil, fmt.Errorf("invalid selection: %s", input)
 	}
 
-	return sessions[idx-1], nil
+	return resumable[idx-1], nil
 }
 
 // formatTimeAgo returns a human-readable time ago string.

@@ -218,7 +218,12 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		}
 		sessions, err := store.ListWithFilter(filter)
 		if err == nil && len(sessions) > 0 {
-			return runContinueLastSession(cmd, prompt, flags)
+			if continueLastSession {
+				return runContinueLastSession(cmd, prompt, flags)
+			}
+			if len(filterResumableSessions(sessions)) > 0 {
+				return runContinueLastSession(cmd, prompt, flags)
+			}
 		}
 		// If no sessions found, fall back to creating new session
 	}
@@ -315,7 +320,12 @@ func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFl
 		return fmt.Errorf("no sessions found to continue")
 	}
 
-	sess := sessions[0]
+	resumable := filterResumableSessions(sessions)
+	if len(resumable) == 0 {
+		return fmt.Errorf("no resumable sessions found (missing backend session id)")
+	}
+
+	sess := resumable[0]
 
 	// Get backend from session (not default backend)
 	b, err := backend.Get(sess.Backend)

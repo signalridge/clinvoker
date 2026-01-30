@@ -165,6 +165,21 @@ func shortSessionID(id string) string {
 	return id[:8]
 }
 
+// filterResumableSessions returns sessions that have a backend session ID.
+// Sessions without a backend session ID cannot be resumed.
+func filterResumableSessions(sessions []*session.Session) []*session.Session {
+	if len(sessions) == 0 {
+		return nil
+	}
+	resumable := make([]*session.Session, 0, len(sessions))
+	for _, s := range sessions {
+		if s != nil && s.BackendSessionID != "" {
+			resumable = append(resumable, s)
+		}
+	}
+	return resumable
+}
+
 // cleanupBackendSession cleans up the backend's session after execution in ephemeral mode.
 // This is a thin wrapper around util.CleanupBackendSession for package convenience.
 func cleanupBackendSession(backendName, sessionID string) {
