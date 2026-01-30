@@ -16,8 +16,8 @@ const (
 	// EnvAPIKeys is the environment variable name for API keys.
 	EnvAPIKeys = "CLINVK_API_KEYS" //nolint:gosec // Not a credential, just env var name
 
-	// GopassPath is the gopass path for API keys.
-	GopassPath = "clinvk/server/api-keys" //nolint:gosec // Not a credential, just path
+	// EnvAPIKeysGopassPath is the environment variable for gopass path.
+	EnvAPIKeysGopassPath = "CLINVK_API_KEYS_GOPASS_PATH" //nolint:gosec // Not a credential, just env var name
 )
 
 var (
@@ -63,9 +63,33 @@ func loadFromEnv() []string {
 	return parseKeys(envKeys)
 }
 
+// getGopassPath returns the gopass path from env or config.
+// Returns empty string if not configured.
+func getGopassPath() string {
+	// 1. Check environment variable first
+	if path := os.Getenv(EnvAPIKeysGopassPath); path != "" {
+		return path
+	}
+
+	// 2. Check config file
+	cfg := config.Get()
+	if cfg != nil && cfg.Server.APIKeysGopassPath != "" {
+		return cfg.Server.APIKeysGopassPath
+	}
+
+	return ""
+}
+
 // loadFromGopass attempts to load API keys from gopass.
-// Returns nil if gopass is not available or the secret doesn't exist.
+// Returns nil if gopass path is not configured, gopass is not available,
+// or the secret doesn't exist.
 func loadFromGopass() []string {
+	// Get the gopass path from config
+	gopassPath := getGopassPath()
+	if gopassPath == "" {
+		return nil // Not configured, skip gopass
+	}
+
 	// Check if gopass is available
 	if _, err := exec.LookPath("gopass"); err != nil {
 		return nil
@@ -75,7 +99,7 @@ func loadFromGopass() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "gopass", "show", "--password", GopassPath)
+	cmd := exec.CommandContext(ctx, "gopass", "show", "--password", gopassPath)
 	out, err := cmd.Output()
 	if err != nil {
 		// Silent fallback - gopass might not have this secret

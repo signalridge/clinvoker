@@ -93,11 +93,16 @@ server:
   # When api_keys is empty or not set, authentication is disabled (backward compatible).
   # Keys can be provided via:
   #   1. CLINVK_API_KEYS environment variable (comma-separated)
-  #   2. gopass clinvk/server/api-keys (if gopass is available)
+  #   2. gopass (if api_keys_gopass_path is configured)
   #   3. This config file (below)
   # api_keys:
   #   - "your-secret-key-here"
   #   - "another-api-key"
+
+  # Gopass path for API keys (optional)
+  # If set, keys will be loaded from gopass when api_keys is empty.
+  # Can also be set via CLINVK_API_KEYS_GOPASS_PATH environment variable.
+  # api_keys_gopass_path: "myproject/server/api-keys"
 
   # Rate Limiting (optional)
   # When disabled (default), no rate limiting is applied.
@@ -116,10 +121,11 @@ parallel:
   aggregate_output: true
 # Environment variables can also be used:
 #
-# CLINVK_BACKEND         - Default backend
-# CLINVK_CLAUDE_MODEL    - Claude model
-# CLINVK_CODEX_MODEL     - Codex model
-# CLINVK_GEMINI_MODEL    - Gemini model
-# CLINVK_API_KEYS        - API keys for server auth (comma-separated)
+# CLINVK_BACKEND              - Default backend
+# CLINVK_CLAUDE_MODEL         - Claude model
+# CLINVK_CODEX_MODEL          - Codex model
+# CLINVK_GEMINI_MODEL         - Gemini model
+# CLINVK_API_KEYS             - API keys for server auth (comma-separated)
+# CLINVK_API_KEYS_GOPASS_PATH - Gopass path for API keys
 #
 # Priority: CLI flags > Environment variables > Config file > Defaults

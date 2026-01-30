@@ -44,6 +44,11 @@ type ServerConfig struct {
 	// Empty list disables API key authentication (backward compatible).
 	APIKeys []string `mapstructure:"api_keys"`
 
+	// APIKeysGopassPath is the gopass path to load API keys from.
+	// If set, keys will be loaded from gopass when APIKeys is empty.
+	// Example: "myproject/server/api-keys"
+	APIKeysGopassPath string `mapstructure:"api_keys_gopass_path"`
+
 	// RateLimitEnabled enables per-IP rate limiting.
 	RateLimitEnabled bool `mapstructure:"rate_limit_enabled"`
 
