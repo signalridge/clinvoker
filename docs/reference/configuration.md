@@ -10,7 +10,7 @@ Use a custom path with `--config`:
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```
+```text
 
 ## Full Configuration Example
 
@@ -114,7 +114,7 @@ parallel:
 
 ```yaml
 default_backend: claude
-```
+```yaml
 
 The backend to use when `--backend` is not specified.
 
@@ -189,7 +189,7 @@ backends:
     enabled: true
     system_prompt: ""
     extra_flags: []
-```
+```text
 
 #### Backend Fields
 
@@ -235,7 +235,7 @@ session:
   retention_days: 30
   store_token_usage: true
   default_tags: []
-```
+```yaml
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -285,7 +285,7 @@ server:
   rate_limit_cleanup_secs: 180
   trusted_proxies: []
   max_request_body_bytes: 10485760
-```
+```yaml
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

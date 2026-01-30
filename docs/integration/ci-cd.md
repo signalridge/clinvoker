@@ -28,7 +28,7 @@ flowchart LR
     style Codex fill:#e8f5e9,stroke:#388e3c
     style Gemini fill:#ffebee,stroke:#c62828
     style Output fill:#e3f2fd,stroke:#1976d2
-```
+```bash
 
 ## Prerequisites - Authentication
 
@@ -58,7 +58,7 @@ env:
 variables:
   ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY  # Set in CI/CD Settings
   OPENAI_API_KEY: $OPENAI_API_KEY
-```
+```bash
 
 ## GitHub Actions
 
@@ -211,7 +211,7 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-```
+```bash
 
 ### Documentation Generation
 
@@ -309,7 +309,7 @@ ai-review:
       - review.txt
   only:
     - merge_requests
-```
+```bash
 
 ## Jenkins
 
@@ -376,7 +376,7 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-```
+```text
 
 ```bash
 # Enable and start
@@ -391,7 +391,7 @@ sudo systemctl start clinvk
 ```bash
 curl -X POST http://localhost:8080/api/v1/prompt \
   -d '{"backend": "claude", "prompt": "...", "ephemeral": true}'
-```
+```bash
 
 ### 2. Set Timeouts
 
@@ -407,7 +407,7 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 ```bash
 # Truncate large diffs
 DIFF=$(git diff HEAD~1 | head -c 50000)
-```
+```bash
 
 ### 4. Cache clinvk Image
 

@@ -33,7 +33,7 @@ Create a `tasks.json` file:
     }
   ]
 }
-```
+```bash
 
 ### Run Tasks
 
@@ -47,7 +47,7 @@ You can also pipe task definitions:
 
 ```bash
 cat tasks.json | clinvk parallel
-```
+```text
 
 ## Task Options
 
@@ -96,7 +96,7 @@ Control how many tasks run simultaneously:
 ```bash
 # Run at most 2 tasks at a time
 clinvk parallel --file tasks.json --max-parallel 2
-```
+```bash
 
 ### Fail-Fast Mode
 
@@ -112,7 +112,7 @@ Get structured output for programmatic processing:
 
 ```bash
 clinvk parallel --file tasks.json --json
-```
+```bash
 
 ### Quiet Mode
 
@@ -142,22 +142,27 @@ CLI flags override file-level settings.
 
 Shows progress and results as tasks complete:
 
-```
+```text
 Running 3 tasks (max 3 parallel)...
 
 [1] The auth module looks good...
 [2] Added logging statements...
 [3] Generated 5 test cases...
 
-Results:
+Results
+============================================================
+
+BACKEND      STATUS   DURATION   SESSION    TASK
+
 ------------------------------------------------------------
-#    BACKEND      STATUS   DURATION   SESSION    TASK
-------------------------------------------------------------
+
 1    claude       OK       2.50s      abc123     review the auth module
 2    codex        OK       3.20s      def456     add logging to the API
 3    gemini       OK       2.80s      ghi789     generate tests for utils
 ------------------------------------------------------------
+
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
+
 ```
 
 ### JSON Output
@@ -208,7 +213,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
     }
   ]
 }
-```
+```text
 
 ### Batch Test Generation
 
@@ -240,7 +245,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
     }
   ]
 }
-```
+```text
 
 ## Configuration
 

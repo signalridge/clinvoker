@@ -4,7 +4,7 @@ Compare responses from multiple backends.
 
 ## Synopsis
 
-```
+```bash
 clinvk compare [prompt] [flags]
 ```
 
@@ -27,7 +27,7 @@ Send the same prompt to multiple AI backends and compare their responses side-by
 
 ```bash
 clinvk compare --backends claude,codex "explain this code"
-```
+```bash
 
 ### Compare All Backends
 
@@ -39,7 +39,7 @@ clinvk compare --all-backends "what does this function do"
 
 ```bash
 clinvk compare --all-backends --sequential "review this PR"
-```
+```bash
 
 ### JSON Output
 
@@ -51,7 +51,7 @@ clinvk compare --all-backends --json "analyze performance"
 
 ### Text Output (Default)
 
-```
+```yaml
 Comparing 3 backends: claude, codex, gemini
 Prompt: explain this algorithm
 ============================================================
@@ -89,7 +89,7 @@ Total time: 3.20s
   ],
   "total_duration_seconds": 3.2
 }
-```
+```bash
 
 ## Execution Modes
 
@@ -112,7 +112,7 @@ Run backends one at a time:
 
 ```bash
 clinvk compare --all-backends --sequential "prompt"
-```
+```yaml
 
 Benefits:
 
@@ -124,10 +124,12 @@ Benefits:
 
 If a backend fails, comparison continues with remaining backends:
 
-```
+```text
+
 Comparing 3 backends: claude, codex, gemini
 Prompt: explain this code
 ============================================================
+
 [claude] Response content...
 [codex] Error: Backend unavailable
 [gemini] Response content...
@@ -135,14 +137,18 @@ Prompt: explain this code
 ============================================================
 COMPARISON SUMMARY
 ============================================================
+
 BACKEND      STATUS     DURATION     SESSION    MODEL
 ------------------------------------------------------------
+
 claude       OK         2.10s        abc123     (default)
 codex        FAILED     0.50s        -          (default)
              Error: Backend unavailable
 gemini       OK         1.80s        def456     (default)
 ------------------------------------------------------------
+
 Total time: 2.10s
+
 ```
 
 ## Exit Codes

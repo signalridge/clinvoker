@@ -4,7 +4,7 @@ Integration tests for clinvk CLI and HTTP API.
 
 ## Structure
 
-```
+```text
 test/
 ├── lib/
 │   └── common.sh       # Shared test utilities
@@ -58,7 +58,7 @@ just integration-api
 
 # Run specific test file
 just integration-file cli/test_version
-```
+```bash
 
 ### Direct Execution
 

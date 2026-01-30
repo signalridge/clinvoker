@@ -22,11 +22,12 @@ flowchart TD
     Claude --> ExtClaude["claude binary"]
     Codex --> ExtCodex["codex binary"]
     Gemini --> ExtGemini["gemini binary"]
-```
+```text
 
 ## Project Structure
 
 ```
+
 cmd/clinvk/           Entry point
 internal/
 ├── app/              CLI commands and orchestration
@@ -35,7 +36,8 @@ internal/
 ├── server/           HTTP API server
 ├── session/          Session persistence
 └── config/           Configuration loading
-```
+
+```text
 
 ## Layer Overview
 
@@ -89,7 +91,7 @@ Handles command execution:
 
 HTTP API with multiple styles:
 
-```
+```text
 /api/v1/          Custom RESTful API
 /openai/v1/       OpenAI-compatible API
 /anthropic/v1/    Anthropic-compatible API
@@ -114,7 +116,7 @@ type Session struct {
     UpdatedAt time.Time
     Metadata  map[string]any
 }
-```
+```yaml
 
 Storage: JSON files in `~/.clinvk/sessions/`
 
@@ -173,7 +175,7 @@ sequenceDiagram
     W1-->>Agg: result 1
     W2-->>Agg: result 2
     Agg-->>User: combined results
-```
+```text
 
 ### Chain Execution
 

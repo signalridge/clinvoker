@@ -19,15 +19,17 @@ View all your sessions:
 
 ```bash
 clinvk sessions list
-```
+```yaml
 
 Output:
 
 ```
+
 ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1,234        fix the bug in auth.go
 def456    codex     completed  2 hours ago     5,678        implement user registration
-```
+
+```bash
 
 ### Filtering Sessions
 
@@ -53,7 +55,7 @@ The quickest way to continue your last conversation:
 
 ```bash
 clinvk resume --last
-```
+```yaml
 
 Or with a follow-up prompt:
 
@@ -67,7 +69,7 @@ Browse and select from recent sessions:
 
 ```bash
 clinvk resume --interactive
-```
+```bash
 
 ### Resume by ID
 
@@ -84,7 +86,7 @@ Only show sessions from the current working directory:
 
 ```bash
 clinvk resume --here
-```
+```bash
 
 ### Filter by Backend
 
@@ -100,7 +102,7 @@ For simple continuation, use the `--continue` flag:
 clinvk "implement the feature"
 clinvk -c "now add tests"
 clinvk -c "update the documentation"
-```
+```yaml
 
 This automatically resumes the most recent session.
 
@@ -114,7 +116,7 @@ clinvk sessions show abc123
 
 Output:
 
-```
+```yaml
 ID:                abc123
 Backend:           claude
 Model:             claude-opus-4-5-20251101
@@ -135,7 +137,7 @@ Token Usage:
 
 ```bash
 clinvk sessions delete abc123
-```
+```bash
 
 ### Clean Old Sessions
 
@@ -169,7 +171,7 @@ session:
 
   # Tags automatically added to new sessions
   default_tags: []
-```
+```bash
 
 ## Stateless Mode
 

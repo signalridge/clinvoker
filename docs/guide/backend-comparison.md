@@ -19,7 +19,7 @@ Run against all enabled backends:
 
 ```bash
 clinvk compare --all-backends "explain this algorithm"
-```
+```bash
 
 ### Compare Specific Backends
 
@@ -38,7 +38,7 @@ Run all backends simultaneously:
 
 ```bash
 clinvk compare --all-backends "explain this code"
-```
+```bash
 
 ### Sequential
 
@@ -60,7 +60,7 @@ Sequential mode is useful when:
 
 Displays each backend's response with clear separation:
 
-```
+```yaml
 Prompt: explain this algorithm
 
 ━━━ claude ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -88,7 +88,7 @@ Get structured data for programmatic processing:
 
 ```bash
 clinvk compare --all-backends --json "explain this code"
-```
+```yaml
 
 Output:
 
@@ -131,7 +131,7 @@ Get multiple perspectives on code quality:
 
 ```bash
 clinvk compare --all-backends "review this code for bugs and improvements"
-```
+```bash
 
 ### Architecture Decisions
 
@@ -147,7 +147,7 @@ See how different AI models explain concepts:
 
 ```bash
 clinvk compare --all-backends "explain how async/await works in JavaScript"
-```
+```bash
 
 ### Validation
 
@@ -161,7 +161,7 @@ clinvk compare --all-backends "is this implementation secure?"
 
 If a backend fails, the comparison continues with remaining backends:
 
-```
+```yaml
 Comparing 3 backends: claude, codex, gemini
 Prompt: explain this code
 ============================================================

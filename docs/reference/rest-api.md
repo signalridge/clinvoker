@@ -4,7 +4,7 @@ Complete reference for the clinvk custom REST API.
 
 ## Base URL
 
-```
+```yaml
 http://localhost:8080/api/v1
 ```
 
@@ -40,7 +40,7 @@ Execute a single prompt.
   "extra": ["--some-flag"],
   "metadata": {"project": "demo"}
 }
-```
+```yaml
 
 **Fields:**
 
@@ -89,7 +89,7 @@ Each line is a unified event:
 {"type":"init","backend":"claude","session_id":"...","content":{...}}
 {"type":"message","backend":"claude","session_id":"...","content":{...}}
 {"type":"done","backend":"claude","session_id":"...","content":{...}}
-```
+```yaml
 
 **Example:**
 
@@ -124,7 +124,7 @@ Execute multiple tasks in parallel.
   "max_parallel": 3,
   "fail_fast": false
 }
-```
+```yaml
 
 **Fields:**
 
@@ -187,7 +187,7 @@ Execute a sequential pipeline.
   "stop_on_failure": true,
   "pass_working_dir": false
 }
-```
+```yaml
 
 **Fields:**
 
@@ -245,7 +245,7 @@ Compare responses from multiple backends.
   "backends": ["claude", "codex", "gemini"],
   "sequential": false
 }
-```
+```yaml
 
 **Fields:**
 
@@ -311,7 +311,7 @@ List available backends.
     }
   ]
 }
-```
+```yaml
 
 ---
 
@@ -383,7 +383,7 @@ Get session details.
   "tags": ["api"],
   "title": "Review auth changes"
 }
-```
+```text
 
 ### DELETE /api/v1/sessions/{id}
 
@@ -417,7 +417,7 @@ Server health status.
     {"name": "gemini", "available": false}
   ]
 }
-```
+```yaml
 
 **Status Values:**
 
@@ -436,22 +436,30 @@ Prometheus-compatible metrics endpoint (when `metrics_enabled: true` in config).
 
 **Response:** Prometheus exposition format
 
-```
+```text
 # HELP clinvk_requests_total Total HTTP requests
+
 # TYPE clinvk_requests_total counter
+
 clinvk_requests_total{method="POST",path="/api/v1/prompt",status="200"} 42
 
 # HELP clinvk_request_duration_seconds HTTP request duration
+
 # TYPE clinvk_request_duration_seconds histogram
+
 clinvk_request_duration_seconds_bucket{path="/api/v1/prompt",le="0.1"} 5
 ...
 
 # HELP clinvk_rate_limit_hits_total Rate limit hits
+
 # TYPE clinvk_rate_limit_hits_total counter
+
 clinvk_rate_limit_hits_total{ip="192.168.1.1"} 3
 
 # HELP clinvk_sessions_total Total sessions
+
 # TYPE clinvk_sessions_total gauge
+
 clinvk_sessions_total 15
 ```
 
@@ -486,7 +494,7 @@ When rate limiting is enabled and the limit is exceeded:
   "status": 429,
   "detail": "Rate limit exceeded. Retry after 5 seconds."
 }
-```
+```text
 
 ### Request Size Limit (413)
 

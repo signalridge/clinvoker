@@ -14,19 +14,21 @@ clinvk 常见问题和解决方案。
 
    ```bash
    which claude codex gemini
-   ```
+
+```yaml
 
 2. 将二进制文件位置添加到 PATH：
 
    ```bash
    export PATH="$PATH:/path/to/backend"
-   ```
+```
 
 3. 检查 clinvk 检测：
 
    ```bash
    clinvk config show | grep available
-   ```
+
+```bash
 
 ### 后端不可用
 
@@ -49,7 +51,7 @@ clinvk 常见问题和解决方案。
 
    ```bash
    clinvk config set backends.claude.model claude-opus-4-5-20251101
-   ```
+```
 
 ## 配置问题
 
@@ -63,19 +65,21 @@ clinvk 常见问题和解决方案。
 
    ```bash
    ls -la ~/.clinvk/config.yaml
-   ```
+
+```text
 
 2. 验证 YAML 语法：
 
    ```bash
    cat ~/.clinvk/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
-   ```
+```
 
 3. 查看有效配置：
 
    ```bash
    clinvk config show
-   ```
+
+```bash
 
 ## 会话问题
 
@@ -89,13 +93,14 @@ clinvk 常见问题和解决方案。
 
    ```bash
    clinvk sessions list
-   ```
+```
 
 2. 检查会话目录：
 
    ```bash
    ls ~/.clinvk/sessions/
-   ```
+
+```bash
 
 3. 会话可能已被清理。创建新会话。
 
@@ -121,13 +126,14 @@ clinvk sessions clean --older-than 7d
 
    ```bash
    lsof -i :8080
-   ```
+
+```bash
 
 2. 使用不同端口：
 
    ```bash
    clinvk serve --port 3000
-   ```
+```
 
 ## 执行问题
 
@@ -142,7 +148,8 @@ clinvk sessions clean --older-than 7d
    ```yaml
    server:
      request_timeout_secs: 600
-   ```
+
+```bash
 
 2. 对于复杂任务，拆分为更小的提示
 
@@ -170,7 +177,7 @@ clinvk --verbose "提示"
 
 ```bash
 clinvk --dry-run "提示"
-```
+```bash
 
 ### 检查版本
 

@@ -86,11 +86,11 @@ Provide both parallel (concurrent) and chain (sequential) execution modes.
 
 **Parallel Execution:**
 
-```
+```text
 Task A ─┬─→ Backend 1 ──┬─→ Result A
         ├─→ Backend 2 ──┤   Result B
         └─→ Backend 3 ──┘   Result C
-```
+```yaml
 
 - Independent tasks run concurrently
 - Fail-fast option for efficiency
@@ -98,7 +98,7 @@ Task A ─┬─→ Backend 1 ──┬─→ Result A
 
 **Chain Execution:**
 
-```
+```text
 Input → Backend 1 → {{previous}} → Backend 2 → {{previous}} → Backend 3 → Output
 ```
 
@@ -133,7 +133,7 @@ CLINVK_TIMEOUT=120
 clinvk --backend codex "prompt"
 
 # Result: backend=codex (CLI), timeout=120 (env)
-```
+```text
 
 ## HTTP Server Design
 

@@ -42,7 +42,7 @@ go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 
 # Nix
 nix run github:signalridge/clinvoker
-```
+```bash
 
 See [Installation](../guide/installation.md) for all options.
 
@@ -64,7 +64,7 @@ Look for `available: true` under each backend.
 
 ```bash
 clinvk config set default_backend codex
-```
+```yaml
 
 Or set the environment variable:
 
@@ -82,7 +82,7 @@ clinvk -c "follow up message"
 
 # Resume command
 clinvk resume --last "follow up message"
-```
+```bash
 
 ### Can I use different models?
 
@@ -96,7 +96,7 @@ Or set it in configuration:
 
 ```bash
 clinvk config set backends.claude.model claude-sonnet-4-20250514
-```
+```bash
 
 ### How do I run tasks in parallel?
 
@@ -112,7 +112,7 @@ See [Parallel Execution](../guide/parallel-execution.md).
 
 ```bash
 clinvk compare --all-backends "your prompt"
-```
+```yaml
 
 See [Backend Comparison](../guide/backend-comparison.md).
 
@@ -145,7 +145,7 @@ Sessions are stored as JSON files in `~/.clinvk/sessions/`.
 
 ```bash
 clinvk sessions clean --older-than 30d
-```
+```bash
 
 ### Can I disable session tracking?
 
@@ -168,7 +168,7 @@ Place it behind a reverse proxy with authentication:
 ```bash
 # Bind to all interfaces (use with caution)
 clinvk serve --host 0.0.0.0
-```
+```text
 
 ### Can I use OpenAI client libraries?
 

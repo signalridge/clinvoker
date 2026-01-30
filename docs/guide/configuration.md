@@ -8,7 +8,7 @@ Learn how to configure clinvk for your workflow. This guide covers common scenar
 
 ```bash
 clinvk config show
-```
+```bash
 
 This shows all settings including which backends are available on your system.
 
@@ -35,7 +35,7 @@ clinvk stores configuration in `~/.clinvk/config.yaml`. You can edit it directly
 ```yaml
 # ~/.clinvk/config.yaml
 default_backend: claude
-```
+```text
 
 ### Recommended Configuration
 
@@ -69,7 +69,7 @@ backends:
     model: o3                           # For code generation
   gemini:
     model: gemini-2.5-pro              # For general tasks
-```
+```yaml
 
 **Usage:**
 
@@ -91,7 +91,7 @@ unified_flags:
   approval_mode: auto    # Auto-approve all actions
 output:
   format: json           # Machine-readable output
-```
+```yaml
 
 !!! warning "Security Note"
     Only use `auto` approval mode in trusted environments. The AI can execute file operations and commands.
@@ -125,7 +125,7 @@ EOF
 
 # Use project config
 clinvk --config .clinvk.yaml "review the auth module"
-```
+```bash
 
 ### Scenario 5: HTTP Server for Integration
 
@@ -152,7 +152,7 @@ parallel:
   max_workers: 5       # Run up to 5 tasks simultaneously
   fail_fast: false     # Continue even if some tasks fail
   aggregate_output: true
-```
+```text
 
 ### Scenario 7: Production API Server
 
@@ -203,7 +203,7 @@ server:
     - "10.0.0.0/8"
     - "172.16.0.0/12"
     - "192.168.0.0/16"
-```
+```text
 
 ### Scenario 9: Metrics and Observability
 
@@ -233,7 +233,7 @@ backends:
     extra_flags:
       - "--add-dir"
       - "./docs"                    # Include docs in context
-```
+```yaml
 
 **Available models:**
 
@@ -260,7 +260,7 @@ backends:
     model: gemini-2.5-pro
     extra_flags:
       - "--sandbox"
-```
+```bash
 
 ## Environment Variables
 
@@ -295,7 +295,7 @@ Keep project-specific settings in `.clinvk.yaml` in your repo:
 
 ```bash
 clinvk --config .clinvk.yaml "your prompt"
-```
+```text
 
 ### 3. Secure Your Server
 
@@ -313,7 +313,7 @@ For long-running tasks:
 ```yaml
 server:
   request_timeout_secs: 600    # 10 minutes
-```
+```text
 
 ### 5. Use Read-Only for Reviews
 
@@ -334,7 +334,7 @@ clinvk config show
 
 # Verify config file location
 ls -la ~/.clinvk/config.yaml
-```
+```bash
 
 ### Backend Not Available
 
@@ -354,7 +354,7 @@ rm ~/.clinvk/config.yaml
 
 # Verify defaults
 clinvk config show
-```
+```text
 
 ## Configuration Templates
 
@@ -388,7 +388,7 @@ output:
 parallel:
   max_workers: 3
   fail_fast: true
-```
+```text
 
 ### API Server
 

@@ -8,7 +8,7 @@
 
 ```bash
 clinvk "解释这个项目是做什么的"
-```
+```bash
 
 ## 指定后端
 
@@ -35,7 +35,7 @@ clinvk --continue "现在添加错误处理"
 
 # 或使用 resume 命令
 clinvk resume --last "为更改添加测试"
-```
+```bash
 
 ## 对比后端
 
@@ -61,7 +61,7 @@ clinvk compare --backends claude,codex "解释这个算法"
     {"backend": "gemini", "prompt": "为 utils 生成测试"}
   ]
 }
-```
+```bash
 
 运行任务：
 
@@ -81,7 +81,7 @@ clinvk parallel --file tasks.json
     {"name": "summary", "backend": "codex", "prompt": "总结发现：{{previous}}"}
   ]
 }
-```
+```bash
 
 运行链：
 
@@ -99,7 +99,7 @@ clinvk serve
 
 # 自定义端口
 clinvk serve --port 3000
-```
+```yaml
 
 然后发送 API 请求：
 

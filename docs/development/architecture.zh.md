@@ -22,11 +22,12 @@ flowchart TD
     Claude --> ExtClaude["claude 二进制"]
     Codex --> ExtCodex["codex 二进制"]
     Gemini --> ExtGemini["gemini 二进制"]
-```
+```text
 
 ## 项目结构
 
 ```
+
 cmd/clinvk/           入口点
 internal/
 ├── app/              CLI 命令和编排
@@ -35,7 +36,8 @@ internal/
 ├── server/           HTTP API 服务器
 ├── session/          会话持久化
 └── config/           配置加载
-```
+
+```text
 
 ## 层级概述
 
@@ -89,7 +91,7 @@ type Backend interface {
 
 HTTP API，支持多种风格：
 
-```
+```text
 /api/v1/          自定义 RESTful API
 /openai/v1/       OpenAI 兼容 API
 /anthropic/v1/    Anthropic 兼容 API
@@ -114,7 +116,7 @@ type Session struct {
     UpdatedAt time.Time
     Metadata  map[string]any
 }
-```
+```yaml
 
 存储：`~/.clinvk/sessions/` 中的 JSON 文件
 
@@ -173,7 +175,7 @@ sequenceDiagram
     W1-->>Agg: 结果 1
     W2-->>Agg: 结果 2
     Agg-->>User: 合并结果
-```
+```text
 
 ### 链式执行
 

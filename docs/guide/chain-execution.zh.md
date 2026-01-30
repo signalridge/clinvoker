@@ -32,7 +32,7 @@
     }
   ]
 }
-```
+```bash
 
 ### 运行链
 
@@ -70,7 +70,7 @@ clinvk chain --file pipeline.json
     }
   ]
 }
-```
+```text
 
 ## 步骤选项
 
@@ -126,7 +126,7 @@ clinvk chain --file pipeline.json
 
 ```bash
 clinvk chain --file pipeline.json --json
-```
+```yaml
 
 输出：
 
@@ -186,13 +186,13 @@ clinvk chain --file pipeline.json --json
     }
   ]
 }
-```
+```text
 
 ## 错误处理
 
 如果步骤失败，链会停止并报告错误：
 
-```
+```text
 Step 1 (analyze): Completed (2.1s)
 Step 2 (implement): Failed - Backend error: rate limit exceeded
 

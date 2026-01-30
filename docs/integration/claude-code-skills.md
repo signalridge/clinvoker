@@ -36,7 +36,7 @@ Run this skill when you need to analyze structured data.
 DATA="$1"
 
 clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $DATA"
-```
+```text
 
 ```
 
@@ -44,7 +44,7 @@ clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $D
 
 In Claude Code, the skill can be invoked:
 
-```
+```yaml
 
 User: /analyze-data {"sales": [100, 150, 200], "months": ["Jan", "Feb", "Mar"]}
 
@@ -85,7 +85,7 @@ echo ""
 echo "### Security Review (Gemini)"
 clinvk -b gemini --ephemeral "Review this code for security vulnerabilities:
 $CODE"
-```
+```text
 
 ```
 
@@ -120,7 +120,7 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
   "## Performance (Codex)\n" + .results[1].output + "\n\n" +
   "## Security (Gemini)\n" + .results[2].output
 '
-```
+```text
 
 ```
 
@@ -166,7 +166,7 @@ cat > /tmp/doc-pipeline.json << EOF
 EOF
 
 clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
-```
+```text
 
 ```
 
@@ -184,7 +184,7 @@ if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
 fi
 
 echo "$OUTPUT"
-```
+```bash
 
 ### Conditional Backend Selection
 
@@ -217,7 +217,7 @@ clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 #!/bin/bash
 # Get responses from all backends and compare
 clinvk compare --all-backends "$1"
-```
+```bash
 
 ## Best Practices
 
@@ -245,7 +245,7 @@ When you need to process the output:
 
 ```bash
 clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
-```
+```bash
 
 ### 4. Format Output for Claude
 
@@ -260,7 +260,7 @@ clinvk -b gemini --ephemeral "Summarize: $INPUT"
 
 ## Skill Directory Structure
 
-```
+```text
 ~/.claude/skills/
 ├── analyze-data/
 │   └── SKILL.md
@@ -279,7 +279,7 @@ clinvk -b gemini --ephemeral "Summarize: $INPUT"
 ```bash
 # Check available backends
 clinvk config show | grep available
-```
+```bash
 
 ### Check Version
 
