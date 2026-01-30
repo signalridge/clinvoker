@@ -50,7 +50,7 @@ flowchart TB
     style clients fill:#e3f2fd,stroke:#1976d2
     style server fill:#fff3e0,stroke:#f57c00
     style backends fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 ## 计划工具
 

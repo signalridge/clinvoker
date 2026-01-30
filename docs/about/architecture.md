@@ -28,7 +28,7 @@ flowchart TB
     Exec --> Codex
     Exec --> Gemini
     Exec <--> Session
-```bash
+```
 
 ## Key Principles
 
@@ -86,7 +86,7 @@ flowchart LR
     B2 --> Agg
     B3 --> Agg
     Agg --> User2["User"]
-```text
+```
 
 ### Chain Execution
 
