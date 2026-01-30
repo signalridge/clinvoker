@@ -22,7 +22,7 @@ flowchart TD
     Claude --> ExtClaude["claude 二进制"]
     Codex --> ExtCodex["codex 二进制"]
     Gemini --> ExtGemini["gemini 二进制"]
-```text
+```
 
 ## 项目结构
 
@@ -175,7 +175,7 @@ sequenceDiagram
     W1-->>Agg: 结果 1
     W2-->>Agg: 结果 2
     Agg-->>User: 合并结果
-```text
+```
 
 ### 链式执行
 

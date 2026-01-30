@@ -22,7 +22,7 @@ flowchart TD
     Claude --> ExtClaude["claude binary"]
     Codex --> ExtCodex["codex binary"]
     Gemini --> ExtGemini["gemini binary"]
-```text
+```
 
 ## Project Structure
 
@@ -175,7 +175,7 @@ sequenceDiagram
     W1-->>Agg: result 1
     W2-->>Agg: result 2
     Agg-->>User: combined results
-```text
+```
 
 ### Chain Execution
 
