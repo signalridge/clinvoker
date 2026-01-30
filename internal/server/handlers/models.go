@@ -227,7 +227,14 @@ type HealthResponse struct {
 
 // HealthResponseBody is the body of a health response.
 type HealthResponseBody struct {
-	Status string `json:"status" doc:"Health status"`
+	Status   string                `json:"status" doc:"Health status (ok or degraded)"`
+	Backends []BackendHealthStatus `json:"backends,omitempty" doc:"Backend availability status"`
+}
+
+// BackendHealthStatus represents the health status of a backend.
+type BackendHealthStatus struct {
+	Name      string `json:"name" doc:"Backend name"`
+	Available bool   `json:"available" doc:"Whether the backend is available"`
 }
 
 // ToServiceRequest converts API request to service request.

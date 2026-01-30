@@ -39,6 +39,19 @@ type ServerConfig struct {
 
 	// IdleTimeoutSecs is the maximum time in seconds to wait for the next request.
 	IdleTimeoutSecs int `mapstructure:"idle_timeout_secs"`
+
+	// APIKeys is a list of valid API keys for authentication.
+	// Empty list disables API key authentication (backward compatible).
+	APIKeys []string `mapstructure:"api_keys"`
+
+	// RateLimitEnabled enables per-IP rate limiting.
+	RateLimitEnabled bool `mapstructure:"rate_limit_enabled"`
+
+	// RateLimitRPS is the requests per second limit per IP.
+	RateLimitRPS int `mapstructure:"rate_limit_rps"`
+
+	// RateLimitBurst is the maximum burst size for rate limiting.
+	RateLimitBurst int `mapstructure:"rate_limit_burst"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -180,6 +193,10 @@ func Init(cfgFile string) error {
 				ReadTimeoutSecs:    30,
 				WriteTimeoutSecs:   300, // 5 minutes
 				IdleTimeoutSecs:    120,
+				APIKeys:            nil, // Empty = no auth required (backward compatible)
+				RateLimitEnabled:   false,
+				RateLimitRPS:       10,
+				RateLimitBurst:     20,
 			},
 		}
 

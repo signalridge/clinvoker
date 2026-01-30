@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/cors"
 
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/server/middleware"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
 
@@ -42,13 +43,33 @@ func New(cfg Config, logger *slog.Logger) *Server {
 
 	router := chi.NewRouter()
 
-	// Add middleware
+	// Get app config for middleware configuration
+	appCfg := config.Get()
+
+	// Add middleware in order:
+	// RequestID → RealIP → Recoverer → RequestLogger → RateLimit → APIKeyAuth → Timeout → CORS
 	router.Use(chiMiddleware.RequestID)
 	router.Use(chiMiddleware.RealIP)
 	router.Use(chiMiddleware.Recoverer)
 
+	// Add request logging
+	router.Use(RequestLogger(logger))
+
+	// Add rate limiting if enabled
+	if appCfg.Server.RateLimitEnabled && appCfg.Server.RateLimitRPS > 0 {
+		rps := appCfg.Server.RateLimitRPS
+		burst := appCfg.Server.RateLimitBurst
+		if burst <= 0 {
+			burst = rps * 2 // Default burst to 2x RPS
+		}
+		router.Use(middleware.RateLimit(rps, burst))
+		logger.Info("Rate limiting enabled", "rps", rps, "burst", burst)
+	}
+
+	// Add API key authentication (skips /health for health checks)
+	router.Use(middleware.SkipAuthPaths("/health"))
+
 	// Get timeout from config, with fallback to 5 minutes
-	appCfg := config.Get()
 	requestTimeout := time.Duration(appCfg.Server.RequestTimeoutSecs) * time.Second
 	if requestTimeout <= 0 {
 		requestTimeout = 5 * time.Minute
