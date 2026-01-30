@@ -20,6 +20,8 @@ test/
 ├── api/                # HTTP API tests
 │   ├── test_health.sh
 │   ├── test_backends.sh
+│   ├── test_auth.sh       # API key authentication
+│   ├── test_ratelimit.sh  # Rate limiting
 │   ├── test_prompt.sh
 │   ├── test_sessions.sh
 │   ├── test_chain.sh
@@ -84,6 +86,8 @@ Environment variables:
 | `CLINVK_BIN` | `./bin/clinvk` | Path to clinvk binary |
 | `SERVER_HOST` | `127.0.0.1` | API server host |
 | `SERVER_PORT` | `18080` | API server port |
+| `AUTH_SERVER_PORT` | `18081` | Auth test server port |
+| `RATELIMIT_SERVER_PORT` | `18082` | Rate limit test server port |
 | `TEST_TIMEOUT` | `60` | Test timeout in seconds |
 | `DEBUG` | `0` | Enable debug output |
 

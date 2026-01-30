@@ -66,8 +66,8 @@ func New(cfg Config, logger *slog.Logger) *Server {
 		logger.Info("Rate limiting enabled", "rps", rps, "burst", burst)
 	}
 
-	// Add API key authentication (skips /health for health checks)
-	router.Use(middleware.SkipAuthPaths("/health"))
+	// Add API key authentication (skips health and docs endpoints)
+	router.Use(middleware.SkipAuthPaths("/health", "/docs", "/openapi.json", "/schemas"))
 
 	// Get timeout from config, with fallback to 5 minutes
 	requestTimeout := time.Duration(appCfg.Server.RequestTimeoutSecs) * time.Second
