@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
 )
 
 // mockBackend implements backend.Backend for testing
@@ -597,4 +599,65 @@ func TestExecuteCommand_JSONMode(t *testing.T) {
 	if result.ExitCode != 0 {
 		t.Errorf("ExitCode = %d, want 0", result.ExitCode)
 	}
+}
+
+func TestGetCommandTimeout(t *testing.T) {
+	t.Run("returns zero when not configured", func(t *testing.T) {
+		// Reset config to ensure clean state
+		config.Reset()
+		defer config.Reset()
+
+		timeout := GetCommandTimeout()
+		if timeout != 0 {
+			t.Errorf("timeout = %v, want 0", timeout)
+		}
+	})
+}
+
+func TestExecuteCommand_WithTimeout(t *testing.T) {
+	b := &mockBackend{
+		name: "test",
+	}
+
+	t.Run("command completes before timeout", func(t *testing.T) {
+		cfg := &ExecutionConfig{
+			Backend:    b,
+			OutputMode: OutputModeText,
+			Stdin:      false,
+			Timeout:    5 * time.Second,
+		}
+		cmd := exec.Command("echo", "quick")
+
+		result, err := ExecuteCommand(cfg, cmd)
+
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.ExitCode != 0 {
+			t.Errorf("ExitCode = %d, want 0", result.ExitCode)
+		}
+	})
+
+	t.Run("command times out", func(t *testing.T) {
+		cfg := &ExecutionConfig{
+			Backend:    b,
+			OutputMode: OutputModeText,
+			Stdin:      false,
+			Timeout:    100 * time.Millisecond,
+		}
+		// Use sleep command that takes longer than timeout
+		cmd := exec.Command("sleep", "5")
+
+		result, err := ExecuteCommand(cfg, cmd)
+
+		if err != ErrCommandTimeout {
+			t.Errorf("error = %v, want ErrCommandTimeout", err)
+		}
+		if result.ExitCode != 124 {
+			t.Errorf("ExitCode = %d, want 124 (timeout)", result.ExitCode)
+		}
+		if result.Error != ErrCommandTimeout.Error() {
+			t.Errorf("Error = %q, want %q", result.Error, ErrCommandTimeout.Error())
+		}
+	})
 }

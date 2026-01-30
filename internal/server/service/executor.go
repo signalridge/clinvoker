@@ -701,6 +701,28 @@ func (e *Executor) ListBackends(ctx context.Context) []BackendInfo {
 	return result
 }
 
+// SessionStoreHealth represents the health status of the session store.
+type SessionStoreHealth struct {
+	Available    bool
+	SessionCount int
+	Error        string
+}
+
+// GetSessionStoreHealth returns the health status of the session store.
+func (e *Executor) GetSessionStoreHealth(ctx context.Context) SessionStoreHealth {
+	health := SessionStoreHealth{Available: true}
+
+	sessions, err := e.store.List()
+	if err != nil {
+		health.Available = false
+		health.Error = err.Error()
+		return health
+	}
+
+	health.SessionCount = len(sessions)
+	return health
+}
+
 func sessionToInfo(s *session.Session) SessionInfo {
 	return SessionInfo{
 		ID:            s.ID,

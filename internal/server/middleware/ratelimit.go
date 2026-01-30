@@ -12,13 +12,14 @@ import (
 	"github.com/signalridge/clinvoker/internal/config"
 )
 
-// RateLimiter provides per-IP rate limiting.
+// RateLimiter provides per-IP rate limiting with LRU eviction.
 type RateLimiter struct {
 	mu       sync.RWMutex
 	limiters map[string]*limiterEntry
 	rps      rate.Limit
 	burst    int
 	cleanup  time.Duration
+	maxSize  int
 	stopCh   chan struct{}
 	stopOnce sync.Once
 }
@@ -28,8 +29,13 @@ type limiterEntry struct {
 	lastSeen time.Time
 }
 
-// DefaultRateLimiterCleanup is the default cleanup interval for stale entries.
-const DefaultRateLimiterCleanup = 3 * time.Minute
+const (
+	// DefaultRateLimiterCleanup is the default cleanup interval for stale entries.
+	DefaultRateLimiterCleanup = 3 * time.Minute
+	// DefaultRateLimiterMaxSize is the default maximum number of IP entries to track.
+	// This prevents memory exhaustion from IP spoofing attacks.
+	DefaultRateLimiterMaxSize = 10000
+)
 
 // NewRateLimiter creates a new rate limiter using the default cleanup interval.
 // rps is requests per second, burst is the maximum burst size.
@@ -40,8 +46,18 @@ func NewRateLimiter(rps, burst int) *RateLimiter {
 // NewRateLimiterWithCleanup creates a new rate limiter with a custom cleanup interval.
 // If cleanup <= 0, DefaultRateLimiterCleanup is used.
 func NewRateLimiterWithCleanup(rps, burst int, cleanup time.Duration) *RateLimiter {
+	return NewRateLimiterWithOptions(rps, burst, cleanup, DefaultRateLimiterMaxSize)
+}
+
+// NewRateLimiterWithOptions creates a new rate limiter with full configuration.
+// If cleanup <= 0, DefaultRateLimiterCleanup is used.
+// If maxSize <= 0, DefaultRateLimiterMaxSize is used.
+func NewRateLimiterWithOptions(rps, burst int, cleanup time.Duration, maxSize int) *RateLimiter {
 	if cleanup <= 0 {
 		cleanup = DefaultRateLimiterCleanup
+	}
+	if maxSize <= 0 {
+		maxSize = DefaultRateLimiterMaxSize
 	}
 
 	rl := &RateLimiter{
@@ -49,6 +65,7 @@ func NewRateLimiterWithCleanup(rps, burst int, cleanup time.Duration) *RateLimit
 		rps:      rate.Limit(rps),
 		burst:    burst,
 		cleanup:  cleanup,
+		maxSize:  maxSize,
 		stopCh:   make(chan struct{}),
 	}
 
@@ -65,6 +82,11 @@ func (rl *RateLimiter) Allow(ip string) bool {
 
 	entry, exists := rl.limiters[ip]
 	if !exists {
+		// Evict oldest entries if at capacity (LRU eviction)
+		if len(rl.limiters) >= rl.maxSize {
+			rl.evictOldestLocked()
+		}
+
 		entry = &limiterEntry{
 			limiter:  rate.NewLimiter(rl.rps, rl.burst),
 			lastSeen: time.Now(),
@@ -75,6 +97,24 @@ func (rl *RateLimiter) Allow(ip string) bool {
 	}
 
 	return entry.limiter.Allow()
+}
+
+// evictOldestLocked removes the oldest entry from the map.
+// Caller must hold the write lock.
+func (rl *RateLimiter) evictOldestLocked() {
+	var oldestIP string
+	var oldestTime time.Time
+
+	for ip, entry := range rl.limiters {
+		if oldestIP == "" || entry.lastSeen.Before(oldestTime) {
+			oldestIP = ip
+			oldestTime = entry.lastSeen
+		}
+	}
+
+	if oldestIP != "" {
+		delete(rl.limiters, oldestIP)
+	}
 }
 
 // cleanupLoop removes stale limiter entries periodically.
@@ -165,14 +205,19 @@ func getClientIP(r *http.Request) string {
 			xff = xff[:idx]
 		}
 		ip := trimSpace(xff)
-		if ip != "" {
+		// Validate that the extracted value is a valid IP
+		if ip != "" && isValidIP(ip) {
 			return ip
 		}
 	}
 
 	// Try X-Real-IP
 	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
-		return trimSpace(xrip)
+		ip := trimSpace(xrip)
+		// Validate that the extracted value is a valid IP
+		if isValidIP(ip) {
+			return ip
+		}
 	}
 
 	// Fall back to direct IP
@@ -233,6 +278,11 @@ func trimSpace(s string) string {
 		end--
 	}
 	return s[start:end]
+}
+
+// isValidIP checks if the given string is a valid IPv4 or IPv6 address.
+func isValidIP(ip string) bool {
+	return net.ParseIP(ip) != nil
 }
 
 // writeTooManyRequests writes a 429 Too Many Requests response.

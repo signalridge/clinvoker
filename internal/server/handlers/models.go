@@ -237,14 +237,25 @@ type HealthResponse struct {
 
 // HealthResponseBody is the body of a health response.
 type HealthResponseBody struct {
-	Status   string                `json:"status" doc:"Health status (ok or degraded)"`
-	Backends []BackendHealthStatus `json:"backends,omitempty" doc:"Backend availability status"`
+	Status       string                `json:"status" doc:"Health status (ok, degraded, or unhealthy)"`
+	Version      string                `json:"version" doc:"Server version"`
+	Uptime       string                `json:"uptime" doc:"Server uptime duration"`
+	UptimeMillis int64                 `json:"uptime_ms" doc:"Server uptime in milliseconds"`
+	Backends     []BackendHealthStatus `json:"backends,omitempty" doc:"Backend availability status"`
+	SessionStore SessionStoreStatus    `json:"session_store" doc:"Session store status"`
 }
 
 // BackendHealthStatus represents the health status of a backend.
 type BackendHealthStatus struct {
 	Name      string `json:"name" doc:"Backend name"`
 	Available bool   `json:"available" doc:"Whether the backend is available"`
+}
+
+// SessionStoreStatus represents the health status of the session store.
+type SessionStoreStatus struct {
+	Available    bool   `json:"available" doc:"Whether the session store is accessible"`
+	SessionCount int    `json:"session_count" doc:"Number of sessions in store"`
+	Error        string `json:"error,omitempty" doc:"Error message if unavailable"`
 }
 
 // ToServiceRequest converts API request to service request.

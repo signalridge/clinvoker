@@ -5,12 +5,17 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/signalridge/clinvoker/internal/config"
 )
+
+// gopassPathPattern validates gopass paths to prevent injection attacks.
+// Allows alphanumeric characters, slashes, hyphens, underscores, and dots.
+var gopassPathPattern = regexp.MustCompile(`^[a-zA-Z0-9/_.\-]+$`)
 
 const (
 	// EnvAPIKeys is the environment variable name for API keys.
@@ -109,6 +114,11 @@ func loadFromGopass() []string {
 		return nil // Not configured, skip gopass
 	}
 
+	// Validate gopass path to prevent injection attacks
+	if !isValidGopassPath(gopassPath) {
+		return nil // Invalid path format
+	}
+
 	// Check if gopass is available
 	if _, err := exec.LookPath("gopass"); err != nil {
 		return nil
@@ -126,6 +136,15 @@ func loadFromGopass() []string {
 	}
 
 	return parseKeys(string(out))
+}
+
+// isValidGopassPath validates that the gopass path contains only safe characters.
+// Allowed: alphanumeric, slashes, hyphens, underscores, dots.
+func isValidGopassPath(path string) bool {
+	if path == "" {
+		return false
+	}
+	return gopassPathPattern.MatchString(path)
 }
 
 // parseKeys parses a comma-separated string of API keys.

@@ -256,6 +256,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		Session:    ctx.sess,
 		OutputMode: DetermineOutputMode(ctx.userFormat),
 		Stdin:      true,
+		Timeout:    GetCommandTimeout(),
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 
@@ -352,7 +353,7 @@ func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFl
 	// Get session ID for resume
 	bSessionID := sess.BackendSessionID
 	if bSessionID == "" {
-		bSessionID = sess.ID
+		return fmt.Errorf("session %s has no backend session id; cannot resume", shortSessionID(sess.ID))
 	}
 
 	// Build resume command
@@ -376,6 +377,7 @@ func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFl
 		Session:    sess,
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
+		Timeout:    GetCommandTimeout(),
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 

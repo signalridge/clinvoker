@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,24 +45,36 @@ type ExecutionConfig struct {
 	Backend    backend.Backend
 	Session    *session.Session
 	OutputMode OutputMode
-	Stdin      bool // Whether to connect stdin
+	Stdin      bool          // Whether to connect stdin
+	Timeout    time.Duration // Command timeout (0 = no timeout)
 }
+
+// ErrCommandTimeout is returned when a command exceeds its timeout.
+var ErrCommandTimeout = errors.New("command execution timed out")
 
 // ExecuteCommand executes a backend command and returns the result.
 // This is the unified execution function that consolidates the execution logic.
 func ExecuteCommand(cfg *ExecutionConfig, cmd *exec.Cmd) (*ExecutionResult, error) {
+	// Create context with timeout if specified
+	ctx := context.Background()
+	if cfg.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+		defer cancel()
+	}
+
 	switch cfg.OutputMode {
 	case OutputModeStream:
-		return executeStream(cfg.Backend, cmd, cfg.Session, cfg.Stdin)
+		return executeStream(ctx, cfg.Backend, cmd, cfg.Session, cfg.Stdin)
 	case OutputModeJSON:
-		return executeWithCapture(cfg.Backend, cmd, cfg.Session, true, cfg.Stdin)
+		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, true, cfg.Stdin)
 	default: // OutputModeText
-		return executeWithCapture(cfg.Backend, cmd, cfg.Session, false, cfg.Stdin)
+		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin)
 	}
 }
 
 // executeStream executes a command with direct stream output.
-func executeStream(b backend.Backend, cmd *exec.Cmd, sess *session.Session, useStdin bool) (*ExecutionResult, error) {
+func executeStream(ctx context.Context, b backend.Backend, cmd *exec.Cmd, sess *session.Session, useStdin bool) (*ExecutionResult, error) {
 	startTime := time.Now()
 
 	if useStdin {
@@ -84,6 +97,12 @@ func executeStream(b backend.Backend, cmd *exec.Cmd, sess *session.Session, useS
 		return &ExecutionResult{ExitCode: 1}, err
 	}
 
+	// Monitor context for timeout
+	waitDone := make(chan error, 1)
+	go func() {
+		waitDone <- cmd.Wait()
+	}()
+
 	parser := output.NewParser(b.Name(), "")
 	if sess != nil {
 		parser = output.NewParser(b.Name(), sess.ID)
@@ -97,8 +116,19 @@ func executeStream(b backend.Backend, cmd *exec.Cmd, sess *session.Session, useS
 	var backendSessionID string
 	var tokenUsage *backend.TokenUsage
 	var streamErr error
+	timedOut := false
 
+scanLoop:
 	for scanner.Scan() {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			timedOut = true
+			_ = cmd.Process.Kill()
+			break scanLoop
+		default:
+		}
+
 		line := scanner.Text()
 		fmt.Fprintln(os.Stdout, line)
 
@@ -126,14 +156,31 @@ func executeStream(b backend.Backend, cmd *exec.Cmd, sess *session.Session, useS
 		}
 	}
 
-	if scanErr := scanner.Err(); scanErr != nil && streamErr == nil {
+	if scanErr := scanner.Err(); scanErr != nil && streamErr == nil && !timedOut {
 		streamErr = scanErr
 	}
 
-	waitErr := cmd.Wait()
+	// Wait for command to finish or timeout
+	var waitErr error
+	select {
+	case waitErr = <-waitDone:
+		// Command finished
+	case <-ctx.Done():
+		// Context cancelled (timeout)
+		_ = cmd.Process.Kill()
+		<-waitDone // Wait for process to exit after kill
+		timedOut = true
+	}
+
 	result := &ExecutionResult{
 		DurationSeconds: time.Since(startTime).Seconds(),
 		SessionID:       backendSessionID,
+	}
+
+	if timedOut {
+		result.ExitCode = 124 // Standard timeout exit code
+		result.Error = ErrCommandTimeout.Error()
+		return result, ErrCommandTimeout
 	}
 
 	if waitErr != nil {
@@ -175,7 +222,7 @@ func executeStream(b backend.Backend, cmd *exec.Cmd, sess *session.Session, useS
 }
 
 // executeWithCapture executes a command and captures output.
-func executeWithCapture(b backend.Backend, cmd *exec.Cmd, sess *session.Session, outputJSON bool, useStdin bool) (*ExecutionResult, error) {
+func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, sess *session.Session, outputJSON bool, useStdin bool) (*ExecutionResult, error) {
 	startTime := time.Now()
 
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -194,9 +241,33 @@ func executeWithCapture(b backend.Backend, cmd *exec.Cmd, sess *session.Session,
 		return &ExecutionResult{ExitCode: 1}, err
 	}
 
-	waitErr := cmd.Wait()
+	// Monitor context for timeout
+	waitDone := make(chan error, 1)
+	go func() {
+		waitDone <- cmd.Wait()
+	}()
+
+	var waitErr error
+	timedOut := false
+
+	select {
+	case waitErr = <-waitDone:
+		// Command finished normally
+	case <-ctx.Done():
+		// Context cancelled (timeout)
+		_ = cmd.Process.Kill()
+		<-waitDone // Wait for process to exit after kill
+		timedOut = true
+	}
+
 	result := &ExecutionResult{
 		DurationSeconds: time.Since(startTime).Seconds(),
+	}
+
+	if timedOut {
+		result.ExitCode = 124 // Standard timeout exit code
+		result.Error = ErrCommandTimeout.Error()
+		return result, ErrCommandTimeout
 	}
 
 	var errMsg string
@@ -334,4 +405,14 @@ func DetermineInternalFormat(userFormat backend.OutputFormat) backend.OutputForm
 		return backend.OutputJSON
 	}
 	return userFormat
+}
+
+// GetCommandTimeout returns the command timeout from config.
+// Returns 0 if no timeout is configured.
+func GetCommandTimeout() time.Duration {
+	cfg := config.Get()
+	if cfg.UnifiedFlags.CommandTimeoutSecs > 0 {
+		return time.Duration(cfg.UnifiedFlags.CommandTimeoutSecs) * time.Second
+	}
+	return 0
 }

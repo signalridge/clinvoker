@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -70,29 +71,59 @@ func CleanupCodexSession(threadID string) {
 // CleanupCodexSessionInDir is the testable version that accepts base directory and time.
 func CleanupCodexSessionInDir(threadID, baseDir string, now time.Time) {
 	// Codex stores sessions in {baseDir}/.codex/sessions/YYYY/MM/DD/
-	sessionDir := filepath.Join(baseDir, ".codex", "sessions",
+	// Older sessions may live in different date folders, so walk the tree.
+	root := filepath.Join(baseDir, ".codex", "sessions",
 		fmt.Sprintf("%d", now.Year()),
 		fmt.Sprintf("%02d", int(now.Month())),
 		fmt.Sprintf("%02d", now.Day()),
 	)
 
-	// Find and delete the session file containing the thread ID in its name
-	entries, err := os.ReadDir(sessionDir)
+	// Prefer the current date path first for performance, then fall back to full walk.
+	if tryCleanupCodexSessionInDir(threadID, root) {
+		return
+	}
+
+	root = filepath.Join(baseDir, ".codex", "sessions")
+	_, err := os.Stat(root)
 	if err != nil {
 		return
+	}
+
+	stopErr := errors.New("session cleaned")
+	if err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return nil
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if ContainsThreadID(entry.Name(), threadID) {
+			_ = os.Remove(path)
+			return stopErr
+		}
+		return nil
+	}); err != nil && !errors.Is(err, stopErr) {
+		return
+	}
+}
+
+func tryCleanupCodexSessionInDir(threadID, sessionDir string) bool {
+	entries, err := os.ReadDir(sessionDir)
+	if err != nil {
+		return false
 	}
 
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		// Session files contain UUID in name: rollout-...-UUID.jsonl
 		if ContainsThreadID(entry.Name(), threadID) {
 			sessionPath := filepath.Join(sessionDir, entry.Name())
 			_ = os.Remove(sessionPath)
-			return
+			return true
 		}
 	}
+	return false
 }
 
 // ContainsThreadID checks if a filename contains the thread ID.

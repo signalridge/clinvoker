@@ -15,8 +15,9 @@ import (
 	"github.com/signalridge/clinvoker/internal/config"
 )
 
-// sessionIDPattern validates session IDs (hex string, 16 characters).
-var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16}$`)
+// sessionIDPattern validates session IDs (hex string, 32 characters for 128-bit entropy).
+// Also accepts legacy 16-character IDs for backward compatibility.
+var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16,32}$`)
 
 // indexFileName is the name of the persisted index file.
 const indexFileName = "index.json"
@@ -51,8 +52,8 @@ func validateSessionID(id string) error {
 	if strings.Contains(id, "/") || strings.Contains(id, "\\") || strings.Contains(id, "..") {
 		return fmt.Errorf("invalid session ID: contains path characters")
 	}
-	// For full session IDs, validate format
-	if len(id) == 16 && !sessionIDPattern.MatchString(id) {
+	// For full session IDs, validate format (16 chars legacy, 32 chars new)
+	if (len(id) == 16 || len(id) == 32) && !sessionIDPattern.MatchString(id) {
 		return fmt.Errorf("invalid session ID format")
 	}
 	return nil
@@ -137,7 +138,7 @@ func (s *Store) persistIndex() error {
 	}
 
 	indexPath := filepath.Join(s.dir, indexFileName)
-	if err := os.WriteFile(indexPath, data, 0600); err != nil {
+	if err := writeFileAtomic(indexPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write index: %w", err)
 	}
 
@@ -407,7 +408,7 @@ func (s *Store) saveLocked(sess *Session) error {
 
 	path := s.sessionPath(sess.ID)
 	// Use 0600 to protect potentially sensitive prompt data
-	if err := os.WriteFile(path, data, 0600); err != nil {
+	if err := writeFileAtomic(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write session file: %w", err)
 	}
 
@@ -991,6 +992,51 @@ func (s *Store) Count() (int, error) {
 
 func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
+}
+
+func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return err
+	}
+
+	tmpName := tmp.Name()
+	cleanup := true
+	defer func() {
+		if cleanup {
+			_ = os.Remove(tmpName)
+		}
+	}()
+
+	if err := tmp.Chmod(perm); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tmpName, path); err != nil {
+		_ = os.Remove(path)
+		if err2 := os.Rename(tmpName, path); err2 != nil {
+			return err
+		}
+	}
+
+	cleanup = false
+	return nil
 }
 
 // ensureStoreDirLocked creates the store directory. Caller must hold s.mu.

@@ -500,7 +500,7 @@ func persistParallelOutputs(results *ParallelResults, tasks *ParallelTasks) erro
 		return nil
 	}
 
-	if err := os.MkdirAll(tasks.OutputDir, 0o755); err != nil {
+	if err := os.MkdirAll(tasks.OutputDir, 0o700); err != nil {
 		return err
 	}
 
@@ -539,7 +539,7 @@ func parallelOutputFilename(task *ParallelTask, index int) string {
 }
 
 func writeJSONFile(path string, v any) error {
-	file, err := os.Create(path)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 
@@ -16,14 +17,26 @@ import (
 	"github.com/signalridge/clinvoker/internal/util"
 )
 
+// HealthInfo contains information for health check responses.
+type HealthInfo struct {
+	Version   string
+	StartTime time.Time
+}
+
 // CustomHandlers provides handlers for the custom RESTful API.
 type CustomHandlers struct {
-	executor *service.Executor
+	executor   *service.Executor
+	healthInfo HealthInfo
 }
 
 // NewCustomHandlers creates a new custom handlers instance.
 func NewCustomHandlers(executor *service.Executor) *CustomHandlers {
-	return &CustomHandlers{executor: executor}
+	return NewCustomHandlersWithHealthInfo(executor, HealthInfo{Version: "1.0.0", StartTime: time.Now()})
+}
+
+// NewCustomHandlersWithHealthInfo creates a new custom handlers instance with health info.
+func NewCustomHandlersWithHealthInfo(executor *service.Executor, healthInfo HealthInfo) *CustomHandlers {
+	return &CustomHandlers{executor: executor, healthInfo: healthInfo}
 }
 
 // Register registers all custom API routes.
@@ -515,33 +528,73 @@ func (h *CustomHandlers) HandleDeleteSession(ctx context.Context, input *DeleteS
 type HealthInput struct{}
 
 // HandleHealth handles health check requests.
-// Returns overall status and individual backend availability.
+// Returns overall status, version, uptime, backend availability, and session store status.
 func (h *CustomHandlers) HandleHealth(ctx context.Context, _ *HealthInput) (*HealthResponse, error) {
 	// Get backend status
 	backends := h.executor.ListBackends(ctx)
 
 	backendStatus := make([]BackendHealthStatus, len(backends))
-	allAvailable := true
+	allBackendsAvailable := true
 	for i, b := range backends {
 		backendStatus[i] = BackendHealthStatus{
 			Name:      b.Name,
 			Available: b.Available,
 		}
 		if !b.Available {
-			allAvailable = false
+			allBackendsAvailable = false
 		}
 	}
 
+	// Get session store status
+	storeHealth := h.executor.GetSessionStoreHealth(ctx)
+	sessionStoreStatus := SessionStoreStatus{
+		Available:    storeHealth.Available,
+		SessionCount: storeHealth.SessionCount,
+		Error:        storeHealth.Error,
+	}
+
+	// Calculate uptime
+	uptime := time.Since(h.healthInfo.StartTime)
+	uptimeMillis := uptime.Milliseconds()
+
+	// Format uptime as human-readable string
+	uptimeStr := formatDuration(uptime)
+
 	// Determine overall status
 	status := "ok"
-	if !allAvailable {
+	if !allBackendsAvailable {
 		status = "degraded"
+	}
+	if !storeHealth.Available {
+		status = "unhealthy"
 	}
 
 	return &HealthResponse{
 		Body: HealthResponseBody{
-			Status:   status,
-			Backends: backendStatus,
+			Status:       status,
+			Version:      h.healthInfo.Version,
+			Uptime:       uptimeStr,
+			UptimeMillis: uptimeMillis,
+			Backends:     backendStatus,
+			SessionStore: sessionStoreStatus,
 		},
 	}, nil
+}
+
+// formatDuration formats a duration as a human-readable string.
+func formatDuration(d time.Duration) string {
+	d = d.Round(time.Second)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+
+	if h > 0 {
+		return fmt.Sprintf("%dh%dm%ds", h, m, s)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm%ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
 }

@@ -27,15 +27,19 @@ type Config struct {
 	Port int
 }
 
+// Version is the server version.
+const Version = "1.0.0"
+
 // Server is the HTTP server for the AI backend APIs.
 type Server struct {
-	config   Config
-	router   chi.Router
-	api      huma.API
-	executor *service.Executor
-	logger   *slog.Logger
-	server   *http.Server
-	limiter  *middleware.RateLimiter
+	config    Config
+	router    chi.Router
+	api       huma.API
+	executor  *service.Executor
+	logger    *slog.Logger
+	server    *http.Server
+	limiter   *middleware.RateLimiter
+	startTime time.Time
 }
 
 // New creates a new server instance.
@@ -137,14 +141,25 @@ func New(cfg Config, logger *slog.Logger) *Server {
 	api := humachi.New(router, humaConfig)
 
 	srv := &Server{
-		config:   cfg,
-		router:   router,
-		api:      api,
-		executor: service.NewExecutor(),
-		logger:   logger,
-		limiter:  limiter,
+		config:    cfg,
+		router:    router,
+		api:       api,
+		executor:  service.NewExecutor(),
+		logger:    logger,
+		limiter:   limiter,
+		startTime: time.Now(),
 	}
 	return srv
+}
+
+// StartTime returns the server's start time.
+func (s *Server) StartTime() time.Time {
+	return s.startTime
+}
+
+// Uptime returns the server's uptime duration.
+func (s *Server) Uptime() time.Duration {
+	return time.Since(s.startTime)
 }
 
 // API returns the huma API for route registration.

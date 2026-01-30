@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -120,6 +121,10 @@ type UnifiedFlagsConfig struct {
 
 	// MaxTokens limits response tokens.
 	MaxTokens int `mapstructure:"max_tokens"`
+
+	// CommandTimeoutSecs is the maximum time in seconds to wait for a command to complete.
+	// Set to 0 for no timeout (default). Common values: 300 (5 min), 600 (10 min), 1800 (30 min).
+	CommandTimeoutSecs int `mapstructure:"command_timeout_secs"`
 }
 
 // BackendConfig contains backend-specific configuration.
@@ -197,8 +202,11 @@ func (c *BackendConfig) IsBackendEnabled() bool {
 }
 
 var (
-	cfg  *Config
-	once sync.Once
+	cfg        *Config
+	cfgMu      sync.RWMutex
+	once       sync.Once
+	watchers   []func(*Config)
+	watchersMu sync.RWMutex
 )
 
 // Init initializes the configuration.
@@ -292,7 +300,67 @@ func Get() *Config {
 	// Always call Init to ensure initialization happens via sync.Once
 	// This avoids race conditions from checking cfg == nil directly
 	_ = Init("")
+	cfgMu.RLock()
+	defer cfgMu.RUnlock()
 	return cfg
+}
+
+// OnConfigChange registers a callback that will be called when the config changes.
+// Returns a function to unregister the callback.
+func OnConfigChange(callback func(*Config)) func() {
+	watchersMu.Lock()
+	watchers = append(watchers, callback)
+	index := len(watchers) - 1
+	watchersMu.Unlock()
+
+	return func() {
+		watchersMu.Lock()
+		defer watchersMu.Unlock()
+		if index < len(watchers) {
+			watchers = append(watchers[:index], watchers[index+1:]...)
+		}
+	}
+}
+
+// EnableHotReload enables automatic config reloading when the config file changes.
+// This should be called after Init() and before starting the server.
+func EnableHotReload() {
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		reloadConfig()
+	})
+	viper.WatchConfig()
+}
+
+// reloadConfig reloads the configuration from viper and notifies watchers.
+func reloadConfig() {
+	cfgMu.Lock()
+	newCfg := &Config{}
+	if err := viper.Unmarshal(newCfg); err != nil {
+		cfgMu.Unlock()
+		return
+	}
+	cfg = newCfg
+	cfgMu.Unlock()
+
+	// Notify watchers
+	watchersMu.RLock()
+	currentWatchers := make([]func(*Config), len(watchers))
+	copy(currentWatchers, watchers)
+	watchersMu.RUnlock()
+
+	for _, watcher := range currentWatchers {
+		watcher(newCfg)
+	}
+}
+
+// Reload forces a reload of the configuration from the config file.
+// Returns an error if the config file cannot be read or parsed.
+func Reload() error {
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+	reloadConfig()
+	return nil
 }
 
 // ConfigDir returns the configuration directory path.
@@ -391,6 +459,13 @@ func EnabledBackends() []string {
 
 // Reset resets the configuration (mainly for testing).
 func Reset() {
-	once = sync.Once{}
+	cfgMu.Lock()
 	cfg = nil
+	cfgMu.Unlock()
+
+	watchersMu.Lock()
+	watchers = nil
+	watchersMu.Unlock()
+
+	once = sync.Once{}
 }

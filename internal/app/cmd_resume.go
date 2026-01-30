@@ -137,7 +137,7 @@ func runResume(cmd *cobra.Command, args []string) error {
 	// Build resume command
 	bSessionID := sess.BackendSessionID
 	if bSessionID == "" {
-		bSessionID = sess.ID
+		return fmt.Errorf("session %s has no backend session id; cannot resume", shortSessionID(sess.ID))
 	}
 	execCmd := b.ResumeCommandUnified(bSessionID, prompt, opts)
 
@@ -159,6 +159,7 @@ func runResume(cmd *cobra.Command, args []string) error {
 		Session:    sess,
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
+		Timeout:    GetCommandTimeout(),
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 

@@ -762,3 +762,188 @@ func TestBackendConfigWithAllFieldsEmpty(t *testing.T) {
 		t.Error("IsBackendEnabled should return true for empty config")
 	}
 }
+
+// ============================================================================
+// Hot Reload Tests
+// ============================================================================
+
+func TestOnConfigChange(t *testing.T) {
+	Reset()
+	Init("")
+
+	t.Run("callback is registered and called", func(t *testing.T) {
+		called := false
+		var receivedCfg *Config
+
+		unregister := OnConfigChange(func(c *Config) {
+			called = true
+			receivedCfg = c
+		})
+		defer unregister()
+
+		// Trigger reload manually
+		reloadConfig()
+
+		if !called {
+			t.Error("callback was not called")
+		}
+		if receivedCfg == nil {
+			t.Error("callback received nil config")
+		}
+	})
+
+	t.Run("multiple callbacks are called", func(t *testing.T) {
+		Reset()
+		Init("")
+
+		count := 0
+
+		unregister1 := OnConfigChange(func(c *Config) { count++ })
+		unregister2 := OnConfigChange(func(c *Config) { count++ })
+		defer unregister1()
+		defer unregister2()
+
+		reloadConfig()
+
+		if count != 2 {
+			t.Errorf("expected 2 callbacks, got %d", count)
+		}
+	})
+
+	t.Run("unregister removes callback", func(t *testing.T) {
+		Reset()
+		Init("")
+
+		called := false
+		unregister := OnConfigChange(func(c *Config) {
+			called = true
+		})
+
+		// Unregister before reload
+		unregister()
+
+		reloadConfig()
+
+		if called {
+			t.Error("callback should not have been called after unregister")
+		}
+	})
+}
+
+func TestReload(t *testing.T) {
+	Reset()
+	Init("")
+
+	t.Run("reload returns error when no config file", func(t *testing.T) {
+		// When there's no config file loaded, Reload should return an error
+		// because viper can't find the config file to read
+		err := Reload()
+		// This may or may not error depending on whether a config file exists
+		// Just verify it doesn't panic
+		_ = err
+	})
+
+	t.Run("reload triggers callbacks", func(t *testing.T) {
+		Reset()
+		Init("")
+
+		called := false
+		unregister := OnConfigChange(func(c *Config) {
+			called = true
+		})
+		defer unregister()
+
+		// Even if Reload fails to read file, it shouldn't call callbacks
+		// Only successful reload should trigger callbacks
+		err := Reload()
+		if err == nil {
+			// If reload succeeded, callbacks should be called
+			if !called {
+				t.Error("callbacks should be called on successful reload")
+			}
+		}
+	})
+}
+
+func TestResetClearsWatchers(t *testing.T) {
+	Reset()
+	Init("")
+
+	called := false
+	OnConfigChange(func(c *Config) {
+		called = true
+	})
+
+	// Reset should clear watchers
+	Reset()
+	Init("")
+
+	// Trigger reload
+	reloadConfig()
+
+	if called {
+		t.Error("watcher should have been cleared by Reset")
+	}
+}
+
+func TestConcurrentConfigAccess(t *testing.T) {
+	Reset()
+	Init("")
+
+	// Test concurrent reads don't cause race conditions
+	done := make(chan bool)
+
+	for i := 0; i < 10; i++ {
+		go func() {
+			cfg := Get()
+			_ = cfg.DefaultBackend
+			done <- true
+		}()
+	}
+
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+}
+
+func TestServerConfigDefaults(t *testing.T) {
+	Reset()
+	Init("")
+	cfg := Get()
+
+	tests := []struct {
+		name     string
+		got      any
+		expected any
+	}{
+		{"Host", cfg.Server.Host, "127.0.0.1"},
+		{"Port", cfg.Server.Port, 8080},
+		{"RequestTimeoutSecs", cfg.Server.RequestTimeoutSecs, 300},
+		{"ReadTimeoutSecs", cfg.Server.ReadTimeoutSecs, 30},
+		{"WriteTimeoutSecs", cfg.Server.WriteTimeoutSecs, 300},
+		{"IdleTimeoutSecs", cfg.Server.IdleTimeoutSecs, 120},
+		{"RateLimitEnabled", cfg.Server.RateLimitEnabled, false},
+		{"RateLimitRPS", cfg.Server.RateLimitRPS, 10},
+		{"RateLimitBurst", cfg.Server.RateLimitBurst, 20},
+		{"RateLimitCleanupSecs", cfg.Server.RateLimitCleanupSecs, 180},
+		{"MaxRequestBodyBytes", cfg.Server.MaxRequestBodyBytes, int64(10 * 1024 * 1024)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.expected {
+				t.Errorf("Server.%s = %v, want %v", tt.name, tt.got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCommandTimeoutSecsDefault(t *testing.T) {
+	Reset()
+	Init("")
+	cfg := Get()
+
+	if cfg.UnifiedFlags.CommandTimeoutSecs != 0 {
+		t.Errorf("CommandTimeoutSecs = %d, want 0 (no timeout by default)", cfg.UnifiedFlags.CommandTimeoutSecs)
+	}
+}

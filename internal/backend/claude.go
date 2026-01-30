@@ -54,6 +54,12 @@ func (c *Claude) ResumeCommand(sessionID, prompt string, opts *Options) *exec.Cm
 		if opts.Model != "" {
 			args = append(args, "--model", opts.Model)
 		}
+		if opts.AllowedTools != "" {
+			args = append(args, "--allowedTools", opts.AllowedTools)
+		}
+		for _, dir := range opts.AllowedDirs {
+			args = append(args, "--add-dir", dir)
+		}
 		args = append(args, opts.ExtraFlags...)
 	}
 

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
@@ -38,8 +39,10 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 		return nil, fmt.Errorf("invalid request")
 	}
 
+	normalizedFormat := strings.ToLower(strings.TrimSpace(req.OutputFormat))
+
 	// Validate output format before processing
-	if err := validateOutputFormat(req.OutputFormat); err != nil {
+	if err := validateOutputFormat(normalizedFormat); err != nil {
 		return nil, err
 	}
 
@@ -70,7 +73,7 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 		}
 	}
 
-	requestedFormat := backend.OutputFormat(util.ApplyOutputFormatDefault(req.OutputFormat, cfg))
+	requestedFormat := backend.OutputFormat(util.ApplyOutputFormatDefault(normalizedFormat, cfg))
 
 	opts := &backend.UnifiedOptions{
 		WorkDir:      req.WorkDir,
