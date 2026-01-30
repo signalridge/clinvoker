@@ -15,8 +15,8 @@ func TestNewSession(t *testing.T) {
 		if sess.ID == "" {
 			t.Error("expected non-empty ID")
 		}
-		if len(sess.ID) != 16 { // 8 bytes = 16 hex chars
-			t.Errorf("expected ID length 16, got %d", len(sess.ID))
+		if len(sess.ID) != 32 { // 16 bytes = 32 hex chars (128-bit entropy)
+			t.Errorf("expected ID length 32, got %d", len(sess.ID))
 		}
 		if sess.Backend != "claude" {
 			t.Errorf("expected backend 'claude', got %q", sess.Backend)
@@ -123,8 +123,8 @@ func TestGenerateID(t *testing.T) {
 		}
 		ids[id] = true
 
-		if len(id) != 16 {
-			t.Errorf("expected ID length 16, got %d", len(id))
+		if len(id) != 32 { // 16 bytes = 32 hex chars (128-bit entropy)
+			t.Errorf("expected ID length 32, got %d", len(id))
 		}
 	}
 }

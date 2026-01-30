@@ -39,6 +39,9 @@ func Validate(cfg *Config) []error {
 	// Validate session config
 	errs = append(errs, validateSessionConfig(&cfg.Session)...)
 
+	// Validate output config
+	errs = append(errs, validateOutputConfig(&cfg.Output)...)
+
 	// Validate server config
 	errs = append(errs, validateServerConfig(&cfg.Server)...)
 
@@ -128,22 +131,6 @@ func validateUnifiedFlags(flags *UnifiedFlagsConfig) []error {
 		}
 	}
 
-	// Validate output format
-	if flags.OutputFormat != "" {
-		validFormats := map[string]bool{
-			"default":     true,
-			"text":        true,
-			"json":        true,
-			"stream-json": true,
-		}
-		if !validFormats[flags.OutputFormat] {
-			errs = append(errs, &ValidationError{
-				Field:   "unified_flags.output_format",
-				Message: fmt.Sprintf("invalid format %q (valid: default, text, json, stream-json)", flags.OutputFormat),
-			})
-		}
-	}
-
 	// Validate max_turns
 	if flags.MaxTurns < 0 {
 		errs = append(errs, &ValidationError{
@@ -158,6 +145,32 @@ func validateUnifiedFlags(flags *UnifiedFlagsConfig) []error {
 			Field:   "unified_flags.max_tokens",
 			Message: "must be non-negative",
 		})
+	}
+
+	return errs
+}
+
+// validateOutputConfig validates output configuration.
+func validateOutputConfig(output *OutputConfig) []error {
+	var errs []error
+
+	if output == nil {
+		return errs
+	}
+
+	if output.Format != "" {
+		validFormats := map[string]bool{
+			"default":     true,
+			"text":        true,
+			"json":        true,
+			"stream-json": true,
+		}
+		if !validFormats[output.Format] {
+			errs = append(errs, &ValidationError{
+				Field:   "output.format",
+				Message: fmt.Sprintf("invalid format %q (valid: default, text, json, stream-json)", output.Format),
+			})
+		}
 	}
 
 	return errs
@@ -285,10 +298,24 @@ func validateServerConfig(server *ServerConfig) []error {
 		})
 	}
 
+	if server.RateLimitCleanupSecs < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   "server.rate_limit_cleanup_secs",
+			Message: "must be non-negative",
+		})
+	}
+
 	if server.RateLimitEnabled && server.RateLimitRPS == 0 {
 		errs = append(errs, &ValidationError{
 			Field:   "server.rate_limit_rps",
 			Message: "must be positive when rate limiting is enabled",
+		})
+	}
+
+	if server.MaxRequestBodyBytes < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   "server.max_request_body_bytes",
+			Message: "must be non-negative",
 		})
 	}
 

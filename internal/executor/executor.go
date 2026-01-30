@@ -77,10 +77,13 @@ func (e *Executor) Run(cmd *exec.Cmd) (int, error) {
 
 	// Create a cancelable reader to stop stdin copy when command exits
 	stdinReader := &cancelableReader{r: e.Stdin}
-	defer stdinReader.Cancel()
+
+	// Channel to signal stdin copy goroutine completion
+	stdinDone := make(chan struct{})
 
 	// Copy stdin to PTY in a goroutine
 	go func() {
+		defer close(stdinDone)
 		_, err := io.Copy(ptmx, stdinReader)
 		// Ignore EOF and ErrClosedPipe as they're expected when PTY closes
 		if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, os.ErrClosed) {
@@ -93,6 +96,10 @@ func (e *Executor) Run(cmd *exec.Cmd) (int, error) {
 	if _, err := io.Copy(e.Stdout, ptmx); err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, os.ErrClosed) {
 		// Non-critical: we still want to wait for the command
 	}
+
+	// Cancel stdin reader and wait for goroutine to complete
+	stdinReader.Cancel()
+	<-stdinDone
 
 	// Wait for the command to finish
 	err = cmd.Wait()

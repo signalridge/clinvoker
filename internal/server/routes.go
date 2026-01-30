@@ -7,8 +7,12 @@ import (
 
 // RegisterRoutes registers all API routes on the server.
 func (s *Server) RegisterRoutes() {
-	// Register custom RESTful API handlers
-	customHandlers := handlers.NewCustomHandlers(s.executor)
+	// Register custom RESTful API handlers with health info
+	healthInfo := handlers.HealthInfo{
+		Version:   Version,
+		StartTime: s.startTime,
+	}
+	customHandlers := handlers.NewCustomHandlersWithHealthInfo(s.executor, healthInfo)
 	customHandlers.Register(s.api)
 
 	// Register OpenAI-compatible API handlers

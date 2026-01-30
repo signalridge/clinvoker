@@ -12,8 +12,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/session"
-	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // compareCmd runs the same prompt on multiple backends for comparison.
@@ -54,7 +52,6 @@ type CompareResult struct {
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 	Duration  float64   `json:"duration_seconds"`
-	SessionID string    `json:"session_id,omitempty"`
 }
 
 // CompareResults represents aggregated comparison results.
@@ -107,8 +104,6 @@ func runCompare(cmd *cobra.Command, args []string) error {
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
 	}
 
-	// Create session store
-	store := session.NewStore()
 	cfg := config.Get()
 
 	results := &CompareResults{
@@ -121,7 +116,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 	if compareSequential {
 		// Run sequentially
 		for i, name := range availableBackends {
-			result := runCompareTask(name, prompt, cfg, store)
+			result := runCompareTask(name, prompt, cfg)
 			results.Results[i] = result
 
 			if !compareJSON {
@@ -137,7 +132,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 			wg.Add(1)
 			go func(idx int, backendName string) {
 				defer wg.Done()
-				result := runCompareTask(backendName, prompt, cfg, store)
+				result := runCompareTask(backendName, prompt, cfg)
 				mu.Lock()
 				results.Results[idx] = result
 				mu.Unlock()
@@ -170,25 +165,20 @@ func runCompare(cmd *cobra.Command, args []string) error {
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
 		fmt.Println("COMPARISON SUMMARY")
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
-		fmt.Printf("%-12s %-10s %-12s %-10s %s\n", "BACKEND", "STATUS", "DURATION", "SESSION", "MODEL")
+		fmt.Printf("%-12s %-10s %-12s %s\n", "BACKEND", "STATUS", "DURATION", "MODEL")
 		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
 
 		for _, r := range results.Results {
 			status := statusText(r.ExitCode, r.Error)
-			sessionID := "-"
-			if r.SessionID != "" {
-				sessionID = shortSessionID(r.SessionID)
-			}
 			model := r.Model
 			if model == "" {
 				model = "(default)"
 			}
 
-			fmt.Printf("%-12s %-10s %-12.2fs %-10s %s\n",
+			fmt.Printf("%-12s %-10s %-12.2fs %s\n",
 				r.Backend,
 				status,
 				r.Duration,
-				sessionID,
 				model,
 			)
 			if r.Error != "" {
@@ -215,7 +205,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runCompareTask(backendName, prompt string, cfg *config.Config, store *session.Store) CompareResult {
+func runCompareTask(backendName, prompt string, cfg *config.Config) CompareResult {
 	startTime := time.Now()
 	result := CompareResult{
 		Backend:   backendName,
@@ -241,6 +231,7 @@ func runCompareTask(backendName, prompt string, cfg *config.Config, store *sessi
 	result.Model = model
 
 	// Build unified options
+	// Always use internal JSON format to capture errors properly
 	opts := &backend.UnifiedOptions{
 		Model:        model,
 		ApprovalMode: backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode),
@@ -249,20 +240,8 @@ func runCompareTask(backendName, prompt string, cfg *config.Config, store *sessi
 		MaxTokens:    cfg.UnifiedFlags.MaxTokens,
 		Verbose:      cfg.UnifiedFlags.Verbose,
 		DryRun:       dryRun,
-		OutputFormat: backend.OutputFormat(util.ApplyOutputFormatDefault("", cfg)),
-	}
-
-	// Create session
-	sess, sessErr := session.NewSession(backendName, "")
-	if sessErr == nil {
-		sess.SetModel(model)
-		sess.InitialPrompt = prompt
-		sess.SetStatus(session.StatusActive)
-		sess.AddTag("compare")
-		if err := store.Save(sess); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
-		}
-		result.SessionID = sess.ID
+		OutputFormat: backend.OutputJSON, // Force JSON for proper error capture
+		Ephemeral:    true,               // Compare is always ephemeral
 	}
 
 	// Build command
@@ -276,27 +255,21 @@ func runCompareTask(backendName, prompt string, cfg *config.Config, store *sessi
 		return result
 	}
 
-	// Execute with output capture and parsing
-	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
-	if execErr != nil {
+	// Execute with JSON output capture for proper error extraction
+	captureResult, execErr := ExecuteAndCaptureWithJSON(b, execCmd)
+	if execErr != nil && captureResult.Error == "" {
 		result.Error = execErr.Error()
+	} else if captureResult.Error != "" {
+		result.Error = captureResult.Error
 	}
-	result.ExitCode = exitCode
-	result.Output = output
+	result.ExitCode = captureResult.ExitCode
+	result.Output = captureResult.Content
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
 
-	// Update session (if created successfully)
-	if sess != nil {
-		sess.IncrementTurn()
-		if exitCode == 0 {
-			sess.Complete()
-		} else {
-			sess.SetError(result.Error)
-		}
-		if err := store.Save(sess); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to update session: %v\n", err)
-		}
+	// Ensure ephemeral compare runs remain clean on the backend.
+	if opts.Ephemeral {
+		cleanupBackendSession(backendName, captureResult.BackendSessionID)
 	}
 
 	return result

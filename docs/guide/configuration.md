@@ -89,7 +89,8 @@ For CI/CD or scripted workflows where you don't want interactive prompts:
 ```yaml
 unified_flags:
   approval_mode: auto    # Auto-approve all actions
-  output_format: json    # Machine-readable output
+output:
+  format: json           # Machine-readable output
 ```
 
 !!! warning "Security Note"
@@ -315,7 +316,8 @@ default_backend: claude
 
 unified_flags:
   approval_mode: auto
-  output_format: json
+output:
+  format: json
 
 parallel:
   max_workers: 3

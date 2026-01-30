@@ -22,6 +22,8 @@ test/
 │   ├── test_backends.sh
 │   ├── test_auth.sh       # API key authentication
 │   ├── test_ratelimit.sh  # Rate limiting
+│   ├── test_requestsize.sh # Request body size limiting
+│   ├── test_tracing.sh    # Distributed tracing
 │   ├── test_prompt.sh
 │   ├── test_sessions.sh
 │   ├── test_chain.sh
@@ -138,6 +140,37 @@ From `lib/common.sh`:
 - `setup_test_env` - Initialize test environment
 - `start_server` / `stop_server` - Manage test server
 - `api_get/api_post/api_delete` - HTTP helpers
+
+## Test Coverage
+
+### CLI Tests
+| Test File | Coverage |
+|-----------|----------|
+| `test_version.sh` | Version command, help flag |
+| `test_config.sh` | Config show command |
+| `test_prompt.sh` | Basic prompt execution, dry-run, output formats |
+| `test_sessions.sh` | Session list, show, delete commands |
+| `test_resume.sh` | Resume session functionality |
+| `test_chain.sh` | Chain execution, placeholders, flags |
+| `test_compare.sh` | Compare across backends, output formats |
+| `test_parallel.sh` | Parallel execution, JSON input, fail-fast |
+
+### API Tests
+| Test File | Coverage |
+|-----------|----------|
+| `test_health.sh` | Health endpoint, backend status |
+| `test_backends.sh` | Backend listing |
+| `test_auth.sh` | API key authentication |
+| `test_ratelimit.sh` | Rate limiting, burst limits, Retry-After header |
+| `test_requestsize.sh` | Request body size limiting, 413 responses |
+| `test_tracing.sh` | W3C Trace Context propagation |
+| `test_prompt.sh` | Prompt API endpoint |
+| `test_sessions.sh` | Sessions API (list, get, delete) |
+| `test_chain.sh` | Chain API endpoint |
+| `test_compare.sh` | Compare API endpoint |
+| `test_parallel.sh` | Parallel API endpoint |
+| `test_openai.sh` | OpenAI-compatible endpoints |
+| `test_anthropic.sh` | Anthropic-compatible endpoints |
 
 ## CI Integration
 

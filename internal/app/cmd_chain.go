@@ -11,7 +11,6 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
-	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // chainCmd runs backends in sequence, passing context between them.
@@ -235,19 +234,26 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 		return result
 	}
 
-	// Execute with output capture and parsing
-	output, exitCode, execErr := ExecuteAndCapture(b, execCmd)
-	if execErr != nil {
+	// Execute with JSON output capture for proper content extraction
+	captureResult, execErr := ExecuteAndCaptureWithJSON(b, execCmd)
+	if execErr != nil && captureResult.Error == "" {
 		result.Error = execErr.Error()
+	} else if captureResult.Error != "" {
+		result.Error = captureResult.Error
 	}
-	result.ExitCode = exitCode
-	result.Output = output
+	result.ExitCode = captureResult.ExitCode
+	result.Output = captureResult.Content // Text content for {{previous}} substitution
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
 
 	// Print output if not in JSON mode
-	if !chainJSONFlag && output != "" {
-		fmt.Println(output)
+	if !chainJSONFlag && captureResult.Content != "" {
+		fmt.Println(captureResult.Content)
+	}
+
+	// Ensure ephemeral chain runs remain clean on the backend.
+	if opts.Ephemeral {
+		cleanupBackendSession(step.Backend, captureResult.BackendSessionID)
 	}
 
 	updateChainContext(ctx, stepWorkDir, result.Output, true)
@@ -302,6 +308,7 @@ func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.C
 		MaxTurns:     step.MaxTurns,
 		DryRun:       dryRun,
 		Ephemeral:    ephemeral,
+		OutputFormat: backend.OutputJSON, // Force JSON for proper parsing of {{previous}}
 	}
 
 	// Apply config defaults if not set
@@ -312,8 +319,8 @@ func buildChainStepOptions(step *ChainStep, workDir, model string, cfg *config.C
 		opts.SandboxMode = backend.SandboxMode(cfg.UnifiedFlags.SandboxMode)
 	}
 
-	// Apply output format default from config
-	opts.OutputFormat = backend.OutputFormat(util.ApplyOutputFormatDefault("", cfg))
+	// Note: OutputFormat is intentionally kept as JSON for internal parsing
+	// Chain passes text content between steps via {{previous}} placeholder
 
 	return opts
 }

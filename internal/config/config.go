@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -56,6 +57,49 @@ type ServerConfig struct {
 
 	// RateLimitBurst is the maximum burst size for rate limiting.
 	RateLimitBurst int `mapstructure:"rate_limit_burst"`
+
+	// RateLimitCleanupSecs controls how often stale rate limiter entries are purged.
+	// Default: 180 (3 minutes). Set to 0 to use the default.
+	RateLimitCleanupSecs int `mapstructure:"rate_limit_cleanup_secs"`
+
+	// TrustedProxies is a list of trusted proxy IP addresses or CIDR ranges.
+	// Only requests from these IPs will have X-Forwarded-For/X-Real-IP headers honored.
+	// If empty, proxy headers are never trusted (always use RemoteAddr).
+	// Examples: ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+	TrustedProxies []string `mapstructure:"trusted_proxies"`
+
+	// MaxRequestBodyBytes limits the maximum size of request bodies.
+	// Set to 0 to disable the limit.
+	MaxRequestBodyBytes int64 `mapstructure:"max_request_body_bytes"`
+
+	// CORS Configuration
+	// CORSAllowedOrigins specifies the allowed origins for CORS requests.
+	// If empty, defaults to localhost only for security.
+	// Examples: ["http://localhost:3000", "https://myapp.example.com"]
+	CORSAllowedOrigins []string `mapstructure:"cors_allowed_origins"`
+
+	// CORSAllowCredentials enables cookies/auth headers in CORS requests.
+	// Only enable this when CORSAllowedOrigins has explicit origins (not wildcards).
+	CORSAllowCredentials bool `mapstructure:"cors_allow_credentials"`
+
+	// CORSMaxAge is the max age in seconds for CORS preflight cache.
+	// Default: 300 (5 minutes)
+	CORSMaxAge int `mapstructure:"cors_max_age"`
+
+	// WorkDir Restrictions
+	// AllowedWorkDirPrefixes restricts work directories to paths starting with these prefixes.
+	// If empty, any path is allowed (subject to blocked paths check).
+	// Examples: ["/home/user/projects", "/var/www"]
+	AllowedWorkDirPrefixes []string `mapstructure:"allowed_workdir_prefixes"`
+
+	// BlockedWorkDirPrefixes blocks work directories starting with these prefixes.
+	// These are checked even if AllowedWorkDirPrefixes is set.
+	// Defaults include: /etc, /var/run, /root, /sys, /proc, /usr/bin, etc.
+	BlockedWorkDirPrefixes []string `mapstructure:"blocked_workdir_prefixes"`
+
+	// MetricsEnabled enables the /metrics endpoint for Prometheus scraping.
+	// Default: false
+	MetricsEnabled bool `mapstructure:"metrics_enabled"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -65,9 +109,6 @@ type UnifiedFlagsConfig struct {
 
 	// SandboxMode controls file/network access (default, read-only, workspace, full).
 	SandboxMode string `mapstructure:"sandbox_mode"`
-
-	// OutputFormat controls output format (default, text, json, stream-json).
-	OutputFormat string `mapstructure:"output_format"`
 
 	// Verbose enables verbose output.
 	Verbose bool `mapstructure:"verbose"`
@@ -80,6 +121,10 @@ type UnifiedFlagsConfig struct {
 
 	// MaxTokens limits response tokens.
 	MaxTokens int `mapstructure:"max_tokens"`
+
+	// CommandTimeoutSecs is the maximum time in seconds to wait for a command to complete.
+	// Set to 0 for no timeout (default). Common values: 300 (5 min), 600 (10 min), 1800 (30 min).
+	CommandTimeoutSecs int `mapstructure:"command_timeout_secs"`
 }
 
 // BackendConfig contains backend-specific configuration.
@@ -157,8 +202,11 @@ func (c *BackendConfig) IsBackendEnabled() bool {
 }
 
 var (
-	cfg  *Config
-	once sync.Once
+	cfg        *Config
+	cfgMu      sync.RWMutex
+	once       sync.Once
+	watchers   []func(*Config)
+	watchersMu sync.RWMutex
 )
 
 // Init initializes the configuration.
@@ -171,7 +219,6 @@ func Init(cfgFile string) error {
 			UnifiedFlags: UnifiedFlagsConfig{
 				ApprovalMode: "default",
 				SandboxMode:  "default",
-				OutputFormat: "default",
 			},
 			Backends: make(map[string]BackendConfig),
 			Session: SessionConfig{
@@ -180,7 +227,7 @@ func Init(cfgFile string) error {
 				StoreTokenUsage: true,
 			},
 			Output: OutputConfig{
-				Format:     "text",
+				Format:     "json",
 				ShowTokens: false,
 				ShowTiming: false,
 				Color:      true,
@@ -191,15 +238,17 @@ func Init(cfgFile string) error {
 				AggregateOutput: true,
 			},
 			Server: ServerConfig{
-				Host:               "127.0.0.1",
-				Port:               8080,
-				RequestTimeoutSecs: 300, // 5 minutes
-				ReadTimeoutSecs:    30,
-				WriteTimeoutSecs:   300, // 5 minutes
-				IdleTimeoutSecs:    120,
-				RateLimitEnabled:   false,
-				RateLimitRPS:       10,
-				RateLimitBurst:     20,
+				Host:                 "127.0.0.1",
+				Port:                 8080,
+				RequestTimeoutSecs:   300, // 5 minutes
+				ReadTimeoutSecs:      30,
+				WriteTimeoutSecs:     300, // 5 minutes
+				IdleTimeoutSecs:      120,
+				RateLimitEnabled:     false,
+				RateLimitRPS:         10,
+				RateLimitBurst:       20,
+				RateLimitCleanupSecs: 180,
+				MaxRequestBodyBytes:  10 * 1024 * 1024, // 10MB
 			},
 		}
 
@@ -251,7 +300,67 @@ func Get() *Config {
 	// Always call Init to ensure initialization happens via sync.Once
 	// This avoids race conditions from checking cfg == nil directly
 	_ = Init("")
+	cfgMu.RLock()
+	defer cfgMu.RUnlock()
 	return cfg
+}
+
+// OnConfigChange registers a callback that will be called when the config changes.
+// Returns a function to unregister the callback.
+func OnConfigChange(callback func(*Config)) func() {
+	watchersMu.Lock()
+	watchers = append(watchers, callback)
+	index := len(watchers) - 1
+	watchersMu.Unlock()
+
+	return func() {
+		watchersMu.Lock()
+		defer watchersMu.Unlock()
+		if index < len(watchers) {
+			watchers = append(watchers[:index], watchers[index+1:]...)
+		}
+	}
+}
+
+// EnableHotReload enables automatic config reloading when the config file changes.
+// This should be called after Init() and before starting the server.
+func EnableHotReload() {
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		reloadConfig()
+	})
+	viper.WatchConfig()
+}
+
+// reloadConfig reloads the configuration from viper and notifies watchers.
+func reloadConfig() {
+	cfgMu.Lock()
+	newCfg := &Config{}
+	if err := viper.Unmarshal(newCfg); err != nil {
+		cfgMu.Unlock()
+		return
+	}
+	cfg = newCfg
+	cfgMu.Unlock()
+
+	// Notify watchers
+	watchersMu.RLock()
+	currentWatchers := make([]func(*Config), len(watchers))
+	copy(currentWatchers, watchers)
+	watchersMu.RUnlock()
+
+	for _, watcher := range currentWatchers {
+		watcher(newCfg)
+	}
+}
+
+// Reload forces a reload of the configuration from the config file.
+// Returns an error if the config file cannot be read or parsed.
+func Reload() error {
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+	reloadConfig()
+	return nil
 }
 
 // ConfigDir returns the configuration directory path.
@@ -350,6 +459,13 @@ func EnabledBackends() []string {
 
 // Reset resets the configuration (mainly for testing).
 func Reset() {
-	once = sync.Once{}
+	cfgMu.Lock()
 	cfg = nil
+	cfgMu.Unlock()
+
+	watchersMu.Lock()
+	watchers = nil
+	watchersMu.Unlock()
+
+	once = sync.Once{}
 }

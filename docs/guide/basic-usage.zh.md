@@ -120,7 +120,7 @@ clinvk --ephemeral "2+2 等于多少"
 | `--backend` | `-b` | 使用的 AI 后端 | `claude` |
 | `--model` | `-m` | 使用的模型 | (后端默认) |
 | `--workdir` | `-w` | 工作目录 | (当前目录) |
-| `--output-format` | `-o` | 输出格式 | `text` |
+| `--output-format` | `-o` | 输出格式 | `json` |
 | `--continue` | `-c` | 继续上一个会话 | `false` |
 | `--dry-run` | | 只显示命令 | `false` |
 | `--ephemeral` | | 无状态模式 | `false` |

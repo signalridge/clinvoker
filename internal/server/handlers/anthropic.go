@@ -329,7 +329,7 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 			streamReq := *req
 			streamCtx := hctx.Context()
 
-			streamResult, streamErr := service.StreamPrompt(streamCtx, &streamReq, nil, true, func(event *output.UnifiedEvent) error {
+			streamResult, streamErr := service.StreamPrompt(streamCtx, &streamReq, nil, nil, true, func(event *output.UnifiedEvent) error {
 				if event.Type != output.EventMessage {
 					return nil
 				}

@@ -14,9 +14,6 @@ unified_flags:
   # Values: default (backend decides), read-only (read only),
   #         workspace (project only), full (full access)
   sandbox_mode: default
-  # Output format for responses.
-  # Values: default, text, json, stream-json
-  output_format: default
   # Enable verbose output.
   verbose: false
   # Dry run mode - show command without executing.
@@ -67,7 +64,7 @@ session:
 # Output settings.
 output:
   # Default output format (text, json, stream-json).
-  format: text
+  format: json
   # Show token usage after each response.
   show_tokens: false
   # Show execution timing.
@@ -108,6 +105,37 @@ server:
   rate_limit_rps: 10
   # Maximum burst size (requests allowed in a burst).
   rate_limit_burst: 20
+  # Cleanup interval in seconds for stale rate limiter entries.
+  # Set to 0 to use the default (180 seconds).
+  rate_limit_cleanup_secs: 180
+  # Max request body size in bytes (default: 10485760 = 10MB).
+  # Set to 0 to disable the limit.
+  max_request_body_bytes: 10485760
+  # Trusted proxy IPs/CIDR ranges. Only these can supply X-Forwarded-For/X-Real-IP.
+  # If empty, proxy headers are ignored and RemoteAddr is used.
+  # trusted_proxies: ["127.0.0.1", "10.0.0.0/8"]
+  # CORS Configuration (optional)
+  # Allowed origins for CORS requests.
+  # If empty, defaults to localhost only for security.
+  # cors_allowed_origins: ["http://localhost:3000", "https://myapp.example.com"]
+
+  # Enable cookies/auth headers in CORS requests.
+  # Only enable when cors_allowed_origins has explicit origins (not wildcards).
+  cors_allow_credentials: false
+  # Max age in seconds for CORS preflight cache (default: 300).
+  cors_max_age: 300
+  # WorkDir Restrictions (optional)
+  # Restrict work directories to paths starting with these prefixes.
+  # If empty, any path is allowed (subject to blocked paths check).
+  # allowed_workdir_prefixes: ["/home/user/projects", "/var/www"]
+
+  # Block work directories starting with these prefixes.
+  # Defaults include: /etc, /var/run, /root, /sys, /proc, /usr/bin, etc.
+  # blocked_workdir_prefixes: ["/etc", "/root"]
+
+  # Prometheus Metrics (optional)
+  # Enable the /metrics endpoint for Prometheus scraping.
+  metrics_enabled: false
 # Parallel execution settings (for `clinvk parallel` command).
 parallel:
   # Maximum number of parallel workers.

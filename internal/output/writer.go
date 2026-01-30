@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 )
 
@@ -243,16 +244,16 @@ func (c *Collector) Messages() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var result string
+	var builder strings.Builder
 	for _, e := range c.events {
 		if e.Type == EventMessage {
 			content, err := e.GetMessageContent()
 			if err == nil {
-				result += content.Text
+				builder.WriteString(content.Text)
 			}
 		}
 	}
-	return result
+	return builder.String()
 }
 
 // LastError returns the last error event, if any.

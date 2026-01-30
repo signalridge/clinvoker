@@ -61,8 +61,8 @@ Run multiple AI tasks concurrently. Tasks are defined in a JSON file or piped vi
 | `dry_run` | bool | No | Simulate execution without running commands |
 | `id` | string | No | Task identifier |
 | `name` | string | No | Task display name |
-| `tags` | array | No | Tags to add to the created session |
-| `meta` | object | No | Custom metadata (currently not used) |
+| `tags` | array | No | Tags copied into JSON output / `output_dir` artifacts |
+| `meta` | object | No | Custom metadata copied into JSON output / `output_dir` artifacts |
 
 ### Top-Level Fields
 
@@ -71,6 +71,7 @@ Run multiple AI tasks concurrently. Tasks are defined in a JSON file or piped vi
 | `tasks` | array | List of tasks |
 | `max_parallel` | int | Max concurrent tasks |
 | `fail_fast` | bool | Stop on first failure |
+| `output_dir` | string | Optional directory to persist `summary.json` and per-task JSON outputs |
 
 ## Examples
 
@@ -103,6 +104,16 @@ clinvk parallel --file tasks.json --fail-fast
 ```bash
 clinvk parallel --file tasks.json --json
 ```
+
+### Persist Outputs
+
+```bash
+cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk parallel
+```
+
+This writes:
+- `summary.json` (aggregate results)
+- One JSON file per task (includes task + result)
 
 ### Quiet Mode
 

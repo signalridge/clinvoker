@@ -80,6 +80,17 @@ Execute a single prompt.
 }
 ```
 
+**Streaming Response (`output_format: "stream-json"`):**
+
+When `output_format` is `stream-json`, the endpoint streams NDJSON (`application/x-ndjson`).
+Each line is a unified event:
+
+```json
+{"type":"init","backend":"claude","session_id":"...","content":{...}}
+{"type":"message","backend":"claude","session_id":"...","content":{...}}
+{"type":"done","backend":"claude","session_id":"...","content":{...}}
+```
+
 **Example:**
 
 ```bash

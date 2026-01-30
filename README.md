@@ -39,13 +39,21 @@
 
 ## 📑 Table of Contents
 
+- [✨ Highlights](#-highlights)
+- [📑 Table of Contents](#-table-of-contents)
 - [🚀 Quick Start](#-quick-start)
 - [📦 Installation](#-installation)
 - [💡 Usage](#-usage)
+  - [Basic Commands](#basic-commands)
+  - [Session Management](#session-management)
 - [🌐 HTTP API Server](#-http-api-server)
+  - [API Endpoints](#api-endpoints)
 - [⚙️ Configuration](#️-configuration)
 - [📖 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
+- [📊 Stats](#-stats)
+- [🙏 Acknowledgments](#-acknowledgments)
+- [📝 License](#-license)
 
 ---
 
@@ -189,7 +197,7 @@ go build ./cmd/clinvk
 
 ## 📊 Stats
 
-![Repobeats](https://repobeats.axiom.co/api/embed/640263fe1e0af60e340f1ac257bff68a562c26c6.svg "Repobeats analytics image")
+![Alt](https://repobeats.axiom.co/api/embed/b841d080442a754e7f11d8514e3e82db6ae1b120.svg "Repobeats analytics image")
 
 ---
 

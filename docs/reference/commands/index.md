@@ -33,7 +33,7 @@ These flags work with all commands:
 | `--backend` | `-b` | string | `claude` | AI backend to use |
 | `--model` | `-m` | string | | Model to use |
 | `--workdir` | `-w` | string | | Working directory |
-| `--output-format` | `-o` | string | `text` | Output format |
+| `--output-format` | `-o` | string | `json` | Output format |
 | `--config` | | string | | Config file path |
 | `--dry-run` | | bool | `false` | Show command only |
 | `--ephemeral` | | bool | `false` | Stateless mode |
@@ -76,8 +76,8 @@ Control output format:
 
 | Value | Description |
 |-------|-------------|
-| `text` | Plain text (default) |
-| `json` | Structured JSON |
+| `text` | Plain text |
+| `json` | Structured JSON (default) |
 | `stream-json` | Streaming JSON events |
 
 ```bash

@@ -45,3 +45,6 @@ Thumbs.db
 
 # MkDocs
 site/
+
+# Code review reports (local only)
+CODE_REVIEW.md

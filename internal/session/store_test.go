@@ -570,3 +570,85 @@ func TestStore_RaceDetection(t *testing.T) {
 		t.Errorf("final list failed: %v", err)
 	}
 }
+
+func TestMetaMatchesFilter_NilFilter(t *testing.T) {
+	store := NewStore()
+	meta := &SessionMeta{
+		Backend: "claude",
+		Model:   "model-x",
+		Tags:    []string{"tag-a"},
+	}
+
+	if !store.metaMatchesFilter(meta, nil) {
+		t.Fatal("expected nil filter to match any session meta")
+	}
+}
+
+func TestStore_ExternalModificationDetection(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "clinvoker-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create first store and add a session
+	store1 := NewStoreWithDir(tmpDir)
+	sess1, err := store1.Create("claude", "/tmp")
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+
+	// Verify store1 can see it
+	list1, err := store1.ListMeta()
+	if err != nil {
+		t.Fatalf("failed to list sessions: %v", err)
+	}
+	if len(list1) != 1 {
+		t.Fatalf("expected 1 session, got %d", len(list1))
+	}
+
+	// Create second store (simulating another process)
+	store2 := NewStoreWithDir(tmpDir)
+
+	// Store2 should be able to see the session created by store1
+	list2, err := store2.ListMeta()
+	if err != nil {
+		t.Fatalf("failed to list sessions from store2: %v", err)
+	}
+	if len(list2) != 1 {
+		t.Fatalf("store2 expected 1 session, got %d", len(list2))
+	}
+
+	// Now store2 creates a new session
+	sess2, err := store2.Create("gemini", "/tmp")
+	if err != nil {
+		t.Fatalf("failed to create session in store2: %v", err)
+	}
+
+	// Wait a bit to ensure file modification time changes
+	// Use 100ms to handle filesystems with lower time precision (e.g., overlayfs in containers)
+	time.Sleep(100 * time.Millisecond)
+
+	// Store1 should detect the external modification and see the new session
+	list1Updated, err := store1.ListMeta()
+	if err != nil {
+		t.Fatalf("failed to list sessions from store1: %v", err)
+	}
+	if len(list1Updated) != 2 {
+		t.Fatalf("store1 expected 2 sessions after external modification, got %d", len(list1Updated))
+	}
+
+	// Verify both sessions are present
+	foundSess1, foundSess2 := false, false
+	for _, meta := range list1Updated {
+		if meta.ID == sess1.ID {
+			foundSess1 = true
+		}
+		if meta.ID == sess2.ID {
+			foundSess2 = true
+		}
+	}
+	if !foundSess1 || !foundSess2 {
+		t.Fatalf("expected both sessions to be found, foundSess1=%v, foundSess2=%v", foundSess1, foundSess2)
+	}
+}

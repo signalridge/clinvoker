@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/metrics"
 	"github.com/signalridge/clinvoker/internal/server/core"
 	"github.com/signalridge/clinvoker/internal/session"
 	"github.com/signalridge/clinvoker/internal/util"
@@ -78,18 +80,26 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 	// Create session (skip if ephemeral or no store)
 	var sess *session.Session
 	if store != nil && !opts.Ephemeral {
+		cfg := config.Get()
+		tags := append([]string{}, cfg.Session.DefaultTags...)
+		tags = append(tags, "api")
+
 		var sessErr error
-		sess, sessErr = session.NewSession(req.Backend, req.WorkDir)
+		sess, sessErr = store.CreateWithOptions(req.Backend, req.WorkDir, &session.SessionOptions{
+			Model:         model,
+			InitialPrompt: req.Prompt,
+			Tags:          tags,
+		})
 		if sessErr == nil {
-			sess.SetModel(model)
-			sess.InitialPrompt = req.Prompt
-			sess.SetStatus(session.StatusActive)
-			sess.AddTag("api")
 			for k, v := range req.Metadata {
 				sess.SetMetadata(k, v)
 			}
 			if err := store.Save(sess); err == nil {
 				result.SessionID = sess.ID
+				// Record session creation metric
+				if cfg.Server.MetricsEnabled {
+					metrics.IncrementSessionsCreated()
+				}
 			}
 		}
 	}
@@ -100,6 +110,18 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 		Options:         opts,
 		RequestedFormat: prep.requestedFormat,
 	})
+
+	// Record backend execution metrics if enabled
+	execDuration := time.Since(start).Seconds()
+	if config.Get().Server.MetricsEnabled {
+		status := "success"
+		if execErr != nil || (coreRes != nil && coreRes.ExitCode != 0) {
+			status = "error"
+		}
+		metrics.RecordBackendExecution(req.Backend, status)
+		metrics.RecordBackendExecutionDuration(req.Backend, execDuration)
+	}
+
 	if execErr != nil {
 		result.Error = execErr.Error()
 		result.ExitCode = 1

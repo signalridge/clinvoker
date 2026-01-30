@@ -80,6 +80,17 @@ API 默认不需要认证。生产环境使用时，请放在带认证的反向�
 }
 ```
 
+**流式响应（`output_format: "stream-json"`）：**
+
+当 `output_format` 为 `stream-json` 时，接口会以 NDJSON（`application/x-ndjson`）流式输出。
+每一行都是一条统一事件：
+
+```json
+{"type":"init","backend":"claude","session_id":"...","content":{...}}
+{"type":"message","backend":"claude","session_id":"...","content":{...}}
+{"type":"done","backend":"claude","session_id":"...","content":{...}}
+```
+
 ---
 
 ## 并行执行

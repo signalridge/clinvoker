@@ -181,3 +181,165 @@ func TestOptions(t *testing.T) {
 		}
 	})
 }
+
+// ============================================================================
+// Registry Type Tests
+// ============================================================================
+
+func TestNewRegistry(t *testing.T) {
+	t.Run("creates empty registry", func(t *testing.T) {
+		r := NewRegistry()
+		if r == nil {
+			t.Fatal("expected non-nil registry")
+		}
+
+		names := r.List()
+		if len(names) != 0 {
+			t.Errorf("expected empty registry, got %d backends", len(names))
+		}
+	})
+
+	t.Run("registry operations work", func(t *testing.T) {
+		r := NewRegistry()
+
+		// Register a backend
+		r.Register(&Claude{})
+		if len(r.List()) != 1 {
+			t.Errorf("expected 1 backend, got %d", len(r.List()))
+		}
+
+		// Get the backend
+		b, err := r.Get("claude")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if b.Name() != "claude" {
+			t.Errorf("expected 'claude', got %q", b.Name())
+		}
+
+		// Unregister
+		r.Unregister("claude")
+		if len(r.List()) != 0 {
+			t.Errorf("expected empty registry after unregister, got %d", len(r.List()))
+		}
+	})
+}
+
+func TestNewRegistryWithDefaults(t *testing.T) {
+	r := NewRegistryWithDefaults()
+	if r == nil {
+		t.Fatal("expected non-nil registry")
+	}
+
+	names := r.List()
+	if len(names) != 3 {
+		t.Errorf("expected 3 default backends, got %d", len(names))
+	}
+
+	// Verify all default backends are present
+	expected := map[string]bool{"claude": false, "codex": false, "gemini": false}
+	for _, name := range names {
+		if _, ok := expected[name]; ok {
+			expected[name] = true
+		}
+	}
+
+	for name, found := range expected {
+		if !found {
+			t.Errorf("expected default backend %q not found", name)
+		}
+	}
+}
+
+func TestRegistryIsolation(t *testing.T) {
+	// Create two separate registries
+	r1 := NewRegistry()
+	r2 := NewRegistry()
+
+	// Register different backends
+	r1.Register(&Claude{})
+	r2.Register(&Codex{})
+
+	// Verify isolation
+	if len(r1.List()) != 1 {
+		t.Errorf("r1: expected 1 backend, got %d", len(r1.List()))
+	}
+	if len(r2.List()) != 1 {
+		t.Errorf("r2: expected 1 backend, got %d", len(r2.List()))
+	}
+
+	_, err1 := r1.Get("codex")
+	if err1 == nil {
+		t.Error("r1 should not have codex backend")
+	}
+
+	_, err2 := r2.Get("claude")
+	if err2 == nil {
+		t.Error("r2 should not have claude backend")
+	}
+}
+
+func TestDefaultRegistry(t *testing.T) {
+	r := DefaultRegistry()
+	if r == nil {
+		t.Fatal("expected non-nil default registry")
+	}
+
+	// Verify it's the same as the global functions
+	names := r.List()
+	globalNames := List()
+
+	if len(names) != len(globalNames) {
+		t.Errorf("default registry has %d backends, global has %d", len(names), len(globalNames))
+	}
+}
+
+func TestRegistryUnregisterAll(t *testing.T) {
+	r := NewRegistryWithDefaults()
+
+	// Verify we have backends
+	if len(r.List()) == 0 {
+		t.Fatal("expected backends before UnregisterAll")
+	}
+
+	r.UnregisterAll()
+
+	if len(r.List()) != 0 {
+		t.Errorf("expected 0 backends after UnregisterAll, got %d", len(r.List()))
+	}
+}
+
+func TestRegistryAvailabilityCache(t *testing.T) {
+	r := NewRegistry()
+	r.Register(&Claude{})
+
+	// First call should cache the result
+	_ = r.IsAvailableCached("claude")
+
+	// Invalidate cache
+	r.InvalidateAvailabilityCache("claude")
+
+	// Should still work after invalidation
+	_ = r.IsAvailableCached("claude")
+
+	// Invalidate all
+	r.InvalidateAllAvailabilityCache()
+
+	// Should still work
+	_ = r.IsAvailableCached("claude")
+}
+
+func TestRegistryGetUnknownBackend(t *testing.T) {
+	r := NewRegistry()
+	r.Register(&Claude{})
+
+	_, err := r.Get("unknown")
+	if err == nil {
+		t.Error("expected error for unknown backend")
+	}
+
+	// Error message should list available backends
+	if !strings.Contains(err.Error(), "claude") {
+		t.Errorf("error should list available backends: %v", err)
+	}
+}

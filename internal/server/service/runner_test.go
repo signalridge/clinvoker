@@ -172,7 +172,7 @@ func TestExecutePrompt_UsesConfigOutputFormatDefault(t *testing.T) {
 		t.Fatalf("config init failed: %v", err)
 	}
 	cfg := config.Get()
-	cfg.UnifiedFlags.OutputFormat = "stream-json"
+	cfg.Output.Format = "stream-json"
 
 	var capturedFormat backend.OutputFormat
 	mockBackend := mock.NewMockBackend("mock-format-capture",

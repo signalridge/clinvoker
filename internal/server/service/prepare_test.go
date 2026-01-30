@@ -15,7 +15,7 @@ func TestPreparePrompt_AppliesOutputFormatDefault(t *testing.T) {
 		t.Fatalf("config init failed: %v", err)
 	}
 	cfg := config.Get()
-	cfg.UnifiedFlags.OutputFormat = "stream-json"
+	cfg.Output.Format = "stream-json"
 
 	mockBackend := mock.NewMockBackend("mock-format-default", mock.WithAvailable(true))
 	t.Cleanup(mock.WithMockBackend(t, mockBackend))
@@ -40,7 +40,7 @@ func TestPreparePrompt_ExplicitOutputFormatWins(t *testing.T) {
 		t.Fatalf("config init failed: %v", err)
 	}
 	cfg := config.Get()
-	cfg.UnifiedFlags.OutputFormat = "json"
+	cfg.Output.Format = "json"
 
 	mockBackend := mock.NewMockBackend("mock-format-explicit", mock.WithAvailable(true))
 	t.Cleanup(mock.WithMockBackend(t, mockBackend))

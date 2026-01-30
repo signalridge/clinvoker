@@ -120,7 +120,7 @@ This is useful for quick one-off queries where you don't need conversation histo
 | `--backend` | `-b` | AI backend to use | `claude` |
 | `--model` | `-m` | Model to use | (backend default) |
 | `--workdir` | `-w` | Working directory | (current dir) |
-| `--output-format` | `-o` | Output format | `text` |
+| `--output-format` | `-o` | Output format | `json` |
 | `--continue` | `-c` | Continue last session | `false` |
 | `--dry-run` | | Show command only | `false` |
 | `--ephemeral` | | Stateless mode | `false` |

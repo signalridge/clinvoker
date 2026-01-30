@@ -22,7 +22,6 @@ func TestCompareResult_Structure(t *testing.T) {
 		StartTime: time.Now(),
 		EndTime:   time.Now().Add(time.Second),
 		Duration:  1.0,
-		SessionID: "sess-123",
 	}
 
 	if result.Backend != "claude" {
@@ -152,13 +151,12 @@ func TestParallelTasks_JSONParsing(t *testing.T) {
 
 func TestTaskResult_Structure(t *testing.T) {
 	result := TaskResult{
-		TaskID:    "task-1",
-		TaskName:  "Test",
-		Backend:   "codex",
-		ExitCode:  0,
-		Output:    "done",
-		Duration:  5.5,
-		SessionID: "sess-abc",
+		TaskID:   "task-1",
+		TaskName: "Test",
+		Backend:  "codex",
+		ExitCode: 0,
+		Output:   "done",
+		Duration: 5.5,
 	}
 
 	if result.Error != "" {
@@ -406,34 +404,32 @@ func getBackendIfAvailable(name string) error {
 
 // ==================== Output Format Config Defaults Tests ====================
 
-func TestBuildChainStepOptions_AppliesOutputFormat(t *testing.T) {
+func TestBuildChainStepOptions_ForcesJSONFormat(t *testing.T) {
+	// Chain steps always use JSON internally for proper content extraction
+	// regardless of config output format
 	tests := []struct {
-		name          string
-		outputFormat  string
-		wantHasFormat bool
+		name         string
+		configFormat string
 	}{
 		{
-			name:          "applies json format from config",
-			outputFormat:  "json",
-			wantHasFormat: true,
+			name:         "json config still uses json",
+			configFormat: "json",
 		},
 		{
-			name:          "applies text format from config",
-			outputFormat:  "text",
-			wantHasFormat: true,
+			name:         "text config is overridden to json",
+			configFormat: "text",
 		},
 		{
-			name:          "empty config format results in empty",
-			outputFormat:  "",
-			wantHasFormat: false,
+			name:         "empty config uses json",
+			configFormat: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &config.Config{
-				UnifiedFlags: config.UnifiedFlagsConfig{
-					OutputFormat: tt.outputFormat,
+				Output: config.OutputConfig{
+					Format: tt.configFormat,
 				},
 			}
 			step := &ChainStep{
@@ -443,14 +439,9 @@ func TestBuildChainStepOptions_AppliesOutputFormat(t *testing.T) {
 
 			opts := buildChainStepOptions(step, "/tmp", "opus", cfg, false)
 
-			if tt.wantHasFormat {
-				if string(opts.OutputFormat) != tt.outputFormat {
-					t.Errorf("OutputFormat = %q, want %q", opts.OutputFormat, tt.outputFormat)
-				}
-			} else {
-				if opts.OutputFormat != "" {
-					t.Errorf("OutputFormat = %q, want empty", opts.OutputFormat)
-				}
+			// Chain steps always force JSON for proper {{previous}} content parsing
+			if opts.OutputFormat != "json" {
+				t.Errorf("OutputFormat = %q, want 'json' (chain steps always use JSON internally)", opts.OutputFormat)
 			}
 		})
 	}
@@ -461,7 +452,6 @@ func TestBuildChainStepOptions_AppliesAllConfigDefaults(t *testing.T) {
 		UnifiedFlags: config.UnifiedFlagsConfig{
 			ApprovalMode: "auto",
 			SandboxMode:  "workspace",
-			OutputFormat: "json",
 		},
 	}
 	step := &ChainStep{

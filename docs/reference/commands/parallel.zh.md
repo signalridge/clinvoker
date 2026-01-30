@@ -58,8 +58,8 @@ clinvk parallel [flags]
 | `dry_run` | bool | 否 | 仅模拟执行 |
 | `id` | string | 否 | 任务标识 |
 | `name` | string | 否 | 任务显示名 |
-| `tags` | array | 否 | 会话标签 |
-| `meta` | object | 否 | 自定义元数据（当前未使用） |
+| `tags` | array | 否 | 写入 JSON 输出 / `output_dir` 产物 |
+| `meta` | object | 否 | 写入 JSON 输出 / `output_dir` 产物 |
 
 ### 顶层字段
 
@@ -68,6 +68,7 @@ clinvk parallel [flags]
 | `tasks` | array | 任务列表 |
 | `max_parallel` | int | 最大并发数 |
 | `fail_fast` | bool | 失败即停止 |
+| `output_dir` | string | 可选输出目录，写入 `summary.json` 和每个任务的 JSON |
 
 ## 示例
 
@@ -100,6 +101,16 @@ clinvk parallel --file tasks.json --fail-fast
 ```bash
 clinvk parallel --file tasks.json --json
 ```
+
+### 持久化输出
+
+```bash
+cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk parallel
+```
+
+写入内容：
+- `summary.json`（汇总结果）
+- 每个任务的 JSON 文件（包含 task + result）
 
 ## 退出码
 
