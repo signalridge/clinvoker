@@ -9,22 +9,26 @@ clinvk 可以通过多种包管理器安装，也可以从源码编译。
 === "Linux (amd64)"
 
     ```bash
-    curl -LO https://github.com/signalridge/clinvoker/releases/latest/download/clinvk_linux_amd64.tar.gz
-    tar xzf clinvk_linux_amd64.tar.gz
+    VERSION="<version>" # 例如 0.1.0-alpha
+    ASSET="clinvoker_${VERSION}_linux_amd64.tar.gz"
+    curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
+    tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
     ```
 
 === "macOS (arm64)"
 
     ```bash
-    curl -LO https://github.com/signalridge/clinvoker/releases/latest/download/clinvk_darwin_arm64.tar.gz
-    tar xzf clinvk_darwin_arm64.tar.gz
+    VERSION="<version>" # 例如 0.1.0-alpha
+    ASSET="clinvoker_${VERSION}_darwin_arm64.tar.gz"
+    curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
+    tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
     ```
 
 === "Windows"
 
-    从发布页面下载 `clinvk_windows_amd64.zip` 并解压到您的 PATH 中。
+    从发布页面下载 `clinvoker_<version>_windows_amd64.zip` 并解压到您的 PATH 中。
 
 ## 包管理器
 
