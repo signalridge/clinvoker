@@ -19,7 +19,7 @@ Instead, please report them via one of the following methods:
 
 1. **GitHub Security Advisories**: Use [GitHub's private vulnerability reporting](https://github.com/signalridge/clinvoker/security/advisories/new)
 
-2. **Email**: Send details to security@signalridge.com
+2. **Email**: Send details to <security@signalridge.com>
 
 ### What to Include
 

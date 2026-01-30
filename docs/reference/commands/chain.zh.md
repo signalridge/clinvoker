@@ -4,7 +4,7 @@
 
 ## 概要
 
-```
+```bash
 clinvk chain [flags]
 ```
 
@@ -36,7 +36,7 @@ clinvk chain [flags]
     }
   ]
 }
-```
+```bash
 
 ### 步骤字段
 

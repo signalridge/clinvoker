@@ -4,7 +4,7 @@ Execute multiple tasks in parallel.
 
 ## Synopsis
 
-```
+```bash
 clinvk parallel [flags]
 ```
 
@@ -40,7 +40,7 @@ Run multiple AI tasks concurrently. Tasks are defined in a JSON file or piped vi
   "max_parallel": 3,
   "fail_fast": true
 }
-```
+```bash
 
 ### Task Fields
 
@@ -85,7 +85,7 @@ clinvk parallel --file tasks.json
 
 ```bash
 cat tasks.json | clinvk parallel
-```
+```bash
 
 ### Limit Workers
 
@@ -97,7 +97,7 @@ clinvk parallel --file tasks.json --max-parallel 2
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```
+```bash
 
 ### JSON Output
 
@@ -109,9 +109,10 @@ clinvk parallel --file tasks.json --json
 
 ```bash
 cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk parallel
-```
+```yaml
 
 This writes:
+
 - `summary.json` (aggregate results)
 - One JSON file per task (includes task + result)
 
@@ -125,7 +126,7 @@ clinvk parallel --file tasks.json --quiet
 
 ### Text Output (Default)
 
-```
+```yaml
 Running 3 tasks (max 3 parallel)...
 
 [1] The auth module looks good...

@@ -8,7 +8,7 @@ clinvk provides Anthropic-compatible endpoints that allow you to use the Anthrop
 
 ## Base URL
 
-```
+```yaml
 http://localhost:8080/anthropic/v1
 ```
 
@@ -36,7 +36,7 @@ Create a message (chat completion).
   ],
   "system": "You are a helpful assistant."
 }
-```
+```yaml
 
 **Fields:**
 
@@ -93,7 +93,7 @@ message = client.messages.create(
 )
 
 print(message.content[0].text)
-```
+```text
 
 ### With Conversation History
 
@@ -160,7 +160,7 @@ async function main() {
 }
 
 main();
-```
+```bash
 
 ### cURL
 
@@ -187,7 +187,7 @@ curl -N -X POST http://localhost:8080/anthropic/v1/messages \
     "stream": true,
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
-```
+```bash
 
 ## Model Mapping
 
@@ -237,7 +237,7 @@ message = client.messages.create(
   "role": "user",
   "content": "Your message here"
 }
-```
+```text
 
 ### Assistant Messages (in history)
 
@@ -259,7 +259,7 @@ System prompts are passed as a top-level field:
   "system": "You are a helpful assistant.",
   "messages": [...]
 }
-```
+```text
 
 ## Error Handling
 

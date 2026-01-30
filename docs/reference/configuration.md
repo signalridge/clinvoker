@@ -10,7 +10,7 @@ Use a custom path with `--config`:
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```
+```text
 
 ## Full Configuration Example
 
@@ -83,12 +83,23 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  # Rate limiting
   rate_limit_enabled: false
   rate_limit_rps: 10
   rate_limit_burst: 20
   rate_limit_cleanup_secs: 180
+  # Security
   trusted_proxies: []
   max_request_body_bytes: 10485760
+  # CORS
+  cors_allowed_origins: []
+  cors_allow_credentials: false
+  cors_max_age: 300
+  # Working directory restrictions
+  allowed_workdir_prefixes: []
+  blocked_workdir_prefixes: []
+  # Observability
+  metrics_enabled: false
 
 # Parallel execution settings
 parallel:
@@ -103,7 +114,7 @@ parallel:
 
 ```yaml
 default_backend: claude
-```
+```yaml
 
 The backend to use when `--backend` is not specified.
 
@@ -178,7 +189,7 @@ backends:
     enabled: true
     system_prompt: ""
     extra_flags: []
-```
+```text
 
 #### Backend Fields
 
@@ -224,7 +235,7 @@ session:
   retention_days: 30
   store_token_usage: true
   default_tags: []
-```
+```yaml
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -274,7 +285,7 @@ server:
   rate_limit_cleanup_secs: 180
   trusted_proxies: []
   max_request_body_bytes: 10485760
-```
+```yaml
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -290,6 +301,12 @@ server:
 | `rate_limit_cleanup_secs` | int | `180` | Cleanup interval for rate limiter entries |
 | `trusted_proxies` | array | `[]` | Trusted proxies; if empty, proxy headers are ignored |
 | `max_request_body_bytes` | int | `10485760` | Max request body size (0 disables limit) |
+| `cors_allowed_origins` | array | `[]` | Allowed CORS origins (empty = localhost only) |
+| `cors_allow_credentials` | bool | `false` | Allow credentials in CORS requests |
+| `cors_max_age` | int | `300` | CORS preflight cache max age in seconds |
+| `allowed_workdir_prefixes` | array | `[]` | Allowed working directory prefixes |
+| `blocked_workdir_prefixes` | array | `[]` | Blocked working directory prefixes |
+| `metrics_enabled` | bool | `false` | Enable Prometheus `/metrics` endpoint |
 
 ---
 

@@ -4,7 +4,7 @@ Execute a sequential pipeline of prompts.
 
 ## Synopsis
 
-```
+```bash
 clinvk chain [flags]
 ```
 
@@ -37,7 +37,7 @@ Execute a series of prompts sequentially, passing output from each step to the n
     }
   ]
 }
-```
+```bash
 
 ### Step Fields
 
@@ -81,7 +81,7 @@ clinvk chain --file pipeline.json
 
 ```bash
 clinvk chain --file pipeline.json --json
-```
+```text
 
 ### Example Pipeline
 
@@ -111,7 +111,7 @@ clinvk chain --file pipeline.json --json
 
 ### Text Output (Default)
 
-```
+```yaml
 Step 1 (analyze): Starting...
 Step 1 (analyze): Completed (2.1s)
 
@@ -166,13 +166,13 @@ Total time: 7.1s
     }
   ]
 }
-```
+```text
 
 ## Error Handling
 
 If a step fails, the chain stops:
 
-```
+```text
 Step 1 (analyze): Completed (2.1s)
 Step 2 (implement): Failed - Backend error
 

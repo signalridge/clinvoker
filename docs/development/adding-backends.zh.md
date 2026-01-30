@@ -18,7 +18,7 @@ type Backend interface {
     ResumeCommand(sessionID, prompt string, opts *Options) *exec.Cmd
     ParseOutput(rawOutput string) string
 }
-```
+```text
 
 ## 逐步指南
 
@@ -60,7 +60,7 @@ func (b *MyBackend) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     args = append(args, prompt)
     return exec.Command("myai", args...)
 }
-```
+```text
 
 ### 3. 注册后端
 

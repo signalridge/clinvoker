@@ -39,7 +39,7 @@ type Backend interface {
     // SeparateStderr indicates if stderr should be captured separately
     SeparateStderr() bool
 }
-```
+```text
 
 ## Step-by-Step Guide
 
@@ -108,7 +108,7 @@ func (b *MyBackend) ResumeCommand(sessionID, prompt string, opts *Options) *exec
     cmd := exec.Command("myai", args...)
     return cmd
 }
-```
+```text
 
 ### 3. Implement Unified Options
 
@@ -171,7 +171,7 @@ func (b *MyBackend) SeparateStderr() bool {
     // Return true if stderr should be captured separately
     return false
 }
-```
+```text
 
 ### 5. Register the Backend
 
@@ -194,7 +194,7 @@ type BackendsConfig struct {
     Gemini    BackendConfig `mapstructure:"gemini"`
     MyBackend BackendConfig `mapstructure:"mybackend"` // Add this
 }
-```
+```yaml
 
 Add environment variable binding:
 
@@ -232,7 +232,7 @@ func TestMyBackend_BuildCommand(t *testing.T) {
         t.Errorf("expected 'myai', got %s", args[0])
     }
 }
-```
+```text
 
 ### 8. Update Documentation
 

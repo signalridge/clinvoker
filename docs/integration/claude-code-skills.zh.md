@@ -36,7 +36,8 @@ Claude Code Skills 扩展了 Claude 的能力，但有时你需要：
 DATA="$1"
 
 clinvk -b gemini -o json --ephemeral "分析此数据并提供洞察：$DATA"
-```
+```text
+
 ```
 
 ## 多模型审查 Skill
@@ -70,7 +71,8 @@ echo ""
 echo "### 安全审查 (Gemini)"
 clinvk -b gemini --ephemeral "审查此代码的安全漏洞：
 $CODE"
-```
+```text
+
 ```
 
 ## 并行审查 Skill
@@ -104,7 +106,8 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
   "## 性能 (Codex)\n" + .results[1].output + "\n\n" +
   "## 安全 (Gemini)\n" + .results[2].output
 '
-```
+```text
+
 ```
 
 ## 链式执行 Skill
@@ -149,7 +152,8 @@ cat > /tmp/doc-pipeline.json << EOF
 EOF
 
 clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
-```
+```text
+
 ```
 
 ## 高级模式
@@ -166,7 +170,7 @@ if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
 fi
 
 echo "$OUTPUT"
-```
+```bash
 
 ### 条件后端选择
 
@@ -199,7 +203,7 @@ clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 #!/bin/bash
 # 获取所有后端的响应并对比
 clinvk compare --all-backends "$1"
-```
+```bash
 
 ## 最佳实践
 
@@ -227,11 +231,12 @@ clinvk -b claude --ephemeral "你的提示"
 
 ```bash
 clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
-```
+```text
 
 ## Skill 目录结构
 
 ```
+
 ~/.claude/skills/
 ├── analyze-data/
 │   └── SKILL.md
@@ -241,7 +246,8 @@ clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
 │   └── SKILL.md
 └── shared/
     └── clinvk-helpers.sh  # 共享函数
-```
+
+```bash
 
 ## 故障排除
 

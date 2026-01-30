@@ -11,19 +11,24 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. Verify the backend CLI is installed:
+
    ```bash
    which claude codex gemini
-   ```
+
+```yaml
 
 2. Add the binary location to your PATH:
+
    ```bash
    export PATH="$PATH:/path/to/backend"
-   ```
+```
 
 3. Check clinvk detection:
+
    ```bash
    clinvk config show | grep available
-   ```
+
+```bash
 
 ### Backend Unavailable
 
@@ -42,18 +47,21 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. List available models for the backend:
+
    ```bash
    # For Claude
    claude models list
 
    # Check configured model
    clinvk config show | grep model
-   ```
+```
 
 2. Update your configuration:
+
    ```bash
    clinvk config set backends.claude.model claude-opus-4-5-20251101
-   ```
+
+```text
 
 ## Configuration Issues
 
@@ -64,38 +72,47 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. Check config file location:
+
    ```bash
    ls -la ~/.clinvk/config.yaml
-   ```
+```
 
 2. Validate YAML syntax:
+
    ```bash
    cat ~/.clinvk/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
-   ```
+
+```yaml
 
 3. Check file permissions:
+
    ```bash
    chmod 600 ~/.clinvk/config.yaml
-   ```
+```
 
 4. View effective configuration:
+
    ```bash
    clinvk config show
-   ```
+
+```bash
 
 ### Environment Variables Not Applied
 
 **Solution:**
 
 1. Verify the variable is set:
+
    ```bash
    echo $CLINVK_BACKEND
-   ```
+```
 
 2. Check shell configuration is loaded:
+
    ```bash
    source ~/.bashrc  # or ~/.zshrc
-   ```
+
+```yaml
 
 3. Remember CLI flags override environment variables
 
@@ -108,14 +125,17 @@ Common issues and solutions for clinvk.
 **Solution:**
 
 1. List available sessions:
+
    ```bash
    clinvk sessions list
-   ```
+```
 
 2. Check session directory:
+
    ```bash
    ls ~/.clinvk/sessions/
-   ```
+
+```yaml
 
 3. Sessions may have been cleaned. Create a new session instead.
 
@@ -142,34 +162,42 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Find the process using the port:
+
    ```bash
    lsof -i :8080
-   ```
+
+```yaml
 
 2. Use a different port:
+
    ```bash
    clinvk serve --port 3000
-   ```
+```
 
 3. Or kill the existing process:
+
    ```bash
    kill -9 <PID>
-   ```
+
+```bash
 
 ### Cannot Connect to Server
 
 **Solution:**
 
 1. Verify server is running:
+
    ```bash
    curl http://localhost:8080/health
-   ```
+```
 
 2. Check bind address:
+
    ```bash
    # If connecting from another machine, use 0.0.0.0
    clinvk serve --host 0.0.0.0
-   ```
+
+```yaml
 
 3. Check firewall settings
 
@@ -182,10 +210,11 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Increase timeout in config:
+
    ```yaml
    server:
      request_timeout_secs: 600
-   ```
+```
 
 2. For complex tasks, break into smaller prompts
 
@@ -194,9 +223,11 @@ rm -rf ~/.clinvk/sessions/*
 **Solution:**
 
 1. Use JSON output for full response:
+
    ```bash
    clinvk -o json "long prompt"
-   ```
+
+```yaml
 
 2. Check backend-specific output limits
 
@@ -209,9 +240,10 @@ rm -rf ~/.clinvk/sessions/*
 1. Wait before retrying
 2. Use `--sequential` for compare commands
 3. Reduce parallel workers:
+
    ```bash
    clinvk parallel --max-parallel 1 --file tasks.json
-   ```
+```
 
 ## Platform-Specific Issues
 
@@ -221,7 +253,7 @@ rm -rf ~/.clinvk/sessions/*
 
 ```bash
 xattr -d com.apple.quarantine /path/to/clinvk
-```
+```text
 
 ### Windows: PATH Issues
 
@@ -239,7 +271,7 @@ $env:Path += ";C:\path\to\clinvk"
 
 ```bash
 chmod +x /path/to/clinvk
-```
+```bash
 
 ## Debugging
 
@@ -255,7 +287,7 @@ See what command would be executed:
 
 ```bash
 clinvk --dry-run "prompt"
-```
+```bash
 
 ### Check Version
 

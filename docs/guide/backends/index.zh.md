@@ -23,7 +23,7 @@ clinvk 通过检查 PATH 中的二进制文件自动检测可用的后端：
 
 ```bash
 clinvk config show
-```
+```yaml
 
 输出显示哪些后端可用：
 
@@ -48,7 +48,7 @@ backends:
 clinvk --backend claude "提示"
 clinvk -b codex "提示"
 clinvk -b gemini "提示"
-```
+```text
 
 ### 通过配置
 
@@ -63,7 +63,7 @@ default_backend: claude
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "提示"  # 使用 codex
-```
+```text
 
 ## 后端特定选项
 
@@ -97,19 +97,19 @@ backends:
 
 ## 选择后端
 
-### 使用 Claude Code 当：
+### 使用 Claude Code 当
 
 - 处理复杂的多步骤任务
 - 需要彻底的代码审查和分析
 - 安全性和准确性至关重要
 
-### 使用 Codex CLI 当：
+### 使用 Codex CLI 当
 
 - 生成样板代码
 - 编写测试
 - 快速代码转换
 
-### 使用 Gemini CLI 当：
+### 使用 Gemini CLI 当
 
 - 需要广泛的知识上下文
 - 处理文档

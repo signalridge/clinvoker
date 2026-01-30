@@ -16,7 +16,7 @@ flowchart LR
     style B fill:#fff3e0,stroke:#f57c00
     style C fill:#ffecb3,stroke:#ffa000
     style D fill:#f3e5f5,stroke:#7b1fa2
-```
+```bash
 
 ## OpenAI SDK Compatibility
 
@@ -67,7 +67,7 @@ messages = [
 
 response = llm.invoke(messages)
 print(response.content)
-```
+```text
 
 ### Using with Chains
 
@@ -124,7 +124,7 @@ gemini_llm = ChatOpenAI(
 architecture_review = claude_llm.invoke("Review the architecture...")
 code_generation = codex_llm.invoke("Generate a function that...")
 data_analysis = gemini_llm.invoke("Analyze this dataset...")
-```
+```text
 
 ## LangGraph Agent Integration
 
@@ -276,7 +276,7 @@ app = workflow.compile()
 # Run
 result = app.invoke({"code": "def process(data): return data * 2"})
 print(result["final_report"])
-```
+```text
 
 ## Streaming Responses
 
@@ -317,7 +317,7 @@ llm = ChatOpenAI(
 
 for chunk in llm.stream([HumanMessage(content="Explain recursion...")]):
     print(chunk.content, end="", flush=True)
-```
+```text
 
 ## Async Support
 
@@ -371,7 +371,7 @@ except APIConnectionError:
     print("Could not connect to clinvk server. Is it running?")
 except APIError as e:
     print(f"API error: {e.message}")
-```
+```text
 
 ## Best Practices
 

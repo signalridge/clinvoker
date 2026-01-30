@@ -33,7 +33,7 @@
     }
   ]
 }
-```
+```bash
 
 ### 运行任务
 
@@ -47,7 +47,7 @@ clinvk parallel --file tasks.json
 
 ```bash
 cat tasks.json | clinvk parallel
-```
+```text
 
 ## 任务选项
 
@@ -96,7 +96,7 @@ cat tasks.json | clinvk parallel
 ```bash
 # 最多同时运行 2 个任务
 clinvk parallel --file tasks.json --max-parallel 2
-```
+```bash
 
 ### 快速失败模式
 
@@ -112,7 +112,7 @@ clinvk parallel --file tasks.json --fail-fast
 
 ```bash
 clinvk parallel --file tasks.json --json
-```
+```bash
 
 ### 静默模式
 
@@ -142,22 +142,27 @@ CLI 参数会覆盖文件级别的设置。
 
 显示任务完成时的进度和结果：
 
-```
+```text
 Running 3 tasks (max 3 parallel)...
 
 [1] auth 模块看起来不错...
 [2] 添加了日志语句...
 [3] 生成了 5 个测试用例...
 
-Results:
+Results
+============================================================
+
+BACKEND      STATUS   DURATION   SESSION    TASK
+
 ------------------------------------------------------------
-#    BACKEND      STATUS   DURATION   SESSION    TASK
-------------------------------------------------------------
+
 1    claude       OK       2.50s      abc123     审查 auth 模块
 2    codex        OK       3.20s      def456     为 API 添加日志
 3    gemini       OK       2.80s      ghi789     为 utils 生成测试
 ------------------------------------------------------------
+
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
+
 ```
 
 ### JSON 输出

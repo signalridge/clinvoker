@@ -14,7 +14,8 @@ clinvk 可以通过多种包管理器安装，也可以从源码编译。
     curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
     tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
-    ```
+
+```yaml
 
 === "macOS (arm64)"
 
@@ -24,7 +25,7 @@ clinvk 可以通过多种包管理器安装，也可以从源码编译。
     curl -LO "https://github.com/signalridge/clinvoker/releases/download/v${VERSION}/${ASSET}"
     tar xzf "${ASSET}"
     sudo mv clinvk /usr/local/bin/
-    ```
+```
 
 === "Windows"
 
@@ -36,7 +37,7 @@ clinvk 可以通过多种包管理器安装，也可以从源码编译。
 
 ```bash
 brew install signalridge/tap/clinvk
-```
+```text
 
 ### Scoop (Windows)
 
@@ -56,7 +57,7 @@ nix profile install github:signalridge/clinvoker
 
 # 开发环境
 nix develop github:signalridge/clinvoker
-```
+```yaml
 
 添加到您的 flake：
 
@@ -77,7 +78,7 @@ yay -S clinvk-bin
 
 # 或从源码构建
 yay -S clinvk
-```
+```text
 
 ### Debian/Ubuntu
 
@@ -91,7 +92,7 @@ sudo dpkg -i clinvk_*.deb
 ```bash
 # 从发布页面下载 .rpm 包
 sudo rpm -i clinvk_*.rpm
-```
+```bash
 
 ## 从源码安装
 
@@ -110,7 +111,7 @@ git clone https://github.com/signalridge/clinvoker.git
 cd clinvoker
 go build -o clinvk ./cmd/clinvk
 sudo mv clinvk /usr/local/bin/
-```
+```bash
 
 ## 验证安装
 
@@ -122,7 +123,7 @@ clinvk version
 
 预期输出：
 
-```
+```yaml
 clinvk version v0.x.x
   commit: abc1234
   built:  2025-01-27T00:00:00Z

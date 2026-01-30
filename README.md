@@ -31,8 +31,10 @@
 
 - **Multi-Backend** — Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI
 - **OpenAI-Compatible API** — Drop-in replacement for OpenAI/Anthropic API endpoints
-- **Session Management** — Persist and resume conversations across sessions
+- **Session Management** — Persist and resume conversations across sessions with cross-process locking
 - **Parallel Execution** — Run tasks concurrently across multiple backends
+- **Security** — Rate limiting, request size limiting, and trusted proxy support
+- **Observability** — Distributed tracing, Prometheus metrics, and structured logging
 - **Cross-Platform** — Native binaries for Linux, macOS, and Windows
 
 ---
