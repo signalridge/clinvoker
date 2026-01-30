@@ -22,6 +22,8 @@ test/
 │   ├── test_backends.sh
 │   ├── test_auth.sh       # API key authentication
 │   ├── test_ratelimit.sh  # Rate limiting
+│   ├── test_requestsize.sh # Request body size limiting
+│   ├── test_tracing.sh    # Distributed tracing
 │   ├── test_prompt.sh
 │   ├── test_sessions.sh
 │   ├── test_chain.sh
