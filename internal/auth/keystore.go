@@ -27,10 +27,10 @@ var (
 
 // LoadAPIKeys loads API keys using a layered approach:
 // 1. Environment variable CLINVK_API_KEYS (comma-separated)
-// 2. gopass clinvk/server/api-keys (if gopass is available)
-// 3. Config file api_keys field
+// 2. gopass (if api_keys_gopass_path is configured)
 //
 // The first source with valid keys wins. Empty result means auth is disabled.
+// Note: Config file storage is intentionally NOT supported for security reasons.
 func LoadAPIKeys() []string {
 	cacheOnce.Do(func() {
 		cachedKeys = loadAPIKeysInternal()
@@ -45,13 +45,8 @@ func loadAPIKeysInternal() []string {
 		return keys
 	}
 
-	// 2. gopass (if available)
-	if keys := loadFromGopass(); len(keys) > 0 {
-		return keys
-	}
-
-	// 3. Config file (lowest priority)
-	return loadFromConfig()
+	// 2. gopass (if configured)
+	return loadFromGopass()
 }
 
 // loadFromEnv loads API keys from the CLINVK_API_KEYS environment variable.
@@ -107,15 +102,6 @@ func loadFromGopass() []string {
 	}
 
 	return parseKeys(string(out))
-}
-
-// loadFromConfig loads API keys from the configuration file.
-func loadFromConfig() []string {
-	cfg := config.Get()
-	if cfg == nil {
-		return nil
-	}
-	return cfg.Server.APIKeys
 }
 
 // parseKeys parses a comma-separated string of API keys.

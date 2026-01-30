@@ -40,12 +40,11 @@ type ServerConfig struct {
 	// IdleTimeoutSecs is the maximum time in seconds to wait for the next request.
 	IdleTimeoutSecs int `mapstructure:"idle_timeout_secs"`
 
-	// APIKeys is a list of valid API keys for authentication.
-	// Empty list disables API key authentication (backward compatible).
-	APIKeys []string `mapstructure:"api_keys"`
-
 	// APIKeysGopassPath is the gopass path to load API keys from.
-	// If set, keys will be loaded from gopass when APIKeys is empty.
+	// API keys can be configured via:
+	//   1. CLINVK_API_KEYS environment variable (comma-separated)
+	//   2. gopass (using this path)
+	// Note: Config file storage is NOT supported for security reasons.
 	// Example: "myproject/server/api-keys"
 	APIKeysGopassPath string `mapstructure:"api_keys_gopass_path"`
 
@@ -198,7 +197,6 @@ func Init(cfgFile string) error {
 				ReadTimeoutSecs:    30,
 				WriteTimeoutSecs:   300, // 5 minutes
 				IdleTimeoutSecs:    120,
-				APIKeys:            nil, // Empty = no auth required (backward compatible)
 				RateLimitEnabled:   false,
 				RateLimitRPS:       10,
 				RateLimitBurst:     20,

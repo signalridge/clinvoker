@@ -90,17 +90,14 @@ server:
   # Maximum time in seconds to wait for the next request.
   idle_timeout_secs: 120
   # API Key Authentication (optional)
-  # When api_keys is empty or not set, authentication is disabled (backward compatible).
-  # Keys can be provided via:
+  # When no keys are configured, authentication is disabled.
+  # Keys can be provided via (in priority order):
   #   1. CLINVK_API_KEYS environment variable (comma-separated)
-  #   2. gopass (if api_keys_gopass_path is configured)
-  #   3. This config file (below)
-  # api_keys:
-  #   - "your-secret-key-here"
-  #   - "another-api-key"
+  #   2. gopass (if api_keys_gopass_path is configured below)
+  # Note: Config file key storage is NOT supported for security reasons.
 
   # Gopass path for API keys (optional)
-  # If set, keys will be loaded from gopass when api_keys is empty.
+  # If set, keys will be loaded from gopass (GPG encrypted).
   # Can also be set via CLINVK_API_KEYS_GOPASS_PATH environment variable.
   # api_keys_gopass_path: "myproject/server/api-keys"
 
