@@ -250,7 +250,7 @@ func TestCircuitBreaker_Concurrent(t *testing.T) {
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
-		go func(id int) {
+		go func() {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
 				if cb.Allow() {
@@ -261,7 +261,7 @@ func TestCircuitBreaker_Concurrent(t *testing.T) {
 					}
 				}
 			}
-		}(i)
+		}()
 	}
 
 	wg.Wait()
@@ -345,12 +345,12 @@ func TestCircuitBreakerRegistry_Concurrent(t *testing.T) {
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
-		go func(id int) {
+		go func() {
 			defer wg.Done()
 			cb := registry.Get("shared")
 			cb.Allow()
 			cb.RecordSuccess()
-		}(i)
+		}()
 	}
 
 	wg.Wait()

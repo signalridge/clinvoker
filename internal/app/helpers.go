@@ -123,7 +123,7 @@ func updateSessionAfterExecution(store *session.Store, sess *session.Session, ex
 
 // updateSessionAfterExecutionWithBackendID updates session status after command execution,
 // including the backend's session ID for resume functionality.
-func updateSessionAfterExecutionWithBackendID(store *session.Store, sess *session.Session, exitCode int, errorMsg string, backendSessionID string, quiet bool) {
+func updateSessionAfterExecutionWithBackendID(store *session.Store, sess *session.Session, exitCode int, errorMsg, backendSessionID string, quiet bool) {
 	if sess == nil {
 		return
 	}

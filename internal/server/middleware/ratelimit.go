@@ -179,7 +179,8 @@ func RateLimit(rps, burst int) func(http.Handler) http.Handler {
 // The caller is responsible for calling Stop() on the limiter when no longer needed.
 func RateLimitWithLimiter(rps, burst int, cleanup time.Duration) (func(http.Handler) http.Handler, *RateLimiter) {
 	limiter := NewRateLimiterWithCleanup(rps, burst, cleanup)
-	return limiter.Middleware(), limiter
+	mw := limiter.Middleware()
+	return mw, limiter
 }
 
 // getClientIP extracts the client IP from the request.

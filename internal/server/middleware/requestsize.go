@@ -255,7 +255,7 @@ func writeRequestTooLarge(w http.ResponseWriter, maxBytes int64) {
 
 	resp := errorResponse{
 		Error:   "request_too_large",
-		Message: "request body exceeds size limit",
+		Message: fmt.Sprintf("request body exceeds size limit (%d bytes)", maxBytes),
 	}
 	_ = json.NewEncoder(w).Encode(resp)
 }

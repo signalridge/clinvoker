@@ -123,7 +123,7 @@ func (l *FileLock) lockWithTimeout(timeout time.Duration, shared bool) error {
 	// If no timeout, use blocking lock
 	if timeout == 0 {
 		if err := syscall.Flock(int(file.Fd()), lockType); err != nil {
-			file.Close()
+			_ = file.Close()
 			l.mu.Unlock()
 			return fmt.Errorf("failed to acquire lock: %w", err)
 		}
@@ -145,13 +145,13 @@ func (l *FileLock) lockWithTimeout(timeout time.Duration, shared bool) error {
 		}
 
 		if err != syscall.EWOULDBLOCK {
-			file.Close()
+			_ = file.Close()
 			l.mu.Unlock()
 			return fmt.Errorf("failed to acquire lock: %w", err)
 		}
 
 		if time.Now().After(deadline) {
-			file.Close()
+			_ = file.Close()
 			l.mu.Unlock()
 			return ErrLockTimeout
 		}
@@ -191,7 +191,7 @@ func (l *FileLock) tryLockInternal(shared bool) error {
 	}
 
 	if err := syscall.Flock(int(file.Fd()), lockType); err != nil {
-		file.Close()
+		_ = file.Close()
 		l.mu.Unlock()
 		if err == syscall.EWOULDBLOCK {
 			return ErrLockBusy
@@ -210,7 +210,9 @@ func (l *FileLock) WithLock(fn func() error) error {
 	if err := l.Lock(); err != nil {
 		return err
 	}
-	defer l.Unlock()
+	defer func() {
+		_ = l.Unlock()
+	}()
 	return fn()
 }
 
@@ -220,6 +222,8 @@ func (l *FileLock) WithLockShared(fn func() error) error {
 	if err := l.LockShared(); err != nil {
 		return err
 	}
-	defer l.Unlock()
+	defer func() {
+		_ = l.Unlock()
+	}()
 	return fn()
 }

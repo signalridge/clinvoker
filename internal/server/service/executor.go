@@ -65,7 +65,7 @@ func hasPathPrefix(path, prefix string) bool {
 	}
 	// Ensure prefix ends with separator for proper boundary check
 	if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-		prefix = prefix + string(filepath.Separator)
+		prefix += string(filepath.Separator)
 	}
 	return strings.HasPrefix(path, prefix)
 }

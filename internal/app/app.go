@@ -429,6 +429,7 @@ func selectOutput(stdout, stderr string, exitCode int) string {
 // ExecuteAndCapture executes a command and returns the parsed output.
 // This is used by commands like compare, parallel, and chain that need to capture output.
 // Note: This function expects text output format, not JSON.
+//
 // Deprecated: Use ExecuteAndCaptureWithJSON for proper session ID capture.
 func ExecuteAndCapture(b backend.Backend, cmd *exec.Cmd) (output string, exitCode int, err error) {
 	var stdoutBuf bytes.Buffer

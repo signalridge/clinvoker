@@ -543,7 +543,9 @@ func writeJSONFile(path string, v any) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	enc := json.NewEncoder(file)
 	enc.SetIndent("", "  ")

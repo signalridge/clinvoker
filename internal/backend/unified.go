@@ -286,11 +286,11 @@ func (m *flagMapper) MapToOptions(unified *UnifiedOptions) *Options {
 	}
 
 	opts := &Options{
-		WorkDir:     unified.WorkDir,
-		Model:       m.mapModel(unified.Model),
-		AllowedDirs: unified.AllowedDirs,
+		WorkDir:      unified.WorkDir,
+		Model:        m.mapModel(unified.Model),
+		AllowedDirs:  unified.AllowedDirs,
 		AllowedTools: unified.AllowedTools,
-		ExtraFlags:  make([]string, 0),
+		ExtraFlags:   make([]string, 0),
 	}
 
 	// Add approval mode flags

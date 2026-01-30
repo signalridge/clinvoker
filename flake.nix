@@ -27,7 +27,7 @@
 
             subPackages = [ "cmd/clinvk" ];
 
-            vendorHash = "sha256-qlBewppBX7rq25PZbhS0TjodE6bE2Y6rF+Usw6iKQaw=";
+            vendorHash = "sha256-cMQLrwoSWwwm39YeQwSM459F2Pbv3XblBSv6IgUDybI=";
 
             # Use -short to skip integration tests that require writable HOME
             checkFlags = [ "-short" ];

@@ -22,7 +22,7 @@ func TestTracingMiddleware_Disabled(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -70,7 +70,7 @@ func TestTracingMiddleware_Enabled(t *testing.T) {
 		w.Write([]byte("OK"))
 	}))
 
-	req := httptest.NewRequest("GET", "/test/path", nil)
+	req := httptest.NewRequest("GET", "/test/path", http.NoBody)
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -125,7 +125,7 @@ func TestTracingMiddleware_PropagatesTraceID(t *testing.T) {
 	}))
 
 	// Request with existing trace ID
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set(TraceIDHeader, "existing-trace-id")
 	rec := httptest.NewRecorder()
 
@@ -164,7 +164,7 @@ func TestTracingMiddleware_ParentSpanID(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set(TraceIDHeader, "trace-123")
 	req.Header.Set(SpanIDHeader, "parent-span-456")
 	rec := httptest.NewRecorder()
@@ -208,7 +208,7 @@ func TestTracingMiddleware_ErrorStatus(t *testing.T) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)

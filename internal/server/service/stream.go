@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os/exec"
 	"time"
@@ -18,12 +19,21 @@ import (
 	"github.com/signalridge/clinvoker/internal/util"
 )
 
+const maxStreamLine = 10 * 1024 * 1024
+
 // StreamResult represents the result of a streaming prompt execution.
 type StreamResult struct {
 	ExitCode         int
 	Error            string
 	TokenUsage       *session.TokenUsage
 	BackendSessionID string
+}
+
+type streamScanResult struct {
+	backendSessionID string
+	tokenUsage       *session.TokenUsage
+	handlerErr       error
+	streamErr        error
 }
 
 // StreamPrompt executes a prompt and emits unified events as they stream.
@@ -78,20 +88,8 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, store *session.Store,
 
 	if opts.DryRun {
 		msg := fmt.Sprintf("Would execute: %s %v", cmd.Path, cmd.Args[1:])
-		if onEvent != nil {
-			event := output.NewUnifiedEvent(output.EventMessage, prep.backend.Name(), sessionID)
-			if err := event.SetContent(&output.MessageContent{Text: msg, Role: "assistant"}); err == nil {
-				if err := onEvent(event); err != nil {
-					return &StreamResult{ExitCode: 1, Error: err.Error()}, err
-				}
-			}
-
-			done := output.NewUnifiedEvent(output.EventDone, prep.backend.Name(), sessionID)
-			if err := done.SetContent(&output.DoneContent{}); err == nil {
-				if err := onEvent(done); err != nil {
-					return &StreamResult{ExitCode: 1, Error: err.Error()}, err
-				}
-			}
+		if err := emitDryRunEvents(prep.backend.Name(), sessionID, msg, onEvent); err != nil {
+			return &StreamResult{ExitCode: 1, Error: err.Error()}, err
 		}
 
 		result := &StreamResult{ExitCode: 0}
@@ -130,74 +128,11 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, store *session.Store,
 		return nil, err
 	}
 
-	parser := output.NewParser(prep.backend.Name(), sessionID)
-	scanner := bufio.NewScanner(stdout)
-	buf := make([]byte, 0, 64*1024)
-	const maxStreamLine = 10 * 1024 * 1024
-	scanner.Buffer(buf, maxStreamLine)
-
-	var backendSessionID string
-	var tokenUsage *session.TokenUsage
-	var handlerErr error
-	var streamErr error
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		event, parseErr := parser.ParseLine(line)
-		if parseErr != nil {
-			logger.Warn("failed to parse stream line", "backend", prep.backend.Name(), "error", parseErr)
-			continue
-		}
-		if event == nil {
-			continue
-		}
-
-		switch event.Type {
-		case output.EventInit:
-			if content, err := event.GetInitContent(); err == nil && content.BackendSessionID != "" {
-				backendSessionID = content.BackendSessionID
-			}
-		case output.EventDone:
-			if content, err := event.GetDoneContent(); err == nil && content.TokenUsage != nil {
-				tokenUsage = &session.TokenUsage{
-					InputTokens:  content.TokenUsage.InputTokens,
-					OutputTokens: content.TokenUsage.OutputTokens,
-				}
-			}
-		case output.EventError:
-			if content, err := event.GetErrorContent(); err == nil && content.Message != "" {
-				streamErr = errors.New(content.Message)
-			}
-		}
-
-		if onEvent != nil {
-			if err := onEvent(event); err != nil {
-				handlerErr = err
-				break
-			}
-		}
-	}
-
-	if scanErr := scanner.Err(); scanErr != nil && handlerErr == nil {
-		// Scanner stops on overly long tokens; emit an error event and treat as a stream error.
-		errMsg := scanErr.Error()
-		if scanErr == bufio.ErrTooLong {
-			errMsg = fmt.Sprintf("stream event exceeded maximum size limit of %d bytes; consider reducing output size", maxStreamLine)
-		}
-
-		// Emit error event to client if callback is available
-		if onEvent != nil {
-			errEvent := output.NewUnifiedEvent(output.EventError, prep.backend.Name(), sessionID)
-			if err := errEvent.SetContent(&output.ErrorContent{
-				Code:    "stream_line_too_long",
-				Message: errMsg,
-			}); err == nil {
-				_ = onEvent(errEvent) // Best effort, ignore error
-			}
-		}
-
-		streamErr = errors.New(errMsg)
-	}
+	scanResult := scanStreamOutput(logger, prep.backend.Name(), sessionID, stdout, onEvent)
+	backendSessionID := scanResult.backendSessionID
+	tokenUsage := scanResult.tokenUsage
+	handlerErr := scanResult.handlerErr
+	streamErr := scanResult.streamErr
 
 	if handlerErr != nil && cmd.Process != nil {
 		_ = cmd.Process.Kill()
@@ -278,4 +213,95 @@ func StreamPrompt(ctx context.Context, req *PromptRequest, store *session.Store,
 	}
 
 	return result, nil
+}
+
+func emitDryRunEvents(backendName, sessionID, msg string, onEvent func(*output.UnifiedEvent) error) error {
+	if onEvent == nil {
+		return nil
+	}
+
+	event := output.NewUnifiedEvent(output.EventMessage, backendName, sessionID)
+	if err := event.SetContent(&output.MessageContent{Text: msg, Role: "assistant"}); err == nil {
+		if err := onEvent(event); err != nil {
+			return err
+		}
+	}
+
+	done := output.NewUnifiedEvent(output.EventDone, backendName, sessionID)
+	if err := done.SetContent(&output.DoneContent{}); err == nil {
+		if err := onEvent(done); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func scanStreamOutput(logger *slog.Logger, backendName, sessionID string, reader io.Reader, onEvent func(*output.UnifiedEvent) error) streamScanResult {
+	parser := output.NewParser(backendName, sessionID)
+	scanner := bufio.NewScanner(reader)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, maxStreamLine)
+
+	result := streamScanResult{}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		event, parseErr := parser.ParseLine(line)
+		if parseErr != nil {
+			logger.Warn("failed to parse stream line", "backend", backendName, "error", parseErr)
+			continue
+		}
+		if event == nil {
+			continue
+		}
+
+		switch event.Type {
+		case output.EventInit:
+			if content, err := event.GetInitContent(); err == nil && content.BackendSessionID != "" {
+				result.backendSessionID = content.BackendSessionID
+			}
+		case output.EventDone:
+			if content, err := event.GetDoneContent(); err == nil && content.TokenUsage != nil {
+				result.tokenUsage = &session.TokenUsage{
+					InputTokens:  content.TokenUsage.InputTokens,
+					OutputTokens: content.TokenUsage.OutputTokens,
+				}
+			}
+		case output.EventError:
+			if content, err := event.GetErrorContent(); err == nil && content.Message != "" {
+				result.streamErr = errors.New(content.Message)
+			}
+		}
+
+		if onEvent != nil {
+			if err := onEvent(event); err != nil {
+				result.handlerErr = err
+				break
+			}
+		}
+	}
+
+	if scanErr := scanner.Err(); scanErr != nil && result.handlerErr == nil {
+		// Scanner stops on overly long tokens; emit an error event and treat as a stream error.
+		errMsg := scanErr.Error()
+		if scanErr == bufio.ErrTooLong {
+			errMsg = fmt.Sprintf("stream event exceeded maximum size limit of %d bytes; consider reducing output size", maxStreamLine)
+		}
+
+		// Emit error event to client if callback is available
+		if onEvent != nil {
+			errEvent := output.NewUnifiedEvent(output.EventError, backendName, sessionID)
+			if err := errEvent.SetContent(&output.ErrorContent{
+				Code:    "stream_line_too_long",
+				Message: errMsg,
+			}); err == nil {
+				_ = onEvent(errEvent) // Best effort, ignore error
+			}
+		}
+
+		result.streamErr = errors.New(errMsg)
+	}
+
+	return result
 }

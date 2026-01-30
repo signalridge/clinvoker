@@ -351,7 +351,9 @@ func (s *Store) ValidateIndex() (int, error) {
 	if err := s.fileLock.Lock(); err != nil {
 		return 0, fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -406,7 +408,9 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 	if err := s.fileLock.Lock(); err != nil {
 		return nil, fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -443,7 +447,9 @@ func (s *Store) Save(sess *Session) error {
 	if err := s.fileLock.Lock(); err != nil {
 		return fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -521,7 +527,9 @@ func (s *Store) Delete(id string) error {
 	if err := s.fileLock.Lock(); err != nil {
 		return fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -666,7 +674,9 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 	if err := s.fileLock.Lock(); err != nil {
 		return 0, fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -949,7 +959,9 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 	if err := s.fileLock.Lock(); err != nil {
 		return nil, fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -982,7 +994,9 @@ func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions)
 	if err := s.fileLock.Lock(); err != nil {
 		return nil, fmt.Errorf("failed to acquire store lock: %w", err)
 	}
-	defer s.fileLock.Unlock()
+	defer func() {
+		_ = s.fileLock.Unlock()
+	}()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
