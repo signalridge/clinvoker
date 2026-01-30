@@ -39,6 +39,23 @@ type ServerConfig struct {
 
 	// IdleTimeoutSecs is the maximum time in seconds to wait for the next request.
 	IdleTimeoutSecs int `mapstructure:"idle_timeout_secs"`
+
+	// APIKeysGopassPath is the gopass path to load API keys from.
+	// API keys can be configured via:
+	//   1. CLINVK_API_KEYS environment variable (comma-separated)
+	//   2. gopass (using this path)
+	// Note: Config file storage is NOT supported for security reasons.
+	// Example: "myproject/server/api-keys"
+	APIKeysGopassPath string `mapstructure:"api_keys_gopass_path"`
+
+	// RateLimitEnabled enables per-IP rate limiting.
+	RateLimitEnabled bool `mapstructure:"rate_limit_enabled"`
+
+	// RateLimitRPS is the requests per second limit per IP.
+	RateLimitRPS int `mapstructure:"rate_limit_rps"`
+
+	// RateLimitBurst is the maximum burst size for rate limiting.
+	RateLimitBurst int `mapstructure:"rate_limit_burst"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -180,6 +197,9 @@ func Init(cfgFile string) error {
 				ReadTimeoutSecs:    30,
 				WriteTimeoutSecs:   300, // 5 minutes
 				IdleTimeoutSecs:    120,
+				RateLimitEnabled:   false,
+				RateLimitRPS:       10,
+				RateLimitBurst:     20,
 			},
 		}
 

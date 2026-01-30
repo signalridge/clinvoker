@@ -270,6 +270,28 @@ func validateServerConfig(server *ServerConfig) []error {
 		})
 	}
 
+	// Validate rate limit settings
+	if server.RateLimitRPS < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   "server.rate_limit_rps",
+			Message: "must be non-negative",
+		})
+	}
+
+	if server.RateLimitBurst < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   "server.rate_limit_burst",
+			Message: "must be non-negative",
+		})
+	}
+
+	if server.RateLimitEnabled && server.RateLimitRPS == 0 {
+		errs = append(errs, &ValidationError{
+			Field:   "server.rate_limit_rps",
+			Message: "must be positive when rate limiting is enabled",
+		})
+	}
+
 	return errs
 }
 
