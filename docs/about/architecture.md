@@ -1,6 +1,6 @@
 # Architecture
 
-clinvk is a lightweight orchestration layer that wraps existing AI CLI tools, providing unified access and powerful composition capabilities.
+clinvoker is a lightweight orchestration layer that wraps existing AI CLI tools, providing unified access and powerful composition capabilities.
 
 ## System Overview
 

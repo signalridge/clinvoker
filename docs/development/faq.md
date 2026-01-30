@@ -2,11 +2,11 @@
 
 ## General
 
-### What is clinvk?
+### What is clinvoker?
 
-clinvk is a unified AI CLI wrapper that lets you work with multiple AI coding assistants (Claude Code, Codex CLI, Gemini CLI) through a single interface. It provides session management, parallel execution, backend comparison, and an HTTP API server.
+clinvoker is a unified AI CLI wrapper that lets you work with multiple AI coding assistants (Claude Code, Codex CLI, Gemini CLI) through a single interface. It provides session management, parallel execution, backend comparison, and an HTTP API server.
 
-### Why use clinvk instead of the individual CLIs?
+### Why use clinvoker instead of the individual CLIs?
 
 - **Unified interface** - Same commands work across all backends
 - **Session management** - Easily resume conversations
@@ -23,13 +23,13 @@ Currently supported:
 - **Codex CLI** - OpenAI's code-focused CLI
 - **Gemini CLI** - Google's Gemini AI CLI
 
-### Is clinvk free?
+### Is clinvoker free?
 
 clinvk itself is free and open source. However, the underlying AI backends may have their own pricing and usage limits.
 
 ## Installation
 
-### How do I install clinvk?
+### How do I install clinvoker?
 
 Multiple options:
 

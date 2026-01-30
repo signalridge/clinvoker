@@ -1,8 +1,8 @@
-# clinvk
+# clinvoker
 
 统一的 AI CLI 封装工具，用于编排多个 AI CLI 后端，支持会话持久化、并行任务执行、HTTP API 服务器和统一输出格式化。
 
-## 为什么选择 clinvk？
+## 为什么选择 clinvoker？
 
 ### 面临的挑战
 
