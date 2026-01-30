@@ -2,11 +2,11 @@
 
 ## 一般问题
 
-### 什么是 clinvk？
+### 什么是 clinvoker？
 
-clinvk 是一个统一的 AI CLI 封装工具，让您可以通过单一接口使用多个 AI 编程助手（Claude Code、Codex CLI、Gemini CLI）。它提供会话管理、并行执行、后端对比和 HTTP API 服务器。
+clinvoker 是一个统一的 AI CLI 封装工具，让您可以通过单一接口使用多个 AI 编程助手（Claude Code、Codex CLI、Gemini CLI）。它提供会话管理、并行执行、后端对比和 HTTP API 服务器。
 
-### 为什么使用 clinvk 而不是单独的 CLI？
+### 为什么使用 clinvoker 而不是单独的 CLI？
 
 - **统一接口** - 相同命令适用于所有后端
 - **会话管理** - 轻松恢复对话
@@ -23,13 +23,13 @@ clinvk 是一个统一的 AI CLI 封装工具，让您可以通过单一接口�
 - **Codex CLI** - OpenAI 的代码专注 CLI
 - **Gemini CLI** - Google 的 Gemini AI CLI
 
-### clinvk 免费吗？
+### clinvoker 免费吗？
 
-clinvk 本身是免费开源的。但底层 AI 后端可能有自己的定价和使用限制。
+clinvoker 本身是免费开源的。但底层 AI 后端可能有自己的定价和使用限制。
 
 ## 安装
 
-### 如何安装 clinvk？
+### 如何安装 clinvoker？
 
 多种选项：
 
@@ -48,7 +48,7 @@ nix run github:signalridge/clinvoker
 
 ### 需要安装所有后端吗？
 
-不需要。clinvk 可以使用任意组合的后端。只安装您想使用的。
+不需要。clinvoker 可以使用任意组合的后端。只安装您想使用的。
 
 ### 如何验证哪些后端可用？
 

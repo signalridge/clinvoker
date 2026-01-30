@@ -1,8 +1,8 @@
-# clinvk
+# clinvoker
 
 Unified AI CLI wrapper for orchestrating multiple AI CLI backends with session persistence, parallel task execution, HTTP API server, and unified output formatting.
 
-## Why clinvk?
+## Why clinvoker?
 
 ### The Challenge
 
