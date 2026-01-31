@@ -82,7 +82,7 @@ cat tasks.json | clinvk parallel
 | `workdir` | string | 否 | 工作目录 |
 | `approval_mode` | string | 否 | `default`, `auto`, `none`, `always` |
 | `sandbox_mode` | string | 否 | `default`, `read-only`, `workspace`, `full` |
-| `output_format` | string | 否 | `text`, `json`, `stream-json` |
+| `output_format` | string | 否 | 可填写但 CLI parallel 会忽略（预留） |
 | `max_tokens` | int | 否 | 最大响应 token 数 |
 | `max_turns` | int | 否 | 最大代理轮次 |
 | `system_prompt` | string | 否 | 自定义系统提示 |
@@ -138,7 +138,7 @@ CLI 参数会覆盖文件级别的设置。
 
 ## 输出格式
 
-### 文本输出（默认）
+### 文本输出
 
 显示任务完成时的进度和结果：
 
@@ -152,13 +152,13 @@ Running 3 tasks (max 3 parallel)...
 Results
 ============================================================
 
-BACKEND      STATUS   DURATION   SESSION    TASK
+BACKEND      STATUS   DURATION   TASK
 
 ------------------------------------------------------------
 
-1    claude       OK       2.50s      abc123     审查 auth 模块
-2    codex        OK       3.20s      def456     为 API 添加日志
-3    gemini       OK       2.80s      ghi789     为 utils 生成测试
+1    claude       OK       2.50s      审查 auth 模块
+2    codex        OK       3.20s      为 API 添加日志
+3    gemini       OK       2.80s      为 utils 生成测试
 ------------------------------------------------------------
 
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
@@ -175,11 +175,11 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
   "total_duration_seconds": 3.2,
   "results": [
     {
+      "index": 0,
       "backend": "claude",
       "output": "auth 模块看起来不错...",
       "duration_seconds": 2.5,
-      "exit_code": 0,
-      "session_id": "abc123"
+      "exit_code": 0
     }
   ]
 }

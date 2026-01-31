@@ -28,25 +28,16 @@ List all sessions.
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--backend` | `-b` | string | | Filter by backend |
-| `--status` | | string | | Filter by status |
+| `--status` | | string | | Filter by status (`active`, `completed`, `error`, `paused`) |
 | `--limit` | `-n` | int | | Max sessions to show |
 
 ### Examples
 
 ```bash
-# List all sessions
 clinvk sessions list
-
-# Filter by backend
 clinvk sessions list --backend claude
-
-# Limit results
 clinvk sessions list --limit 10
-
-# Filter by status
 clinvk sessions list --status active
-
-# Combine filters
 clinvk sessions list --backend claude --status active --limit 5
 ```
 
@@ -54,9 +45,9 @@ clinvk sessions list --backend claude --status active --limit 5
 
 ```text
 ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
-abc123    claude    active     5 minutes ago   1,234        fix the bug in auth.go
-def456    codex     completed  2 hours ago     5,678        implement user registration
-ghi789    gemini    error      1 day ago       0            failed task
+abc123    claude    active     5 minutes ago   1234         fix the bug in auth.go
+def456    codex     completed  2 hours ago     5678         implement user registration
+ghi789    gemini    error      1 day ago       -            failed task
 ```
 
 ---
@@ -87,11 +78,12 @@ Status:            active
 Created:           2025-01-27T10:00:00Z
 Last Used:         2025-01-27T11:30:00Z (30 minutes ago)
 Working Directory: /projects/myapp
+Backend Session:   session-xyz
+Turns:             3
 Token Usage:
-  Input:           1,234
-  Output:          5,678
-  Cached:          500
-  Total:           6,912
+  Input:           1234
+  Output:          5678
+  Total:           6912
 ```
 
 ---
@@ -115,7 +107,7 @@ clinvk sessions delete abc123
 ### Output
 
 ```text
-Session abc123 deleted
+Session abc123 deleted.
 ```
 
 ---
@@ -128,33 +120,22 @@ Remove old sessions.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--older-than` | string | | Delete sessions older than this |
-
-The `--older-than` format accepts:
-
-- `30d` - 30 days
-- `7d` - 7 days
-- `24h` - 24 hours
+| `--older-than` | string | | Delete sessions older than this many days (e.g. `30` or `30d`) |
 
 If not specified, uses the `session.retention_days` config value.
 
 ### Examples
 
 ```bash
-# Delete sessions older than 30 days
 clinvk sessions clean --older-than 30d
-
-# Delete sessions older than 7 days
-clinvk sessions clean --older-than 7d
-
-# Use config default retention
+clinvk sessions clean --older-than 7
 clinvk sessions clean
 ```
 
 ### Output
 
 ```text
-Cleaned 15 sessions older than 30 days
+Deleted 15 session(s) older than 30 days.
 ```
 
 ---
@@ -166,6 +147,7 @@ Cleaned 15 sessions older than 30 days
 | `active` | Session is active and can be resumed |
 | `completed` | Session completed normally |
 | `error` | Session ended with an error |
+| `paused` | Session is paused (not currently active) |
 
 ## See Also
 

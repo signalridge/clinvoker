@@ -4,13 +4,18 @@ Complete reference for the clinvk custom REST API.
 
 ## Base URL
 
-```yaml
+```text
 http://localhost:8080/api/v1
 ```
 
 ## Authentication
 
-The API does not require authentication by default. For production use, place behind a reverse proxy with authentication.
+API key auth is **optional**. If keys are configured, every request must include one of:
+
+- `X-Api-Key: <key>`
+- `Authorization: Bearer <key>`
+
+Keys can be provided via `CLINVK_API_KEYS` (comma-separated) or `server.api_keys_gopass_path` (gopass).
 
 ---
 
@@ -49,18 +54,18 @@ Execute a single prompt.
 | `backend` | string | Yes | Backend to use |
 | `prompt` | string | Yes | The prompt |
 | `model` | string | No | Model override |
-| `workdir` | string | No | Working directory |
+| `workdir` | string | No | Working directory (absolute path; validated against allowed/blocked prefixes) |
 | `ephemeral` | boolean | No | Stateless mode (no session) |
 | `approval_mode` | string | No | `default`, `auto`, `none`, `always` |
 | `sandbox_mode` | string | No | `default`, `read-only`, `workspace`, `full` |
 | `output_format` | string | No | `default`, `text`, `json`, `stream-json` |
-| `max_tokens` | integer | No | Maximum response tokens |
+| `max_tokens` | integer | No | Maximum response tokens (not mapped to backend flags yet) |
 | `max_turns` | integer | No | Maximum agentic turns |
 | `system_prompt` | string | No | System prompt |
 | `verbose` | boolean | No | Enable verbose output |
 | `dry_run` | boolean | No | Simulate execution |
 | `extra` | array | No | Extra backend-specific flags |
-| `metadata` | object | No | Custom metadata |
+| `metadata` | object | No | Custom metadata stored with session |
 
 **Response:**
 
@@ -82,21 +87,12 @@ Execute a single prompt.
 
 **Streaming Response (`output_format: "stream-json"`):**
 
-When `output_format` is `stream-json`, the endpoint streams NDJSON (`application/x-ndjson`).
-Each line is a unified event:
+Streams NDJSON (`application/x-ndjson`) of unified events. Example (structure abbreviated):
 
 ```json
-{"type":"init","backend":"claude","session_id":"...","content":{...}}
-{"type":"message","backend":"claude","session_id":"...","content":{...}}
-{"type":"done","backend":"claude","session_id":"...","content":{...}}
-```
-
-**Example:**
-
-```bash
-curl -X POST http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d '{"backend": "claude", "prompt": "hello world"}'
+{"type":"init","backend":"claude","session_id":"...","content":{"model":"..."}}
+{"type":"message","backend":"claude","session_id":"...","content":{"text":"..."}}
+{"type":"done","backend":"claude","session_id":"..."}
 ```
 
 ---
@@ -126,14 +122,7 @@ Execute multiple tasks in parallel.
 }
 ```
 
-**Fields:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `tasks` | array | Yes | List of task objects |
-| `max_parallel` | integer | No | Max concurrent tasks |
-| `fail_fast` | boolean | No | Stop on first failure |
-| `dry_run` | boolean | No | Simulate execution |
+Each task accepts the same fields as `/api/v1/prompt` (including `workdir`, `approval_mode`, `output_format`, etc.).
 
 **Response:**
 
@@ -149,16 +138,12 @@ Execute multiple tasks in parallel.
       "exit_code": 0,
       "duration_ms": 2000,
       "output": "result 1"
-    },
-    {
-      "backend": "codex",
-      "exit_code": 0,
-      "duration_ms": 1800,
-      "output": "result 2"
     }
   ]
 }
 ```
+
+> Parallel tasks are always ephemeral; `session_id` may be omitted.
 
 ---
 
@@ -184,7 +169,7 @@ Execute a sequential pipeline.
       "prompt": "improve based on: {{previous}}"
     }
   ],
-  "stop_on_failure": true,
+  "stop_on_failure": false,
   "pass_working_dir": false
 }
 ```
@@ -194,11 +179,10 @@ Execute a sequential pipeline.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `steps` | array | Yes | List of chain steps |
-| `stop_on_failure` | boolean | No | Stop on first failure (default true) |
+| `stop_on_failure` | boolean | No | Stop on first failure (default `false` for API) |
 | `pass_working_dir` | boolean | No | Pass working directory between steps |
 
-!!! note "Ephemeral Only"
-    Chain execution is always ephemeral. Session linking and persistence are not supported.
+> Chain execution is always ephemeral. `pass_session_id` and `persist_sessions` are not supported.
 
 **Response:**
 
@@ -216,14 +200,6 @@ Execute a sequential pipeline.
       "exit_code": 0,
       "duration_ms": 2000,
       "output": "analysis result"
-    },
-    {
-      "step": 2,
-      "name": "improve",
-      "backend": "codex",
-      "exit_code": 0,
-      "duration_ms": 1500,
-      "output": "improved code"
     }
   ]
 }
@@ -247,17 +223,6 @@ Compare responses from multiple backends.
 }
 ```
 
-**Fields:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `prompt` | string | Yes | The prompt |
-| `backends` | array | Yes | Backends to compare |
-| `model` | string | No | Model to use (if applicable) |
-| `workdir` | string | No | Working directory |
-| `sequential` | boolean | No | Run one at a time |
-| `dry_run` | boolean | No | Simulate execution |
-
 **Response:**
 
 ```json
@@ -272,17 +237,12 @@ Compare responses from multiple backends.
       "exit_code": 0,
       "duration_ms": 2500,
       "output": "explanation from claude"
-    },
-    {
-      "backend": "codex",
-      "model": "o3",
-      "exit_code": 0,
-      "duration_ms": 3200,
-      "output": "explanation from codex"
     }
   ]
 }
 ```
+
+> Compare runs are ephemeral; `session_id` may be omitted.
 
 ---
 
@@ -297,18 +257,9 @@ List available backends.
 ```json
 {
   "backends": [
-    {
-      "name": "claude",
-      "available": true
-    },
-    {
-      "name": "codex",
-      "available": true
-    },
-    {
-      "name": "gemini",
-      "available": false
-    }
+    {"name": "claude", "available": true},
+    {"name": "codex", "available": true},
+    {"name": "gemini", "available": false}
   ]
 }
 ```
@@ -326,7 +277,7 @@ List sessions.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `backend` | string | Filter by backend |
-| `status` | string | Filter by status (`active`, `completed`, `error`) |
+| `status` | string | Filter by status (`active`, `completed`, `error`, `paused`) |
 | `limit` | integer | Maximum results |
 | `offset` | integer | Pagination offset |
 
@@ -345,10 +296,7 @@ List sessions.
       "initial_prompt": "Review auth changes",
       "status": "active",
       "turn_count": 3,
-      "token_usage": {
-        "input_tokens": 123,
-        "output_tokens": 456
-      },
+      "token_usage": {"input_tokens": 123, "output_tokens": 456},
       "tags": ["api"],
       "title": "Review auth changes"
     }
@@ -363,40 +311,9 @@ List sessions.
 
 Get session details.
 
-**Response:**
-
-```json
-{
-  "id": "abc123",
-  "backend": "claude",
-  "created_at": "2025-01-27T10:00:00Z",
-  "last_used": "2025-01-27T11:30:00Z",
-  "working_dir": "/projects/myapp",
-  "model": "claude-opus-4-5-20251101",
-  "initial_prompt": "Review auth changes",
-  "status": "active",
-  "turn_count": 3,
-  "token_usage": {
-    "input_tokens": 123,
-    "output_tokens": 456
-  },
-  "tags": ["api"],
-  "title": "Review auth changes"
-}
-```
-
 ### DELETE /api/v1/sessions/{id}
 
 Delete a session.
-
-**Response:**
-
-```json
-{
-  "deleted": true,
-  "id": "abc123"
-}
-```
 
 ---
 
@@ -406,16 +323,21 @@ Delete a session.
 
 Server health status.
 
-**Response:**
+**Response (abridged):**
 
 ```json
 {
   "status": "ok",
+  "version": "1.0.0",
+  "uptime": "2m31s",
+  "uptime_millis": 151000,
   "backends": [
-    {"name": "claude", "available": true},
-    {"name": "codex", "available": true},
-    {"name": "gemini", "available": false}
-  ]
+    {"name": "claude", "available": true}
+  ],
+  "session_store": {
+    "available": true,
+    "session_count": 15
+  }
 }
 ```
 
@@ -425,6 +347,7 @@ Server health status.
 |--------|-------------|
 | `ok` | All systems operational |
 | `degraded` | Some backends unavailable |
+| `unhealthy` | Session store unavailable |
 
 ---
 
@@ -434,83 +357,28 @@ Server health status.
 
 Prometheus-compatible metrics endpoint (when `metrics_enabled: true` in config).
 
-**Response:** Prometheus exposition format
-
-```text
-# HELP clinvk_requests_total Total HTTP requests
-
-# TYPE clinvk_requests_total counter
-
-clinvk_requests_total{method="POST",path="/api/v1/prompt",status="200"} 42
-
-# HELP clinvk_request_duration_seconds HTTP request duration
-
-# TYPE clinvk_request_duration_seconds histogram
-
-clinvk_request_duration_seconds_bucket{path="/api/v1/prompt",le="0.1"} 5
-...
-
-# HELP clinvk_rate_limit_hits_total Rate limit hits
-
-# TYPE clinvk_rate_limit_hits_total counter
-
-clinvk_rate_limit_hits_total{ip="192.168.1.1"} 3
-
-# HELP clinvk_sessions_total Total sessions
-
-# TYPE clinvk_sessions_total gauge
-
-clinvk_sessions_total 15
-```
-
-**Enable in config:**
-
-```yaml
-server:
-  metrics_enabled: true
-```
-
 ---
 
 ## Error Responses
 
-### Rate Limiting (429)
+### Unauthorized (401)
 
-When rate limiting is enabled and the limit is exceeded:
-
-**Status:** `429 Too Many Requests`
-
-**Headers:**
-
-| Header | Description |
-|--------|-------------|
-| `Retry-After` | Seconds to wait before retry |
-
-**Response:**
+If API keys are configured and missing/invalid:
 
 ```json
 {
-  "title": "Too Many Requests",
-  "status": 429,
-  "detail": "Rate limit exceeded. Retry after 5 seconds."
+  "error": "unauthorized",
+  "message": "missing API key"
 }
 ```
+
+### Rate Limiting (429)
+
+When rate limiting is enabled and the limit is exceeded.
 
 ### Request Size Limit (413)
 
-When request body exceeds `max_request_body_bytes`:
-
-**Status:** `413 Request Entity Too Large`
-
-**Response:**
-
-```json
-{
-  "title": "Request Entity Too Large",
-  "status": 413,
-  "detail": "Request body exceeds maximum size of 10485760 bytes"
-}
-```
+When request body exceeds `max_request_body_bytes`.
 
 ---
 
@@ -518,22 +386,4 @@ When request body exceeds `max_request_body_bytes`:
 
 ### GET /openapi.json
 
-Get the OpenAPI specification.
-
-Returns the full OpenAPI 3.0 specification for the API.
-
----
-
-## Error Responses
-
-Execution failures are typically reported in the normal response body via `exit_code != 0` and the `error` field.
-
-For request validation errors (for example, missing required fields), the server responds with non-2xx and an RFC 7807 Problem Details body (via Huma). Example:
-
-```json
-{
-  "title": "Unprocessable Entity",
-  "status": 422,
-  "detail": "backend is required"
-}
-```
+Returns the OpenAPI 3.0 specification for the API.

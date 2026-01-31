@@ -1,128 +1,67 @@
+---
+title: clinvoker - Unified AI CLI Orchestration
+description: Transform AI CLI tools into programmable infrastructure with SDK compatibility, session persistence, and multi-backend orchestration.
+---
+
 # clinvoker
 
-Unified AI CLI wrapper for orchestrating multiple AI CLI backends with session persistence, parallel task execution, HTTP API server, and unified output formatting.
+<div align="center">
 
-## Why clinvoker?
+Unified AI CLI wrapper for orchestrating multiple AI CLI backends
 
-### The Challenge
+[![GitHub](https://img.shields.io/badge/GitHub-signalridge%2Fclinvoker-blue?logo=github)](https://github.com/signalridge/clinvoker)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](about/license.md)
 
-When working with AI programming assistants, you often face these limitations:
+</div>
 
-- **Single Model Lock-in**: Stuck with one AI's capabilities when different models excel at different tasks
-- **No SDK for CLI Tools**: Can't easily integrate Claude Code, Codex CLI, or Gemini CLI into your applications
-- **Manual Orchestration**: Complex workflows require switching between tools manually
-- **No Framework Integration**: Can't use familiar SDKs (OpenAI, Anthropic) with CLI tools
-
-### The Solution
-
-clinvk transforms AI CLI tools into a programmable infrastructure with three core capabilities:
-
-#### 1. Skills Integration - Extend AI Agent Capabilities
-
-Build Claude Code Skills that call other AI backends for specialized tasks:
+## Installation
 
 ```bash
-# A Claude Code Skill calling Gemini for data analysis
-clinvk -b gemini --ephemeral "analyze this dataset..."
+curl -sSL https://raw.githubusercontent.com/signalridge/clinvoker/main/install.sh | bash
 ```
 
-**Use cases:**
+Or install from source:
 
-- Claude analyzing code, then Codex generating fixes
-- Multi-model code review from different perspectives
-- Specialized tasks routed to the best-suited model
-
-#### 2. HTTP API Transformation - SDK Compatibility
-
-Use your favorite SDK while leveraging any CLI backend:
-
-```python
-from openai import OpenAI
-
-# Use OpenAI SDK, actually calling Claude CLI
-client = OpenAI(base_url="http://localhost:8080/openai/v1")
-response = client.chat.completions.create(
-    model="claude",  # Maps to Claude CLI backend
-    messages=[{"role": "user", "content": "Review this code"}]
-)
+```bash
+go install github.com/signalridge/clinvoker/cmd/clinvk@latest
 ```
 
-**Compatible with:**
+## Three Core Capabilities
 
-- OpenAI SDK (Python, TypeScript, Go)
-- Anthropic SDK
-- LangChain / LangGraph
-- Any HTTP client
+<div class="grid cards" markdown>
 
-#### 3. Orchestration - Multi-Backend Workflows
+-   :material-lightning-bolt-circle:{ .lg .middle } __Skills Integration__
 
-Coordinate multiple AI backends for complex tasks:
+    ---
 
-=== "Parallel: Multi-Perspective Review"
+    Claude Code Skills calling other AI backends for specialized tasks.
+    Route tasks to the best-suited model automatically.
 
-    ```bash
-    # Claude reviews architecture, Codex reviews performance, Gemini reviews security
-    clinvk parallel -f tasks.json
-    ```
+    [:octicons-arrow-right-24: Learn more](use-cases/ai-team-collaboration.md)
 
-    ```json
-    {
-      "tasks": [
-        {"backend": "claude", "prompt": "Review architecture for this code:\n\n<PASTE CODE OR DIFF HERE>"},
-        {"backend": "codex", "prompt": "Review performance for this code:\n\n<PASTE CODE OR DIFF HERE>"},
-        {"backend": "gemini", "prompt": "Review security for this code:\n\n<PASTE CODE OR DIFF HERE>"}
-      ]
-    }
-    ```
+-   :material-api:{ .lg .middle } __HTTP API Transformation__
 
-=== "Chain: Pipeline Processing"
+    ---
 
-    ```bash
-    # Claude analyzes → Codex fixes → Claude reviews
-    clinvk chain -f pipeline.json
-    ```
+    Use OpenAI/Anthropic SDKs with any CLI backend. Drop-in compatibility
+    with existing applications and frameworks.
 
-    ```json
-    {
-      "steps": [
-        {"name": "analyze", "backend": "claude", "prompt": "Analyze this code"},
-        {"name": "fix", "backend": "codex", "prompt": "Fix issues: {{previous}}"},
-        {"name": "review", "backend": "claude", "prompt": "Review fixes: {{previous}}"}
-      ]
-    }
-    ```
+    [:octicons-arrow-right-24: API Reference](reference/api/rest-api.md)
 
-### How It Works
+-   :material-source-branch:{ .lg .middle } __Orchestration__
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Client as Client (SDK/Agent/Skill)
-    participant Server as clinvk server
-    participant Backend as Backend CLI (claude/codex/gemini)
+    ---
 
-    Client->>+Server: HTTP request (OpenAI/Anthropic/REST)
-    Server->>Server: Normalize + route
-    Server->>+Backend: Execute CLI command
-    Backend-->>-Server: Output (text/JSON)
-    Server-->>-Client: SDK-compatible response
-```
+    Parallel execution, chain workflows, and backend comparison.
+    Build complex AI pipelines with simple commands.
 
-## Features
+    [:octicons-arrow-right-24: See examples](use-cases/index.md)
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-Backend Support** | Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI |
-| **SDK Compatibility** | OpenAI and Anthropic compatible API endpoints |
-| **Session Persistence** | Automatic session tracking with resume capability and cross-process file locking |
-| **Parallel Execution** | Run multiple AI tasks concurrently with fail-fast support |
-| **Chain Execution** | Pipeline prompts through multiple backends sequentially |
-| **Backend Comparison** | Compare responses from multiple backends side-by-side |
-| **HTTP API Server** | RESTful API with rate limiting, request size limiting, and CORS support |
-| **Security** | API key authentication, trusted proxy support, and working directory restrictions |
-| **Observability** | Distributed tracing, Prometheus metrics endpoint, and structured logging |
+</div>
 
 ## Quick Start
+
+### 1. First Prompt
 
 ```bash
 # Run with default backend (Claude Code)
@@ -130,43 +69,193 @@ clinvk "fix the bug in auth.go"
 
 # Specify a backend
 clinvk --backend codex "implement user registration"
-
-# Start HTTP API server
-clinvk serve --port 8080
-
-# Compare backends
-clinvk compare --all-backends "explain this code"
-
-# Parallel execution
-clinvk parallel -f tasks.json
-
-# Chain execution
-clinvk chain -f pipeline.json
 ```
 
-## Use Case Comparison
+### 2. Compare Backends
 
-| Scenario | Traditional Approach | clinvk Approach |
-|----------|---------------------|-----------------|
-| AI Skill calling other AIs | Not supported | HTTP API call |
-| LangChain integration | Custom code per model | OpenAI-compatible endpoint |
-| CI/CD code review | Shell scripts | REST API + parallel execution |
-| Multi-model comparison | Manual execution | `clinvk compare` |
-| Agent orchestration | Complex wiring | Chain/parallel execution |
+```bash
+# Run the same prompt on all backends
+clinvk compare --all-backends "explain this code"
+```
+
+### 3. Start HTTP Server
+
+```bash
+# Start the API server
+clinvk serve --port 8080
+
+# Test with curl
+curl -X POST http://localhost:8080/api/v1/prompt \
+  -H "Content-Type: application/json" \
+  -d '{"backend":"claude","prompt":"Hello"}'
+```
+
+## Use Cases Gallery
+
+<div class="grid cards" markdown>
+
+-   :material-account-group:{ .lg .middle } __AI Team Collaboration__
+
+    ---
+
+    Simulate a multi-AI development team with Claude as architect,
+    Codex as implementer, and Gemini as reviewer.
+
+    [:octicons-arrow-right-24: Explore](use-cases/ai-team-collaboration.md)
+
+-   :material-file-code:{ .lg .middle } __Automated Code Review__
+
+    ---
+
+    CI/CD pipeline that sends PR diffs to multiple backends for
+    comprehensive architecture, performance, and security reviews.
+
+    [:octicons-arrow-right-24: Explore](use-cases/automated-code-review.md)
+
+-   :material-book-search:{ .lg .middle } __Multi-Model Research__
+
+    ---
+
+    Complex technical research with multiple perspectives.
+    Compare answers and synthesize comprehensive reports.
+
+    [:octicons-arrow-right-24: Explore](use-cases/multi-model-research.md)
+
+-   :material-file-document:{ .lg .middle } __Smart Documentation__
+
+    ---
+
+    Automatically generate architecture docs, API references,
+    and usage examples from your codebase.
+
+    [:octicons-arrow-right-24: Explore](use-cases/smart-documentation.md)
+
+-   :material-test-tube:{ .lg .middle } __Test Generation Pipeline__
+
+    ---
+
+    End-to-end test generation: from test case design to
+    implementation to coverage review.
+
+    [:octicons-arrow-right-24: Explore](use-cases/test-generation-pipeline.md)
+
+-   :material-server:{ .lg .middle } __API Gateway Pattern__
+
+    ---
+
+    Deploy clinvk as a unified AI gateway for your organization.
+    Centralized routing, authentication, and monitoring.
+
+    [:octicons-arrow-right-24: Explore](use-cases/api-gateway-pattern.md)
+
+-   :material-alert:{ .lg .middle } __Incident Response War Room__
+
+    ---
+
+    Triage production incidents with parallel analysis and a synthesis chain.
+
+    [:octicons-arrow-right-24: Explore](use-cases/incident-response-war-room.md)
+
+</div>
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Clients["Clients"]
+        SDK[OpenAI/Anthropic SDK]
+        SKILL[Claude Code Skills]
+        CLI[CLI Users]
+        API[HTTP Clients]
+    end
+
+    subgraph clinvk["clinvk Server"]
+        ROUTER[API Router]
+        SESSION[Session Manager]
+        EXEC[Executor]
+        RATE[Rate Limiter]
+    end
+
+    subgraph Backends["AI CLI Backends"]
+        CLAUDE[Claude Code]
+        CODEX[Codex CLI]
+        GEMINI[Gemini CLI]
+    end
+
+    SDK -->|/openai/v1/*| ROUTER
+    SKILL -->|/api/v1/*| ROUTER
+    CLI -->|Direct| EXEC
+    API -->|/api/v1/*| ROUTER
+
+    ROUTER --> RATE
+    RATE --> SESSION
+    SESSION --> EXEC
+    EXEC --> CLAUDE
+    EXEC --> CODEX
+    EXEC --> GEMINI
+```
+
+## Feature Comparison
+
+| Feature | clinvoker | Direct CLI | Other Wrappers |
+|---------|:---------:|:----------:|:--------------:|
+| Multi-backend support | :material-check:{ .green } | :material-close:{ .red } | Limited |
+| OpenAI SDK compatible | :material-check:{ .green } | :material-close:{ .red } | Sometimes |
+| Session persistence | :material-check:{ .green } | :material-close:{ .red } | Rare |
+| Parallel execution | :material-check:{ .green } | :material-close:{ .red } | :material-close:{ .red } |
+| Chain workflows | :material-check:{ .green } | :material-close:{ .red } | :material-close:{ .red } |
+| Backend comparison | :material-check:{ .green } | Manual | :material-close:{ .red } |
+| Rate limiting | :material-check:{ .green } | :material-close:{ .red } | Varies |
+| Self-hosted | :material-check:{ .green } | N/A | Varies |
 
 ## Supported Backends
 
-| Backend | CLI Tool | Description |
-|---------|----------|-------------|
-| Claude Code | `claude` | Anthropic's AI coding assistant |
-| Codex CLI | `codex` | OpenAI's code-focused CLI |
-| Gemini CLI | `gemini` | Google's Gemini AI CLI |
+| Backend | CLI Tool | Best For |
+|---------|----------|----------|
+| :material-robot: Claude Code | `claude` | Complex reasoning, architecture, analysis |
+| :material-code-tags: Codex CLI | `codex` | Code generation, quick implementations |
+| :material-google: Gemini CLI | `gemini` | Research, summarization, creative tasks |
 
 ## Next Steps
 
-- [Installation](guide/installation.md) - Install clinvk on your system
-- [Quick Start](guide/quick-start.md) - Get up and running in minutes
-- [Architecture](about/architecture.md) - Learn about clinvk's architecture and design
-- [Integration Guide](integration/index.md) - Connect clinvk to your tools
-- [Parallel & Chain Execution](guide/parallel-execution.md) - Multi-backend workflow patterns
-- [HTTP API](guide/http-server.md) - Use the REST API server
+<div class="grid cards" markdown>
+
+-   :material-rocket:{ .lg .middle } __Getting Started__
+
+    ---
+
+    Install clinvk and run your first prompt in under 5 minutes.
+
+    [:octicons-arrow-right-24: Installation](getting-started/installation.md)
+
+-   :material-school:{ .lg .middle } __Tutorials__
+
+    ---
+
+    Step-by-step guides for common use cases and integrations.
+
+    [:octicons-arrow-right-24: Tutorials](tutorials/index.md)
+
+-   :material-book-open:{ .lg .middle } __How-To Guides__
+
+    ---
+
+    Practical guides for specific tasks and configurations.
+
+    [:octicons-arrow-right-24: How-To](how-to/index.md)
+
+-   :material-code-braces:{ .lg .middle } __API Reference__
+
+    ---
+
+    Complete REST API documentation with examples.
+
+    [:octicons-arrow-right-24: Reference](reference/index.md)
+
+</div>
+
+## Community
+
+- **GitHub**: [signalridge/clinvoker](https://github.com/signalridge/clinvoker)
+- **Issues**: [Report bugs or request features](https://github.com/signalridge/clinvoker/issues)
+- **Contributing**: [Development guide](development/contributing.md)

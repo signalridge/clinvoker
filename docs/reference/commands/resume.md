@@ -10,23 +10,23 @@ clinvk resume [session-id] [prompt] [flags]
 
 ## Description
 
-Resume a previous session to continue the conversation. Sessions maintain context from previous interactions.
+Resume a previous session to continue the conversation. A session can only be resumed if it has a backend session ID recorded.
 
 ## Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `session-id` | Session ID to resume (optional with `--last` or `--interactive`) |
+| `session-id` | Session ID or prefix (optional when using `--last` or interactive picker) |
 | `prompt` | Follow-up prompt (optional) |
 
 ## Flags
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--last` | | bool | `false` | Resume most recent session |
-| `--interactive` | `-i` | bool | `false` | Interactive session picker |
-| `--here` | | bool | `false` | Filter by current directory |
-| `--backend` | `-b` | string | | Filter by backend |
+| `--last` | | bool | `false` | Resume the most recent session (filtered by other flags) |
+| `--interactive` | `-i` | bool | `false` | Show interactive session picker |
+| `--here` | | bool | `false` | Filter sessions by current working directory |
+| `--backend` | `-b` | string | | Filter sessions by backend |
 
 ## Examples
 
@@ -48,15 +48,13 @@ clinvk resume --last "continue from where we left off"
 clinvk resume --interactive
 ```
 
-This displays a list of recent sessions to choose from.
+If you run `clinvk resume` with no arguments and no `--last`, the interactive picker opens by default.
 
 ### Resume from Current Directory
 
 ```bash
 clinvk resume --here
 ```
-
-Only shows sessions created in the current working directory.
 
 ### Filter by Backend
 
@@ -79,18 +77,9 @@ clinvk resume --here --backend claude --last
 
 ## Behavior
 
-1. If `--last` is specified, resumes the most recent session (filtered if other flags present)
-2. If `--interactive` is specified, shows a picker UI
-3. If a session ID is provided, resumes that specific session
-4. If a prompt is provided, it's sent as a follow-up message
-
-## Session Resolution
-
-Sessions are resolved in this priority:
-
-1. Explicit session ID argument
-2. `--last` flag (most recent matching session)
-3. `--interactive` flag (user selection)
+1. If `--last` is specified, resume the most recent resumable session that matches filters
+2. Else if a session ID is provided, resume that session
+3. Else open the interactive picker (or error if no resumable sessions exist)
 
 ## Output
 

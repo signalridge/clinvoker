@@ -172,12 +172,12 @@ Prompt: explain this code
 ============================================================
 COMPARISON SUMMARY
 ============================================================
-BACKEND      STATUS     DURATION     SESSION    MODEL
+BACKEND      STATUS     DURATION     MODEL
 ------------------------------------------------------------
-claude       OK         2.50s        abc123     claude-opus-4-5-20251101
-codex        FAILED     0.50s        -          o3
+claude       OK         2.50s        claude-opus-4-5-20251101
+codex        FAILED     0.50s        o3
              Error: Backend unavailable
-gemini       OK         2.80s        def456     gemini-2.5-pro
+gemini       OK         2.80s        gemini-2.5-pro
 ------------------------------------------------------------
 Total time: 2.80s
 ```
@@ -187,7 +187,7 @@ Total time: 2.80s
 | 参数 | 描述 | 默认值 |
 |------|------|--------|
 | `--backends` | 逗号分隔的后端列表 | - |
-| `--all-backends` | 对比所有启用的后端 | `false` |
+| `--all-backends` | 对比所有已注册后端（跳过不可用） | `false` |
 | `--sequential` | 一次运行一个 | `false` |
 | `--json` | JSON 输出 | `false` |
 

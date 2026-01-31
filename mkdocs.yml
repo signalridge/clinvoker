@@ -92,57 +92,83 @@ extra:
     provider: google
     property: G-XXXXXXXXXX
 nav:
-  - clinvk:
-      - index.md
-      - Architecture: about/architecture.md
-      - Design Decisions: about/design-decisions.md
-  - Guide:
-      - guide/index.md
-      - Installation: guide/installation.md
-      - Quick Start: guide/quick-start.md
-      - Configuration: guide/configuration.md
-      - Basic Usage: guide/basic-usage.md
-      - Session Management: guide/session-management.md
-      - Parallel Execution: guide/parallel-execution.md
-      - Chain Execution: guide/chain-execution.md
-      - Backend Comparison: guide/backend-comparison.md
-      - HTTP Server: guide/http-server.md
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - First Prompt: getting-started/first-prompt.md
+      - Next Steps: getting-started/next-steps.md
+  - Tutorials:
+      - tutorials/index.md
+      - Multi-Backend Code Review: tutorials/multi-backend-code-review.md
+      - Building AI Skills: tutorials/building-ai-skills.md
+      - CI/CD Integration: tutorials/ci-cd-integration.md
+      - LangChain Integration: tutorials/langchain-integration.md
+  - How-To Guides:
+      - how-to/index.md
+      - Basic Usage: how-to/basic-usage.md
+      - Session Management: how-to/session-management.md
+      - Parallel Execution: how-to/parallel-execution.md
+      - Chain Execution: how-to/chain-execution.md
+      - Backend Comparison: how-to/backend-comparison.md
+      - Configuration: how-to/configuration.md
       - Backends:
-          - guide/backends/index.md
-          - Claude Code: guide/backends/claude.md
-          - Codex CLI: guide/backends/codex.md
-          - Gemini CLI: guide/backends/gemini.md
-  - Integration:
-      - integration/index.md
-      - Claude Code Skills: integration/claude-code-skills.md
-      - LangChain/LangGraph: integration/langchain-langgraph.md
-      - CI/CD: integration/ci-cd.md
-      - Client Libraries: integration/client-libraries.md
-      - MCP Server: integration/mcp-server.md
+          - how-to/backends/index.md
+          - Claude Code: how-to/backends/claude.md
+          - Codex CLI: how-to/backends/codex.md
+          - Gemini CLI: how-to/backends/gemini.md
+  - Use Cases:
+      - use-cases/index.md
+      - AI Team Collaboration: use-cases/ai-team-collaboration.md
+      - Automated Code Review: use-cases/automated-code-review.md
+      - Multi-Model Research: use-cases/multi-model-research.md
+      - Smart Documentation: use-cases/smart-documentation.md
+      - Test Generation Pipeline: use-cases/test-generation-pipeline.md
+      - API Gateway Pattern: use-cases/api-gateway-pattern.md
   - Reference:
       - reference/index.md
       - Commands:
           - reference/commands/index.md
-          - prompt: reference/commands/prompt.md
-          - resume: reference/commands/resume.md
-          - sessions: reference/commands/sessions.md
-          - config: reference/commands/config.md
-          - parallel: reference/commands/parallel.md
-          - compare: reference/commands/compare.md
-          - chain: reference/commands/chain.md
-          - serve: reference/commands/serve.md
-      - REST API: reference/rest-api.md
-      - OpenAI Compatible: reference/openai-compatible.md
-      - Anthropic Compatible: reference/anthropic-compatible.md
+          - Prompt: reference/commands/prompt.md
+          - Resume: reference/commands/resume.md
+          - Sessions: reference/commands/sessions.md
+          - Config: reference/commands/config.md
+          - Parallel: reference/commands/parallel.md
+          - Compare: reference/commands/compare.md
+          - Chain: reference/commands/chain.md
+          - Serve: reference/commands/serve.md
+      - API:
+          - reference/api/rest-api.md
+          - reference/api/openai-compatible.md
+          - reference/api/anthropic-compatible.md
       - Configuration: reference/configuration.md
       - Environment Variables: reference/environment.md
       - Exit Codes: reference/exit-codes.md
+  - Integration:
+      - integration/index.md
+      - Claude Code Skills: integration/claude-code-skills.md
+      - LangChain/LangGraph: integration/langchain-langgraph.md
+      - OpenAI SDK: integration/openai-sdk.md
+      - Anthropic SDK: integration/anthropic-sdk.md
+      - CI/CD Platforms:
+          - integration/ci-cd-platforms/github-actions.md
+          - integration/ci-cd-platforms/gitlab-ci.md
+          - integration/ci-cd-platforms/jenkins.md
+  - Architecture:
+      - architecture/index.md
+      - Overview: architecture/overview.md
+      - Backend System: architecture/backend-system.md
+      - Session System: architecture/session-system.md
+      - API Design: architecture/api-design.md
+      - Design Decisions: architecture/design-decisions.md
   - Development:
       - development/index.md
-      - Architecture: development/architecture.md
       - Contributing: development/contributing.md
       - Adding Backends: development/adding-backends.md
       - Testing: development/testing.md
       - Troubleshooting: development/troubleshooting.md
       - FAQ: development/faq.md
       - Changelog: development/changelog.md
+  - About:
+      - about/index.md
+      - License: about/license.md

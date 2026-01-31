@@ -33,7 +33,11 @@ clinvk serve --host 0.0.0.0 --port 8080
 ```
 
 !!! warning "安全"
-    绑定到 `0.0.0.0` 会将服务器暴露到网络。没有内置认证。
+    绑定到 `0.0.0.0` 会将服务器暴露到网络。建议启用 API Key 并限制 CORS/工作目录。
+
+## 认证
+
+可通过 `CLINVK_API_KEYS` 或 `server.api_keys_gopass_path` 启用 API Key。请求需带 `Authorization: Bearer <key>` 或 `X-Api-Key: <key>`。
 
 ## 测试服务器
 
@@ -43,11 +47,7 @@ clinvk serve --host 0.0.0.0 --port 8080
 curl http://localhost:8080/health
 ```
 
-响应：
-
-```json
-{"status": "ok"}
-```
+响应包含 `status`、`version`、`uptime`、后端可用性与会话存储状态。
 
 ### 列出后端
 
@@ -97,6 +97,8 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 |------|------|------|
 | GET | `/health` | 健康检查 |
 | GET | `/openapi.json` | OpenAPI 规范 |
+| GET | `/docs` | API 文档 UI |
+| GET | `/metrics` | Prometheus 指标（需开启） |
 
 ## 使用客户端库
 
@@ -107,7 +109,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:8080/openai/v1",
-    api_key="not-needed"  # clinvk 不需要认证
+    api_key="not-needed"  # 开启 API Key 时才需要
 )
 
 response = client.chat.completions.create(
@@ -124,7 +126,7 @@ import anthropic
 
 client = anthropic.Client(
     base_url="http://localhost:8080/anthropic/v1",
-    api_key="not-needed"
+    api_key="not-needed"  # 开启 API Key 时才需要
 )
 
 message = client.messages.create(
@@ -195,6 +197,9 @@ server:
 
   # 空闲连接超时（秒）
   idle_timeout_secs: 120
+
+  # 可选：gopass 中的 API Key 路径
+  api_keys_gopass_path: ""
 ```
 
 ### 通过 CLI 参数

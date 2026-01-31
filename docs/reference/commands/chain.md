@@ -10,7 +10,9 @@ clinvk chain [flags]
 
 ## Description
 
-Execute a series of prompts sequentially, passing output from each step to the next. This enables multi-stage workflows where different backends contribute their strengths.
+Execute a series of prompts sequentially, passing output from each step to the next via `{{previous}}`. This enables multi-stage workflows where different backends contribute their strengths.
+
+**Note:** CLI chain runs are always ephemeral (no sessions are persisted). `{{session}}`, `pass_session_id`, and `persist_sessions` are not supported and will error.
 
 ## Flags
 
@@ -57,7 +59,7 @@ Execute a series of prompts sequentially, passing output from each step to the n
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `steps` | array | | List of steps (required) |
-| `stop_on_failure` | bool | `true` | Stop the chain on first failure |
+| `stop_on_failure` | bool | `true` | **CLI always stops on failure** (field is accepted but `false` is ignored) |
 | `pass_working_dir` | bool | `false` | Pass working directory between steps |
 
 ### Template Variables
@@ -65,9 +67,6 @@ Execute a series of prompts sequentially, passing output from each step to the n
 | Variable | Description |
 |----------|-------------|
 | `{{previous}}` | Output text from the previous step |
-
-!!! note "Ephemeral Only"
-    Chain always runs in ephemeral mode - no sessions are persisted, and `{{session}}` is not supported.
 
 ## Examples
 
@@ -83,52 +82,36 @@ clinvk chain --file pipeline.json
 clinvk chain --file pipeline.json --json
 ```
 
-### Example Pipeline
-
-```json
-{
-  "steps": [
-    {
-      "name": "analyze",
-      "backend": "claude",
-      "prompt": "Analyze this codebase structure"
-    },
-    {
-      "name": "recommend",
-      "backend": "gemini",
-      "prompt": "Based on this analysis, recommend improvements: {{previous}}"
-    },
-    {
-      "name": "implement",
-      "backend": "codex",
-      "prompt": "Implement these recommendations: {{previous}}"
-    }
-  ]
-}
-```
-
 ## Output
 
-### Text Output (Default)
+### Text Output
 
-```yaml
-Step 1 (analyze): Starting...
-Step 1 (analyze): Completed (2.1s)
+```text
+Executing chain with 3 steps
+================================================================================
 
+[1/3] analyze (claude)
+--------------------------------------------------------------------------------
 Analysis result text...
 
-Step 2 (recommend): Starting...
-Step 2 (recommend): Completed (1.8s)
-
+[2/3] recommend (gemini)
+--------------------------------------------------------------------------------
 Recommendations text...
 
-Step 3 (implement): Starting...
-Step 3 (implement): Completed (3.2s)
-
+[3/3] implement (codex)
+--------------------------------------------------------------------------------
 Implementation text...
 
-Chain completed successfully
-Total time: 7.1s
+================================================================================
+CHAIN EXECUTION SUMMARY
+================================================================================
+STEP   BACKEND      STATUS   DURATION   NAME
+--------------------------------------------------------------------------------
+1      claude       OK       2.10s      analyze
+2      gemini       OK       1.80s      recommend
+3      codex        OK       3.20s      implement
+--------------------------------------------------------------------------------
+Total: 3/3 steps completed (7.10s)
 ```
 
 ### JSON Output
@@ -147,36 +130,9 @@ Total time: 7.1s
       "output": "Analysis result...",
       "duration_seconds": 2.1,
       "exit_code": 0
-    },
-    {
-      "step": 2,
-      "name": "recommend",
-      "backend": "gemini",
-      "output": "Recommendations...",
-      "duration_seconds": 1.8,
-      "exit_code": 0
-    },
-    {
-      "step": 3,
-      "name": "implement",
-      "backend": "codex",
-      "output": "Implementation...",
-      "duration_seconds": 3.2,
-      "exit_code": 0
     }
   ]
 }
-```
-
-## Error Handling
-
-If a step fails, the chain stops:
-
-```text
-Step 1 (analyze): Completed (2.1s)
-Step 2 (implement): Failed - Backend error
-
-Chain failed at step 2
 ```
 
 ## Exit Codes

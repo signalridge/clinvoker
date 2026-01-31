@@ -112,7 +112,7 @@ clinvk chain --file pipeline.json
 
 | 字段 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
-| `stop_on_failure` | bool | `true` | 失败即停止 |
+| `stop_on_failure` | bool | `true` | CLI 始终失败即停（字段接受但 `false` 会被忽略） |
 | `pass_working_dir` | bool | `false` | 在步骤间传递工作目录 |
 
 !!! note "仅临时模式"

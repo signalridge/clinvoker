@@ -10,6 +10,8 @@ Reference for all environment variables supported by clinvk.
 | `CLINVK_CLAUDE_MODEL` | Claude model | (backend default) |
 | `CLINVK_CODEX_MODEL` | Codex model | (backend default) |
 | `CLINVK_GEMINI_MODEL` | Gemini model | (backend default) |
+| `CLINVK_API_KEYS` | API keys for HTTP server (comma-separated) | (disabled) |
+| `CLINVK_API_KEYS_GOPASS_PATH` | gopass path for API keys | (disabled) |
 
 !!! note
     Only the variables above are explicitly supported. Other configuration keys are not currently mapped to environment variables.
@@ -38,6 +40,15 @@ clinvk -b codex "quick task"     # Uses o3-mini
 ```bash
 CLINVK_BACKEND=gemini clinvk "explain this"
 ```
+
+### API Keys for HTTP Server
+
+```bash
+export CLINVK_API_KEYS="key-1,key-2"
+clinvk serve
+```
+
+Clients must include `Authorization: Bearer <key>` or `X-Api-Key: <key>`.
 
 ## Priority
 
