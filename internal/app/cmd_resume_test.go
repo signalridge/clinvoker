@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const justNow = "just now"
+
 func TestFormatTimeAgo(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -16,17 +18,17 @@ func TestFormatTimeAgo(t *testing.T) {
 		{
 			name:     "just now - 0 seconds",
 			duration: 0,
-			want:     "just now",
+			want:     justNow,
 		},
 		{
 			name:     "just now - 30 seconds",
 			duration: 30 * time.Second,
-			want:     "just now",
+			want:     justNow,
 		},
 		{
 			name:     "just now - 59 seconds",
 			duration: 59 * time.Second,
-			want:     "just now",
+			want:     justNow,
 		},
 		{
 			name:     "1 minute ago",
@@ -187,7 +189,7 @@ func TestFormatTimeAgo_BoundaryConditions(t *testing.T) {
 			var isCorrectType bool
 			switch tt.wantType {
 			case "just now":
-				isCorrectType = got == "just now"
+				isCorrectType = got == justNow
 			case "minutes":
 				isCorrectType = got != "" && got[len(got)-1] == 'o' && got[len(got)-5:] == "m ago"
 			case "hours":
