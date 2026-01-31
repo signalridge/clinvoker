@@ -23,11 +23,3 @@ MD012:
   maximum: 2 # Multiple consecutive blank lines
 MD035:
   style: '---' # Horizontal rule style
-# Ignore auto-generated files
-ignorePatterns:
-  - CHANGELOG.md
-  - node_modules/
-  - vendor/
-  - dist/
-  - build/
-  - bin/

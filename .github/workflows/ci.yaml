@@ -34,7 +34,9 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           config: .markdownlint.yaml
-          globs: '**/*.md'
+          globs: |
+            **/*.md
+            !CHANGELOG.md
   lint-go:
     name: Lint Go
     runs-on: ubuntu-latest
