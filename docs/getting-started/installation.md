@@ -141,7 +141,7 @@ clinvk version
 
 Expected output:
 
-```
+```text
 clinvk version v0.x.x
   commit: abc1234
   built:  2025-01-27T00:00:00Z

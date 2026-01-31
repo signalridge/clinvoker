@@ -48,11 +48,12 @@ claude
 
 In Claude Code, use the skill:
 
-```
+```text
 /ai-team I need to implement a secure user authentication system in Go
 ```
 
 Claude should:
+
 1. Use Claude backend for architecture
 2. Use Codex for implementation
 3. Use Gemini for security review
@@ -112,9 +113,8 @@ claude
 
 # Test multi-review skill
 /multi-review
-```
+```text
 paste your code here
-```
 ```
 
 ## Best Practices for AI Skills

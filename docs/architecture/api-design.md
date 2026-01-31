@@ -202,7 +202,7 @@ type UnifiedEvent struct {
 
 ### SSE Format
 
-```
+```text
 data: {"type": "message", "backend": "claude", "content": {"text": "Hello"}}
 
 data: {"type": "message", "backend": "claude", "content": {"text": " world"}}

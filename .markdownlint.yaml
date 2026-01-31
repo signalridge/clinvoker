@@ -6,10 +6,15 @@ default: true
 # Disable rules that conflict with GitHub Flavored Markdown or common practices
 MD013: false # Line length - too strict for READMEs
 MD024: false # Duplicate headings - allows multiple "Examples" sections
+MD025: false # Multiple h1 - MkDocs uses YAML frontmatter title
 MD029: false # Ordered list prefix - allows any numbering style
+MD030: false # List marker spaces - too strict for nested lists
+MD031: false # Blanks around fences - stylistic choice
+MD032: false # Blanks around lists - stylistic choice
 MD033: false # Inline HTML - needed for badges and centered content
 MD041: false # First line heading - READMEs often have HTML first
 MD046: false # Code block style - allows indented blocks
+MD050: false # Strong style - inconsistent requirements
 MD060: false # Table column style - too strict for compact tables
 # Configure specific rules
 MD007:

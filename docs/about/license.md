@@ -7,7 +7,7 @@ description: clinvoker license information.
 
 clinvoker is released under the MIT License.
 
-```
+```text
 MIT License
 
 Copyright (c) 2025 SignalRidge

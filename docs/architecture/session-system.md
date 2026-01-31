@@ -41,7 +41,7 @@ type Session struct {
 
 Sessions are stored as JSON files:
 
-```
+```text
 ~/.clinvk/sessions/
 ├── a1b2c3d4e5f6.json
 ├── b2c3d4e5f6g7.json
