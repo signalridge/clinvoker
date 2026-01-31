@@ -1,22 +1,43 @@
-name: Release
+name: Release Please
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
 permissions:
   contents: write
+  pull-requests: write
   packages: write
   id-token: write
   attestations: write
+  actions: read
 env:
   GO_VERSION: "1.24"
   REGISTRY: ghcr.io
-  # Docker image name (must match .goreleaser.yaml)
   IMAGE_NAME: signalridge/clinvk
 jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      major: ${{ steps.release.outputs.major }}
+      minor: ${{ steps.release.outputs.minor }}
+      patch: ${{ steps.release.outputs.patch }}
+    steps:
+      - name: Release Please
+        uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
   test:
     name: Test
     runs-on: ubuntu-latest
+    needs: [release-please]
+    if: needs.release-please.outputs.release_created == 'true'
     steps:
       - uses: actions/checkout@v6
       - name: Set up Go
@@ -29,7 +50,8 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [release-please, test]
+    if: needs.release-please.outputs.release_created == 'true'
     outputs:
       version: ${{ steps.version.outputs.version }}
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -62,20 +84,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur_key
           chmod 600 ~/.ssh/aur_key
-          # Fetch AUR host keys dynamically
-          # Expected fingerprints (from https://aur.archlinux.org):
-          #   Ed25519: SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4
-          #   ECDSA:   SHA256:uTa/0PndEgPZTf76e1DFqXKJEXKsn7m9ivhLQtzGOCI
-          #   RSA:     SHA256:5s5cIyReIfNNVGRFdDbe3hdYiI5OelHGpw2rOUud3Q8
           ssh-keyscan -t ed25519,rsa,ecdsa aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
-          # Configure SSH to use the key for AUR
           cat >> ~/.ssh/config << 'EOF'
           Host aur.archlinux.org
             IdentityFile ~/.ssh/aur_key
             User aur
           EOF
       - name: Run GoReleaser
-        id: release
+        id: goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
@@ -88,7 +104,7 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          VERSION=$(echo '${{ steps.release.outputs.metadata }}' | jq -r '.version')
+          VERSION=$(echo '${{ steps.goreleaser.outputs.metadata }}' | jq -r '.version')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
       - name: Generate hashes
         id: hash
@@ -104,7 +120,8 @@ jobs:
           retention-days: 30
   provenance:
     name: Generate SLSA Provenance
-    needs: [release]
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     permissions:
       actions: read
       id-token: write
@@ -116,7 +133,8 @@ jobs:
   verify-nix:
     name: Verify Nix
     runs-on: ubuntu-latest
-    needs: [release]
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     steps:
       - uses: actions/checkout@v6
       - name: Install Nix
@@ -128,10 +146,8 @@ jobs:
   verify-container:
     name: Verify Container
     runs-on: ubuntu-latest
-    needs: [release]
-    env:
-      # Strip 'v' prefix from tag (v0.1.0 -> 0.1.0) to match GoReleaser
-      VERSION: ${{ github.ref_name }}
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -140,11 +156,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull and test container
+        env:
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
         run: |
           TAG="${VERSION#v}"
           docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}"
           docker run --rm "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}" version
       - name: Run Trivy vulnerability scan
+        env:
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
         run: |
           TAG="${VERSION#v}"
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
@@ -156,11 +176,11 @@ jobs:
         if: always()
         with:
           sarif_file: trivy-results.sarif
-  # Package installation verification
   verify-homebrew:
     name: Verify Homebrew
     runs-on: macos-latest
-    needs: [release]
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     steps:
       - name: Install via Homebrew
         run: |
@@ -173,11 +193,12 @@ jobs:
   verify-deb:
     name: Verify Debian Package
     runs-on: ubuntu-latest
-    needs: [release]
-    env:
-      VERSION: ${{ github.ref_name }}
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     steps:
       - name: Download and install deb
+        env:
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
         run: |
           TAG="${VERSION#v}"
           curl -LO "https://github.com/signalridge/clinvoker/releases/download/${VERSION}/clinvk_${TAG}_linux_amd64.deb"
@@ -189,12 +210,13 @@ jobs:
   verify-rpm:
     name: Verify RPM Package
     runs-on: ubuntu-latest
-    needs: [release]
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     container: fedora:latest
-    env:
-      VERSION: ${{ github.ref_name }}
     steps:
       - name: Download and install rpm
+        env:
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
         run: |
           TAG="${VERSION#v}"
           curl -LO "https://github.com/signalridge/clinvoker/releases/download/${VERSION}/clinvk_${TAG}_linux_amd64.rpm"
@@ -206,7 +228,8 @@ jobs:
   verify-binary:
     name: Verify Binary (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [release]
+    needs: [release-please, release]
+    if: needs.release-please.outputs.release_created == 'true'
     strategy:
       matrix:
         include:
@@ -214,10 +237,10 @@ jobs:
             asset: clinvoker_VERSION_linux_amd64.tar.gz
           - os: macos-latest
             asset: clinvoker_VERSION_darwin_arm64.tar.gz
-    env:
-      VERSION: ${{ github.ref_name }}
     steps:
       - name: Download and extract binary
+        env:
+          VERSION: ${{ needs.release-please.outputs.tag_name }}
         run: |
           TAG="${VERSION#v}"
           ASSET=$(echo "${{ matrix.asset }}" | sed "s/VERSION/${TAG}/")
