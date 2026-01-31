@@ -11,41 +11,41 @@ These tutorials provide hands-on, step-by-step guidance for learning clinvoker a
 
 <div class="grid cards" markdown>
 
--   :material-code-review:{ .lg .middle } __Multi-Backend Code Review__
+-   **Multi-Backend Code Review**
 
     ---
 
     Build a complete code review system that uses Claude, Codex, and Gemini
     in parallel to provide comprehensive feedback on pull requests.
 
-    [:octicons-arrow-right-24: Start tutorial](multi-backend-code-review.md)
+    [Start tutorial &rarr;](multi-backend-code-review.md)
 
--   :material-puzzle:{ .lg .middle } __Building AI Skills__
+-   **Building AI Skills**
 
     ---
 
     Create Claude Code Skills that leverage clinvoker to call other AI backends
     for specialized tasks, extending Claude's capabilities.
 
-    [:octicons-arrow-right-24: Start tutorial](building-ai-skills.md)
+    [Start tutorial &rarr;](building-ai-skills.md)
 
--   :material-rocket:{ .lg .middle } __CI/CD Integration__
+-   **CI/CD Integration**
 
     ---
 
     Integrate clinvoker into your CI/CD pipelines for automated code review,
     documentation generation, and testing.
 
-    [:octicons-arrow-right-24: Start tutorial](ci-cd-integration.md)
+    [Start tutorial &rarr;](ci-cd-integration.md)
 
--   :material-graph:{ .lg .middle } __LangChain Integration__
+-   **LangChain Integration**
 
     ---
 
     Connect clinvoker to LangChain and LangGraph for building complex
     agent workflows with multiple AI backends.
 
-    [:octicons-arrow-right-24: Start tutorial](langchain-integration.md)
+    [Start tutorial &rarr;](langchain-integration.md)
 
 </div>
 
@@ -62,9 +62,9 @@ These tutorials provide hands-on, step-by-step guidance for learning clinvoker a
 
 All tutorials assume you have:
 
-1. **clinvk installed** - See [Getting Started](../getting-started/installation.md)
+1. **clinvk installed** - See [Getting Started](../tutorials/getting-started.md)
 2. **At least one backend** - Claude Code, Codex CLI, or Gemini CLI
-3. **Basic understanding** of the [core concepts](../getting-started/first-prompt.md)
+3. **Basic understanding** of the [core concepts](../guides/basic-usage.md)
 
 ## Tutorial Structure
 
@@ -80,6 +80,6 @@ Each tutorial follows this structure:
 
 If you get stuck:
 
-- Check the [FAQ](../development/faq.md)
-- Review the [Troubleshooting Guide](../development/troubleshooting.md)
+- Check the [FAQ](../concepts/faq.md)
+- Review the [Troubleshooting Guide](../concepts/troubleshooting.md)
 - Open an issue on [GitHub](https://github.com/signalridge/clinvoker/issues)
