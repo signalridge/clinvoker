@@ -19,7 +19,7 @@ clinvk --verbose "your prompt"
 
 # 调试模式包括后端命令输出
 CLINVK_DEBUG=1 clinvk "your prompt"
-```text
+```
 
 ### 检查系统状态
 
@@ -32,7 +32,7 @@ clinvk config show
 
 # 验证配置文件
 clinvk config validate
-```text
+```
 
 ### 试运行模式
 
@@ -40,7 +40,7 @@ clinvk config validate
 
 ```bash
 clinvk --dry-run "your prompt"
-```text
+```
 
 ## 后端不可用
 
@@ -69,7 +69,7 @@ which claude codex gemini
 claude --version
 codex --version
 gemini --version
-```text
+```
 
 **2. 添加到 PATH**
 
@@ -79,7 +79,7 @@ export PATH="$PATH:/usr/local/bin"
 
 # 重新加载配置文件
 source ~/.bashrc  # 或 ~/.zshrc
-```text
+```
 
 **3. 检查权限**
 
@@ -89,14 +89,14 @@ ls -la $(which claude)
 
 # 如需要则修复
 chmod +x /path/to/claude
-```bash
+```
 
 **4. 验证 clinvk 检测**
 
 ```bash
 # 检查 clinvk 可以找到哪些后端
 clinvk config show | grep -A2 "available"
-```text
+```
 
 ## 会话问题
 
@@ -126,7 +126,7 @@ clinvk sessions delete <session-id>
 
 # 或清理所有会话
 rm -rf ~/.clinvk/sessions/*
-```bash
+```
 
 ### 会话锁定问题
 
@@ -154,7 +154,7 @@ rm -f ~/.clinvk/.store.lock
 
 # 验证锁文件权限
 ls -la ~/.clinvk/
-```text
+```
 
 ### 会话未找到
 
@@ -173,7 +173,7 @@ ls -la ~/.clinvk/sessions/
 
 # 通过部分 ID 搜索会话
 find ~/.clinvk/sessions/ -name "*abc*"
-```text
+```
 
 ## API 服务器问题
 
@@ -199,7 +199,7 @@ clinvk serve --port 3000
 
 # 或终止现有进程
 kill -9 <pid>
-```text
+```
 
 **权限被拒绝（低端口）：**
 
@@ -209,7 +209,7 @@ clinvk serve --port 8080
 
 # 或使用 sudo（不推荐）
 sudo clinvk serve --port 80
-```text
+```
 
 ### 认证问题
 
@@ -231,7 +231,7 @@ echo $CLINVK_API_KEY
 
 # 测试无认证（如果未配置密钥）
 curl http://localhost:8080/health
-```text
+```
 
 ### 速率限制问题
 
@@ -250,7 +250,7 @@ clinvk config set server.rate_limit_rps 100
 
 # 对于并行执行，降低并发度
 clinvk parallel --max-parallel 2 --file tasks.json
-```text
+```
 
 ## 性能问题
 
@@ -281,7 +281,7 @@ clinvk config set timeout 300
 
 # 使用更快的模型
 clinvk -m fast "prompt"
-```bash
+```
 
 ### 内存使用过高
 
@@ -303,7 +303,7 @@ clinvk sessions clean --older-than 7d
 
 # 使用临时模式（无会话存储）
 clinvk --ephemeral "prompt"
-```text
+```
 
 ### 磁盘空间问题
 
@@ -325,7 +325,7 @@ clinvk sessions clean --older-than 30d
 
 # 或手动清理
 rm -rf ~/.clinvk/sessions/*.json
-```text
+```
 
 ## 配置问题
 
@@ -353,7 +353,7 @@ clinvk config show
 # 检查环境变量覆盖
 echo $CLINVK_BACKEND
 echo $CLINVK_TIMEOUT
-```text
+```
 
 ### 环境变量未应用
 
@@ -371,7 +371,7 @@ export CLINVK_BACKEND=codex
 env | grep CLINVK
 
 # 记住优先级：CLI 参数 > 环境变量 > 配置文件
-```text
+```
 
 ## 平台特定问题
 
@@ -384,7 +384,7 @@ env | grep CLINVK
 xattr -d com.apple.quarantine /path/to/clinvk
 
 # 或在系统偏好设置 > 安全性与隐私中允许
-```text
+```
 
 **公证问题：**
 
@@ -393,7 +393,7 @@ xattr -d com.apple.quarantine /path/to/clinvk
 sudo spctl --master-disable  # 临时禁用（谨慎使用）
 # 首次运行后重新启用
 sudo spctl --master-enable
-```text
+```
 
 ### Windows
 
@@ -405,7 +405,7 @@ $env:Path += ";C:\path\to\clinvk"
 
 # 或通过系统属性永久添加
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\path\to\clinvk", "User")
-```bash
+```
 
 **杀毒软件误报：**
 
@@ -417,7 +417,7 @@ $env:Path += ";C:\path\to\clinvk"
 
 ```bash
 chmod +x /path/to/clinvk
-```text
+```
 
 **SELinux 问题：**
 
@@ -431,7 +431,7 @@ ausearch -m avc -ts recent
 # 如需要创建策略模块
 audit2allow -a -M clinvk
 semodule -i clinvk.pp
-```text
+```
 
 ## 调试模式使用
 
@@ -446,7 +446,7 @@ clinvk --verbose "prompt"
 
 # 服务器模式
 CLINVK_DEBUG=1 clinvk serve
-```bash
+```
 
 ### 日志位置
 
@@ -466,21 +466,21 @@ CLINVK_DEBUG=1 clinvk serve
 [DEBUG] Executing: claude --print --model sonnet "prompt"
 [DEBUG] Working directory: /home/user/project
 [DEBUG] Exit code: 0
-```text
+```
 
 **会话操作：**
 ```text
 [DEBUG] Loading session: abc123
 [DEBUG] Acquiring file lock
 [DEBUG] Session saved successfully
-```text
+```
 
 **API 请求：**
 ```text
 [DEBUG] POST /api/v1/prompt
 [DEBUG] Request body: {...}
 [DEBUG] Response: 200 OK
-```text
+```
 
 ## 获取帮助
 

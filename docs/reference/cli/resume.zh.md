@@ -6,7 +6,7 @@
 
 ```bash
 clinvk resume [session-id] [prompt] [flags]
-```text
+```
 
 ## 说明
 
@@ -36,7 +36,7 @@ clinvk resume [session-id] [prompt] [flags]
 
 ```bash
 clinvk resume --last
-```text
+```
 
 ### 带追问恢复
 
@@ -44,7 +44,7 @@ clinvk resume --last
 
 ```bash
 clinvk resume --last "从上次中断的地方继续"
-```text
+```
 
 ### 交互选择
 
@@ -52,7 +52,7 @@ clinvk resume --last "从上次中断的地方继续"
 
 ```bash
 clinvk resume --interactive
-```bash
+```
 
 如果不带参数执行 `clinvk resume`，将默认进入交互选择。
 
@@ -62,7 +62,7 @@ clinvk resume --interactive
 
 ```bash
 clinvk resume --here
-```text
+```
 
 ### 按后端过滤
 
@@ -70,7 +70,7 @@ clinvk resume --here
 
 ```bash
 clinvk resume --backend claude
-```text
+```
 
 ### 指定会话
 
@@ -79,7 +79,7 @@ clinvk resume --backend claude
 ```bash
 clinvk resume abc123
 clinvk resume abc123 "现在添加测试"
-```text
+```
 
 ### 组合过滤
 
@@ -87,7 +87,7 @@ clinvk resume abc123 "现在添加测试"
 
 ```bash
 clinvk resume --here --backend claude --last
-```text
+```
 
 这会恢复当前目录中最近的 Claude 会话。
 
@@ -111,7 +111,7 @@ Resuming session abc123 (claude)
 > 从上次中断的地方继续
 
 我已经审查了你对 auth 模块的更改。以下是我发现的...
-```text
+```
 
 ## 常见错误
 

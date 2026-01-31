@@ -37,7 +37,7 @@ jobs:
         run: |
           git diff origin/${{ github.base_ref }}...HEAD > pr.diff
           # Run review using clinvoker
-```text
+```
 
 ## Advanced Configuration
 

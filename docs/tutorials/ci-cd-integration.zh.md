@@ -33,7 +33,7 @@ flowchart LR
     CLAUDE --> RESULT["Review Results"]
     CODEX --> RESULT
     GEMINI --> RESULT
-```yaml
+```
 
 ---
 
@@ -63,14 +63,14 @@ services:
       - "8080:8080"
     volumes:
       - ./config.yaml:/root/.clinvk/config.yaml
-```text
+```
 
 部署服务器：
 
 ```bash
 export CLINVK_API_KEYS="your-api-key-1,your-api-key-2"
 docker-compose -f docker-compose.ci.yml up -d
-```yaml
+```
 
 ---
 
@@ -279,7 +279,7 @@ jobs:
         run: |
           echo "::error::AI 审查发现严重问题"
           exit 1
-```text
+```
 
 ### Pull Request 评论自动化
 
@@ -307,7 +307,7 @@ clinvoker 使用标准退出码，您可以在 CI/CD 中使用：
       echo "::error::发现严重问题"
       exit 1
     fi
-```yaml
+```
 
 ---
 
@@ -422,7 +422,7 @@ post-review:
     expire_in: 1 week
   rules:
     - if: $CI_MERGE_REQUEST_IID
-```yaml
+```
 
 ---
 
@@ -585,7 +585,7 @@ pipeline {
         }
     }
 }
-```yaml
+```
 
 ---
 
@@ -613,7 +613,7 @@ AI 后端有速率限制影响 CI/CD：
     # 合并多个小文件
     cat file1.go file2.go file3.go > combined.go
     clinvk -b claude "审查这些文件: $(cat combined.go)"
-```text
+```
 
 #### 2. 指数退避
 
@@ -626,7 +626,7 @@ AI 后端有速率限制影响 CI/CD：
       clinvk -b claude "审查此文件" && break
       sleep $((2 ** i))
     done
-```text
+```
 
 #### 3. clinvoker 服务器速率限制
 
@@ -637,7 +637,7 @@ server:
   rate_limit_enabled: true
   rate_limit_rps: 10
   rate_limit_burst: 20
-```yaml
+```
 
 ---
 
@@ -653,7 +653,7 @@ env:
 # 正确 - 使用 secrets
 env:
   CLINVK_API_KEY: ${{ secrets.CLINVK_API_KEY }}
-```text
+```
 
 ### 2. 使用环境特定的密钥
 
@@ -669,7 +669,7 @@ env:
   if: github.ref != 'refs/heads/main'
   env:
     CLINVK_API_KEY: ${{ secrets.CLINVK_API_KEY_DEV }}
-```text
+```
 
 ### 3. 定期轮换密钥
 
@@ -677,7 +677,7 @@ env:
 # 设置密钥轮换提醒
 # 每 90 天轮换一次
 # 在 GitHub/GitLab/Jenkins secrets 中更新
-```text
+```
 
 ### 4. 限制密钥范围
 
@@ -703,7 +703,7 @@ env:
       echo "没有代码变更需要审查"
       exit 0
     fi
-```text
+```
 
 ### 2. 大小限制
 
@@ -715,7 +715,7 @@ env:
       echo "Diff 太大，不适合 AI 审查"
       exit 0
     fi
-```text
+```
 
 ### 3. 选择性后端使用
 
@@ -728,7 +728,7 @@ env:
 - name: 深度审查
   run: |
     clinvk -b claude "深度分析"  # 更昂贵
-```text
+```
 
 ### 4. 缓存结果
 
@@ -737,7 +737,7 @@ env:
   with:
     path: .ai-reviews
     key: ai-reviews-${{ hashFiles('**/*.go') }}
-```yaml
+```
 
 ---
 
@@ -751,7 +751,7 @@ env:
 - name: 带超时的审查
   run: |
     clinvk -b claude --timeout 300 "审查此文件"
-```text
+```
 
 ### 问题：超出速率限制
 
@@ -764,7 +764,7 @@ env:
       clinvk -b claude "审查 $file"
       sleep 2  # 速率限制缓冲
     done
-```text
+```
 
 ### 问题：密钥不可用
 
@@ -773,7 +773,7 @@ env:
 ```bash
 # 验证密钥是否设置
 echo "密钥长度: ${#CLINVK_API_KEY}"
-```text
+```
 
 ---
 

@@ -121,7 +121,7 @@ flowchart TB
 
     SESSION --> DISC
     CONFIG --> CONFIG_FILE
-```bash
+```
 
 ## 关键组件
 
@@ -135,7 +135,7 @@ func main() {
         os.Exit(1)
     }
 }
-```bash
+```
 
 这种设计遵循关注点分离原则：
 
@@ -218,7 +218,7 @@ type Registry struct {
     availabilityCache    map[string]*cachedAvailability
     availabilityCacheTTL time.Duration
 }
-```bash
+```
 
 ### 会话存储并发
 
@@ -231,7 +231,7 @@ type Store struct {
     index        map[string]*SessionMeta
     fileLock     *FileLock             // 跨进程锁
 }
-```text
+```
 
 ### HTTP 服务器并发
 

@@ -24,13 +24,13 @@ Thank you for your interest in contributing to clinvoker! This guide covers deve
 git clone https://github.com/YOUR_USERNAME/clinvoker.git
 cd clinvoker
 git remote add upstream https://github.com/signalridge/clinvoker.git
-```text
+```
 
 ### Using Nix (Recommended)
 
 ```bash
 nix develop
-```text
+```
 
 This provides all required tools in a reproducible environment.
 
@@ -40,14 +40,14 @@ This provides all required tools in a reproducible environment.
 go mod download
 go build ./cmd/clinvk
 ./clinvk version
-```text
+```
 
 ### Pre-commit Hooks
 
 ```bash
 pre-commit install
 pre-commit install --hook-type commit-msg
-```text
+```
 
 ## Project Structure
 
@@ -70,7 +70,7 @@ clinvoker/
 ├── docs/                 # Documentation
 ├── scripts/              # Build and utility scripts
 └── test/                 # Integration tests
-```bash
+```
 
 ### Package Responsibilities
 
@@ -119,7 +119,7 @@ func exec(cfg *Config, c *exec.Cmd) (*Result, error) {
     res, _ := runWithTimeout(context.Background(), c, cfg.Timeout)
     return res, nil
 }
-```go
+```
 
 ### Error Handling
 
@@ -135,7 +135,7 @@ return apperrors.BackendError("claude", err)
 if apperrors.IsCode(err, apperrors.ErrCodeBackendUnavailable) {
     // Handle specific error
 }
-```bash
+```
 
 ### Testing Standards
 
@@ -182,7 +182,7 @@ func TestExecuteCommand(t *testing.T) {
         })
     }
 }
-```text
+```
 
 ## Testing Requirements
 
@@ -204,7 +204,7 @@ go test -short ./...
 
 # Specific package
 go test ./internal/backend/...
-```text
+```
 
 ### Integration Tests
 
@@ -216,7 +216,7 @@ CLINVK_TEST_INTEGRATION=1 go test ./test/...
 
 # Run with specific backend
 CLINVK_TEST_BACKEND=claude go test ./test/...
-```text
+```
 
 ### Benchmarks
 
@@ -226,7 +226,7 @@ go test -bench=. ./...
 
 # Run with memory profiling
 go test -bench=. -benchmem ./...
-```text
+```
 
 ## Documentation Requirements
 
@@ -249,7 +249,7 @@ type Backend interface {
 func NewStore(dir string) (*Store, error) {
     // ...
 }
-```text
+```
 
 ### User Documentation
 
@@ -292,7 +292,7 @@ type(scope): description
 [optional body]
 
 [optional footer]
-```yaml
+```
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
@@ -316,7 +316,7 @@ docs(readme): update installation instructions
 test(backend): add unit tests for registry
 
 chore(deps): update golang.org/x packages
-```text
+```
 
 ### Pull Request Template
 
@@ -341,7 +341,7 @@ How changes were tested:
 
 Fixes #123
 Closes #456
-```text
+```
 
 ### Code Review Checklist
 

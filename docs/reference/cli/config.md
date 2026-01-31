@@ -6,7 +6,7 @@ Manage configuration.
 
 ```bash
 clinvk config [command] [flags]
-```bash
+```
 
 ## Description
 
@@ -30,7 +30,7 @@ Display the current configuration.
 
 ```bash
 clinvk config show
-```text
+```
 
 ### Output
 
@@ -75,7 +75,7 @@ server:
 parallel:
   max_workers: 3
   fail_fast: false
-```yaml
+```
 
 ---
 
@@ -87,7 +87,7 @@ Get a specific configuration value.
 
 ```bash
 clinvk config get <key>
-```text
+```
 
 ### Key Format
 
@@ -97,7 +97,7 @@ Use dot notation for nested keys:
 clinvk config get default_backend
 clinvk config get backends.claude.model
 clinvk config get session.auto_resume
-```text
+```
 
 ### Examples
 
@@ -106,21 +106,21 @@ Get default backend:
 ```bash
 clinvk config get default_backend
 # Output: claude
-```text
+```
 
 Get Claude model:
 
 ```bash
 clinvk config get backends.claude.model
 # Output: claude-opus-4-5-20251101
-```text
+```
 
 Get session retention:
 
 ```bash
 clinvk config get session.retention_days
 # Output: 30
-```yaml
+```
 
 ---
 
@@ -132,7 +132,7 @@ Set a configuration value.
 
 ```bash
 clinvk config set <key> <value>
-```text
+```
 
 ### Key Format
 
@@ -142,7 +142,7 @@ Use dot notation for nested keys:
 clinvk config set default_backend codex
 clinvk config set backends.claude.model claude-sonnet-4-20250514
 clinvk config set session.retention_days 7
-```text
+```
 
 ### Examples
 
@@ -150,31 +150,31 @@ Set default backend:
 
 ```bash
 clinvk config set default_backend codex
-```text
+```
 
 Set Claude model:
 
 ```bash
 clinvk config set backends.claude.model claude-sonnet-4-20250514
-```text
+```
 
 Set session retention:
 
 ```bash
 clinvk config set session.retention_days 7
-```text
+```
 
 Set parallel workers:
 
 ```bash
 clinvk config set parallel.max_workers 5
-```text
+```
 
 Enable verbose output:
 
 ```bash
 clinvk config set unified_flags.verbose true
-```bash
+```
 
 ### Value Types
 
@@ -195,7 +195,7 @@ Use `--config` flag to specify a different file:
 
 ```bash
 clinvk --config /path/to/config.yaml config show
-```text
+```
 
 ## Configuration Priority
 

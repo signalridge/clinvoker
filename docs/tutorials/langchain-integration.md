@@ -43,7 +43,7 @@ flowchart TB
     style CLAUDE fill:#f3e5f5,stroke:#7b1fa2
     style CODEX fill:#e8f5e9,stroke:#388e3c
     style GEMINI fill:#ffebee,stroke:#c62828
-```yaml
+```
 
 ---
 
@@ -60,7 +60,7 @@ Before integrating with LangChain:
 
 ```bash
 pip install langchain langchain-openai langgraph
-```text
+```
 
 ### Verify clinvoker Server
 
@@ -72,7 +72,7 @@ curl http://localhost:8080/health
 
 # Expected response
 {"status":"ok"}
-```yaml
+```
 
 ---
 
@@ -133,7 +133,7 @@ messages = [
 
 response = llm.invoke(messages)
 print(response.content)
-```text
+```
 
 ### How It Works
 
@@ -207,7 +207,7 @@ print("\n=== Implementation Review (Codex) ===")
 print(results["implementation"].content)
 print("\n=== Security Review (Gemini) ===")
 print(results["security"].content)
-```text
+```
 
 ### Sequential Chain Execution
 
@@ -273,7 +273,7 @@ print("\n=== Implementation ===")
 print(result["implementation"])
 print("\n=== Review ===")
 print(result["review"])
-```yaml
+```
 
 ---
 
@@ -403,7 +403,7 @@ def process_payment(card_number, amount):
 
 print("=== Final Solution ===")
 print(result["final_output"])
-```text
+```
 
 ### Conditional Routing
 
@@ -502,7 +502,7 @@ for task in tasks:
     print(f"\nTask: {task}")
     print(f"Type: {result['task_type']}")
     print(f"Result: {result['result'][:200]}...")
-```yaml
+```
 
 ---
 
@@ -535,7 +535,7 @@ for chunk in llm.stream(messages):
     sys.stdout.flush()
 
 print()  # Final newline
-```text
+```
 
 ### Streaming with Callbacks
 
@@ -558,7 +558,7 @@ llm = ChatOpenAI(
 # This will automatically stream to stdout
 messages = [HumanMessage(content="Explain the SOLID principles")]
 response = llm.invoke(messages)
-```yaml
+```
 
 ---
 
@@ -603,7 +603,7 @@ try:
     print(response.content)
 except Exception as e:
     print(f"Failed after retries: {e}")
-```text
+```
 
 ### Fallback Chain
 
@@ -634,7 +634,7 @@ def fallback_invoke(prompt, backends=["claude", "codex", "gemini"]):
 # Usage
 response = fallback_invoke("Explain quantum computing")
 print(response.content)
-```yaml
+```
 
 ---
 
@@ -689,7 +689,7 @@ llm = ChatOpenAI(
 
 response = llm.invoke([HumanMessage(content="Explain machine learning")])
 print(f"\nResponse: {response.content[:200]}...")
-```yaml
+```
 
 ---
 
@@ -710,7 +710,7 @@ claude_llm = ChatOpenAI(
 # Use the same instance multiple times
 for prompt in prompts:
     response = claude_llm.invoke([HumanMessage(content=prompt)])
-```text
+```
 
 ### 2. Timeout Configuration
 
@@ -723,7 +723,7 @@ llm = ChatOpenAI(
     openai_api_key="not-needed",
     request_timeout=60,  # 60 seconds
 )
-```text
+```
 
 ### 3. Model Selection Strategy
 
@@ -747,7 +747,7 @@ def get_llm_for_task(task_type: str):
         openai_api_key="not-needed",
         temperature=temp,
     )
-```yaml
+```
 
 ---
 
@@ -769,7 +769,7 @@ llm = ChatOpenAI(
     # If using HTTPS with self-signed cert
     # http_client=httpx.Client(verify=False),
 )
-```text
+```
 
 ### Model Not Found
 
@@ -783,7 +783,7 @@ response = requests.get("http://localhost:8080/openai/v1/models")
 print(response.json())
 
 # Use exact model names from the response
-```text
+```
 
 ### Timeout Issues
 
@@ -797,7 +797,7 @@ llm = ChatOpenAI(
     request_timeout=300,  # 5 minutes
     max_retries=3,
 )
-```text
+```
 
 ---
 

@@ -6,7 +6,7 @@
 
 ```bash
 clinvk serve [flags]
-```text
+```
 
 ## 说明
 
@@ -85,7 +85,7 @@ server:
   api_keys_gopass_path: "myproject/server/api-keys"
   rate_limit_enabled: false
   metrics_enabled: false
-```text
+```
 
 ## 启动输出
 
@@ -100,7 +100,7 @@ Available endpoints:
   Health:         /health
 
 Press Ctrl+C to stop
-```text
+```
 
 ## 另请参阅
 

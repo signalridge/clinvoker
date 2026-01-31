@@ -6,7 +6,7 @@ Start the HTTP API server.
 
 ```bash
 clinvk serve [flags]
-```bash
+```
 
 ## Description
 
@@ -30,19 +30,19 @@ Start an HTTP server that exposes clinvk functionality via REST APIs. The server
 ```bash
 clinvk serve
 # Server running at http://127.0.0.1:8080
-```text
+```
 
 ### Custom Port
 
 ```bash
 clinvk serve --port 3000
-```text
+```
 
 ### Bind to All Interfaces
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 8080
-```text
+```
 
 !!! warning "Security"
     Binding to `0.0.0.0` exposes the server to the network. Enable API keys and restrict CORS/workdirs for production use.
@@ -113,7 +113,7 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 curl -X POST http://localhost:8080/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "claude", "messages": [{"role": "user", "content": "hello"}]}'
-```bash
+```
 
 ## Configuration
 
@@ -130,7 +130,7 @@ server:
   api_keys_gopass_path: "myproject/server/api-keys"
   rate_limit_enabled: false
   metrics_enabled: false
-```text
+```
 
 ## Output
 
@@ -147,7 +147,7 @@ Available endpoints:
   Health:         /health
 
 Press Ctrl+C to stop
-```text
+```
 
 ## Exit Codes
 

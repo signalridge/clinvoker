@@ -10,7 +10,7 @@ clinvk provides OpenAI-compatible endpoints that allow you to use OpenAI SDKs wi
 
 ```text
 http://localhost:8080/openai/v1
-```text
+```
 
 ## Authentication
 
@@ -53,7 +53,7 @@ List available models (backends mapped as models).
     }
   ]
 }
-```text
+```
 
 ### POST /openai/v1/chat/completions
 
@@ -72,7 +72,7 @@ Create a chat completion.
   "temperature": 0.7,
   "stream": false
 }
-```text
+```
 
 **Fields:**
 
@@ -115,7 +115,7 @@ Create a chat completion.
     "total_tokens": 25
   }
 }
-```text
+```
 
 **Streaming Response:**
 
@@ -131,7 +131,7 @@ data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1704067
 data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1704067200,"model":"claude","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
 
 data: [DONE]
-```bash
+```
 
 ## Model Mapping
 
@@ -170,7 +170,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ### TypeScript/JavaScript
 
@@ -188,7 +188,7 @@ const response = await client.chat.completions.create({
 });
 
 console.log(response.choices[0].message.content);
-```text
+```
 
 ### cURL
 
@@ -196,7 +196,7 @@ console.log(response.choices[0].message.content);
 curl -X POST http://localhost:8080/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "claude", "messages": [{"role": "user", "content": "Hello!"}]}'
-```text
+```
 
 ### Streaming Example (Python)
 
@@ -217,7 +217,7 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content is not None:
         print(chunk.choices[0].delta.content, end="")
-```bash
+```
 
 ## Differences from OpenAI API
 
@@ -242,7 +242,7 @@ server:
   request_timeout_secs: 300
   read_timeout_secs: 30
   write_timeout_secs: 300
-```text
+```
 
 ## Error Responses
 
@@ -255,7 +255,7 @@ Errors follow RFC 7807 Problem Details format:
   "status": 400,
   "detail": "The requested backend 'unknown' is not available"
 }
-```text
+```
 
 ## Next Steps
 

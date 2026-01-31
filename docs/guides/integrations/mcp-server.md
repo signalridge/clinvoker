@@ -50,7 +50,7 @@ flowchart TB
     style clients fill:#e3f2fd,stroke:#1976d2
     style server fill:#fff3e0,stroke:#f57c00
     style backends fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 ## Planned Tools
 
@@ -82,7 +82,7 @@ Execute a prompt with a specified backend.
     "required": ["backend", "prompt"]
   }
 }
-```text
+```
 
 ### `clinvk_parallel`
 
@@ -109,7 +109,7 @@ Execute multiple prompts in parallel.
     "required": ["tasks"]
   }
 }
-```text
+```
 
 ### `clinvk_chain`
 
@@ -137,7 +137,7 @@ Execute a chain of prompts sequentially.
     "required": ["steps"]
   }
 }
-```text
+```
 
 ## Planned Usage
 
@@ -155,7 +155,7 @@ Execute a chain of prompts sequentially.
     }
   }
 }
-```text
+```
 
 ### Starting the MCP Server
 
@@ -165,7 +165,7 @@ clinvk mcp --transport stdio
 
 # HTTP transport (for network clients)
 clinvk mcp --transport http --port 3000
-```bash
+```
 
 ## Use Cases
 
@@ -184,7 +184,7 @@ Here are the combined perspectives:
 - Architecture (Claude): ...
 - Performance (Codex): ...
 - Security (Gemini): ...
-```text
+```
 
 ### 2. Documentation Pipeline
 
@@ -196,7 +196,7 @@ Claude: I'll use the clinvk_chain tool to create documentation through a pipelin
 [Calls clinvk_chain with analyze → generate → polish steps]
 
 Here's the polished documentation: ...
-```text
+```
 
 ### 3. Specialized Task Routing
 
@@ -208,7 +208,7 @@ Claude: I'll route this to Gemini, which excels at data analysis.
 [Calls clinvk_prompt with backend="gemini"]
 
 Gemini suggests these optimizations: ...
-```text
+```
 
 ## Development Status
 
@@ -224,7 +224,7 @@ Gemini suggests these optimizations: ...
 
 - [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
 - [Claude Desktop MCP Guide](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API Reference](../reference/api/rest-api.md) - Current HTTP API
+- [REST API Reference](../reference/api/rest.md) - Current HTTP API
 
 ## Feedback
 

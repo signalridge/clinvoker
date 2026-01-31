@@ -23,7 +23,7 @@ type Backend interface {
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
     SeparateStderr() bool
 }
-```bash
+```
 
 ### 接口设计原理
 
@@ -67,7 +67,7 @@ flowchart TB
     GET --> RWMU
     LIST --> RWMU
     AVAILABLE --> CACHE
-```text
+```
 
 ### 线程安全设计
 
@@ -88,7 +88,7 @@ func (r *Registry) Register(b Backend) {
     // ... 注册逻辑
     delete(r.availabilityCache, b.Name()) // 使缓存失效
 }
-```text
+```
 
 这种设计允许：
 - 多个并发读取器（例如健康检查、列表）
@@ -119,7 +119,7 @@ func (r *Registry) isAvailableCachedLocked(b Backend) bool {
     }
     return available
 }
-```text
+```
 
 **30 秒 TTL 的原理**：
 - **性能**：避免频繁的 `exec.LookPath()` 调用
@@ -158,7 +158,7 @@ func (c *Claude) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     }
     return cmd
 }
-```text
+```
 
 ### Codex 后端
 
@@ -182,7 +182,7 @@ func (c *Codex) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     args = append(args, prompt)
     return exec.Command("codex", args...)
 }
-```text
+```
 
 ### Gemini 后端
 
@@ -206,7 +206,7 @@ func (g *Gemini) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     args = append(args, prompt)
     return exec.Command("gemini", args...)
 }
-```bash
+```
 
 ## 统一选项处理
 
@@ -230,7 +230,7 @@ type UnifiedOptions struct {
     ExtraFlags    []string
     Ephemeral     bool
 }
-```text
+```
 
 ### 标志映射架构
 
@@ -273,7 +273,7 @@ flowchart TB
     MAP_OUTPUT --> CLAUDE
     MAP_OUTPUT --> CODEX
     MAP_OUTPUT --> GEMINI
-```text
+```
 
 ### 模型名称映射
 
@@ -314,7 +314,7 @@ func (m *flagMapper) mapApprovalMode(mode ApprovalMode) []string {
     }
     return nil
 }
-```text
+```
 
 ## 输出解析和规范化
 
@@ -350,7 +350,7 @@ func (c *Claude) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
         },
     }, nil
 }
-```text
+```
 
 ### 统一响应结构
 
@@ -364,7 +364,7 @@ type UnifiedResponse struct {
     Error      string
     Raw        map[string]any
 }
-```bash
+```
 
 ## 添加新后端
 
@@ -455,7 +455,7 @@ func (n *NewBackend) ParseJSONResponse(rawOutput string) (*UnifiedResponse, erro
 func (n *NewBackend) SeparateStderr() bool {
     return false
 }
-```bash
+```
 
 ### 步骤 2：在注册表中注册
 
@@ -468,7 +468,7 @@ func init() {
     globalRegistry.Register(&Gemini{})
     globalRegistry.Register(&NewBackend{}) // 添加此行
 }
-```bash
+```
 
 ### 步骤 3：添加统一选项映射
 
@@ -491,7 +491,7 @@ func (m *flagMapper) mapModel(model string) string {
     // ...
     }
 }
-```bash
+```
 
 ### 步骤 4：添加允许的标志
 
@@ -505,7 +505,7 @@ var allowedFlagPatterns = map[string][]string{
     },
     // ...
 }
-```text
+```
 
 ## 最佳实践
 

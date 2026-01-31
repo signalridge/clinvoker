@@ -40,7 +40,7 @@ type Session struct {
     ErrorMessage     string            `json:"error_message,omitempty"`
     Metadata         map[string]string `json:"metadata,omitempty"`
 }
-```text
+```
 
 ### 会话 ID 生成
 
@@ -56,7 +56,7 @@ func generateID() (string, error) {
     }
     return hex.EncodeToString(bytes), nil
 }
-```bash
+```
 
 这提供了：
 - **抗碰撞性**：需要 2^64 次操作才能达到 50% 的碰撞概率
@@ -75,7 +75,7 @@ func generateID() (string, error) {
 ├── b2c3d4e5f6g7890123456789abcdef12.json
 ├── c3d4e5f6g7h8901234567890abcdef23.json
 └── index.json
-```text
+```
 
 ### 会话文件格式
 
@@ -101,7 +101,7 @@ func generateID() (string, error) {
   "tags": ["refactoring", "auth"],
   "title": "Auth Middleware Refactoring"
 }
-```text
+```
 
 ## 原子写入机制
 
@@ -152,7 +152,7 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
     cleanup = false
     return nil
 }
-```text
+```
 
 ### 原子写入过程
 
@@ -169,7 +169,7 @@ sequenceDiagram
     Writer->>TempFile: 关闭文件
     Writer->>TargetFile: rename() 原子操作
     Note over Writer,TargetFile: 原子性：读取者看到旧文件或新文件，永远不会是部分写入
-```text
+```
 
 这确保了：
 - **原子性**：读取者总是看到完整的旧文件或新文件，永远不会是部分写入
@@ -203,7 +203,7 @@ flowchart TB
     SHARED --> INTERFACE
     TRY --> INTERFACE
     TIMEOUT --> INTERFACE
-```text
+```
 
 ### 存储中的锁使用
 
@@ -229,7 +229,7 @@ func (s *Store) Save(sess *Session) error {
 
     return nil
 }
-```text
+```
 
 ### 双重锁定策略
 
@@ -260,7 +260,7 @@ flowchart TB
     UPDATE --> MUNLOCK
     MUNLOCK --> FUNLOCK
     FUNLOCK --> END
-```text
+```
 
 ## 内存元数据索引
 
@@ -287,7 +287,7 @@ type Store struct {
     fileLock     *FileLock
     indexModTime time.Time
 }
-```text
+```
 
 ### 索引优势
 
@@ -313,7 +313,7 @@ func (s *Store) persistIndex() error {
     indexPath := filepath.Join(s.dir, indexFileName)
     return writeFileAtomic(indexPath, data, 0600)
 }
-```text
+```
 
 ### 索引恢复
 
@@ -334,7 +334,7 @@ func (s *Store) rebuildIndex() error {
     _ = s.persistIndex()
     return nil
 }
-```text
+```
 
 ## 会话生命周期状态
 
@@ -348,7 +348,7 @@ stateDiagram-v2
     Active --> Error: 失败
     Completed --> [*]: 清理
     Error --> [*]: 清理
-```text
+```
 
 ### 状态定义
 
@@ -378,7 +378,7 @@ func (s *Session) SetError(msg string) {
 func (s *Session) Complete() {
     s.Status = StatusCompleted
 }
-```text
+```
 
 ## 并发控制策略
 
@@ -391,7 +391,7 @@ func (s *Store) Get(id string) (*Session, error) {
 
     return s.getLocked(id)
 }
-```text
+```
 
 读操作：
 1. 获取读锁
@@ -414,7 +414,7 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 
     // ... 创建并保存会话
 }
-```text
+```
 
 写操作：
 1. 获取跨进程文件锁
@@ -442,7 +442,7 @@ func (s *Store) indexModifiedExternally() bool {
 
     return info.ModTime().After(s.indexModTime)
 }
-```text
+```
 
 ## 性能考虑
 
@@ -466,7 +466,7 @@ func (s *Store) ListMeta() ([]*SessionMeta, error) {
     }
     return metas, nil
 }
-```text
+```
 
 ### 分页
 
@@ -507,7 +507,7 @@ func (s *Store) ListPaginated(filter *ListFilter) (*ListResult, error) {
         Offset:   filter.Offset,
     }, nil
 }
-```text
+```
 
 ## 分叉和清理机制
 
@@ -533,7 +533,7 @@ func (s *Session) Fork() (*Session, error) {
 
     return newSess, nil
 }
-```text
+```
 
 ### 清理
 
@@ -567,7 +567,7 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 
     return deleted, nil
 }
-```text
+```
 
 ## 安全考虑
 
@@ -580,7 +580,7 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 if err := writeFileAtomic(path, data, 0600); err != nil {
     return fmt.Errorf("failed to write session file: %w", err)
 }
-```text
+```
 
 ### 目录权限
 
@@ -591,7 +591,7 @@ func (s *Store) ensureStoreDirLocked() error {
     // 使用 0700 确保安全 - 只有所有者可以访问会话数据
     return os.MkdirAll(s.dir, 0700)
 }
-```text
+```
 
 ### 路径遍历防护
 
@@ -612,7 +612,7 @@ func validateSessionID(id string) error {
     }
     return nil
 }
-```text
+```
 
 ## 相关文档
 

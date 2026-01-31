@@ -36,7 +36,7 @@ flowchart LR
     style S2 fill:#e8f5e9,stroke:#388e3c
     style S3 fill:#ffebee,stroke:#c62828
     style S4 fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 **Execution Flow:**
 
@@ -60,7 +60,7 @@ flowchart LR
     style S2 fill:#fff3e0,stroke:#f57c00
     style S3 fill:#e8f5e9,stroke:#388e3c
     style S4 fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 ## Pipeline JSON Format
 
@@ -88,7 +88,7 @@ Create a `pipeline.json` file:
     }
   ]
 }
-```text
+```
 
 ### Complete Step Specification
 
@@ -107,7 +107,7 @@ Create a `pipeline.json` file:
     }
   ]
 }
-```text
+```
 
 ### Step Fields Reference
 
@@ -130,7 +130,7 @@ Create a `pipeline.json` file:
   "stop_on_failure": true,
   "pass_working_dir": false
 }
-```text
+```
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -166,7 +166,7 @@ Use `{{previous}}` in prompts to reference the previous step's output:
     }
   ]
 }
-```text
+```
 
 **How Substitution Works:**
 
@@ -188,7 +188,7 @@ Use `{{previous}}` in prompts to reference the previous step's output:
 
 ```bash
 clinvk chain --file pipeline.json
-```text
+```
 
 ### With JSON Output
 
@@ -196,7 +196,7 @@ Get structured results for programmatic use:
 
 ```bash
 clinvk chain --file pipeline.json --json
-```text
+```
 
 **Output:**
 
@@ -225,7 +225,7 @@ clinvk chain --file pipeline.json --json
     }
   ]
 }
-```text
+```
 
 ## Error Handling Strategies
 
@@ -241,7 +241,7 @@ The chain stops immediately when any step fails:
   ],
   "stop_on_failure": true
 }
-```text
+```
 
 **Use When:**
 
@@ -265,7 +265,7 @@ Step 1 (analyze): Completed (2.1s)
 Step 2 (implement): Failed - Backend error: rate limit exceeded
 
 Chain failed at step 2
-```text
+```
 
 With `--json`:
 
@@ -276,7 +276,7 @@ With `--json`:
     {"name": "implement", "exit_code": 1, "error": "rate limit exceeded"}
   ]
 }
-```text
+```
 
 ## Real-World Examples
 
@@ -308,7 +308,7 @@ A complete development workflow:
     }
   ]
 }
-```text
+```
 
 ### Example 2: Code Review Pipeline
 
@@ -339,7 +339,7 @@ Comprehensive multi-perspective review:
     }
   ]
 }
-```text
+```
 
 ### Example 3: Documentation Generation
 
@@ -365,7 +365,7 @@ End-to-end documentation workflow:
     }
   ]
 }
-```text
+```
 
 ### Example 4: Iterative Refinement
 
@@ -391,7 +391,7 @@ Refine code through multiple iterations:
     }
   ]
 }
-```text
+```
 
 ### Example 5: Multi-Language Translation
 
@@ -422,7 +422,7 @@ Translate documentation through multiple languages:
     }
   ]
 }
-```text
+```
 
 ## State Passing Between Steps
 
@@ -447,7 +447,7 @@ By default, each step uses its own working directory. Enable propagation:
   ],
   "pass_working_dir": true
 }
-```text
+```
 
 **With `pass_working_dir: true`:**
 
@@ -467,7 +467,7 @@ Step 2: "Based on: Analysis: 3 issues found
 Step 3: "Based on: Based on: Analysis: 3 issues found
          Implementation: Fixed 2 issues
          Review: 1 issue remains"
-```text
+```
 
 **Managing Context Length:**
 
@@ -496,7 +496,7 @@ Use the first step as a validation check:
     }
   ]
 }
-```text
+```
 
 If validation passes with "No violations", the fix step receives that message.
 
@@ -519,7 +519,7 @@ Use backend capabilities to make decisions:
     }
   ]
 }
-```text
+```
 
 ### Pattern 3: Fallback Chain
 
@@ -545,7 +545,7 @@ Try different approaches in sequence:
     }
   ]
 }
-```text
+```
 
 ## Best Practices
 
@@ -595,7 +595,7 @@ Try different approaches in sequence:
     {"name": "implement", "backend": "codex", "prompt": "Implement based on: {{previous}}"}
   ]
 }
-```text
+```
 
 2. Use more specific prompts to limit output
 

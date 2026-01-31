@@ -18,13 +18,13 @@ clinvoker provides multiple API endpoints for integration with various tools and
 
 ```bash
 clinvk serve --port 8080
-```text
+```
 
 ### Test the API
 
 ```bash
 curl http://localhost:8080/health
-```text
+```
 
 ### Execute a Prompt
 
@@ -32,7 +32,7 @@ curl http://localhost:8080/health
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "hello"}'
-```text
+```
 
 ## Choosing an API
 
@@ -48,7 +48,7 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 
 ```text
 http://localhost:8080
-```text
+```
 
 ## Authentication
 
@@ -71,7 +71,7 @@ curl -H "X-Api-Key: your-api-key" http://localhost:8080/api/v1/prompt
 
 # Option 2: Authorization header
 curl -H "Authorization: Bearer your-api-key" http://localhost:8080/api/v1/prompt
-```text
+```
 
 If no keys are configured, requests are allowed without authentication.
 
@@ -84,7 +84,7 @@ All APIs return JSON responses with a consistent structure:
   "success": true,
   "data": { ... }
 }
-```text
+```
 
 ## Error Handling
 
@@ -95,7 +95,7 @@ Error responses include an error message:
   "success": false,
   "error": "Backend not available"
 }
-```text
+```
 
 ### HTTP Status Codes
 
@@ -163,7 +163,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ### Python with Anthropic SDK
 
@@ -182,7 +182,7 @@ message = client.messages.create(
 )
 
 print(message.content[0].text)
-```text
+```
 
 ### JavaScript/TypeScript with OpenAI SDK
 
@@ -200,7 +200,7 @@ const response = await client.chat.completions.create({
 });
 
 console.log(response.choices[0].message.content);
-```bash
+```
 
 ## Server Configuration
 
@@ -216,7 +216,7 @@ server:
   idle_timeout_secs: 120
   rate_limit_enabled: false
   metrics_enabled: false
-```text
+```
 
 ## Security Considerations
 

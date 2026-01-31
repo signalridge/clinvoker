@@ -53,7 +53,7 @@ flowchart TB
     style POOL fill:#fff3e0,stroke:#f57c00
     style WORKERS fill:#e8f5e9,stroke:#388e3c
     style RESULT fill:#ffecb3,stroke:#ffa000
-```bash
+```
 
 **Execution Flow:**
 
@@ -93,7 +93,7 @@ clinvk uses a worker pool pattern for parallel execution:
     }
   ]
 }
-```text
+```
 
 ### Complete Task Specification
 
@@ -114,7 +114,7 @@ clinvk uses a worker pool pattern for parallel execution:
     }
   ]
 }
-```text
+```
 
 ### Task Fields Reference
 
@@ -141,7 +141,7 @@ Specify options that apply to all tasks:
   "max_parallel": 3,
   "fail_fast": true
 }
-```bash
+```
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -156,7 +156,7 @@ Specify options that apply to all tasks:
 
 ```bash
 clinvk parallel --file tasks.json
-```text
+```
 
 ### From Stdin
 
@@ -167,7 +167,7 @@ cat tasks.json | clinvk parallel
 
 # Or generate dynamically
 ./generate-tasks.py | clinvk parallel
-```text
+```
 
 ### Execution Options
 
@@ -178,7 +178,7 @@ Control concurrency to manage resource usage:
 ```bash
 # Run at most 2 tasks at a time
 clinvk parallel --file tasks.json --max-parallel 2
-```text
+```
 
 **When to Limit Workers:**
 
@@ -193,7 +193,7 @@ Stop all tasks on the first failure:
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```text
+```
 
 **Use Cases for Fail-Fast:**
 
@@ -214,7 +214,7 @@ Run all tasks regardless of individual failures:
 clinvk parallel --file tasks.json
 # or explicitly
 clinvk parallel --file tasks.json --max-parallel 3
-```text
+```
 
 **Use Cases for Continue-on-Error:**
 
@@ -248,7 +248,7 @@ BACKEND      STATUS   DURATION   TASK
 ------------------------------------------------------------
 
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
-```text
+```
 
 ### JSON Output
 
@@ -256,7 +256,7 @@ Structured output for programmatic processing:
 
 ```bash
 clinvk parallel --file tasks.json --json
-```text
+```
 
 ```json
 {
@@ -288,7 +288,7 @@ clinvk parallel --file tasks.json --json
     }
   ]
 }
-```text
+```
 
 ### Quiet Mode
 
@@ -296,13 +296,13 @@ Suppress task output, show only summary:
 
 ```bash
 clinvk parallel --file tasks.json --quiet
-```text
+```
 
 **Output:**
 
 ```text
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
-```text
+```
 
 **Best for:** CI/CD pipelines, cron jobs, when only status matters
 
@@ -314,7 +314,7 @@ Process all outputs together:
 
 ```bash
 clinvk parallel --file tasks.json --json | jq '.results[].output'
-```text
+```
 
 ### Pattern 2: Filter by Status
 
@@ -323,7 +323,7 @@ Process only successful results:
 ```bash
 clinvk parallel --file tasks.json --json | \
   jq '.results[] | select(.exit_code == 0) | .output'
-```text
+```
 
 ### Pattern 3: Error Handling
 
@@ -340,7 +340,7 @@ if [ "$failed" -gt 0 ]; then
   echo "$result" | jq '.results[] | select(.exit_code != 0)'
   exit 1
 fi
-```text
+```
 
 ## Real-World Examples
 
@@ -372,11 +372,11 @@ Run comprehensive security checks across multiple backends:
   ],
   "max_parallel": 3
 }
-```text
+```
 
 ```bash
 clinvk parallel --file security-audit.json --json > security-report.json
-```text
+```
 
 ### Multi-Perspective Code Review
 
@@ -399,7 +399,7 @@ Get diverse insights on code changes:
     }
   ]
 }
-```text
+```
 
 ### Batch Test Generation
 
@@ -414,7 +414,7 @@ Generate tests for multiple modules:
   ],
   "max_parallel": 3
 }
-```text
+```
 
 ### Multi-Project Tasks
 
@@ -440,7 +440,7 @@ Update dependencies across multiple projects:
     }
   ]
 }
-```text
+```
 
 ## Combining with Chain Execution
 
@@ -461,7 +461,7 @@ Use parallel within chain steps for complex workflows:
     }
   ]
 }
-```text
+```
 
 Then run the generated tasks:
 
@@ -469,7 +469,7 @@ Then run the generated tasks:
 clinvk chain --file analyze.json --json | \
   jq -r '.results[-1].output' > generated-tasks.json
 clinvk parallel --file generated-tasks.json
-```text
+```
 
 ## Resource Limits and Tuning
 
@@ -493,7 +493,7 @@ Example:
 - Base clinvk: 50MB
 - Claude process: 200MB
 - 3 parallel tasks: 50 + (3 × 200) = 650MB
-```bash
+```
 
 ### Rate Limiting
 
@@ -518,7 +518,7 @@ parallel:
 
   # Combine output from all tasks
   aggregate_output: true
-```text
+```
 
 ## Error Scenarios and Solutions
 
@@ -535,7 +535,7 @@ clinvk parallel --file tasks.json
 # Then process results
 clinvk parallel --file tasks.json --json | \
   jq '.results[] | select(.exit_code != 0) | {index, backend, error}'
-```text
+```
 
 ### Scenario 2: Rate Limiting
 
@@ -549,7 +549,7 @@ clinvk parallel --file tasks.json --max-parallel 1
 
 # Or use sequential mode
 clinvk parallel --file tasks.json --max-parallel 1
-```text
+```
 
 ### Scenario 3: Resource Exhaustion
 
@@ -564,7 +564,7 @@ clinvk parallel --file tasks.json --max-parallel 2
 # Process in batches
 head -n 10 tasks.json > batch1.json
 clinvk parallel --file batch1.json
-```text
+```
 
 ### Scenario 4: Dependency Failures
 
@@ -578,7 +578,7 @@ clinvk parallel --file tasks.json --fail-fast
 
 # Or use chain execution for dependencies
 clinvk chain --file dependent-tasks.json
-```text
+```
 
 ## Best Practices
 

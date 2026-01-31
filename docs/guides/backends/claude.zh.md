@@ -19,7 +19,7 @@ Claude Code 是 Anthropic 的强大 AI 编程助手。它擅长：
 # 验证安装
 which claude
 claude --version
-```text
+```
 
 ## 基本用法
 
@@ -27,7 +27,7 @@ claude --version
 # 使用 clinvk 调用 Claude
 clinvk --backend claude "修复 auth.go 中的 bug"
 clinvk -b claude "解释这个代码库"
-```text
+```
 
 ## 模型
 
@@ -40,7 +40,7 @@ clinvk -b claude "解释这个代码库"
 
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
-```bash
+```
 
 ## 配置
 
@@ -69,13 +69,13 @@ backends:
 
     # 额外 CLI 参数
     extra_flags: []
-```text
+```
 
 ### 环境变量
 
 ```bash
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
-```text
+```
 
 ## 审批模式
 
@@ -94,7 +94,7 @@ Claude 支持不同的审批行为：
 backends:
   claude:
     approval_mode: auto
-```text
+```
 
 或每个命令（在 tasks/chains 中）：
 
@@ -104,7 +104,7 @@ backends:
   "prompt": "重构模块",
   "approval_mode": "auto"
 }
-```text
+```
 
 ## 沙箱模式
 
@@ -132,7 +132,7 @@ backends:
 
     # 仅特定工具
     allowed_tools: read,write,edit
-```bash
+```
 
 ## 最佳实践
 
@@ -151,25 +151,25 @@ backends:
 
 ```bash
 clinvk -b claude "审查这个 PR 的安全问题和代码质量"
-```text
+```
 
 ### 复杂重构
 
 ```bash
 clinvk -b claude "重构认证系统以使用 JWT token"
-```text
+```
 
 ### 架构分析
 
 ```bash
 clinvk -b claude "分析这个代码库架构并建议改进"
-```text
+```
 
 ### Bug 调查
 
 ```bash
 clinvk -b claude "调查 CI 管道中测试失败的原因"
-```text
+```
 
 ## 下一步
 

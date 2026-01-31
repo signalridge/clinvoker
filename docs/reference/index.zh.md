@@ -50,7 +50,7 @@ clinvk 命令、配置和 API 的完整技术参考。
 # 示例：CLI 参数优先于环境变量
 export CLINVK_BACKEND=codex
 clinvk -b claude "提示词"  # 使用 claude，而不是 codex
-```text
+```
 
 ## 常用参数参考
 

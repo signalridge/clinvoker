@@ -16,7 +16,7 @@ flowchart LR
     style B fill:#fff3e0,stroke:#f57c00
     style C fill:#ffecb3,stroke:#ffa000
     style D fill:#f3e5f5,stroke:#7b1fa2
-```bash
+```
 
 ## OpenAI SDK Compatibility
 
@@ -41,7 +41,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ## LangChain Integration
 
@@ -67,7 +67,7 @@ messages = [
 
 response = llm.invoke(messages)
 print(response.content)
-```text
+```
 
 ### Using with Chains
 
@@ -94,7 +94,7 @@ chain = prompt | llm | StrOutputParser()
 # Execute
 result = chain.invoke({"code": "def hello(): return 'world'"})
 print(result)
-```text
+```
 
 ### Multiple Backends in One Application
 
@@ -124,7 +124,7 @@ gemini_llm = ChatOpenAI(
 architecture_review = claude_llm.invoke("Review the architecture...")
 code_generation = codex_llm.invoke("Generate a function that...")
 data_analysis = gemini_llm.invoke("Analyze this dataset...")
-```text
+```
 
 ## LangGraph Agent Integration
 
@@ -199,7 +199,7 @@ agent = create_react_agent(llm, [parallel_code_review, chain_documentation])
 result = agent.invoke({
     "messages": [{"role": "user", "content": "Review this code: def add(a, b): return a + b"}]
 })
-```text
+```
 
 ### Custom Agent Graph
 
@@ -276,7 +276,7 @@ app = workflow.compile()
 # Run
 result = app.invoke({"code": "def process(data): return data * 2"})
 print(result["final_report"])
-```text
+```
 
 ## Streaming Responses
 
@@ -300,7 +300,7 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="", flush=True)
-```text
+```
 
 ### LangChain Streaming
 
@@ -317,7 +317,7 @@ llm = ChatOpenAI(
 
 for chunk in llm.stream([HumanMessage(content="Explain recursion...")]):
     print(chunk.content, end="", flush=True)
-```text
+```
 
 ## Async Support
 
@@ -350,7 +350,7 @@ async def main():
             print(chunk.choices[0].delta.content, end="")
 
 asyncio.run(main())
-```text
+```
 
 ## Error Handling
 
@@ -371,7 +371,7 @@ except APIConnectionError:
     print("Could not connect to clinvk server. Is it running?")
 except APIError as e:
     print(f"API error: {e.message}")
-```text
+```
 
 ## Best Practices
 
@@ -388,7 +388,7 @@ client = httpx.Client(
 
 # Use in your application
 response = client.post("/api/v1/prompt", json={...})
-```text
+```
 
 ### 2. Timeout Configuration
 
@@ -401,7 +401,7 @@ llm = ChatOpenAI(
     api_key="not-needed",
     request_timeout=120  # 2 minutes for long tasks
 )
-```text
+```
 
 ### 3. Backend Selection Strategy
 
@@ -414,6 +414,6 @@ llm = ChatOpenAI(
 
 ## Next Steps
 
-- [CI/CD Integration](ci-cd.md) - Automate with pipelines
-- [Client Libraries](client-libraries.md) - Other language bindings
-- [REST API Reference](../reference/api/rest-api.md) - Complete API docs
+- [CI/CD Integration](ci-cd/) - Automate with pipelines
+- [Client Libraries](openai-sdk.md) - Other language bindings
+- [REST API Reference](../reference/api/rest.md) - Complete API docs

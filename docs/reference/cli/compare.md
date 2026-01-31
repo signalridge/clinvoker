@@ -6,7 +6,7 @@ Compare responses from multiple backends.
 
 ```bash
 clinvk compare <prompt> [flags]
-```text
+```
 
 ## Description
 
@@ -27,25 +27,25 @@ Send the same prompt to multiple backends and compare their responses. CLI compa
 
 ```bash
 clinvk compare --backends claude,codex "explain this code"
-```text
+```
 
 ### Compare All Backends
 
 ```bash
 clinvk compare --all-backends "what does this function do"
-```text
+```
 
 ### Sequential Execution
 
 ```bash
 clinvk compare --all-backends --sequential "review this PR"
-```text
+```
 
 ### JSON Output
 
 ```bash
 clinvk compare --all-backends --json "analyze performance"
-```text
+```
 
 ## Output
 
@@ -69,7 +69,7 @@ codex        OK         3.20s        o3
 gemini       OK         2.80s        gemini-2.5-pro
 --------------------------------------------------------------------------------
 Total time: 3.20s
-```text
+```
 
 ### JSON Output
 
@@ -88,7 +88,7 @@ Total time: 3.20s
   ],
   "total_duration_seconds": 3.2
 }
-```text
+```
 
 ## Execution Modes
 
@@ -98,7 +98,7 @@ All backends run simultaneously:
 
 ```bash
 clinvk compare --all-backends "prompt"
-```text
+```
 
 ### Sequential
 
@@ -106,7 +106,7 @@ Run backends one at a time:
 
 ```bash
 clinvk compare --all-backends --sequential "prompt"
-```text
+```
 
 ## Error Handling
 

@@ -6,7 +6,7 @@ Resume a previous session.
 
 ```bash
 clinvk resume [session-id] [prompt] [flags]
-```text
+```
 
 ## Description
 
@@ -36,7 +36,7 @@ Resume the most recent resumable session:
 
 ```bash
 clinvk resume --last
-```text
+```
 
 ### Resume with Follow-up
 
@@ -44,7 +44,7 @@ Resume and immediately send a follow-up prompt:
 
 ```bash
 clinvk resume --last "continue from where we left off"
-```text
+```
 
 ### Interactive Picker
 
@@ -52,7 +52,7 @@ Use the interactive picker to select a session:
 
 ```bash
 clinvk resume --interactive
-```bash
+```
 
 If you run `clinvk resume` with no arguments and no `--last`, the interactive picker opens by default.
 
@@ -62,7 +62,7 @@ Filter sessions to only those from the current directory:
 
 ```bash
 clinvk resume --here
-```text
+```
 
 ### Filter by Backend
 
@@ -70,7 +70,7 @@ Only consider sessions from a specific backend:
 
 ```bash
 clinvk resume --backend claude
-```text
+```
 
 ### Resume Specific Session
 
@@ -79,7 +79,7 @@ Resume a specific session by ID:
 ```bash
 clinvk resume abc123
 clinvk resume abc123 "now add tests"
-```text
+```
 
 ### Combine Filters
 
@@ -87,7 +87,7 @@ Combine multiple filters:
 
 ```bash
 clinvk resume --here --backend claude --last
-```text
+```
 
 This resumes the most recent Claude session from the current directory.
 
@@ -111,7 +111,7 @@ Resuming session abc123 (claude)
 > continue from where we left off
 
 I've reviewed the changes you made to the auth module. Here's what I found...
-```text
+```
 
 ## Common Errors
 

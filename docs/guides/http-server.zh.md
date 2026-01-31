@@ -16,7 +16,7 @@ clinvk 内置 HTTP API 服务器，通过 REST 端点暴露所有功能。
 
 ```bash
 clinvk serve
-```text
+```
 
 服务器默认在 `http://127.0.0.1:8080` 启动。
 
@@ -24,13 +24,13 @@ clinvk serve
 
 ```bash
 clinvk serve --port 3000
-```text
+```
 
 ### 绑定到所有接口
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 8080
-```text
+```
 
 !!! warning "安全"
     绑定到 `0.0.0.0` 会将服务器暴露到网络。建议启用 API Key 并限制 CORS/工作目录。
@@ -45,7 +45,7 @@ clinvk serve --host 0.0.0.0 --port 8080
 
 ```bash
 curl http://localhost:8080/health
-```text
+```
 
 响应包含 `status`、`version`、`uptime`、后端可用性与会话存储状态。
 
@@ -53,7 +53,7 @@ curl http://localhost:8080/health
 
 ```bash
 curl http://localhost:8080/api/v1/backends
-```text
+```
 
 ### 执行提示
 
@@ -61,7 +61,7 @@ curl http://localhost:8080/api/v1/backends
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "hello world"}'
-```text
+```
 
 ## 端点概览
 
@@ -117,7 +117,7 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "你好！"}]
 )
 print(response.choices[0].message.content)
-```text
+```
 
 ### Python (Anthropic SDK)
 
@@ -135,7 +135,7 @@ message = client.messages.create(
     messages=[{"role": "user", "content": "你好！"}]
 )
 print(message.content[0].text)
-```text
+```
 
 ### JavaScript/TypeScript
 
@@ -151,7 +151,7 @@ const response = await fetch('http://localhost:8080/api/v1/prompt', {
 
 const data = await response.json();
 console.log(data.output);
-```text
+```
 
 ### cURL
 
@@ -170,7 +170,7 @@ curl -X POST http://localhost:8080/api/v1/parallel \
       {"backend": "codex", "prompt": "任务 2"}
     ]
   }'
-```bash
+```
 
 ## 配置
 
@@ -200,13 +200,13 @@ server:
 
   # 可选：gopass 中的 API Key 路径
   api_keys_gopass_path: ""
-```text
+```
 
 ### 通过 CLI 参数
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 3000
-```bash
+```
 
 CLI 参数覆盖配置文件设置。
 
@@ -230,14 +230,14 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-```text
+```
 
 启用并启动：
 
 ```bash
 sudo systemctl enable clinvk
 sudo systemctl start clinvk
-```text
+```
 
 ### Docker
 
@@ -246,7 +246,7 @@ docker run -d \
   --name clinvk \
   -p 8080:8080 \
   ghcr.io/signalridge/clinvk serve --host 0.0.0.0
-```bash
+```
 
 ### launchd (macOS)
 
@@ -272,13 +272,13 @@ docker run -d \
     <true/>
 </dict>
 </plist>
-```text
+```
 
 加载服务：
 
 ```bash
 launchctl load ~/Library/LaunchAgents/com.clinvk.server.plist
-```text
+```
 
 ## 安全说明
 
@@ -302,10 +302,10 @@ launchctl load ~/Library/LaunchAgents/com.clinvk.server.plist
 curl http://localhost:8080/openapi.json > openapi.json
 
 # 在 Swagger UI 查看或导入 API 工具
-```text
+```
 
 ## 下一步
 
-- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档
-- [OpenAI 兼容](../reference/api/openai-compatible.md) - 使用 OpenAI 客户端
-- [Anthropic 兼容](../reference/api/anthropic-compatible.md) - 使用 Anthropic 客户端
+- [REST API 参考](../reference/api/rest.md) - 完整 API 文档
+- [OpenAI 兼容](../reference/api/openai-compat.md) - 使用 OpenAI 客户端
+- [Anthropic 兼容](../reference/api/anthropic-compat.md) - 使用 Anthropic 客户端

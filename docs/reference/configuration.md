@@ -10,7 +10,7 @@ Use a custom path with the `--config` flag:
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```text
+```
 
 ## Full Configuration Example
 
@@ -111,7 +111,7 @@ parallel:
   max_workers: 3
   fail_fast: false
   aggregate_output: true
-```yaml
+```
 
 ---
 
@@ -127,7 +127,7 @@ Available values: `claude`, `codex`, `gemini`
 
 ```yaml
 default_backend: claude
-```yaml
+```
 
 ---
 
@@ -251,7 +251,7 @@ backends:
     enabled: true
     extra_flags:
       - "--sandbox"
-```bash
+```
 
 !!! note "allowed_tools Limitation"
     The `allowed_tools` option is currently only supported by the Claude backend. Setting it for Codex or Gemini will have no effect, and a warning will be logged.
@@ -275,7 +275,7 @@ session:
   retention_days: 30
   store_token_usage: true
   default_tags: []
-```yaml
+```
 
 ---
 
@@ -296,7 +296,7 @@ output:
   show_tokens: false
   show_timing: false
   color: true
-```yaml
+```
 
 ---
 
@@ -378,7 +378,7 @@ parallel:
   max_workers: 3
   fail_fast: false
   aggregate_output: true
-```text
+```
 
 ---
 

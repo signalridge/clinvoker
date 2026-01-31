@@ -40,7 +40,7 @@ type Session struct {
     ErrorMessage     string            `json:"error_message,omitempty"`
     Metadata         map[string]string `json:"metadata,omitempty"`
 }
-```text
+```
 
 ### Session ID Generation
 
@@ -56,7 +56,7 @@ func generateID() (string, error) {
     }
     return hex.EncodeToString(bytes), nil
 }
-```bash
+```
 
 This provides:
 - **Collision resistance**: 2^64 operations needed for 50% collision probability
@@ -75,7 +75,7 @@ Sessions are stored in `~/.clinvk/sessions/`:
 ├── b2c3d4e5f6g7890123456789abcdef12.json
 ├── c3d4e5f6g7h8901234567890abcdef23.json
 └── index.json
-```text
+```
 
 ### Session File Format
 
@@ -101,7 +101,7 @@ Each session is stored as a JSON file with 0600 permissions:
   "tags": ["refactoring", "auth"],
   "title": "Auth Middleware Refactoring"
 }
-```text
+```
 
 ## Atomic Write Mechanism
 
@@ -152,7 +152,7 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
     cleanup = false
     return nil
 }
-```text
+```
 
 ### Atomic Write Process
 
@@ -169,7 +169,7 @@ sequenceDiagram
     Writer->>TempFile: Close file
     Writer->>TargetFile: rename() atomic operation
     Note over Writer,TargetFile: Atomic: readers see old or new, never partial
-```text
+```
 
 This ensures:
 - **Atomicity**: Readers always see complete old or new file, never partial writes
@@ -203,7 +203,7 @@ flowchart TB
     SHARED --> INTERFACE
     TRY --> INTERFACE
     TIMEOUT --> INTERFACE
-```text
+```
 
 ### Lock Usage in Store
 
@@ -229,7 +229,7 @@ func (s *Store) Save(sess *Session) error {
 
     return nil
 }
-```text
+```
 
 ### Dual-Locking Strategy
 
@@ -260,7 +260,7 @@ flowchart TB
     UPDATE --> MUNLOCK
     MUNLOCK --> FUNLOCK
     FUNLOCK --> END
-```text
+```
 
 ## In-Memory Metadata Index
 
@@ -287,7 +287,7 @@ type Store struct {
     fileLock     *FileLock
     indexModTime time.Time
 }
-```text
+```
 
 ### Index Benefits
 
@@ -313,7 +313,7 @@ func (s *Store) persistIndex() error {
     indexPath := filepath.Join(s.dir, indexFileName)
     return writeFileAtomic(indexPath, data, 0600)
 }
-```text
+```
 
 ### Index Recovery
 
@@ -334,7 +334,7 @@ func (s *Store) rebuildIndex() error {
     _ = s.persistIndex()
     return nil
 }
-```text
+```
 
 ## Session Lifecycle States
 
@@ -348,7 +348,7 @@ stateDiagram-v2
     Active --> Error: Failure
     Completed --> [*]: Cleanup
     Error --> [*]: Cleanup
-```text
+```
 
 ### State Definitions
 
@@ -378,7 +378,7 @@ func (s *Session) SetError(msg string) {
 func (s *Session) Complete() {
     s.Status = StatusCompleted
 }
-```text
+```
 
 ## Concurrency Control Strategies
 
@@ -391,7 +391,7 @@ func (s *Store) Get(id string) (*Session, error) {
 
     return s.getLocked(id)
 }
-```text
+```
 
 Read operations:
 1. Acquire read lock
@@ -414,7 +414,7 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 
     // ... create and save session
 }
-```text
+```
 
 Write operations:
 1. Acquire cross-process file lock
@@ -442,7 +442,7 @@ func (s *Store) indexModifiedExternally() bool {
 
     return info.ModTime().After(s.indexModTime)
 }
-```text
+```
 
 ## Performance Considerations
 
@@ -466,7 +466,7 @@ func (s *Store) ListMeta() ([]*SessionMeta, error) {
     }
     return metas, nil
 }
-```text
+```
 
 ### Pagination
 
@@ -507,7 +507,7 @@ func (s *Store) ListPaginated(filter *ListFilter) (*ListResult, error) {
         Offset:   filter.Offset,
     }, nil
 }
-```text
+```
 
 ## Fork and Cleanup Mechanisms
 
@@ -533,7 +533,7 @@ func (s *Session) Fork() (*Session, error) {
 
     return newSess, nil
 }
-```text
+```
 
 ### Cleanup
 
@@ -567,7 +567,7 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 
     return deleted, nil
 }
-```text
+```
 
 ## Security Considerations
 
@@ -580,7 +580,7 @@ Session files are created with 0600 permissions (owner read/write only):
 if err := writeFileAtomic(path, data, 0600); err != nil {
     return fmt.Errorf("failed to write session file: %w", err)
 }
-```text
+```
 
 ### Directory Permissions
 
@@ -591,7 +591,7 @@ func (s *Store) ensureStoreDirLocked() error {
     // Use 0700 for security - only owner can access session data
     return os.MkdirAll(s.dir, 0700)
 }
-```text
+```
 
 ### Path Traversal Prevention
 
@@ -612,7 +612,7 @@ func validateSessionID(id string) error {
     }
     return nil
 }
-```text
+```
 
 ## Related Documentation
 

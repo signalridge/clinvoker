@@ -19,7 +19,7 @@ Run against all enabled backends:
 
 ```bash
 clinvk compare --all-backends "explain this algorithm"
-```bash
+```
 
 ### Compare Specific Backends
 
@@ -28,7 +28,7 @@ Select which backends to compare:
 ```bash
 clinvk compare --backends claude,codex "what does this code do"
 clinvk compare --backends claude,gemini "review this PR"
-```text
+```
 
 ## Execution Modes
 
@@ -38,7 +38,7 @@ Run all backends simultaneously:
 
 ```bash
 clinvk compare --all-backends "explain this code"
-```text
+```
 
 ### Sequential
 
@@ -46,7 +46,7 @@ Run backends one at a time:
 
 ```bash
 clinvk compare --all-backends --sequential "review this implementation"
-```text
+```
 
 Sequential mode is useful when:
 
@@ -80,7 +80,7 @@ Model: gemini-2.5-pro
 Duration: 2.8s
 
 This is a classic binary search implementation...
-```text
+```
 
 ### JSON Output
 
@@ -88,7 +88,7 @@ Get structured data for programmatic processing:
 
 ```bash
 clinvk compare --all-backends --json "explain this code"
-```text
+```
 
 Output:
 
@@ -121,7 +121,7 @@ Output:
   ],
   "total_duration_seconds": 3.2
 }
-```text
+```
 
 ## Use Cases
 
@@ -131,7 +131,7 @@ Get multiple perspectives on code quality:
 
 ```bash
 clinvk compare --all-backends "review this code for bugs and improvements"
-```text
+```
 
 ### Architecture Decisions
 
@@ -139,7 +139,7 @@ Compare recommendations for design choices:
 
 ```bash
 clinvk compare --backends claude,gemini "what's the best way to implement caching here?"
-```text
+```
 
 ### Learning
 
@@ -147,7 +147,7 @@ See how different AI models explain concepts:
 
 ```bash
 clinvk compare --all-backends "explain how async/await works in JavaScript"
-```text
+```
 
 ### Validation
 
@@ -155,7 +155,7 @@ Cross-check important decisions:
 
 ```bash
 clinvk compare --all-backends "is this implementation secure?"
-```text
+```
 
 ## Handling Failures
 
@@ -180,7 +180,7 @@ codex        FAILED     0.50s        o3
 gemini       OK         2.80s        gemini-2.5-pro
 ------------------------------------------------------------
 Total time: 2.80s
-```text
+```
 
 ## Command Options
 

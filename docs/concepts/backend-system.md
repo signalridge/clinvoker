@@ -23,7 +23,7 @@ type Backend interface {
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
     SeparateStderr() bool
 }
-```typescript
+```
 
 ### Interface Design Rationale
 
@@ -67,7 +67,7 @@ flowchart TB
     GET --> RWMU
     LIST --> RWMU
     AVAILABLE --> CACHE
-```text
+```
 
 ### Thread-Safe Design
 
@@ -88,7 +88,7 @@ func (r *Registry) Register(b Backend) {
     // ... registration logic
     delete(r.availabilityCache, b.Name()) // Invalidate cache
 }
-```text
+```
 
 This design allows:
 - Multiple concurrent readers (e.g., health checks, listing)
@@ -119,7 +119,7 @@ func (r *Registry) isAvailableCachedLocked(b Backend) bool {
     }
     return available
 }
-```text
+```
 
 **Rationale for 30s TTL**:
 - **Performance**: Avoids frequent `exec.LookPath()` calls
@@ -158,7 +158,7 @@ func (c *Claude) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     }
     return cmd
 }
-```text
+```
 
 ### Codex Backend
 
@@ -182,7 +182,7 @@ func (c *Codex) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     args = append(args, prompt)
     return exec.Command("codex", args...)
 }
-```text
+```
 
 ### Gemini Backend
 
@@ -206,7 +206,7 @@ func (g *Gemini) BuildCommand(prompt string, opts *Options) *exec.Cmd {
     args = append(args, prompt)
     return exec.Command("gemini", args...)
 }
-```bash
+```
 
 ## Unified Options Handling
 
@@ -230,7 +230,7 @@ type UnifiedOptions struct {
     ExtraFlags    []string
     Ephemeral     bool
 }
-```text
+```
 
 ### Flag Mapping Architecture
 
@@ -273,7 +273,7 @@ flowchart TB
     MAP_OUTPUT --> CLAUDE
     MAP_OUTPUT --> CODEX
     MAP_OUTPUT --> GEMINI
-```text
+```
 
 ### Model Name Mapping
 
@@ -314,7 +314,7 @@ func (m *flagMapper) mapApprovalMode(mode ApprovalMode) []string {
     }
     return nil
 }
-```text
+```
 
 ## Output Parsing and Normalization
 
@@ -350,7 +350,7 @@ func (c *Claude) ParseJSONResponse(rawOutput string) (*UnifiedResponse, error) {
         },
     }, nil
 }
-```text
+```
 
 ### Unified Response Structure
 
@@ -364,7 +364,7 @@ type UnifiedResponse struct {
     Error      string
     Raw        map[string]any
 }
-```bash
+```
 
 ## Adding New Backends
 
@@ -455,7 +455,7 @@ func (n *NewBackend) ParseJSONResponse(rawOutput string) (*UnifiedResponse, erro
 func (n *NewBackend) SeparateStderr() bool {
     return false
 }
-```bash
+```
 
 ### Step 2: Register in Registry
 
@@ -468,7 +468,7 @@ func init() {
     globalRegistry.Register(&Gemini{})
     globalRegistry.Register(&NewBackend{}) // Add this line
 }
-```bash
+```
 
 ### Step 3: Add Unified Options Mapping
 
@@ -491,7 +491,7 @@ func (m *flagMapper) mapModel(model string) string {
     // ...
     }
 }
-```bash
+```
 
 ### Step 4: Add Allowed Flags
 
@@ -505,7 +505,7 @@ var allowedFlagPatterns = map[string][]string{
     },
     // ...
 }
-```text
+```
 
 ## Best Practices
 

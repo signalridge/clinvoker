@@ -53,7 +53,7 @@ flowchart TB
     style POOL fill:#fff3e0,stroke:#f57c00
     style WORKERS fill:#e8f5e9,stroke:#388e3c
     style RESULT fill:#ffecb3,stroke:#ffa000
-```bash
+```
 
 **执行流程：**
 
@@ -93,7 +93,7 @@ clinvk 使用工作池模式进行并行执行：
     }
   ]
 }
-```text
+```
 
 ### 完整任务规范
 
@@ -114,7 +114,7 @@ clinvk 使用工作池模式进行并行执行：
     }
   ]
 }
-```text
+```
 
 ### 任务字段参考
 
@@ -141,7 +141,7 @@ clinvk 使用工作池模式进行并行执行：
   "max_parallel": 3,
   "fail_fast": true
 }
-```text
+```
 
 | 字段 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
@@ -156,7 +156,7 @@ clinvk 使用工作池模式进行并行执行：
 
 ```bash
 clinvk parallel --file tasks.json
-```text
+```
 
 ### 从标准输入
 
@@ -167,7 +167,7 @@ cat tasks.json | clinvk parallel
 
 # 或动态生成
 ./generate-tasks.py | clinvk parallel
-```text
+```
 
 ### 执行选项
 
@@ -178,7 +178,7 @@ cat tasks.json | clinvk parallel
 ```bash
 # 最多同时运行 2 个任务
 clinvk parallel --file tasks.json --max-parallel 2
-```text
+```
 
 **何时限制工作器：**
 
@@ -193,7 +193,7 @@ clinvk parallel --file tasks.json --max-parallel 2
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```text
+```
 
 **快速失败的使用场景：**
 
@@ -214,7 +214,7 @@ clinvk parallel --file tasks.json --fail-fast
 clinvk parallel --file tasks.json
 # 或显式
 clinvk parallel --file tasks.json --max-parallel 3
-```text
+```
 
 **错误继续的使用场景：**
 
@@ -248,7 +248,7 @@ BACKEND      STATUS   DURATION   TASK
 ------------------------------------------------------------
 
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
-```text
+```
 
 ### JSON 输出
 
@@ -256,7 +256,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
 
 ```bash
 clinvk parallel --file tasks.json --json
-```text
+```
 
 ```json
 {
@@ -288,7 +288,7 @@ clinvk parallel --file tasks.json --json
     }
   ]
 }
-```text
+```
 
 ### 静默模式
 
@@ -296,13 +296,13 @@ clinvk parallel --file tasks.json --json
 
 ```bash
 clinvk parallel --file tasks.json --quiet
-```text
+```
 
 **输出：**
 
 ```text
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
-```text
+```
 
 **适用于：** CI/CD 流水线、cron 任务、当只需要状态时
 
@@ -314,7 +314,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
 
 ```bash
 clinvk parallel --file tasks.json --json | jq '.results[].output'
-```text
+```
 
 ### 模式 2：按状态过滤
 
@@ -323,7 +323,7 @@ clinvk parallel --file tasks.json --json | jq '.results[].output'
 ```bash
 clinvk parallel --file tasks.json --json | \
   jq '.results[] | select(.exit_code == 0) | .output'
-```text
+```
 
 ### 模式 3：错误处理
 
@@ -340,7 +340,7 @@ if [ "$failed" -gt 0 ]; then
   echo "$result" | jq '.results[] | select(.exit_code != 0)'
   exit 1
 fi
-```text
+```
 
 ## 真实示例
 
@@ -372,11 +372,11 @@ fi
   ],
   "max_parallel": 3
 }
-```text
+```
 
 ```bash
 clinvk parallel --file security-audit.json --json > security-report.json
-```text
+```
 
 ### 多视角代码审查
 
@@ -399,7 +399,7 @@ clinvk parallel --file security-audit.json --json > security-report.json
     }
   ]
 }
-```text
+```
 
 ### 批量测试生成
 
@@ -414,7 +414,7 @@ clinvk parallel --file security-audit.json --json > security-report.json
   ],
   "max_parallel": 3
 }
-```text
+```
 
 ### 多项目任务
 
@@ -440,7 +440,7 @@ clinvk parallel --file security-audit.json --json > security-report.json
     }
   ]
 }
-```text
+```
 
 ## 与链式执行结合
 
@@ -461,7 +461,7 @@ clinvk parallel --file security-audit.json --json > security-report.json
     }
   ]
 }
-```text
+```
 
 然后运行生成的任务：
 
@@ -469,7 +469,7 @@ clinvk parallel --file security-audit.json --json > security-report.json
 clinvk chain --file analyze.json --json | \
   jq -r '.results[-1].output' > generated-tasks.json
 clinvk parallel --file generated-tasks.json
-```text
+```
 
 ## 资源限制和调优
 
@@ -493,7 +493,7 @@ clinvk parallel --file generated-tasks.json
 - 基础 clinvk: 50MB
 - Claude 进程: 200MB
 - 3 个并行任务: 50 + (3 × 200) = 650MB
-```bash
+```
 
 ### 速率限制
 
@@ -518,7 +518,7 @@ parallel:
 
   # 合并所有任务的输出
   aggregate_output: true
-```text
+```
 
 ## 错误场景和解决方案
 
@@ -535,7 +535,7 @@ clinvk parallel --file tasks.json
 # 然后处理结果
 clinvk parallel --file tasks.json --json | \
   jq '.results[] | select(.exit_code != 0) | {index, backend, error}'
-```text
+```
 
 ### 场景 2：速率限制
 
@@ -549,7 +549,7 @@ clinvk parallel --file tasks.json --max-parallel 1
 
 # 或使用顺序模式
 clinvk parallel --file tasks.json --max-parallel 1
-```text
+```
 
 ### 场景 3：资源耗尽
 
@@ -564,7 +564,7 @@ clinvk parallel --file tasks.json --max-parallel 2
 # 分批处理
 head -n 10 tasks.json > batch1.json
 clinvk parallel --file batch1.json
-```text
+```
 
 ### 场景 4：依赖失败
 
@@ -578,7 +578,7 @@ clinvk parallel --file tasks.json --fail-fast
 
 # 或对依赖使用链式执行
 clinvk chain --file dependent-tasks.json
-```text
+```
 
 ## 最佳实践
 

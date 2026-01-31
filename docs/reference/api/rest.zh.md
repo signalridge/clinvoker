@@ -6,7 +6,7 @@ clinvk 自定义 REST API 的完整参考。
 
 ```text
 http://localhost:8080/api/v1
-```text
+```
 
 ## 认证
 
@@ -45,7 +45,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
   "extra": ["--some-flag"],
   "metadata": {"project": "demo"}
 }
-```text
+```
 
 **字段说明：**
 
@@ -83,7 +83,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
     "reasoning_tokens": 0
   }
 }
-```text
+```
 
 **流式响应（`output_format: "stream-json"`）：**
 
@@ -93,7 +93,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
 {"type":"init","backend":"claude","session_id":"...","content":{"model":"..."}}
 {"type":"message","backend":"claude","session_id":"...","content":{"text":"..."}}
 {"type":"done","backend":"claude","session_id":"..."}
-```yaml
+```
 
 ---
 
@@ -114,7 +114,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
   "max_parallel": 3,
   "fail_fast": false
 }
-```text
+```
 
 每个任务与 `/api/v1/prompt` 使用相同字段。
 
@@ -130,7 +130,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
     {"backend": "claude", "exit_code": 0, "duration_ms": 2000, "output": "result 1"}
   ]
 }
-```text
+```
 
 > 并行任务始终为无状态，`session_id` 可能为空。
 
@@ -151,7 +151,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
   "stop_on_failure": false,
   "pass_working_dir": false
 }
-```text
+```
 
 > API 默认 `stop_on_failure=false`。
 
@@ -169,7 +169,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
   "backends": ["claude", "codex", "gemini"],
   "sequential": false
 }
-```yaml
+```
 
 ---
 
@@ -200,7 +200,7 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
   "error": "unauthorized",
   "message": "missing API key"
 }
-```text
+```
 
 ---
 

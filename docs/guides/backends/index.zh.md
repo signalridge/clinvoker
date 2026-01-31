@@ -23,7 +23,7 @@ clinvk 通过检查 PATH 中的二进制文件自动检测可用的后端：
 
 ```bash
 clinvk config show
-```text
+```
 
 输出包含可用性摘要：
 
@@ -42,7 +42,7 @@ Available backends:
   claude: available
   codex: not installed
   gemini: available
-```text
+```
 
 ## 选择后端
 
@@ -52,7 +52,7 @@ Available backends:
 clinvk --backend claude "提示"
 clinvk -b codex "提示"
 clinvk -b gemini "提示"
-```bash
+```
 
 ### 通过配置
 
@@ -60,14 +60,14 @@ clinvk -b gemini "提示"
 
 ```yaml
 default_backend: claude
-```text
+```
 
 ### 通过环境变量
 
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "提示"  # 使用 codex
-```text
+```
 
 ## 后端特定选项
 
@@ -97,7 +97,7 @@ backends:
     extra_flags: ["--quiet"]
   gemini:
     extra_flags: ["--sandbox"]
-```text
+```
 
 ## 选择后端
 

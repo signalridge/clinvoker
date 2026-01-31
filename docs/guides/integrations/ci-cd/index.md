@@ -28,7 +28,7 @@ flowchart LR
     style Codex fill:#e8f5e9,stroke:#388e3c
     style Gemini fill:#ffebee,stroke:#c62828
     style Output fill:#e3f2fd,stroke:#1976d2
-```bash
+```
 
 ## Prerequisites - Authentication
 
@@ -50,7 +50,7 @@ env:
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-```text
+```
 
 ### Setup in GitLab CI
 
@@ -58,7 +58,7 @@ env:
 variables:
   ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY  # Set in CI/CD Settings
   OPENAI_API_KEY: $OPENAI_API_KEY
-```text
+```
 
 ## GitHub Actions
 
@@ -129,7 +129,7 @@ jobs:
               repo: context.repo.repo,
               body: `## AI Code Review\n\n${{ steps.review.outputs.review }}`
             })
-```text
+```
 
 ### Multi-Model Review
 
@@ -211,7 +211,7 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-```text
+```
 
 ### Documentation Generation
 
@@ -270,7 +270,7 @@ jobs:
           git add docs/
           git diff --staged --quiet || git commit -m "docs: auto-generate API documentation"
           git push
-```text
+```
 
 ## GitLab CI
 
@@ -309,7 +309,7 @@ ai-review:
       - review.txt
   only:
     - merge_requests
-```text
+```
 
 ## Jenkins
 
@@ -355,7 +355,7 @@ pipeline {
         }
     }
 }
-```bash
+```
 
 ## Self-Hosted Runner Setup
 
@@ -376,13 +376,13 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-```text
+```
 
 ```bash
 # Enable and start
 sudo systemctl enable clinvk
 sudo systemctl start clinvk
-```text
+```
 
 ## Best Practices
 
@@ -391,7 +391,7 @@ sudo systemctl start clinvk
 ```bash
 curl -X POST http://localhost:8080/api/v1/prompt \
   -d '{"backend": "claude", "prompt": "...", "ephemeral": true}'
-```text
+```
 
 ### 2. Set Timeouts
 
@@ -400,14 +400,14 @@ curl -X POST http://localhost:8080/api/v1/prompt \
   timeout-minutes: 10
   run: |
     curl --max-time 300 -X POST http://localhost:8080/api/v1/prompt ...
-```text
+```
 
 ### 3. Handle Large Diffs
 
 ```bash
 # Truncate large diffs
 DIFF=$(git diff HEAD~1 | head -c 50000)
-```bash
+```
 
 ### 4. Cache clinvk Image
 
@@ -416,7 +416,7 @@ services:
   clinvk:
     image: ghcr.io/signalridge/clinvk:latest
     # Add image pull policy for caching
-```text
+```
 
 ### 5. Error Handling
 
@@ -428,7 +428,7 @@ if [ "$HTTP_CODE" != "200" ]; then
   echo "AI review failed with code $HTTP_CODE"
   exit 1
 fi
-```text
+```
 
 ## Security Considerations
 
@@ -439,6 +439,6 @@ fi
 
 ## Next Steps
 
-- [Client Libraries](client-libraries.md) - Language-specific SDKs
-- [REST API Reference](../reference/api/rest-api.md) - Complete API docs
-- [Troubleshooting](../development/troubleshooting.md) - Common issues
+- [Client Libraries](openai-sdk.md) - Language-specific SDKs
+- [REST API Reference](../reference/api/rest.md) - Complete API docs
+- [Troubleshooting](../../concepts/troubleshooting.md) - Common issues

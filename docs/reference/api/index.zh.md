@@ -18,13 +18,13 @@ clinvoker 为与各种工具和 SDK 集成提供了多个 API 端点。HTTP 服�
 
 ```bash
 clinvk serve --port 8080
-```text
+```
 
 ### 测试 API
 
 ```bash
 curl http://localhost:8080/health
-```text
+```
 
 ### 执行提示词
 
@@ -32,7 +32,7 @@ curl http://localhost:8080/health
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "hello"}'
-```text
+```
 
 ## 选择 API
 
@@ -48,7 +48,7 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 
 ```text
 http://localhost:8080
-```text
+```
 
 ## 认证
 
@@ -71,7 +71,7 @@ curl -H "X-Api-Key: your-api-key" http://localhost:8080/api/v1/prompt
 
 # 选项 2：Authorization 头
 curl -H "Authorization: Bearer your-api-key" http://localhost:8080/api/v1/prompt
-```text
+```
 
 如果未配置 Key，则允许无认证请求。
 
@@ -84,7 +84,7 @@ curl -H "Authorization: Bearer your-api-key" http://localhost:8080/api/v1/prompt
   "success": true,
   "data": { ... }
 }
-```text
+```
 
 ## 错误处理
 
@@ -95,7 +95,7 @@ curl -H "Authorization: Bearer your-api-key" http://localhost:8080/api/v1/prompt
   "success": false,
   "error": "Backend not available"
 }
-```text
+```
 
 ### HTTP 状态码
 
@@ -163,7 +163,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ### Python 与 Anthropic SDK
 
@@ -182,7 +182,7 @@ message = client.messages.create(
 )
 
 print(message.content[0].text)
-```text
+```
 
 ### JavaScript/TypeScript 与 OpenAI SDK
 
@@ -200,7 +200,7 @@ const response = await client.chat.completions.create({
 });
 
 console.log(response.choices[0].message.content);
-```bash
+```
 
 ## 服务器配置
 
@@ -216,7 +216,7 @@ server:
   idle_timeout_secs: 120
   rate_limit_enabled: false
   metrics_enabled: false
-```text
+```
 
 ## 安全考虑
 

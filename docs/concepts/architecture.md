@@ -70,7 +70,7 @@ flowchart TB
 
     SESSION --> DISC
     CONFIG --> CONFIG_FILE
-```bash
+```
 
 ## CLI Layer Deep Dive
 
@@ -91,7 +91,7 @@ func main() {
         os.Exit(1)
     }
 }
-```go
+```
 
 This design:
 - Keeps the main package clean and focused
@@ -123,7 +123,7 @@ flowchart LR
     ROOT --> PARALLEL
     ROOT --> COMPARE
     ROOT --> CHAIN
-```text
+```
 
 Key Cobra features used:
 
@@ -181,7 +181,7 @@ sequenceDiagram
     end
 
     CLI-->>User: Formatted output
-```text
+```
 
 ## Core Components Interaction
 
@@ -209,7 +209,7 @@ flowchart TB
     BACKENDS --> CO
     BACKENDS --> GM
     BACKENDS --> CACHE
-```text
+```
 
 The registry provides:
 - **Thread-safe access**: `sync.RWMutex` for concurrent reads/writes
@@ -243,7 +243,7 @@ flowchart TB
     RWLOCK --> DIR
     DIR --> SESSION_FILES
     DIR --> INDEX_FILE
-```text
+```
 
 The session manager uses a dual-locking strategy:
 1. **In-process**: `sync.RWMutex` for goroutine safety
@@ -285,7 +285,7 @@ flowchart LR
     CORS --> CUSTOM
     CORS --> OPENAI
     CORS --> ANTH
-```text
+```
 
 Middleware execution order is critical:
 1. **RequestID**: Assign unique request ID for tracing
@@ -322,7 +322,7 @@ sequenceDiagram
     AI-->>CLI: Output
     CLI->>Session: Save session
     CLI-->>User: Formatted output
-```text
+```
 
 ### HTTP API Flow
 
@@ -346,7 +346,7 @@ sequenceDiagram
     Backend-->>Executor: Result
     Executor-->>API: Response
     API-->>Client: JSON response
-```text
+```
 
 ### Streaming Response Flow
 
@@ -372,7 +372,7 @@ sequenceDiagram
 
     AI-->>Streamer: Complete
     Streamer-->>Client: data: [DONE]
-```typescript
+```
 
 ## Backend Abstraction Architecture
 
@@ -392,7 +392,7 @@ type Backend interface {
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
     SeparateStderr() bool
 }
-```text
+```
 
 ### Backend Implementation Structure
 
@@ -426,7 +426,7 @@ flowchart TB
     MAPPER --> CLAUDE
     MAPPER --> CODEX
     MAPPER --> GEMINI
-```text
+```
 
 ## Concurrency Patterns
 
@@ -448,7 +448,7 @@ func (r *Registry) Register(b Backend) {
     defer r.mu.Unlock()
     // ... register backend
 }
-```text
+```
 
 ### Session Store Concurrency
 
@@ -469,7 +469,7 @@ flowchart TB
 
     RW --> INDEX
     FLOCK --> FILES
-```bash
+```
 
 Read flow:
 1. Acquire read lock (`RLock`)
@@ -532,7 +532,7 @@ flowchart LR
     EXEC --> C1
     EXEC --> C2
     EXEC --> C3
-```text
+```
 
 ## Security Architecture
 

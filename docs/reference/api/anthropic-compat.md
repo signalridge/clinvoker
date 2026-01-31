@@ -10,7 +10,7 @@ clinvk provides Anthropic-compatible endpoints that allow you to use Anthropic S
 
 ```text
 http://localhost:8080/anthropic/v1
-```text
+```
 
 ## Authentication
 
@@ -45,7 +45,7 @@ Create a message (chat completion).
   ],
   "system": "You are a helpful assistant."
 }
-```text
+```
 
 **Fields:**
 
@@ -79,7 +79,7 @@ Create a message (chat completion).
     "output_tokens": 15
   }
 }
-```text
+```
 
 **Streaming Response:**
 
@@ -106,7 +106,7 @@ data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":
 
 event: message_stop
 data: {"type":"message_stop"}
-```bash
+```
 
 ## Model Mapping
 
@@ -144,7 +144,7 @@ message = client.messages.create(
 )
 
 print(message.content[0].text)
-```text
+```
 
 ### TypeScript/JavaScript
 
@@ -163,7 +163,7 @@ const message = await client.messages.create({
 });
 
 console.log(message.content[0].text);
-```text
+```
 
 ### cURL
 
@@ -176,7 +176,7 @@ curl -X POST http://localhost:8080/anthropic/v1/messages \
     "max_tokens": 1024,
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
-```text
+```
 
 ### Streaming Example (Python)
 
@@ -197,7 +197,7 @@ stream = client.messages.create(
 
 for text in stream.text_stream:
     print(text, end="", flush=True)
-```bash
+```
 
 ## Differences from Anthropic API
 
@@ -222,7 +222,7 @@ server:
   request_timeout_secs: 300
   read_timeout_secs: 30
   write_timeout_secs: 300
-```text
+```
 
 ## Error Responses
 
@@ -235,7 +235,7 @@ Errors follow RFC 7807 Problem Details format:
   "status": 400,
   "detail": "The requested backend 'unknown' is not available"
 }
-```text
+```
 
 ## Next Steps
 

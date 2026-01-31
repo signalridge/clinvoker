@@ -70,7 +70,7 @@ flowchart TB
 
     SESSION --> DISC
     CONFIG --> CONFIG_FILE
-```bash
+```
 
 ## CLI 层深入解析
 
@@ -91,7 +91,7 @@ func main() {
         os.Exit(1)
     }
 }
-```bash
+```
 
 这种设计：
 - 保持 main 包简洁专注
@@ -123,7 +123,7 @@ flowchart LR
     ROOT --> PARALLEL
     ROOT --> COMPARE
     ROOT --> CHAIN
-```text
+```
 
 使用的关键 Cobra 特性：
 
@@ -181,7 +181,7 @@ sequenceDiagram
     end
 
     CLI-->>用户: 格式化输出
-```text
+```
 
 ## 核心组件交互
 
@@ -209,7 +209,7 @@ flowchart TB
     BACKENDS --> CO
     BACKENDS --> GM
     BACKENDS --> CACHE
-```text
+```
 
 注册表提供：
 - **线程安全访问**：`sync.RWMutex` 用于并发读/写
@@ -243,7 +243,7 @@ flowchart TB
     RWLOCK --> DIR
     DIR --> SESSION_FILES
     DIR --> INDEX_FILE
-```text
+```
 
 会话管理器使用双重锁定策略：
 1. **进程内**：`sync.RWMutex` 用于 goroutine 安全
@@ -285,7 +285,7 @@ flowchart LR
     CORS --> CUSTOM
     CORS --> OPENAI
     CORS --> ANTH
-```text
+```
 
 中间件执行顺序至关重要：
 1. **RequestID**：分配唯一请求 ID 用于跟踪
@@ -322,7 +322,7 @@ sequenceDiagram
     AI-->>CLI: 输出
     CLI->>Session: 保存会话
     CLI-->>用户: 格式化输出
-```text
+```
 
 ### HTTP API 流程
 
@@ -346,7 +346,7 @@ sequenceDiagram
     Backend-->>Executor: 结果
     Executor-->>API: 响应
     API-->>客户端: JSON 响应
-```text
+```
 
 ### 流式响应流程
 
@@ -372,7 +372,7 @@ sequenceDiagram
 
     AI-->>Streamer: 完成
     Streamer-->>客户端: data: [DONE]
-```bash
+```
 
 ## 后端抽象架构
 
@@ -392,7 +392,7 @@ type Backend interface {
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
     SeparateStderr() bool
 }
-```text
+```
 
 ### 后端实现结构
 
@@ -426,7 +426,7 @@ flowchart TB
     MAPPER --> CLAUDE
     MAPPER --> CODEX
     MAPPER --> GEMINI
-```text
+```
 
 ## 并发模式
 
@@ -448,7 +448,7 @@ func (r *Registry) Register(b Backend) {
     defer r.mu.Unlock()
     // ... 注册后端
 }
-```text
+```
 
 ### 会话存储并发
 
@@ -469,7 +469,7 @@ flowchart TB
 
     RW --> INDEX
     FLOCK --> FILES
-```bash
+```
 
 读流程：
 1. 获取读锁（`RLock`）
@@ -532,7 +532,7 @@ flowchart LR
     EXEC --> C1
     EXEC --> C2
     EXEC --> C3
-```text
+```
 
 ## 安全架构
 

@@ -23,7 +23,7 @@ ai-code-review:
     # 运行 clinvoker 审查
   rules:
     - if: $CI_MERGE_REQUEST_IID
-```text
+```
 
 ## 另请参阅
 

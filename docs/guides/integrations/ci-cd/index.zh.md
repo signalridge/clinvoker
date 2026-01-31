@@ -33,7 +33,7 @@ flowchart LR
     style Codex fill:#e8f5e9,stroke:#388e3c
     style Gemini fill:#ffebee,stroke:#c62828
     style Output fill:#e3f2fd,stroke:#1976d2
-```bash
+```
 
 ## 前置条件 - 认证
 
@@ -55,7 +55,7 @@ env:
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-```text
+```
 
 ### 在 GitLab CI 中设置
 
@@ -63,7 +63,7 @@ env:
 variables:
   ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY  # 在 CI/CD 设置中配置
   OPENAI_API_KEY: $OPENAI_API_KEY
-```text
+```
 
 ## GitHub Actions
 
@@ -134,7 +134,7 @@ jobs:
               repo: context.repo.repo,
               body: `## AI 代码审查\n\n${{ steps.review.outputs.review }}`
             })
-```text
+```
 
 ### 多模型审查
 
@@ -216,7 +216,7 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-```text
+```
 
 ### 文档生成
 
@@ -275,7 +275,7 @@ jobs:
           git add docs/
           git diff --staged --quiet || git commit -m "docs: auto-generate API documentation"
           git push
-```text
+```
 
 ## GitLab CI
 
@@ -314,7 +314,7 @@ ai-review:
       - review.txt
   only:
     - merge_requests
-```text
+```
 
 ## Jenkins
 
@@ -360,7 +360,7 @@ pipeline {
         }
     }
 }
-```bash
+```
 
 ## 自托管 Runner 设置
 
@@ -381,13 +381,13 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-```text
+```
 
 ```bash
 # 启用并启动
 sudo systemctl enable clinvk
 sudo systemctl start clinvk
-```text
+```
 
 ## 最佳实践
 
@@ -396,7 +396,7 @@ sudo systemctl start clinvk
 ```bash
 curl -X POST http://localhost:8080/api/v1/prompt \
   -d '{"backend": "claude", "prompt": "...", "ephemeral": true}'
-```text
+```
 
 ### 2. 设置超时
 
@@ -405,14 +405,14 @@ curl -X POST http://localhost:8080/api/v1/prompt \
   timeout-minutes: 10
   run: |
     curl --max-time 300 -X POST http://localhost:8080/api/v1/prompt ...
-```text
+```
 
 ### 3. 处理大 Diff
 
 ```bash
 # 截断大 diff
 DIFF=$(git diff HEAD~1 | head -c 50000)
-```bash
+```
 
 ### 4. 缓存 clinvk 镜像
 
@@ -421,7 +421,7 @@ services:
   clinvk:
     image: ghcr.io/signalridge/clinvk:latest
     # 添加镜像拉取策略以缓存
-```text
+```
 
 ### 5. 错误处理
 
@@ -433,7 +433,7 @@ if [ "$HTTP_CODE" != "200" ]; then
   echo "AI review failed with code $HTTP_CODE"
   exit 1
 fi
-```text
+```
 
 ## 安全考虑
 
@@ -444,6 +444,6 @@ fi
 
 ## 下一步
 
-- [客户端库](client-libraries.md) - 特定语言的 SDK
-- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档
-- [故障排除](../development/troubleshooting.md) - 常见问题
+- [客户端库](openai-sdk.md) - 特定语言的 SDK
+- [REST API 参考](../reference/api/rest.md) - 完整 API 文档
+- [故障排除](../../concepts/troubleshooting.md) - 常见问题

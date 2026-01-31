@@ -55,7 +55,7 @@ which codex && codex --version
 
 # 检查 Gemini CLI
 which gemini && gemini --version
-```yaml
+```
 
 ---
 
@@ -109,7 +109,7 @@ brew install clinvk
 
 # 后续升级
 brew upgrade clinvk
-```text
+```
 
 #### Scoop (Windows)
 
@@ -122,7 +122,7 @@ scoop install clinvk
 
 # 升级
 scoop update clinvk
-```text
+```
 
 #### Nix (Linux/macOS)
 
@@ -138,7 +138,7 @@ nix profile install github:signalridge/clinvoker
   inputs.clinvoker.url = "github:signalridge/clinvoker";
   nixpkgs.overlays = [ clinvoker.overlays.default ];
 }
-```text
+```
 
 #### Arch Linux (AUR)
 
@@ -148,7 +148,7 @@ yay -S clinvk-bin
 
 # 或从源码构建
 yay -S clinvk
-```text
+```
 
 #### Debian/Ubuntu
 
@@ -156,7 +156,7 @@ yay -S clinvk
 # 从 releases 页面下载
 wget https://github.com/signalridge/clinvoker/releases/download/v0.1.0/clinvk_0.1.0_amd64.deb
 sudo dpkg -i clinvk_*.deb
-```text
+```
 
 #### RPM 系 (Fedora/RHEL)
 
@@ -164,7 +164,7 @@ sudo dpkg -i clinvk_*.deb
 # 从 releases 页面下载
 wget https://github.com/signalridge/clinvoker/releases/download/v0.1.0/clinvk-0.1.0-1.x86_64.rpm
 sudo rpm -i clinvk-*.rpm
-```bash
+```
 
 ### 3. 手动下载
 
@@ -205,7 +205,7 @@ git clone https://github.com/signalridge/clinvoker.git
 cd clinvoker
 go build -o clinvk ./cmd/clinvk
 sudo mv clinvk /usr/local/bin/
-```yaml
+```
 
 ---
 
@@ -216,7 +216,7 @@ sudo mv clinvk /usr/local/bin/
 ```bash
 # 检查版本
 clinvk version
-```text
+```
 
 预期输出：
 
@@ -224,13 +224,13 @@ clinvk version
 clinvk version v0.1.0-alpha
   commit: abc1234
   built:  2025-01-27T00:00:00Z
-```text
+```
 
 检查检测到的后端：
 
 ```bash
 clinvk config show
-```text
+```
 
 您应该会看到根据系统上已安装内容列出的可用后端列表。
 
@@ -258,7 +258,7 @@ export CLINVK_BACKEND=claude
 
 # 通过配置（永久）
 clinvk config set default_backend claude
-```bash
+```
 
 ### 配置文件
 
@@ -286,7 +286,7 @@ backends:
 session:
   auto_resume: true
   retention_days: 30
-```yaml
+```
 
 ---
 
@@ -298,7 +298,7 @@ session:
 
 ```bash
 clinvk "解释软件工程中的 SOLID 原则"
-```text
+```
 
 这会将您的提示词发送到默认后端（默认是 Claude Code）并显示响应。
 
@@ -315,7 +315,7 @@ clinvk -b codex "用 Python 实现快速排序算法"
 
 # Gemini 提供广泛的知识和解释
 clinvk -b gemini "解释 SQL 和 NoSQL 数据库之间的权衡"
-```text
+```
 
 ### 工作目录
 
@@ -327,7 +327,7 @@ clinvk -w . "审查此代码库的安全问题"
 
 # 分析特定项目
 clinvk -w /path/to/project "解释此应用的架构"
-```yaml
+```
 
 ---
 
@@ -341,7 +341,7 @@ clinvoker 支持三种输出格式，每种适用于不同的使用场景：
 
 ```bash
 clinvk -o text "解释 REST API"
-```text
+```
 
 **特点：**
 - 干净、格式化的文本
@@ -357,7 +357,7 @@ clinvk -o text "解释 REST API"
 
 ```bash
 clinvk -o json "解释 REST API"
-```text
+```
 
 **输出结构：**
 
@@ -371,7 +371,7 @@ clinvk -o json "解释 REST API"
   "session_id": "sess_abc123",
   "timestamp": "2025-01-27T10:30:00Z"
 }
-```text
+```
 
 **何时使用：** 脚本编写、日志记录、存储结果、API 集成
 
@@ -381,7 +381,7 @@ clinvk -o json "解释 REST API"
 
 ```bash
 clinvk -o stream-json "撰写一份关于 Go 并发的综合指南"
-```text
+```
 
 **特点：**
 - 在内容可用时立即发出 JSON 对象
@@ -417,7 +417,7 @@ clinvk -o stream-json "撰写一份关于 Go 并发的综合指南"
 
 ```bash
 clinvk sessions list
-```text
+```
 
 输出：
 
@@ -425,7 +425,7 @@ clinvk sessions list
 ID          BACKEND  CREATED              STATUS   TAGS
 sess_abc12  claude   2025-01-27 10:00:00  active   project-x
 sess_def34  codex    2025-01-27 09:30:00  closed   -
-```text
+```
 
 ### 继续会话
 
@@ -440,7 +440,7 @@ clinvk resume --last
 
 # 恢复特定会话
 clinvk resume sess_abc12
-```text
+```
 
 ### 会话最佳实践
 
@@ -457,7 +457,7 @@ clinvk resume sess_abc12
 **症状：**
 ```text
 Error: backend "claude" not available
-```bash
+```
 
 **原因和解决方案：**
 
@@ -493,7 +493,7 @@ Error: backend "claude" not available
 **症状：**
 ```text
 Error: authentication failed for backend "claude"
-```text
+```
 
 **解决方案：**
 
@@ -503,14 +503,14 @@ claude config set api_key $ANTHROPIC_API_KEY
 
 # 或设置环境变量
 export ANTHROPIC_API_KEY="sk-ant-..."
-```text
+```
 
 ### 问题 3："Session not found"
 
 **症状：**
 ```text
 Error: no sessions found for backend "claude"
-```text
+```
 
 **说明：** 首次运行时这是正常的。会话在第一次成功提示词后创建。
 
@@ -522,7 +522,7 @@ clinvk "Hello, world!"
 
 # 现在会话将可用
 clinvk sessions list
-```text
+```
 
 如果仍有问题：
 
@@ -532,7 +532,7 @@ ls -la ~/.clinvk/sessions/
 
 # 如果损坏则重置
 clinvk sessions cleanup
-```yaml
+```
 
 ---
 
@@ -577,7 +577,7 @@ clinvk serve --port 8080
 # 会话管理
 clinvk sessions list
 clinvk resume --last
-```text
+```
 
 ---
 

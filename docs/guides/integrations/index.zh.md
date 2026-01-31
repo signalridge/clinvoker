@@ -44,7 +44,7 @@ flowchart LR
     style E1 fill:#f3e5f5,stroke:#7b1fa2
     style E2 fill:#e8f5e9,stroke:#388e3c
     style E3 fill:#ffebee,stroke:#c62828
-```bash
+```
 
 ## 集成方式
 
@@ -65,7 +65,7 @@ flowchart LR
 curl -s http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "gemini", "prompt": "分析这个数据"}'
-```text
+```
 
 ### LangChain
 
@@ -77,7 +77,7 @@ llm = ChatOpenAI(
     model="claude",
     api_key="not-needed"
 )
-```text
+```
 
 ### OpenAI SDK
 
@@ -88,7 +88,7 @@ client = OpenAI(
     base_url="http://localhost:8080/openai/v1",
     api_key="not-needed"
 )
-```text
+```
 
 ### GitHub Actions
 
@@ -99,7 +99,7 @@ client = OpenAI(
     curl -sS -X POST http://localhost:8080/api/v1/prompt \
       -H "Content-Type: application/json" \
       -d "$payload"
-```text
+```
 
 ## 前提条件
 

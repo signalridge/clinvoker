@@ -48,7 +48,7 @@ The following variables are passed directly to the respective backend CLIs:
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "implement feature"  # Uses codex
-```text
+```
 
 ### Set Model per Backend
 
@@ -58,7 +58,7 @@ export CLINVK_CODEX_MODEL=o3-mini
 
 clinvk -b claude "complex task"  # Uses claude-sonnet
 clinvk -b codex "quick task"     # Uses o3-mini
-```text
+```
 
 ### Temporary Override
 
@@ -66,14 +66,14 @@ Set a variable for a single command:
 
 ```bash
 CLINVK_BACKEND=gemini clinvk "explain this"
-```text
+```
 
 ### API Keys for HTTP Server
 
 ```bash
 export CLINVK_API_KEYS="prod-key-1,prod-key-2,dev-key-1"
 clinvk serve
-```text
+```
 
 Clients must include one of the following headers:
 
@@ -85,7 +85,7 @@ curl -H "X-Api-Key: prod-key-1" http://localhost:8080/api/v1/prompt \
 # Option 2: Authorization header
 curl -H "Authorization: Bearer prod-key-1" http://localhost:8080/api/v1/prompt \
   -d '{"backend":"claude","prompt":"hello"}'
-```text
+```
 
 ## Priority
 
@@ -101,7 +101,7 @@ Example demonstrating priority:
 ```bash
 export CLINVK_BACKEND=codex
 clinvk -b claude "prompt"  # Uses claude (CLI flag wins)
-```text
+```
 
 ## Shell Configuration
 
@@ -114,7 +114,7 @@ Add to `~/.bashrc` or `~/.bash_profile`:
 export CLINVK_BACKEND=claude
 export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 export CLINVK_CODEX_MODEL=o3
-```text
+```
 
 ### Zsh
 
@@ -125,7 +125,7 @@ Add to `~/.zshrc`:
 export CLINVK_BACKEND=claude
 export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 export CLINVK_CODEX_MODEL=o3
-```text
+```
 
 ### Fish
 
@@ -136,7 +136,7 @@ Add to `~/.config/fish/config.fish`:
 set -gx CLINVK_BACKEND claude
 set -gx CLINVK_CLAUDE_MODEL claude-opus-4-5-20251101
 set -gx CLINVK_CODEX_MODEL o3
-```text
+```
 
 ## Per-Directory Configuration
 
@@ -146,7 +146,7 @@ Use [direnv](https://direnv.net/) for project-specific settings:
 # .envrc in your project root
 export CLINVK_BACKEND=codex
 export CLINVK_CODEX_MODEL=o3
-```text
+```
 
 When you enter the directory, direnv automatically loads these variables.
 
@@ -169,7 +169,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Review code
         run: clinvk "review this PR for security issues"
-```text
+```
 
 ### GitLab CI
 
@@ -182,7 +182,7 @@ ai-review:
     ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
   script:
     - clinvk "review the changes"
-```text
+```
 
 ### Jenkins
 
@@ -202,7 +202,7 @@ pipeline {
         }
     }
 }
-```text
+```
 
 ## Docker Usage
 
@@ -216,13 +216,13 @@ ENV CLINVK_BACKEND=claude
 ENV CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 
 ENTRYPOINT ["clinvk"]
-```text
+```
 
 ### Docker Run
 
 ```bash
 docker run -e CLINVK_BACKEND=codex -e OPENAI_API_KEY=$OPENAI_API_KEY clinvk "prompt"
-```text
+```
 
 ### Docker Compose
 
@@ -236,7 +236,7 @@ services:
       - CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     command: clinvk "analyze codebase"
-```text
+```
 
 ## Kubernetes Usage
 
@@ -270,7 +270,7 @@ spec:
             name: clinvk-config
         - secretRef:
             name: clinvk-secrets
-```bash
+```
 
 ## Troubleshooting
 
@@ -292,7 +292,7 @@ echo $CLINVK_BACKEND
 
 # Run with debug output
 CLINVK_DEBUG=1 clinvk "prompt"
-```text
+```
 
 ## See Also
 

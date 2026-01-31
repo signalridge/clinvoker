@@ -26,7 +26,7 @@ clinvk 自动跟踪会话，以便您可以恢复对话并在调用之间保持�
     ├── abc123def.json
     ├── def456ghi.json
     └── ghi789jkl.json
-```text
+```
 
 ### JSON 格式
 
@@ -55,7 +55,7 @@ clinvk 自动跟踪会话，以便您可以恢复对话并在调用之间保持�
     "duration_seconds": 2.5
   }
 }
-```bash
+```
 
 ### 字段描述
 
@@ -88,7 +88,7 @@ flowchart LR
     WRITE --> UNLOCK["释放锁定"]
     UNLOCK --> C["进程 B 获取锁定"]
     C --> D["写入文件"]
-```text
+```
 
 ### 锁定行为
 
@@ -101,7 +101,7 @@ flowchart LR
 
 ```text
 ~/.clinvk/sessions/.lock
-```text
+```
 
 !!! note "实现细节"
     锁定机制在 Unix 系统上使用 POSIX 建议文件锁，在 Windows 上使用 Windows 文件锁定 API。
@@ -122,7 +122,7 @@ flowchart LR
     style COMPLETED fill:#e8f5e9,stroke:#388e3c
     style EXPIRED fill:#f5f5f5,stroke:#9e9e9e
     style ERROR fill:#ffebee,stroke:#c62828
-```text
+```
 
 **状态：**
 
@@ -150,7 +150,7 @@ flowchart LR
 
 ```bash
 clinvk sessions list
-```text
+```
 
 **输出：**
 
@@ -159,7 +159,7 @@ ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1234         fix the bug in auth.go
 def456    codex     completed  2 hours ago     5678         implement user registration
 ghi789    gemini    active     1 day ago       890          explain algorithm
-```text
+```
 
 ### 筛选会话
 
@@ -167,25 +167,25 @@ ghi789    gemini    active     1 day ago       890          explain algorithm
 
 ```bash
 clinvk sessions list --backend claude
-```text
+```
 
 #### 按状态
 
 ```bash
 clinvk sessions list --status active
-```text
+```
 
 #### 限制结果
 
 ```bash
 clinvk sessions list --limit 10
-```text
+```
 
 #### 组合筛选
 
 ```bash
 clinvk sessions list --backend claude --status active --limit 5
-```text
+```
 
 ### JSON 输出
 
@@ -193,7 +193,7 @@ clinvk sessions list --backend claude --status active --limit 5
 
 ```bash
 clinvk sessions list --json
-```text
+```
 
 ```json
 [
@@ -206,7 +206,7 @@ clinvk sessions list --json
     "prompt": "fix the bug in auth.go"
   }
 ]
-```text
+```
 
 ## 恢复会话
 
@@ -216,13 +216,13 @@ clinvk sessions list --json
 
 ```bash
 clinvk resume --last
-```text
+```
 
 或带上后续提示：
 
 ```bash
 clinvk resume --last "添加错误处理"
-```text
+```
 
 ### 交互式选择器
 
@@ -230,7 +230,7 @@ clinvk resume --last "添加错误处理"
 
 ```bash
 clinvk resume --interactive
-```bash
+```
 
 如果不带参数执行 `clinvk resume`，也会默认进入交互选择。
 
@@ -241,7 +241,7 @@ clinvk resume --interactive
 ```bash
 clinvk resume abc123
 clinvk resume abc123 "继续测试"
-```text
+```
 
 ### 从当前目录恢复
 
@@ -249,13 +249,13 @@ clinvk resume abc123 "继续测试"
 
 ```bash
 clinvk resume --here
-```text
+```
 
 ### 按后端筛选
 
 ```bash
 clinvk resume --backend claude
-```text
+```
 
 ### 恢复要求
 
@@ -266,7 +266,7 @@ clinvk resume --backend claude
 
 ```bash
 clinvk sessions show abc123
-```text
+```
 
 在输出中查找 `backend_session_id`。
 
@@ -278,7 +278,7 @@ clinvk sessions show abc123
 clinvk "实现功能"
 clinvk -c "现在添加测试"
 clinvk -c "更新文档"
-```bash
+```
 
 **工作原理：**
 
@@ -298,7 +298,7 @@ clinvk -c "更新文档"
 
 ```bash
 clinvk sessions show abc123
-```text
+```
 
 **输出：**
 
@@ -317,7 +317,7 @@ Token Usage:
   Cached:          500
   Total:           6,912
 Tags:              bugfix, auth
-```text
+```
 
 ### 检查会话状态
 
@@ -327,7 +327,7 @@ clinvk sessions show <id> > /dev/null 2>&1 && echo "Exists" || echo "Not found"
 
 # 获取特定字段
 clinvk sessions show abc123 --json | jq '.status'
-```text
+```
 
 ## 会话 Fork
 
@@ -339,7 +339,7 @@ clinvk sessions fork abc123
 
 # Fork 并带上新提示
 clinvk sessions fork abc123 "探索替代方案"
-```text
+```
 
 **使用场景：**
 
@@ -366,7 +366,7 @@ clinvk config set session.default_tags '["project-x", "feature-y"]'
 
 # 或添加到现有会话
 clinvk sessions tag abc123 "urgent"
-```bash
+```
 
 ### 默认标签
 
@@ -377,7 +377,7 @@ session:
   default_tags:
     - "clinvk"
     - "${USER}"
-```text
+```
 
 ### 基于标签的筛选
 
@@ -387,7 +387,7 @@ clinvk sessions list --tag "urgent"
 
 # 多个标签（AND 逻辑）
 clinvk sessions list --tag "project-x" --tag "bugfix"
-```text
+```
 
 ## 搜索功能
 
@@ -399,7 +399,7 @@ clinvk sessions list | grep "auth"
 
 # 使用 JSON 输出和 jq
 clinvk sessions list --json | jq '.[] | select(.prompt | contains("auth"))'
-```text
+```
 
 ### 按日期范围搜索
 
@@ -411,7 +411,7 @@ clinvk sessions list --json | \
 # 特定日期的会话
 clinvk sessions list --json | \
   jq '.[] | select(.created_at | startswith("2025-01-27"))'
-```bash
+```
 
 ## 清理策略
 
@@ -423,7 +423,7 @@ clinvk sessions list --json | \
 session:
   # 保留会话的天数（0 = 永久保留）
   retention_days: 30
-```text
+```
 
 超过 `retention_days` 的会话会在以下情况下自动删除：
 - 创建新会话时（定期检查）
@@ -444,13 +444,13 @@ clinvk sessions clean --older-than 7d
 
 # 使用配置的默认保留期限
 clinvk sessions clean
-```text
+```
 
 #### 删除特定会话
 
 ```bash
 clinvk sessions delete abc123
-```text
+```
 
 #### 批量删除
 
@@ -464,7 +464,7 @@ clinvk sessions list --status completed --json | \
 clinvk sessions list --backend codex --json | \
   jq -r '.[].id' | \
   xargs -I {} clinvk sessions delete {}
-```bash
+```
 
 ### 清理最佳实践
 
@@ -500,7 +500,7 @@ session:
 
   # 自动添加到新会话的标签
   default_tags: []
-```text
+```
 
 ### 自动恢复行为
 
@@ -512,7 +512,7 @@ clinvk "继续处理功能"
 
 # 等同于：
 clinvk resume --last "继续处理功能"
-```text
+```
 
 **优先级：**
 
@@ -527,7 +527,7 @@ clinvk resume --last "继续处理功能"
 ```yaml
 session:
   store_token_usage: true
-```text
+```
 
 ### 查看 Token 使用
 
@@ -542,7 +542,7 @@ clinvk sessions list --json | \
 # 按后端使用
 clinvk sessions list --json | \
   jq 'group_by(.backend) | map({backend: .[0].backend, total: [.[].token_usage.total] | add})'
-```text
+```
 
 ### Token 预算
 
@@ -558,7 +558,7 @@ monthly_tokens=$(clinvk sessions list --json | \
 if [ "$monthly_tokens" -gt 1000000 ]; then
   echo "警告: Token 使用较高 ($monthly_tokens)"
 fi
-```text
+```
 
 ## 无状态模式
 
@@ -566,7 +566,7 @@ fi
 
 ```bash
 clinvk --ephemeral "不需要历史记录的快速问题"
-```text
+```
 
 **何时使用临时模式：**
 

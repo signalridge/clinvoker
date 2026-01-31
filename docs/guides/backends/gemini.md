@@ -19,7 +19,7 @@ Install Gemini CLI from [Google](https://github.com/google/gemini-cli):
 # Verify installation
 which gemini
 gemini --version
-```text
+```
 
 ## Basic Usage
 
@@ -27,7 +27,7 @@ gemini --version
 # Use Gemini with clinvk
 clinvk --backend gemini "explain how this algorithm works"
 clinvk -b gemini "write documentation for this API"
-```text
+```
 
 ## Models
 
@@ -40,7 +40,7 @@ Specify a model:
 
 ```bash
 clinvk -b gemini -m gemini-2.5-flash "quick explanation"
-```bash
+```
 
 ## Configuration
 
@@ -57,13 +57,13 @@ backends:
 
     # Extra CLI flags
     extra_flags: []
-```text
+```
 
 ### Environment Variable
 
 ```bash
 export CLINVK_GEMINI_MODEL=gemini-2.5-flash
-```text
+```
 
 ## Session Management
 
@@ -73,7 +73,7 @@ Gemini uses `--resume` for session resume:
 # Resume with clinvk
 clinvk resume --last --backend gemini
 clinvk resume <session-id>
-```text
+```
 
 ## Sandbox Mode
 
@@ -84,7 +84,7 @@ backends:
   gemini:
     extra_flags:
       - "--sandbox"
-```text
+```
 
 ## Unified Options
 
@@ -113,25 +113,25 @@ These options work with Gemini:
 
 ```bash
 clinvk -b gemini "write comprehensive documentation for this module"
-```text
+```
 
 ### Explanations
 
 ```bash
 clinvk -b gemini "explain the architecture of this microservice"
-```text
+```
 
 ### Research
 
 ```bash
 clinvk -b gemini "what are the best practices for implementing rate limiting"
-```text
+```
 
 ### Code Review
 
 ```bash
 clinvk -b gemini "review this code and explain potential issues"
-```text
+```
 
 ## Comparison with Other Backends
 
@@ -166,7 +166,7 @@ Use Gemini for research and documentation:
     }
   ]
 }
-```text
+```
 
 ## Troubleshooting
 
@@ -178,7 +178,7 @@ which gemini
 
 # Check clinvk detection
 clinvk config show | grep gemini
-```text
+```
 
 ### Authentication
 

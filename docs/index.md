@@ -65,7 +65,7 @@ flowchart TB
     REG -.-> CLAUDE
     REG -.-> CODEX
     REG -.-> GEMINI
-```bash
+```
 
 **CLI Layer** (`cmd/clinvk/main.go`, `internal/app/`)
 : Entry point and command definitions using Cobra framework. Handles flag parsing, configuration initialization, and command routing for prompt execution, session management, and workflow orchestration.
@@ -115,7 +115,7 @@ The `parallel` command executes prompts across multiple backends simultaneously,
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/signalridge/clinvoker/main/install.sh | bash
-```text
+```
 
 ### Basic Usage
 
@@ -123,19 +123,19 @@ Run a prompt with the default backend:
 
 ```bash
 clinvk "Explain the architecture of this codebase"
-```text
+```
 
 Specify a backend and model:
 
 ```bash
 clinvk --backend claude --model claude-opus-4.5 "Refactor this function for better error handling"
-```text
+```
 
 Use Codex CLI with the latest GPT model:
 
 ```bash
 clinvk --backend codex --model gpt-5.2 "Generate unit tests for auth.go"
-```text
+```
 
 ### SDK Integration Example
 
@@ -154,7 +154,7 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello, world!"}]
 )
 print(response.choices[0].message.content)
-```text
+```
 
 ## Feature Comparison
 

@@ -6,7 +6,7 @@
 
 ```bash
 clinvk parallel [flags]
-```text
+```
 
 ## 说明
 
@@ -42,7 +42,7 @@ clinvk parallel [flags]
   "max_parallel": 3,
   "fail_fast": true
 }
-```text
+```
 
 ### 任务字段
 
@@ -81,37 +81,37 @@ clinvk parallel [flags]
 
 ```bash
 clinvk parallel --file tasks.json
-```text
+```
 
 ### 从 stdin
 
 ```bash
 cat tasks.json | clinvk parallel
-```text
+```
 
 ### 限制并发
 
 ```bash
 clinvk parallel --file tasks.json --max-parallel 2
-```text
+```
 
 ### Fail-Fast
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```text
+```
 
 ### JSON 输出
 
 ```bash
 clinvk parallel --file tasks.json --json
-```text
+```
 
 ### 持久化输出
 
 ```bash
 cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk parallel
-```text
+```
 
 ## 输出
 
@@ -133,7 +133,7 @@ Results:
 3    gemini       OK       2.80s      generate tests for utils
 --------------------------------------------------------------------------------
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
-```text
+```
 
 ### JSON 输出
 
@@ -155,7 +155,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
     }
   ]
 }
-```text
+```
 
 ## 退出码
 

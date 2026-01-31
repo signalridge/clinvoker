@@ -8,7 +8,7 @@ clinvk 遵循一致的命令结构：
 
 ```bash
 clinvk [全局参数] [子命令] [子命令参数] [参数]
-```bash
+```
 
 ### 命令类型
 
@@ -31,7 +31,7 @@ clinvk [全局参数] [子命令] [子命令参数] [参数]
 clinvk --backend claude "修复 auth.go 中的 bug"
 clinvk -b codex "实现用户注册"
 clinvk -b gemini "解释这个算法"
-```bash
+```
 
 **后端选择策略：**
 
@@ -53,7 +53,7 @@ clinvk -b gemini "解释这个算法"
 clinvk --model claude-opus-4-5-20251101 "复杂的架构任务"
 clinvk -b codex -m o3 "实现功能"
 clinvk -b gemini -m gemini-2.5-flash "快速问题"
-```text
+```
 
 **何时覆盖模型：**
 
@@ -68,7 +68,7 @@ clinvk -b gemini -m gemini-2.5-flash "快速问题"
 ```bash
 clinvk --workdir /path/to/project "审查代码库"
 clinvk -w ./subproject "修复测试"
-```text
+```
 
 **工作目录行为：**
 
@@ -85,7 +85,7 @@ clinvk -w /home/user/projects/myapp "分析代码"
 
 # 风险：完全系统访问（取决于后端沙箱模式）
 clinvk -w / "搜索文件"
-```text
+```
 
 ### 输出格式 (`--output-format`, `-o`)
 
@@ -97,7 +97,7 @@ clinvk -w / "搜索文件"
 
 ```bash
 clinvk --output-format text "解释这段代码"
-```text
+```
 
 **适用于：** 交互式使用、终端阅读、快速检查
 
@@ -107,7 +107,7 @@ clinvk --output-format text "解释这段代码"
 
 ```bash
 clinvk --output-format json "解释这段代码"
-```text
+```
 
 **输出结构：**
 
@@ -119,7 +119,7 @@ clinvk --output-format json "解释这段代码"
   "duration_seconds": 2.5,
   "exit_code": 0
 }
-```text
+```
 
 **适用于：** 脚本编写、CI/CD 流水线、存储结果、进一步处理
 
@@ -127,7 +127,7 @@ clinvk --output-format json "解释这段代码"
 
 ```bash
 clinvk -o stream-json "解释这段代码"
-```text
+```
 
 `stream-json` 直接透传后端的原生流式输出（NDJSON/JSONL）。这提供了 AI 生成内容时的实时更新。
 
@@ -149,7 +149,7 @@ clinvk -o stream-json "解释这段代码"
 clinvk "实现登录功能"
 clinvk -c "现在添加密码验证"
 clinvk -c "添加速率限制"
-```bash
+```
 
 **继续模式的工作原理：**
 
@@ -169,7 +169,7 @@ clinvk -c "添加速率限制"
 
 ```bash
 clinvk --ephemeral "2+2 等于多少"
-```text
+```
 
 **何时使用临时模式：**
 
@@ -192,13 +192,13 @@ clinvk --ephemeral "2+2 等于多少"
 
 ```bash
 clinvk --dry-run "实现功能 X"
-```text
+```
 
 **输出显示将要运行的确切命令：**
 
 ```yaml
 Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
-```text
+```
 
 **使用场景：**
 
@@ -213,7 +213,7 @@ Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
 
 ```bash
 clinvk --verbose "复杂任务"
-```bash
+```
 
 **显示内容：**
 
@@ -262,7 +262,7 @@ case $exit_code in
     echo "后端返回代码: $exit_code"
     ;;
 esac
-```text
+```
 
 ## 环境变量
 
@@ -279,7 +279,7 @@ export CLINVK_GEMINI_MODEL=gemini-2.5-flash
 
 # 使用环境设置运行
 clinvk "提示"  # 使用 codex 和 o3-mini
-```bash
+```
 
 **优先级顺序**（从高到低）：
 
@@ -298,7 +298,7 @@ clinvk "提示"  # 使用 codex 和 o3-mini
 clinvk "实现登录功能"
 clinvk -c "现在添加密码验证"
 clinvk -c "添加速率限制"
-```text
+```
 
 ### Resume 命令
 
@@ -316,7 +316,7 @@ clinvk resume --last "从上次中断的地方继续"
 
 # 按 ID 恢复
 clinvk resume abc123 "添加测试"
-```bash
+```
 
 详见 [会话管理](sessions.md)。
 
@@ -340,19 +340,19 @@ clinvk resume abc123 "添加测试"
 
 ```bash
 clinvk "utils.go 第 45 行有空指针异常"
-```text
+```
 
 ### 代码生成
 
 ```bash
 clinvk -b codex "生成用户 CRUD 操作的 REST API 处理器"
-```text
+```
 
 ### 代码解释
 
 ```bash
 clinvk -b gemini "解释 cmd/server/main.go 中的 main 函数是做什么的"
-```text
+```
 
 ### 带继续的重构
 
@@ -360,7 +360,7 @@ clinvk -b gemini "解释 cmd/server/main.go 中的 main 函数是做什么的"
 clinvk "重构数据库模块以使用连接池"
 clinvk -c "现在为更改添加单元测试"
 clinvk -c "更新文档"
-```text
+```
 
 ### CI/CD 集成
 
@@ -369,7 +369,7 @@ clinvk -c "更新文档"
 clinvk --ephemeral --output-format json \
   --backend codex \
   "为 auth 模块生成测试"
-```text
+```
 
 ### 多步骤工作流
 
@@ -384,7 +384,7 @@ clinvk -c "实现推荐的更改"
 
 # 步骤 3：验证
 clinvk -c "运行测试并修复任何失败"
-```text
+```
 
 ## 常见模式
 
@@ -396,7 +396,7 @@ clinvk -o text "解释这个模块"
 
 # 满意后，切换到 JSON 进行自动化
 clinvk -o json --ephemeral "生成实现"
-```text
+```
 
 ### 模式 2：按任务类型选择后端
 
@@ -409,7 +409,7 @@ clinvk -b codex "实现端点"
 
 # 文档 - Gemini
 clinvk -b gemini "编写 API 文档"
-```text
+```
 
 ### 模式 3：执行前试运行
 
@@ -419,7 +419,7 @@ clinvk --dry-run --backend codex "重构整个代码库"
 
 # 如果满意，实际运行
 clinvk --backend codex "重构整个代码库"
-```text
+```
 
 ## 故障排查
 
@@ -431,7 +431,7 @@ clinvk config show | grep available
 
 # 验证 CLI 安装
 which claude codex gemini
-```text
+```
 
 ### 配置未生效
 
@@ -441,7 +441,7 @@ clinvk config show
 
 # 验证文件存在
 ls -la ~/.clinvk/config.yaml
-```text
+```
 
 ### 会话未恢复
 
@@ -451,7 +451,7 @@ clinvk sessions list
 
 # 检查会话是否有后端 ID
 clinvk sessions show <session-id>
-```text
+```
 
 ## 下一步
 

@@ -55,7 +55,7 @@ which codex && codex --version
 
 # Check Gemini CLI
 which gemini && gemini --version
-```yaml
+```
 
 ---
 
@@ -109,7 +109,7 @@ brew install clinvk
 
 # Upgrade later
 brew upgrade clinvk
-```text
+```
 
 #### Scoop (Windows)
 
@@ -122,7 +122,7 @@ scoop install clinvk
 
 # Upgrade
 scoop update clinvk
-```text
+```
 
 #### Nix (Linux/macOS)
 
@@ -138,7 +138,7 @@ nix profile install github:signalridge/clinvoker
   inputs.clinvoker.url = "github:signalridge/clinvoker";
   nixpkgs.overlays = [ clinvoker.overlays.default ];
 }
-```text
+```
 
 #### Arch Linux (AUR)
 
@@ -148,7 +148,7 @@ yay -S clinvk-bin
 
 # Or build from source
 yay -S clinvk
-```text
+```
 
 #### Debian/Ubuntu
 
@@ -156,7 +156,7 @@ yay -S clinvk
 # Download from releases page
 wget https://github.com/signalridge/clinvoker/releases/download/v0.1.0/clinvk_0.1.0_amd64.deb
 sudo dpkg -i clinvk_*.deb
-```text
+```
 
 #### RPM-based (Fedora/RHEL)
 
@@ -164,7 +164,7 @@ sudo dpkg -i clinvk_*.deb
 # Download from releases page
 wget https://github.com/signalridge/clinvoker/releases/download/v0.1.0/clinvk-0.1.0-1.x86_64.rpm
 sudo rpm -i clinvk-*.rpm
-```bash
+```
 
 ### 3. Manual Download
 
@@ -205,7 +205,7 @@ git clone https://github.com/signalridge/clinvoker.git
 cd clinvoker
 go build -o clinvk ./cmd/clinvk
 sudo mv clinvk /usr/local/bin/
-```yaml
+```
 
 ---
 
@@ -216,7 +216,7 @@ After installation, verify everything is working:
 ```bash
 # Check version
 clinvk version
-```text
+```
 
 Expected output:
 
@@ -224,13 +224,13 @@ Expected output:
 clinvk version v0.1.0-alpha
   commit: abc1234
   built:  2025-01-27T00:00:00Z
-```text
+```
 
 Check detected backends:
 
 ```bash
 clinvk config show
-```text
+```
 
 You should see a list of available backends based on what's installed on your system.
 
@@ -258,7 +258,7 @@ export CLINVK_BACKEND=claude
 
 # Via config (permanent)
 clinvk config set default_backend claude
-```bash
+```
 
 ### Configuration File
 
@@ -286,7 +286,7 @@ backends:
 session:
   auto_resume: true
   retention_days: 30
-```yaml
+```
 
 ---
 
@@ -298,7 +298,7 @@ Run your first prompt with the default backend:
 
 ```bash
 clinvk "Explain the SOLID principles in software engineering"
-```text
+```
 
 This sends your prompt to the default backend (Claude Code by default) and displays the response.
 
@@ -315,7 +315,7 @@ clinvk -b codex "Implement a quicksort algorithm in Python"
 
 # Gemini provides broad knowledge and explanations
 clinvk -b gemini "Explain the trade-offs between SQL and NoSQL databases"
-```text
+```
 
 ### Working Directory
 
@@ -327,7 +327,7 @@ clinvk -w . "Review this codebase for security issues"
 
 # Analyze a specific project
 clinvk -w /path/to/project "Explain the architecture of this application"
-```yaml
+```
 
 ---
 
@@ -341,7 +341,7 @@ Human-readable output ideal for interactive use:
 
 ```bash
 clinvk -o text "Explain REST APIs"
-```text
+```
 
 **Characteristics:**
 - Clean, formatted text
@@ -357,7 +357,7 @@ Structured output with metadata for programmatic use:
 
 ```bash
 clinvk -o json "Explain REST APIs"
-```text
+```
 
 **Output structure:**
 
@@ -371,7 +371,7 @@ clinvk -o json "Explain REST APIs"
   "session_id": "sess_abc123",
   "timestamp": "2025-01-27T10:30:00Z"
 }
-```text
+```
 
 **When to use:** Scripting, logging, storing results, API integrations
 
@@ -381,7 +381,7 @@ Real-time streaming for long-running tasks:
 
 ```bash
 clinvk -o stream-json "Write a comprehensive guide to Go concurrency"
-```text
+```
 
 **Characteristics:**
 - Emits JSON objects as they become available
@@ -417,7 +417,7 @@ View all active sessions:
 
 ```bash
 clinvk sessions list
-```text
+```
 
 Output:
 
@@ -425,7 +425,7 @@ Output:
 ID          BACKEND  CREATED              STATUS   TAGS
 sess_abc12  claude   2025-01-27 10:00:00  active   project-x
 sess_def34  codex    2025-01-27 09:30:00  closed   -
-```text
+```
 
 ### Continuing Sessions
 
@@ -440,7 +440,7 @@ clinvk resume --last
 
 # Resume a specific session
 clinvk resume sess_abc12
-```text
+```
 
 ### Session Best Practices
 
@@ -457,7 +457,7 @@ clinvk resume sess_abc12
 **Symptoms:**
 ```text
 Error: backend "claude" not available
-```bash
+```
 
 **Causes and Solutions:**
 
@@ -493,7 +493,7 @@ Error: backend "claude" not available
 **Symptoms:**
 ```text
 Error: authentication failed for backend "claude"
-```text
+```
 
 **Solution:**
 
@@ -503,14 +503,14 @@ claude config set api_key $ANTHROPIC_API_KEY
 
 # Or set environment variable
 export ANTHROPIC_API_KEY="sk-ant-..."
-```text
+```
 
 ### Issue 3: "Session not found"
 
 **Symptoms:**
 ```text
 Error: no sessions found for backend "claude"
-```text
+```
 
 **Explanation:** This is normal for your first run. Sessions are created after your first successful prompt.
 
@@ -522,7 +522,7 @@ clinvk "Hello, world!"
 
 # Now sessions will be available
 clinvk sessions list
-```text
+```
 
 If you still see issues:
 
@@ -532,7 +532,7 @@ ls -la ~/.clinvk/sessions/
 
 # Reset if corrupted
 clinvk sessions cleanup
-```yaml
+```
 
 ---
 
@@ -577,7 +577,7 @@ clinvk serve --port 8080
 # Session management
 clinvk sessions list
 clinvk resume --last
-```text
+```
 
 ---
 

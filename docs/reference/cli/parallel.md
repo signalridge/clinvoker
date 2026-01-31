@@ -6,7 +6,7 @@ Execute multiple tasks in parallel.
 
 ```bash
 clinvk parallel [flags]
-```text
+```
 
 ## Description
 
@@ -42,7 +42,7 @@ Run multiple AI tasks concurrently. Tasks are defined in a JSON file or piped vi
   "max_parallel": 3,
   "fail_fast": true
 }
-```text
+```
 
 ### Task Fields
 
@@ -81,37 +81,37 @@ Run multiple AI tasks concurrently. Tasks are defined in a JSON file or piped vi
 
 ```bash
 clinvk parallel --file tasks.json
-```text
+```
 
 ### From Stdin
 
 ```bash
 cat tasks.json | clinvk parallel
-```text
+```
 
 ### Limit Workers
 
 ```bash
 clinvk parallel --file tasks.json --max-parallel 2
-```text
+```
 
 ### Fail-Fast Mode
 
 ```bash
 clinvk parallel --file tasks.json --fail-fast
-```text
+```
 
 ### JSON Output
 
 ```bash
 clinvk parallel --file tasks.json --json
-```text
+```
 
 ### Persist Outputs
 
 ```bash
 cat tasks.json | jq '. + {"output_dir": "parallel_runs/run-001"}' | clinvk parallel
-```text
+```
 
 This writes:
 
@@ -122,7 +122,7 @@ This writes:
 
 ```bash
 clinvk parallel --file tasks.json --quiet
-```text
+```
 
 ## Output
 
@@ -144,7 +144,7 @@ Results:
 3    gemini       OK       2.80s      generate tests for utils
 --------------------------------------------------------------------------------
 Total: 3 tasks, 3 completed, 0 failed (3.20s)
-```text
+```
 
 ### JSON Output
 
@@ -166,7 +166,7 @@ Total: 3 tasks, 3 completed, 0 failed (3.20s)
     }
   ]
 }
-```text
+```
 
 ## Exit Codes
 

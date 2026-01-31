@@ -67,7 +67,7 @@ func init() {
     rootCmd.PersistentFlags().String("model", "", "Model to use")
     // ...
 }
-```text
+```
 
 ## 为什么选择 Chi 作为 HTTP 路由器
 
@@ -96,7 +96,7 @@ router.Use(middleware.RealIP)
 router.Use(middleware.Recoverer)
 router.Use(middleware.Logger)
 router.Use(middleware.Timeout(60 * time.Second))
-```text
+```
 
 ## 为什么选择 Huma 作为 OpenAPI 工具
 
@@ -126,7 +126,7 @@ huma.Register(api, huma.Operation{
 }, func(ctx context.Context, input *ChatRequest) (*ChatResponse, error) {
     // 处理器实现
 })
-```text
+```
 
 ## 为什么使用子进程执行而不是 SDK
 
@@ -196,7 +196,7 @@ flowchart TB
     NATIVE --> MAP
     MAP --> EXEC
     EXEC --> BACKEND
-```text
+```
 
 ## 会话持久化权衡
 
@@ -260,7 +260,7 @@ type Backend interface {
     ParseOutput(rawOutput string) string
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
 }
-```text
+```
 
 ## 并发模型选择
 
@@ -294,7 +294,7 @@ func (s *Store) Save(sess *Session) error {
     defer s.mu.Unlock()
     return s.saveLocked(sess)
 }
-```text
+```
 
 ## 配置级联设计
 
@@ -326,7 +326,7 @@ CLINVK_TIMEOUT=120
 clinvk --backend codex "prompt"
 
 # 结果：backend=codex (CLI), timeout=120 (env)
-```bash
+```
 
 ## HTTP 服务器设计
 
@@ -378,7 +378,7 @@ clinvk --backend codex "prompt"
     "details": "rate limit exceeded"
   }
 }
-```text
+```
 
 ## 总结表
 

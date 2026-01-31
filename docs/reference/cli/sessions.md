@@ -6,7 +6,7 @@ Manage sessions.
 
 ```bash
 clinvk sessions [command] [flags]
-```bash
+```
 
 ## Description
 
@@ -41,31 +41,31 @@ List all sessions:
 
 ```bash
 clinvk sessions list
-```text
+```
 
 Filter by backend:
 
 ```bash
 clinvk sessions list --backend claude
-```text
+```
 
 Filter by status:
 
 ```bash
 clinvk sessions list --status active
-```text
+```
 
 Limit results:
 
 ```bash
 clinvk sessions list --limit 10
-```text
+```
 
 Combined filters:
 
 ```bash
 clinvk sessions list --backend claude --status active --limit 5
-```text
+```
 
 ### Output
 
@@ -74,7 +74,7 @@ ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1234         fix the bug in auth.go
 def456    codex     completed  2 hours ago     5678         implement user registration
 ghi789    gemini    error      1 day ago       -            failed task
-```yaml
+```
 
 ---
 
@@ -86,13 +86,13 @@ Show details of a specific session.
 
 ```bash
 clinvk sessions show <session-id>
-```text
+```
 
 ### Example
 
 ```bash
 clinvk sessions show abc123
-```text
+```
 
 ### Output
 
@@ -111,7 +111,7 @@ Token Usage:
   Output:          5678
   Total:           6912
 Tags:              [feature-auth, urgent]
-```yaml
+```
 
 ---
 
@@ -123,19 +123,19 @@ Delete a specific session.
 
 ```bash
 clinvk sessions delete <session-id>
-```text
+```
 
 ### Example
 
 ```bash
 clinvk sessions delete abc123
-```text
+```
 
 ### Output
 
 ```text
 Session abc123 deleted.
-```yaml
+```
 
 ---
 
@@ -157,25 +157,25 @@ Clean sessions older than 30 days:
 
 ```bash
 clinvk sessions clean --older-than 30d
-```text
+```
 
 Clean sessions older than 7 days:
 
 ```bash
 clinvk sessions clean --older-than 7
-```text
+```
 
 Use config default:
 
 ```bash
 clinvk sessions clean
-```text
+```
 
 ### Output
 
 ```text
 Deleted 15 session(s) older than 30 days.
-```text
+```
 
 ---
 

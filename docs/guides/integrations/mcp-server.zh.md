@@ -50,7 +50,7 @@ flowchart TB
     style clients fill:#e3f2fd,stroke:#1976d2
     style server fill:#fff3e0,stroke:#f57c00
     style backends fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 ## 计划工具
 
@@ -82,7 +82,7 @@ flowchart TB
     "required": ["backend", "prompt"]
   }
 }
-```text
+```
 
 ### `clinvk_parallel`
 
@@ -109,7 +109,7 @@ flowchart TB
     "required": ["tasks"]
   }
 }
-```text
+```
 
 ### `clinvk_chain`
 
@@ -137,7 +137,7 @@ flowchart TB
     "required": ["steps"]
   }
 }
-```text
+```
 
 ## 计划用法
 
@@ -155,7 +155,7 @@ flowchart TB
     }
   }
 }
-```text
+```
 
 ### 启动 MCP 服务器
 
@@ -165,7 +165,7 @@ clinvk mcp --transport stdio
 
 # HTTP 传输（用于网络客户端）
 clinvk mcp --transport http --port 3000
-```bash
+```
 
 ## 使用场景
 
@@ -184,7 +184,7 @@ Claude：我将使用 clinvk_parallel 工具从不同 AI 模型获取审查。
 - 架构（Claude）：...
 - 性能（Codex）：...
 - 安全（Gemini）：...
-```text
+```
 
 ### 2. 文档流水线
 
@@ -196,7 +196,7 @@ Claude：我将使用 clinvk_chain 工具通过流水线创建文档。
 [使用 analyze → generate → polish 步骤调用 clinvk_chain]
 
 这是精修后的文档：...
-```text
+```
 
 ### 3. 专业任务路由
 
@@ -208,7 +208,7 @@ Claude：我将把这个路由到擅长数据分析的 Gemini。
 [使用 backend="gemini" 调用 clinvk_prompt]
 
 Gemini 建议这些优化：...
-```text
+```
 
 ## 开发状态
 
@@ -224,7 +224,7 @@ Gemini 建议这些优化：...
 
 - [Model Context Protocol 规范](https://spec.modelcontextprotocol.io/)
 - [Claude Desktop MCP 指南](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API 参考](../reference/api/rest-api.md) - 当前 HTTP API
+- [REST API 参考](../reference/api/rest.md) - 当前 HTTP API
 
 ## 反馈
 

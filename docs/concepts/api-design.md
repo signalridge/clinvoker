@@ -33,7 +33,7 @@ flowchart TB
     ANTH --> EXEC
     EXEC --> SESSION
     EXEC --> BACKEND
-```text
+```
 
 ## REST API Design Principles
 
@@ -73,7 +73,7 @@ All responses follow a consistent envelope:
     "timestamp": "2025-01-15T10:30:00Z"
   }
 }
-```text
+```
 
 ## OpenAI Compatibility Layer
 
@@ -108,7 +108,7 @@ The OpenAI-compatible API (`/openai/v1/*`) enables drop-in replacement for OpenA
     "model": "sonnet"
   }
 }
-```text
+```
 
 ### Response Transformation
 
@@ -145,7 +145,7 @@ The OpenAI-compatible API (`/openai/v1/*`) enables drop-in replacement for OpenA
     "total_tokens": 35
   }
 }
-```text
+```
 
 ### Streaming Support
 
@@ -159,7 +159,7 @@ data: {"id":"chatcmpl-123","choices":[{"delta":{"content":"!"}}]}
 data: {"id":"chatcmpl-123","choices":[{"delta":{},"finish_reason":"stop"}]}
 
 data: [DONE]
-```text
+```
 
 ## Anthropic Compatibility Layer
 
@@ -192,7 +192,7 @@ The Anthropic-compatible API (`/anthropic/v1/*`) enables drop-in replacement for
     "model": "sonnet"
   }
 }
-```text
+```
 
 ### Response Transformation
 
@@ -212,7 +212,7 @@ The Anthropic-compatible API (`/anthropic/v1/*`) enables drop-in replacement for
     "output_tokens": 10
   }
 }
-```bash
+```
 
 ## Endpoint Routing Architecture
 
@@ -234,7 +234,7 @@ func (s *Server) RegisterRoutes() {
     anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(s.logger), s.logger)
     anthropicHandlers.Register(s.api)
 }
-```text
+```
 
 ### Huma Integration
 
@@ -251,7 +251,7 @@ huma.Register(s.api, huma.Operation{
 }, func(ctx context.Context, input *ChatCompletionRequest) (*ChatCompletionResponse, error) {
     // Handler implementation
 })
-```bash
+```
 
 ## Middleware Integration
 
@@ -279,7 +279,7 @@ flowchart LR
     RATE --> AUTH
     AUTH --> TIMEOUT
     TIMEOUT --> CORS
-```text
+```
 
 ### Request ID Middleware
 
@@ -294,7 +294,7 @@ func RequestID(next http.Handler) http.Handler {
         next.ServeHTTP(w, r.WithContext(ctx))
     })
 }
-```text
+```
 
 ### Rate Limiting Middleware
 
@@ -320,7 +320,7 @@ func (rl *RateLimiter) Middleware() func(http.Handler) http.Handler {
         })
     }
 }
-```text
+```
 
 ### Authentication Middleware
 
@@ -352,7 +352,7 @@ func extractAPIKey(r *http.Request) string {
     }
     return ""
 }
-```bash
+```
 
 ## Authentication Design
 
@@ -377,7 +377,7 @@ func (s *Server) validateAPIKey(key string) bool {
     }
     return false
 }
-```yaml
+```
 
 Note: `subtle.ConstantTimeCompare` prevents timing attacks.
 
@@ -398,7 +398,7 @@ All errors follow a consistent format:
     }
   }
 }
-```text
+```
 
 ### Error Types
 
@@ -424,7 +424,7 @@ func ErrorHandler(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 }
-```text
+```
 
 ## Versioning Approach
 
@@ -442,7 +442,7 @@ Future versions may support header-based negotiation:
 
 ```text
 Accept-Version: v2
-```text
+```
 
 ### Deprecation Strategy
 
@@ -474,7 +474,7 @@ flowchart TB
     ANTH_REQ --> MAP
     NATIVE_REQ --> MAP
     MAP --> UNIFIED
-```text
+```
 
 ### Streaming Transformation
 
@@ -502,7 +502,7 @@ func (h *OpenAIHandler) streamResponse(ctx context.Context, input *ChatCompletio
     fmt.Fprint(w, "data: [DONE]\n\n")
     flusher.Flush()
 }
-```text
+```
 
 ## Related Documentation
 

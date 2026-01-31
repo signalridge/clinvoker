@@ -8,7 +8,7 @@ Learn how to configure clinvk for your workflow. This guide covers common scenar
 
 ```bash
 clinvk config show
-```bash
+```
 
 This shows all settings including which backends are available on your system.
 
@@ -20,7 +20,7 @@ clinvk config set default_backend claude
 
 # Or use Gemini
 clinvk config set default_backend gemini
-```bash
+```
 
 ### 3. Done
 
@@ -35,7 +35,7 @@ clinvk stores configuration in `~/.clinvk/config.yaml`. You can edit it directly
 ```yaml
 # ~/.clinvk/config.yaml
 default_backend: claude
-```text
+```
 
 ### Recommended Configuration
 
@@ -51,7 +51,7 @@ output:
 session:
   retention_days: 60
   auto_resume: true
-```text
+```
 
 ## Common Scenarios
 
@@ -69,7 +69,7 @@ backends:
     model: o3                           # For code generation
   gemini:
     model: gemini-2.5-pro              # For general tasks
-```text
+```
 
 **Usage:**
 
@@ -80,7 +80,7 @@ clinvk "analyze this architecture"
 # Specify backend for specific tasks
 clinvk -b codex "generate unit tests"
 clinvk -b gemini "summarize this document"
-```text
+```
 
 ### Scenario 2: Auto-Approve Mode for Automation
 
@@ -91,7 +91,7 @@ unified_flags:
   approval_mode: auto    # Auto-approve all actions
 output:
   format: json           # Machine-readable output
-```text
+```
 
 !!! warning "Security Note"
     Only use `auto` approval mode in trusted environments. The AI can execute file operations and commands.
@@ -106,7 +106,7 @@ unified_flags:
   # approval_mode controls prompting behavior, not whether actions are allowed.
   # Use `sandbox_mode` to restrict file access. Use `always` for maximum safety.
   approval_mode: always
-```text
+```
 
 ### Scenario 4: Team Shared Configuration
 
@@ -125,7 +125,7 @@ EOF
 
 # Use project config
 clinvk --config .clinvk.yaml "review the auth module"
-```bash
+```
 
 ### Scenario 5: HTTP Server for Integration
 
@@ -141,7 +141,7 @@ server:
 # server:
 #   host: "0.0.0.0"          # All interfaces
 #   port: 8080
-```text
+```
 
 ### Scenario 6: Parallel Task Optimization
 
@@ -152,7 +152,7 @@ parallel:
   max_workers: 5       # Run up to 5 tasks simultaneously
   fail_fast: false     # Continue even if some tasks fail
   aggregate_output: true
-```text
+```
 
 ### Scenario 7: Production API Server
 
@@ -184,7 +184,7 @@ server:
     - "/etc"
     - "/root"
     - "/usr/bin"
-```text
+```
 
 ### Scenario 8: Rate Limiting Configuration
 
@@ -203,7 +203,7 @@ server:
     - "10.0.0.0/8"
     - "172.16.0.0/12"
     - "192.168.0.0/16"
-```text
+```
 
 ### Scenario 9: Metrics and Observability
 
@@ -216,7 +216,7 @@ server:
 
   # Request size limits for resource protection
   max_request_body_bytes: 10485760  # 10MB
-```text
+```
 
 Access metrics at `http://localhost:8080/metrics`
 
@@ -233,7 +233,7 @@ backends:
     extra_flags:
       - "--add-dir"
       - "./docs"                    # Include docs in context
-```text
+```
 
 **Available models:**
 
@@ -250,7 +250,7 @@ backends:
     model: o3
     extra_flags:
       - "--quiet"                   # Less verbose output
-```text
+```
 
 ### Gemini CLI
 
@@ -260,7 +260,7 @@ backends:
     model: gemini-2.5-pro
     extra_flags:
       - "--sandbox"
-```text
+```
 
 ## Environment Variables
 
@@ -274,7 +274,7 @@ export CLINVK_BACKEND=gemini
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
 export CLINVK_CODEX_MODEL=o3
 export CLINVK_GEMINI_MODEL=gemini-2.5-pro
-```bash
+```
 
 **Priority order** (highest to lowest):
 
@@ -295,7 +295,7 @@ Keep project-specific settings in `.clinvk.yaml` in your repo:
 
 ```bash
 clinvk --config .clinvk.yaml "your prompt"
-```text
+```
 
 ### 3. Secure Your Server
 
@@ -304,7 +304,7 @@ If exposing the HTTP server:
 ```yaml
 server:
   host: "127.0.0.1"    # Never use 0.0.0.0 without a reverse proxy
-```text
+```
 
 ### 4. Set Appropriate Timeouts
 
@@ -313,7 +313,7 @@ For long-running tasks:
 ```yaml
 server:
   request_timeout_secs: 600    # 10 minutes
-```text
+```
 
 ### 5. Use Read-Only for Reviews
 
@@ -322,7 +322,7 @@ When you just want analysis without changes:
 ```yaml
 unified_flags:
   sandbox_mode: read-only
-```text
+```
 
 ## Troubleshooting
 
@@ -334,7 +334,7 @@ clinvk config show
 
 # Verify config file location
 ls -la ~/.clinvk/config.yaml
-```text
+```
 
 ### Backend Not Available
 
@@ -344,7 +344,7 @@ clinvk config show | grep available
 
 # Verify CLI is in PATH
 which claude codex gemini
-```text
+```
 
 ### Reset to Defaults
 
@@ -354,7 +354,7 @@ rm ~/.clinvk/config.yaml
 
 # Verify defaults
 clinvk config show
-```text
+```
 
 ## Configuration Templates
 
@@ -373,7 +373,7 @@ output:
 session:
   auto_resume: true
   retention_days: 30
-```text
+```
 
 ### CI/CD Pipeline
 
@@ -388,7 +388,7 @@ output:
 parallel:
   max_workers: 3
   fail_fast: true
-```text
+```
 
 ### API Server
 
@@ -402,7 +402,7 @@ server:
 
 output:
   format: json
-```text
+```
 
 ## Next Steps
 

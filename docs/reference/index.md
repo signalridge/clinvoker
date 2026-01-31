@@ -50,7 +50,7 @@ Configuration values are resolved in this order (highest to lowest priority):
 # Example: CLI flag wins over environment variable
 export CLINVK_BACKEND=codex
 clinvk -b claude "prompt"  # Uses claude, not codex
-```text
+```
 
 ## Common Flags Reference
 

@@ -6,7 +6,7 @@
 
 ```bash
 clinvk chain [flags]
-```text
+```
 
 ## 说明
 
@@ -39,7 +39,7 @@ clinvk chain [flags]
     }
   ]
 }
-```text
+```
 
 ### 步骤字段
 
@@ -98,7 +98,7 @@ STEP   BACKEND      STATUS   DURATION   NAME
 3      codex        OK       3.20s      implement
 --------------------------------------------------------------------------------
 Total: 3/3 steps completed (7.10s)
-```text
+```
 
 ### JSON 输出
 
@@ -119,7 +119,7 @@ Total: 3/3 steps completed (7.10s)
     }
   ]
 }
-```text
+```
 
 ## 退出码
 

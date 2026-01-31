@@ -37,7 +37,7 @@ jobs:
         run: |
           git diff origin/${{ github.base_ref }}...HEAD > pr.diff
           # 使用 clinvoker 运行审查
-```text
+```
 
 ## 高级配置
 

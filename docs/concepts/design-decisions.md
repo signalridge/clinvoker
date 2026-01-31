@@ -67,7 +67,7 @@ func init() {
     rootCmd.PersistentFlags().String("model", "", "Model to use")
     // ...
 }
-```text
+```
 
 ## Why Chi for HTTP Router
 
@@ -96,7 +96,7 @@ router.Use(middleware.RealIP)
 router.Use(middleware.Recoverer)
 router.Use(middleware.Logger)
 router.Use(middleware.Timeout(60 * time.Second))
-```text
+```
 
 ## Why Huma for OpenAPI
 
@@ -126,7 +126,7 @@ huma.Register(api, huma.Operation{
 }, func(ctx context.Context, input *ChatRequest) (*ChatResponse, error) {
     // Handler implementation
 })
-```text
+```
 
 ## Why Subprocess Execution Instead of SDK
 
@@ -196,7 +196,7 @@ flowchart TB
     NATIVE --> MAP
     MAP --> EXEC
     EXEC --> BACKEND
-```typescript
+```
 
 ## Session Persistence Trade-offs
 
@@ -260,7 +260,7 @@ type Backend interface {
     ParseOutput(rawOutput string) string
     ParseJSONResponse(rawOutput string) (*UnifiedResponse, error)
 }
-```text
+```
 
 ## Concurrency Model Selection
 
@@ -294,7 +294,7 @@ func (s *Store) Save(sess *Session) error {
     defer s.mu.Unlock()
     return s.saveLocked(sess)
 }
-```text
+```
 
 ## Configuration Cascade Design
 
@@ -326,7 +326,7 @@ CLINVK_TIMEOUT=120
 clinvk --backend codex "prompt"
 
 # Result: backend=codex (CLI), timeout=120 (env)
-```bash
+```
 
 ## HTTP Server Design
 
@@ -378,7 +378,7 @@ Propagate errors with context, fail gracefully.
     "details": "rate limit exceeded"
   }
 }
-```text
+```
 
 ## Summary Table
 

@@ -31,14 +31,14 @@ Claude Code Skills 扩展了 Claude 的能力，但有时你需要：
 当需要分析结构化数据时运行此 skill。
 
 ## Script
-```bash
+```
 #!/bin/bash
 DATA="$1"
 
 clinvk -b gemini -o json --ephemeral "分析此数据并提供洞察：$DATA"
-```text
+```
 
-```text
+```
 
 ## 多模型审查 Skill
 
@@ -51,7 +51,7 @@ clinvk -b gemini -o json --ephemeral "分析此数据并提供洞察：$DATA"
 使用 Claude（架构）、Codex（性能）和 Gemini（安全）进行全面代码审查。
 
 ## Script
-```bash
+```
 #!/bin/bash
 CODE="$1"
 
@@ -71,9 +71,9 @@ echo ""
 echo "### 安全审查 (Gemini)"
 clinvk -b gemini --ephemeral "审查此代码的安全漏洞：
 $CODE"
-```text
+```
 
-```text
+```
 
 ## 并行审查 Skill
 
@@ -86,7 +86,7 @@ $CODE"
 使用所有后端同时进行快速代码审查。
 
 ## Script
-```bash
+```
 #!/bin/bash
 CODE="$1"
 
@@ -106,9 +106,9 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
   "## 性能 (Codex)\n" + .results[1].output + "\n\n" +
   "## 安全 (Gemini)\n" + .results[2].output
 '
-```text
+```
 
-```text
+```
 
 ## 链式执行 Skill
 
@@ -124,7 +124,7 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
 3. Gemini 润色提高可读性
 
 ## Script
-```bash
+```
 #!/bin/bash
 CODE="$1"
 
@@ -152,9 +152,9 @@ cat > /tmp/doc-pipeline.json << EOF
 EOF
 
 clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
-```text
+```
 
-```text
+```
 
 ## 高级模式
 
@@ -170,7 +170,7 @@ if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
 fi
 
 echo "$OUTPUT"
-```text
+```
 
 ### 条件后端选择
 
@@ -195,7 +195,7 @@ case "$TASK_TYPE" in
 esac
 
 clinvk -b "$BACKEND" --ephemeral "$PROMPT"
-```text
+```
 
 ### 对比后端
 
@@ -203,7 +203,7 @@ clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 #!/bin/bash
 # 获取所有后端的响应并对比
 clinvk compare --all-backends "$1"
-```text
+```
 
 ## 最佳实践
 
@@ -213,7 +213,7 @@ clinvk compare --all-backends "$1"
 
 ```bash
 clinvk -b claude --ephemeral "你的提示"
-```text
+```
 
 ### 2. 选择合适的后端
 
@@ -231,7 +231,7 @@ clinvk -b claude --ephemeral "你的提示"
 
 ```bash
 clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
-```text
+```
 
 ## Skill 目录结构
 
@@ -246,7 +246,7 @@ clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
 └── shared/
     └── clinvk-helpers.sh  # 共享函数
 
-```text
+```
 
 ## 故障排除
 
@@ -255,7 +255,7 @@ clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
 ```bash
 # 检查可用后端
 clinvk config show | grep available
-```text
+```
 
 ## 下一步
 

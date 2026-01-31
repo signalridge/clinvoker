@@ -6,7 +6,7 @@
 
 ```bash
 clinvk config [command] [flags]
-```bash
+```
 
 ## 说明
 
@@ -30,7 +30,7 @@ clinvk config [command] [flags]
 
 ```bash
 clinvk config show
-```text
+```
 
 ### 输出
 
@@ -75,7 +75,7 @@ server:
 parallel:
   max_workers: 3
   fail_fast: false
-```yaml
+```
 
 ---
 
@@ -87,7 +87,7 @@ parallel:
 
 ```bash
 clinvk config get <key>
-```text
+```
 
 ### 键格式
 
@@ -97,7 +97,7 @@ clinvk config get <key>
 clinvk config get default_backend
 clinvk config get backends.claude.model
 clinvk config get session.auto_resume
-```text
+```
 
 ### 示例
 
@@ -106,21 +106,21 @@ clinvk config get session.auto_resume
 ```bash
 clinvk config get default_backend
 # 输出：claude
-```text
+```
 
 获取 Claude 模型：
 
 ```bash
 clinvk config get backends.claude.model
 # 输出：claude-opus-4-5-20251101
-```text
+```
 
 获取会话保留时间：
 
 ```bash
 clinvk config get session.retention_days
 # 输出：30
-```yaml
+```
 
 ---
 
@@ -132,7 +132,7 @@ clinvk config get session.retention_days
 
 ```bash
 clinvk config set <key> <value>
-```text
+```
 
 ### 键格式
 
@@ -142,7 +142,7 @@ clinvk config set <key> <value>
 clinvk config set default_backend codex
 clinvk config set backends.claude.model claude-sonnet-4-20250514
 clinvk config set session.retention_days 7
-```text
+```
 
 ### 示例
 
@@ -150,31 +150,31 @@ clinvk config set session.retention_days 7
 
 ```bash
 clinvk config set default_backend codex
-```text
+```
 
 设置 Claude 模型：
 
 ```bash
 clinvk config set backends.claude.model claude-sonnet-4-20250514
-```text
+```
 
 设置会话保留时间：
 
 ```bash
 clinvk config set session.retention_days 7
-```text
+```
 
 设置并行工作线程：
 
 ```bash
 clinvk config set parallel.max_workers 5
-```text
+```
 
 启用详细输出：
 
 ```bash
 clinvk config set unified_flags.verbose true
-```bash
+```
 
 ### 值类型
 
@@ -195,7 +195,7 @@ clinvk config set unified_flags.verbose true
 
 ```bash
 clinvk --config /path/to/config.yaml config show
-```text
+```
 
 ## 配置优先级
 

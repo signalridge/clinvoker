@@ -16,7 +16,7 @@ flowchart LR
     style B fill:#fff3e0,stroke:#f57c00
     style C fill:#ffecb3,stroke:#ffa000
     style D fill:#f3e5f5,stroke:#7b1fa2
-```bash
+```
 
 ## OpenAI SDK 兼容性
 
@@ -41,7 +41,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ## LangChain 集成
 
@@ -67,7 +67,7 @@ messages = [
 
 response = llm.invoke(messages)
 print(response.content)
-```text
+```
 
 ### 使用 Chain
 
@@ -94,7 +94,7 @@ chain = prompt | llm | StrOutputParser()
 # 执行
 result = chain.invoke({"code": "def hello(): return 'world'"})
 print(result)
-```text
+```
 
 ### 在一个应用中使用多个后端
 
@@ -124,7 +124,7 @@ gemini_llm = ChatOpenAI(
 architecture_review = claude_llm.invoke("审查架构...")
 code_generation = codex_llm.invoke("生成一个函数...")
 data_analysis = gemini_llm.invoke("分析这个数据集...")
-```text
+```
 
 ## LangGraph Agent 集成
 
@@ -199,7 +199,7 @@ agent = create_react_agent(llm, [parallel_code_review, chain_documentation])
 result = agent.invoke({
     "messages": [{"role": "user", "content": "审查这段代码: def add(a, b): return a + b"}]
 })
-```text
+```
 
 ### 自定义 Agent Graph
 
@@ -276,7 +276,7 @@ app = workflow.compile()
 # 运行
 result = app.invoke({"code": "def process(data): return data * 2"})
 print(result["final_report"])
-```text
+```
 
 ## 流式响应
 
@@ -300,7 +300,7 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="", flush=True)
-```text
+```
 
 ### LangChain 流式传输
 
@@ -317,7 +317,7 @@ llm = ChatOpenAI(
 
 for chunk in llm.stream([HumanMessage(content="解释递归...")]):
     print(chunk.content, end="", flush=True)
-```text
+```
 
 ## 异步支持
 
@@ -350,7 +350,7 @@ async def main():
             print(chunk.choices[0].delta.content, end="")
 
 asyncio.run(main())
-```text
+```
 
 ## 错误处理
 
@@ -371,7 +371,7 @@ except APIConnectionError:
     print("无法连接到 clinvk 服务器。它在运行吗？")
 except APIError as e:
     print(f"API 错误: {e.message}")
-```text
+```
 
 ## 最佳实践
 
@@ -388,7 +388,7 @@ client = httpx.Client(
 
 # 在应用中使用
 response = client.post("/api/v1/prompt", json={...})
-```text
+```
 
 ### 2. 超时配置
 
@@ -401,7 +401,7 @@ llm = ChatOpenAI(
     api_key="not-needed",
     request_timeout=120  # 长任务 2 分钟
 )
-```text
+```
 
 ### 3. 后端选择策略
 
@@ -414,6 +414,6 @@ llm = ChatOpenAI(
 
 ## 下一步
 
-- [CI/CD 集成](ci-cd.md) - 在流水线中自动化
-- [客户端库](client-libraries.md) - 其他语言绑定
-- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档
+- [CI/CD 集成](ci-cd/) - 在流水线中自动化
+- [客户端库](openai-sdk.md) - 其他语言绑定
+- [REST API 参考](../reference/api/rest.md) - 完整 API 文档

@@ -7,7 +7,7 @@
 ```bash
 clinvk [全局参数] [提示词]
 clinvk [命令] [子命令] [参数]
-```text
+```
 
 ## 命令概览
 
@@ -49,7 +49,7 @@ clinvk [命令] [子命令] [参数]
 clinvk --backend claude "提示词"
 clinvk -b codex "提示词"
 clinvk -b gemini "提示词"
-```text
+```
 
 可用后端：`claude`、`codex`、`gemini`
 
@@ -60,7 +60,7 @@ clinvk -b gemini "提示词"
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "提示词"
 clinvk -b codex -m o3-mini "提示词"
-```text
+```
 
 ### --workdir, -w
 
@@ -68,7 +68,7 @@ clinvk -b codex -m o3-mini "提示词"
 
 ```bash
 clinvk --workdir /path/to/project "分析这个代码库"
-```text
+```
 
 ### --output-format, -o
 
@@ -83,7 +83,7 @@ clinvk --workdir /path/to/project "分析这个代码库"
 ```bash
 clinvk --output-format json "提示词"
 clinvk -o stream-json "提示词"
-```text
+```
 
 ### --config
 
@@ -91,7 +91,7 @@ clinvk -o stream-json "提示词"
 
 ```bash
 clinvk --config /path/to/config.yaml "提示词"
-```text
+```
 
 ### --dry-run
 
@@ -100,7 +100,7 @@ clinvk --config /path/to/config.yaml "提示词"
 ```bash
 clinvk --dry-run "实现功能 X"
 # 输出：Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
-```text
+```
 
 ### --ephemeral
 
@@ -108,7 +108,7 @@ clinvk --dry-run "实现功能 X"
 
 ```bash
 clinvk --ephemeral "快速问题"
-```text
+```
 
 ## 命令分类
 
@@ -153,7 +153,7 @@ clinvk -b codex "实现功能"
 
 # 指定模型
 clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
-```text
+```
 
 ### 会话管理
 
@@ -166,7 +166,7 @@ clinvk resume --last
 
 # 删除旧会话
 clinvk sessions clean --older-than 30d
-```text
+```
 
 ### 配置
 
@@ -176,7 +176,7 @@ clinvk config show
 
 # 设置值
 clinvk config set default_backend codex
-```text
+```
 
 ### 高级执行
 
@@ -189,14 +189,14 @@ clinvk compare --all-backends "解释这段代码"
 
 # 执行链
 clinvk chain --file pipeline.json
-```text
+```
 
 ### 服务器
 
 ```bash
 # 启动服务器
 clinvk serve --port 8080
-```text
+```
 
 ## 退出码
 
@@ -225,7 +225,7 @@ clinvk [命令] --help
 
 # 示例
 clinvk parallel --help
-```text
+```
 
 ## 另请参阅
 

@@ -36,7 +36,7 @@ flowchart LR
     style S2 fill:#e8f5e9,stroke:#388e3c
     style S3 fill:#ffebee,stroke:#c62828
     style S4 fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 **执行流程：**
 
@@ -60,7 +60,7 @@ flowchart LR
     style S2 fill:#fff3e0,stroke:#f57c00
     style S3 fill:#e8f5e9,stroke:#388e3c
     style S4 fill:#f3e5f5,stroke:#7b1fa2
-```text
+```
 
 ## Pipeline JSON 格式
 
@@ -88,7 +88,7 @@ flowchart LR
     }
   ]
 }
-```text
+```
 
 ### 完整步骤规范
 
@@ -107,7 +107,7 @@ flowchart LR
     }
   ]
 }
-```text
+```
 
 ### 步骤字段参考
 
@@ -130,7 +130,7 @@ flowchart LR
   "stop_on_failure": true,
   "pass_working_dir": false
 }
-```text
+```
 
 | 字段 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
@@ -166,7 +166,7 @@ flowchart LR
     }
   ]
 }
-```text
+```
 
 **替换的工作原理：**
 
@@ -188,7 +188,7 @@ flowchart LR
 
 ```bash
 clinvk chain --file pipeline.json
-```text
+```
 
 ### 使用 JSON 输出
 
@@ -196,7 +196,7 @@ clinvk chain --file pipeline.json
 
 ```bash
 clinvk chain --file pipeline.json --json
-```text
+```
 
 **输出：**
 
@@ -225,7 +225,7 @@ clinvk chain --file pipeline.json --json
     }
   ]
 }
-```text
+```
 
 ## 错误处理策略
 
@@ -241,7 +241,7 @@ clinvk chain --file pipeline.json --json
   ],
   "stop_on_failure": true
 }
-```text
+```
 
 **何时使用：**
 
@@ -265,7 +265,7 @@ Step 1 (analyze): Completed (2.1s)
 Step 2 (implement): Failed - Backend error: rate limit exceeded
 
 Chain failed at step 2
-```text
+```
 
 使用 `--json`：
 
@@ -276,7 +276,7 @@ Chain failed at step 2
     {"name": "implement", "exit_code": 1, "error": "rate limit exceeded"}
   ]
 }
-```text
+```
 
 ## 真实示例
 
@@ -308,7 +308,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ### 示例 2：代码审查管道
 
@@ -339,7 +339,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ### 示例 3：文档生成
 
@@ -365,7 +365,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ### 示例 4：迭代细化
 
@@ -391,7 +391,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ### 示例 5：多语言翻译
 
@@ -422,7 +422,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ## 步骤之间的状态传递
 
@@ -447,7 +447,7 @@ Chain failed at step 2
   ],
   "pass_working_dir": true
 }
-```text
+```
 
 **使用 `pass_working_dir: true`：**
 
@@ -467,7 +467,7 @@ Chain failed at step 2
 步骤 3："基于：基于：分析：发现 3 个问题
          实现：修复了 2 个问题
          审查：还剩 1 个问题"
-```text
+```
 
 **管理上下文长度：**
 
@@ -496,7 +496,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 如果验证通过并显示"无违规"，修复步骤会收到该消息。
 
@@ -519,7 +519,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ### 模式 3：回退链
 
@@ -545,7 +545,7 @@ Chain failed at step 2
     }
   ]
 }
-```text
+```
 
 ## 最佳实践
 
@@ -595,7 +595,7 @@ Chain failed at step 2
     {"name": "implement", "backend": "codex", "prompt": "基于以下内容实现：{{previous}}"}
   ]
 }
-```text
+```
 
 2. 使用更具体的提示限制输出
 

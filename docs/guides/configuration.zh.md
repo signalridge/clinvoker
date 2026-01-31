@@ -8,7 +8,7 @@
 
 ```bash
 clinvk config show
-```text
+```
 
 这会显示所有设置，包括系统上可用的后端。
 
@@ -20,7 +20,7 @@ clinvk config set default_backend claude
 
 # 或者使用 Gemini
 clinvk config set default_backend gemini
-```bash
+```
 
 ### 3. 完成
 
@@ -35,7 +35,7 @@ clinvk 将配置存储在 `~/.clinvk/config.yaml`。你可以直接编辑它或�
 ```yaml
 # ~/.clinvk/config.yaml
 default_backend: claude
-```text
+```
 
 ### 推荐配置
 
@@ -51,7 +51,7 @@ output:
 session:
   retention_days: 60
   auto_resume: true
-```text
+```
 
 ## 常见场景
 
@@ -69,7 +69,7 @@ backends:
     model: o3                           # 用于代码生成
   gemini:
     model: gemini-2.5-pro              # 用于通用任务
-```text
+```
 
 **使用方法：**
 
@@ -80,7 +80,7 @@ clinvk "分析这个架构"
 # 为特定任务指定后端
 clinvk -b codex "生成单元测试"
 clinvk -b gemini "总结这个文档"
-```text
+```
 
 ### 场景 2：自动化的自动批准模式
 
@@ -91,7 +91,7 @@ unified_flags:
   approval_mode: auto    # 自动批准所有操作
 output:
   format: json           # 机器可读输出
-```text
+```
 
 !!! warning "安全说明"
     只在受信任的环境中使用 `auto` 批准模式。AI 可以执行文件操作和命令。
@@ -106,7 +106,7 @@ unified_flags:
   # approval_mode 控制“是否询问/如何询问”，并不等同于“允许/拒绝”。
   # 若你更重视安全性，建议使用 `always` 并配合 `sandbox_mode` 限制访问范围。
   approval_mode: always
-```text
+```
 
 ### 场景 4：团队共享配置
 
@@ -125,7 +125,7 @@ EOF
 
 # 使用项目配置
 clinvk --config .clinvk.yaml "审查 auth 模块"
-```bash
+```
 
 ### 场景 5：用于集成的 HTTP 服务器
 
@@ -141,7 +141,7 @@ server:
 # server:
 #   host: "0.0.0.0"          # 所有接口
 #   port: 8080
-```text
+```
 
 ### 场景 6：并行任务优化
 
@@ -152,7 +152,7 @@ parallel:
   max_workers: 5       # 最多同时运行 5 个任务
   fail_fast: false     # 即使部分任务失败也继续
   aggregate_output: true
-```text
+```
 
 ## 后端特定设置
 
@@ -167,7 +167,7 @@ backends:
     extra_flags:
       - "--add-dir"
       - "./docs"                    # 将文档包含在上下文中
-```text
+```
 
 **可用模型：**
 
@@ -184,7 +184,7 @@ backends:
     model: o3
     extra_flags:
       - "--quiet"                   # 减少输出详细程度
-```text
+```
 
 ### Gemini CLI
 
@@ -194,7 +194,7 @@ backends:
     model: gemini-2.5-pro
     extra_flags:
       - "--sandbox"
-```text
+```
 
 ## 环境变量
 
@@ -208,7 +208,7 @@ export CLINVK_BACKEND=gemini
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
 export CLINVK_CODEX_MODEL=o3
 export CLINVK_GEMINI_MODEL=gemini-2.5-pro
-```bash
+```
 
 **优先级顺序**（从高到低）：
 
@@ -229,7 +229,7 @@ clinvk 开箱即用效果很好。只自定义你需要的部分。
 
 ```bash
 clinvk --config .clinvk.yaml "你的提示"
-```text
+```
 
 ### 3. 保护你的服务器
 
@@ -238,7 +238,7 @@ clinvk --config .clinvk.yaml "你的提示"
 ```yaml
 server:
   host: "127.0.0.1"    # 没有反向代理时不要使用 0.0.0.0
-```text
+```
 
 ### 4. 设置适当的超时
 
@@ -247,7 +247,7 @@ server:
 ```yaml
 server:
   request_timeout_secs: 600    # 10 分钟
-```text
+```
 
 ### 5. 审查时使用只读模式
 
@@ -256,7 +256,7 @@ server:
 ```yaml
 unified_flags:
   sandbox_mode: read-only
-```text
+```
 
 ## 故障排查
 
@@ -268,7 +268,7 @@ clinvk config show
 
 # 验证配置文件位置
 ls -la ~/.clinvk/config.yaml
-```text
+```
 
 ### 后端不可用
 
@@ -278,7 +278,7 @@ clinvk config show | grep available
 
 # 验证 CLI 在 PATH 中
 which claude codex gemini
-```text
+```
 
 ### 重置为默认值
 
@@ -288,7 +288,7 @@ rm ~/.clinvk/config.yaml
 
 # 验证默认值
 clinvk config show
-```text
+```
 
 ## 配置模板
 
@@ -307,7 +307,7 @@ output:
 session:
   auto_resume: true
   retention_days: 30
-```text
+```
 
 ### CI/CD 流水线
 
@@ -322,7 +322,7 @@ output:
 parallel:
   max_workers: 3
   fail_fast: true
-```text
+```
 
 ### API 服务器
 
@@ -336,7 +336,7 @@ server:
 
 output:
   format: json
-```text
+```
 
 ## 下一步
 

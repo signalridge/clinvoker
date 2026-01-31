@@ -65,7 +65,7 @@ flowchart TB
     REG -.-> CLAUDE
     REG -.-> CODEX
     REG -.-> GEMINI
-```bash
+```
 
 **CLI Layer** (`cmd/clinvk/main.go`, `internal/app/`)
 : 使用 Cobra 框架的入口点和命令定义。处理标志解析、配置初始化和命令路由，用于提示执行、会话管理和工作流编排。
@@ -115,7 +115,7 @@ clinvoker 将 AI CLI 工具之间的差异抽象为统一接口。后端系统�
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/signalridge/clinvoker/main/install.sh | bash
-```text
+```
 
 ### 基本用法
 
@@ -123,19 +123,19 @@ curl -sSL https://raw.githubusercontent.com/signalridge/clinvoker/main/install.s
 
 ```bash
 clinvk "解释此代码库的架构"
-```text
+```
 
 指定后端和模型：
 
 ```bash
 clinvk --backend claude --model claude-opus-4.5 "重构此函数以改进错误处理"
-```text
+```
 
 使用最新 GPT 模型的 Codex CLI：
 
 ```bash
 clinvk --backend codex --model gpt-5.2 "为 auth.go 生成单元测试"
-```text
+```
 
 ### SDK 集成示例
 
@@ -154,7 +154,7 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello, world!"}]
 )
 print(response.choices[0].message.content)
-```text
+```
 
 ## 功能对比
 

@@ -30,7 +30,7 @@ response = client.messages.create(
 )
 
 print(response.content[0].text)
-```text
+```
 
 ### TypeScript/JavaScript
 
@@ -49,7 +49,7 @@ const response = await client.messages.create({
 });
 
 console.log(response.content[0].text);
-```text
+```
 
 ## 模型支持
 
@@ -71,7 +71,7 @@ with client.messages.stream(
 ) as stream:
     for text in stream.text_stream:
         print(text, end="", flush=True)
-```text
+```
 
 ## 系统提示
 
@@ -82,7 +82,7 @@ response = client.messages.create(
     system="You are a helpful coding assistant.",
     messages=[{"role": "user", "content": "Review this code"}]
 )
-```text
+```
 
 ## 最佳实践
 
@@ -98,7 +98,7 @@ response = client.messages.create(
 
 ```bash
 curl http://localhost:8080/health
-```text
+```
 
 ### 版本兼容性
 

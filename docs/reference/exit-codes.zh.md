@@ -29,7 +29,7 @@ clinvk 使用退出码来指示命令执行的结果。理解这些代码对于�
 ```bash
 clinvk "hello world"
 echo $?  # 输出：0
-```text
+```
 
 ### 1 - 一般错误
 
@@ -43,7 +43,7 @@ echo $?  # 输出：0
 ```bash
 clinvk --invalid-flag "提示词"
 echo $?  # 输出：1
-```text
+```
 
 ### 2 - 后端不可用
 
@@ -52,7 +52,7 @@ echo $?  # 输出：1
 ```bash
 clinvk -b nonexistent "提示词"
 echo $?  # 输出：2
-```text
+```
 
 ### 3 - 配置无效
 
@@ -61,7 +61,7 @@ echo $?  # 输出：2
 ```bash
 clinvk --config /invalid/config.yaml "提示词"
 echo $?  # 输出：3
-```text
+```
 
 ### 4 - 会话错误
 
@@ -70,7 +70,7 @@ echo $?  # 输出：3
 ```bash
 clinvk resume nonexistent-session
 echo $?  # 输出：4
-```bash
+```
 
 ### 5 - API 错误
 
@@ -80,7 +80,7 @@ HTTP API 请求失败（使用 `clinvk serve` 或 API 模式时）。
 # 服务器未运行
 clinvk --api-mode "提示词"
 echo $?  # 输出：5
-```text
+```
 
 ### 6 - 超时
 
@@ -89,7 +89,7 @@ echo $?  # 输出：5
 ```bash
 clinvk --timeout 5 "非常长的任务"
 echo $?  # 输出：6
-```text
+```
 
 ### 7 - 已取消
 
@@ -99,7 +99,7 @@ echo $?  # 输出：6
 clinvk "长时间运行的任务"
 # 按 Ctrl+C
 echo $?  # 输出：7
-```bash
+```
 
 ### 后端退出码（8+）
 
@@ -173,7 +173,7 @@ if clinvk "实现功能"; then
 else
   echo "失败！"
 fi
-```text
+```
 
 ### 处理特定代码
 
@@ -198,7 +198,7 @@ case $code in
     echo "后端错误：$code"
     ;;
 esac
-```text
+```
 
 ### 失败时重试
 
@@ -221,7 +221,7 @@ while [ $attempt -le $max_attempts ]; do
   sleep 5
   attempt=$((attempt + 1))
 done
-```text
+```
 
 ### 错误时退出
 
@@ -234,7 +234,7 @@ clinvk "步骤 2"
 clinvk "步骤 3"
 
 echo "所有步骤成功完成"
-```text
+```
 
 ### 忽略特定错误
 
@@ -246,7 +246,7 @@ clinvk "可选任务" || true
 
 # 这个必须成功
 clinvk "关键任务"
-```text
+```
 
 ## CI/CD 集成
 
@@ -263,7 +263,7 @@ clinvk "关键任务"
   run: |
     echo "AI task failed with exit code $?"
     exit 1
-```text
+```
 
 ### GitLab CI
 
@@ -277,7 +277,7 @@ ai-task:
         2) echo "Backend not installed" ; exit 1 ;;
         *) echo "Error: $EXIT_CODE" ; exit 1 ;;
       esac
-```text
+```
 
 ### Make/Just
 
@@ -292,7 +292,7 @@ ai-review:
 
 lint-and-review: lint ai-review
  @echo "All checks passed"
-```bash
+```
 
 ## 退出码最佳实践
 
@@ -323,7 +323,7 @@ echo "退出码：$?"
 # 直接检查后端
 claude "test"
 echo "后端退出码：$?"
-```text
+```
 
 ## 另请参阅
 

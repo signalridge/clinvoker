@@ -121,7 +121,7 @@ flowchart TB
 
     SESSION --> DISC
     CONFIG --> CONFIG_FILE
-```bash
+```
 
 ## Key Components
 
@@ -135,7 +135,7 @@ func main() {
         os.Exit(1)
     }
 }
-```typescript
+```
 
 This design follows the principle of separation of concerns:
 
@@ -218,7 +218,7 @@ type Registry struct {
     availabilityCache    map[string]*cachedAvailability
     availabilityCacheTTL time.Duration
 }
-```bash
+```
 
 ### Session Store Concurrency
 
@@ -231,7 +231,7 @@ type Store struct {
     index        map[string]*SessionMeta
     fileLock     *FileLock             // Cross-process lock
 }
-```text
+```
 
 ### HTTP Server Concurrency
 

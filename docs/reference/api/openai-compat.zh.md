@@ -10,7 +10,7 @@ clinvk 提供 OpenAI 兼容端点，允许你使用 OpenAI SDK 与 CLI 后端。
 
 ```text
 http://localhost:8080/openai/v1
-```text
+```
 
 ## 认证
 
@@ -53,7 +53,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
     }
   ]
 }
-```text
+```
 
 ### POST /openai/v1/chat/completions
 
@@ -72,7 +72,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
   "temperature": 0.7,
   "stream": false
 }
-```text
+```
 
 **字段：**
 
@@ -115,7 +115,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
     "total_tokens": 25
   }
 }
-```text
+```
 
 **流式响应：**
 
@@ -131,7 +131,7 @@ data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1704067
 data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1704067200,"model":"claude","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
 
 data: [DONE]
-```text
+```
 
 ## 模型映射
 
@@ -170,7 +170,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ### TypeScript/JavaScript
 
@@ -188,7 +188,7 @@ const response = await client.chat.completions.create({
 });
 
 console.log(response.choices[0].message.content);
-```text
+```
 
 ### cURL
 
@@ -196,7 +196,7 @@ console.log(response.choices[0].message.content);
 curl -X POST http://localhost:8080/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "claude", "messages": [{"role": "user", "content": "Hello!"}]}'
-```text
+```
 
 ### 流式示例（Python）
 
@@ -217,7 +217,7 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content is not None:
         print(chunk.choices[0].delta.content, end="")
-```bash
+```
 
 ## 与 OpenAI API 的差异
 
@@ -242,7 +242,7 @@ server:
   request_timeout_secs: 300
   read_timeout_secs: 30
   write_timeout_secs: 300
-```text
+```
 
 ## 错误响应
 
@@ -255,7 +255,7 @@ server:
   "status": 400,
   "detail": "The requested backend 'unknown' is not available"
 }
-```text
+```
 
 ## 下一步
 

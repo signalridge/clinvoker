@@ -64,7 +64,7 @@ nix run github:signalridge/clinvoker
 
 # 从 GitHub releases 下载二进制文件
 # 访问：https://github.com/signalridge/clinvoker/releases
-```text
+```
 
 详见[安装指南](../tutorials/getting-started.zh.md)。
 
@@ -83,7 +83,7 @@ nix run github:signalridge/clinvoker
 
 ```bash
 clinvk config show
-```text
+```
 
 查看每个后端部分下的 `available: true`。
 
@@ -100,7 +100,7 @@ export CLINVK_BACKEND=codex
 
 # 或为每个命令指定
 clinvk -b claude "your prompt"
-```text
+```
 
 ### 如何继续对话？
 
@@ -113,7 +113,7 @@ clinvk resume <session-id> "follow up message"
 
 # 恢复上次会话
 clinvk resume --last "follow up message"
-```text
+```
 
 ### 可以使用不同的模型吗？
 
@@ -130,7 +130,7 @@ clinvk -m best "task"      # 最佳质量
 
 # 在配置中设置默认值
 clinvk config set backends.claude.model claude-opus-4
-```text
+```
 
 ### 如何并行运行任务？
 
@@ -148,7 +148,7 @@ clinvk config set backends.claude.model claude-opus-4
 
 # 并行运行
 clinvk parallel --file tasks.json --max-parallel 3
-```text
+```
 
 详见[并行执行指南](../guides/parallel.zh.md)。
 
@@ -163,7 +163,7 @@ clinvk compare -b claude -b codex "your prompt"
 
 # 保存比较到文件
 clinvk compare --all-backends -o comparison.md "your prompt"
-```text
+```
 
 详见[后端对比](../guides/backends/index.zh.md)。
 
@@ -181,7 +181,7 @@ clinvk compare --all-backends -o comparison.md "your prompt"
 
 # 执行链
 clinvk chain --file chain.json
-```bash
+```
 
 详见[链式执行指南](../guides/chains.zh.md)。
 
@@ -195,7 +195,7 @@ clinvk chain --file chain.json
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```text
+```
 
 ### 配置优先级是什么？
 
@@ -210,7 +210,7 @@ clinvk --config /path/to/config.yaml "prompt"
 
 ```bash
 clinvk config show
-```text
+```
 
 这显示合并所有来源后的有效配置。
 
@@ -222,7 +222,7 @@ clinvk config show
 export CLINVK_BACKEND=codex
 export CLINVK_TIMEOUT=120
 export CLINVK_SERVER_PORT=3000
-```text
+```
 
 ### 如何设置后端特定选项？
 
@@ -235,7 +235,7 @@ backends:
   codex:
     model: gpt-5.2
     sandbox_mode: full
-```bash
+```
 
 ## 会话
 
@@ -253,7 +253,7 @@ clinvk sessions list --backend claude
 
 # 显示详细信息
 clinvk sessions list --verbose
-```text
+```
 
 ### 如何清理旧会话？
 
@@ -266,7 +266,7 @@ clinvk sessions clean --all
 
 # 或手动删除
 rm -rf ~/.clinvk/sessions/*
-```text
+```
 
 ### 可以禁用会话跟踪吗？
 
@@ -274,7 +274,7 @@ rm -rf ~/.clinvk/sessions/*
 
 ```bash
 clinvk --ephemeral "prompt"
-```text
+```
 
 这运行时不创建或加载任何会话。
 
@@ -286,7 +286,7 @@ clinvk sessions export <session-id> > session.json
 
 # 或直接复制文件
 cp ~/.clinvk/sessions/<session-id>.json ./backup.json
-```text
+```
 
 ## HTTP 服务器
 
@@ -301,7 +301,7 @@ clinvk serve --port 3000
 
 # 使用 API 密钥认证启动
 clinvk serve --api-keys "key1,key2"
-```text
+```
 
 ### 服务器有认证吗？
 
@@ -316,7 +316,7 @@ clinvk config set server.api_keys "key1,key2"
 
 # 在请求中使用
 curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
-```text
+```
 
 如果未配置密钥，服务器允许所有请求。
 
@@ -327,7 +327,7 @@ curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
 ```bash
 # 绑定到所有接口（谨慎使用）
 clinvk serve --host 0.0.0.0 --api-keys "your-secret-key"
-```text
+```
 
 ### 可以使用 OpenAI 客户端库吗？
 
@@ -345,7 +345,7 @@ response = client.chat.completions.create(
     model="claude",
     messages=[{"role": "user", "content": "Hello!"}]
 )
-```text
+```
 
 ### 可以使用 Anthropic 客户端库吗？
 
@@ -364,7 +364,7 @@ response = client.messages.create(
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello!"}]
 )
-```text
+```
 
 ## 集成
 
@@ -378,7 +378,7 @@ clinvk -b claude "your prompt"
 
 # 或启动 Claude Code 的交互模式
 claude
-```text
+```
 
 详见[Claude 后端指南](../guides/backends/claude.zh.md)。
 
@@ -394,7 +394,7 @@ llm = ChatOpenAI(
 )
 
 response = llm.invoke("Hello!")
-```text
+```
 
 详见[LangChain 集成指南](../guides/integrations/langchain-langgraph.zh.md)。
 
@@ -408,7 +408,7 @@ response = llm.invoke("Hello!")
   run: |
     echo '{"prompt": "Review this PR", "files": ["src/"] }' | \
     clinvk parallel --file - --output-format json
-```bash
+```
 
 详见[CI/CD 集成指南](../guides/integrations/ci-cd/index.zh.md)。
 
@@ -421,7 +421,7 @@ response = llm.invoke("Hello!")
 ```bash
 which claude codex gemini
 echo $PATH
-```text
+```
 
 ### 为什么我的配置没有应用？
 
@@ -430,7 +430,7 @@ echo $PATH
 ```bash
 clinvk config show  # 显示有效配置
 env | grep CLINVK   # 显示环境变量
-```text
+```
 
 ### 哪里可以获得帮助？
 

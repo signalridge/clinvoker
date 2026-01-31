@@ -6,7 +6,7 @@
 
 ```bash
 clinvk compare <prompt> [flags]
-```text
+```
 
 ## 说明
 
@@ -27,25 +27,25 @@ clinvk compare <prompt> [flags]
 
 ```bash
 clinvk compare --backends claude,codex "explain this code"
-```text
+```
 
 ### 比较所有后端
 
 ```bash
 clinvk compare --all-backends "what does this function do"
-```text
+```
 
 ### 顺序执行
 
 ```bash
 clinvk compare --all-backends --sequential "review this PR"
-```text
+```
 
 ### JSON 输出
 
 ```bash
 clinvk compare --all-backends --json "analyze performance"
-```text
+```
 
 ## 输出
 
@@ -69,7 +69,7 @@ codex        OK         3.20s        o3
 gemini       OK         2.80s        gemini-2.5-pro
 --------------------------------------------------------------------------------
 Total time: 3.20s
-```text
+```
 
 ### JSON 输出
 
@@ -88,7 +88,7 @@ Total time: 3.20s
   ],
   "total_duration_seconds": 3.2
 }
-```text
+```
 
 ## 错误处理
 

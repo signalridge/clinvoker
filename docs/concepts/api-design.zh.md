@@ -33,7 +33,7 @@ flowchart TB
     ANTH --> EXEC
     EXEC --> SESSION
     EXEC --> BACKEND
-```text
+```
 
 ## REST API 设计原则
 
@@ -73,7 +73,7 @@ flowchart TB
     "timestamp": "2025-01-15T10:30:00Z"
   }
 }
-```text
+```
 
 ## OpenAI 兼容层
 
@@ -108,7 +108,7 @@ OpenAI 兼容 API（`/openai/v1/*`）支持 OpenAI SDK 客户端的即插即用�
     "model": "sonnet"
   }
 }
-```text
+```
 
 ### 响应转换
 
@@ -145,7 +145,7 @@ OpenAI 兼容 API（`/openai/v1/*`）支持 OpenAI SDK 客户端的即插即用�
     "total_tokens": 35
   }
 }
-```text
+```
 
 ### 流式支持
 
@@ -159,7 +159,7 @@ data: {"id":"chatcmpl-123","choices":[{"delta":{"content":"!"}}]}
 data: {"id":"chatcmpl-123","choices":[{"delta":{},"finish_reason":"stop"}]}
 
 data: [DONE]
-```text
+```
 
 ## Anthropic 兼容层
 
@@ -192,7 +192,7 @@ Anthropic 兼容 API（`/anthropic/v1/*`）支持 Anthropic SDK 客户端的即�
     "model": "sonnet"
   }
 }
-```text
+```
 
 ### 响应转换
 
@@ -212,7 +212,7 @@ Anthropic 兼容 API（`/anthropic/v1/*`）支持 Anthropic SDK 客户端的即�
     "output_tokens": 10
   }
 }
-```bash
+```
 
 ## 端点路由架构
 
@@ -234,7 +234,7 @@ func (s *Server) RegisterRoutes() {
     anthropicHandlers := handlers.NewAnthropicHandlers(service.NewStatelessRunner(s.logger), s.logger)
     anthropicHandlers.Register(s.api)
 }
-```text
+```
 
 ### Huma 集成
 
@@ -251,7 +251,7 @@ huma.Register(s.api, huma.Operation{
 }, func(ctx context.Context, input *ChatCompletionRequest) (*ChatCompletionResponse, error) {
     // 处理器实现
 })
-```bash
+```
 
 ## 中间件集成
 
@@ -279,7 +279,7 @@ flowchart LR
     RATE --> AUTH
     AUTH --> TIMEOUT
     TIMEOUT --> CORS
-```text
+```
 
 ### 请求 ID 中间件
 
@@ -294,7 +294,7 @@ func RequestID(next http.Handler) http.Handler {
         next.ServeHTTP(w, r.WithContext(ctx))
     })
 }
-```text
+```
 
 ### 速率限制中间件
 
@@ -320,7 +320,7 @@ func (rl *RateLimiter) Middleware() func(http.Handler) http.Handler {
         })
     }
 }
-```text
+```
 
 ### 认证中间件
 
@@ -352,7 +352,7 @@ func extractAPIKey(r *http.Request) string {
     }
     return ""
 }
-```bash
+```
 
 ## 认证设计
 
@@ -377,7 +377,7 @@ func (s *Server) validateAPIKey(key string) bool {
     }
     return false
 }
-```text
+```
 
 注意：`subtle.ConstantTimeCompare` 可防止时序攻击。
 
@@ -398,7 +398,7 @@ func (s *Server) validateAPIKey(key string) bool {
     }
   }
 }
-```text
+```
 
 ### 错误类型
 
@@ -424,7 +424,7 @@ func ErrorHandler(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 }
-```text
+```
 
 ## 版本控制方法
 
@@ -442,7 +442,7 @@ API 版本包含在 URL 路径中：
 
 ```text
 Accept-Version: v2
-```text
+```
 
 ### 弃用策略
 
@@ -474,7 +474,7 @@ flowchart TB
     ANTH_REQ --> MAP
     NATIVE_REQ --> MAP
     MAP --> UNIFIED
-```text
+```
 
 ### 流式转换
 
@@ -502,7 +502,7 @@ func (h *OpenAIHandler) streamResponse(ctx context.Context, input *ChatCompletio
     fmt.Fprint(w, "data: [DONE]\n\n")
     flusher.Flush()
 }
-```text
+```
 
 ## 相关文档
 

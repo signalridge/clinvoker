@@ -19,7 +19,7 @@ clinvk --verbose "your prompt"
 
 # Debug mode includes backend command output
 CLINVK_DEBUG=1 clinvk "your prompt"
-```text
+```
 
 ### Check System Status
 
@@ -32,7 +32,7 @@ clinvk config show
 
 # Verify configuration file
 clinvk config validate
-```text
+```
 
 ### Dry Run Mode
 
@@ -40,7 +40,7 @@ See what command would be executed without actually running it:
 
 ```bash
 clinvk --dry-run "your prompt"
-```text
+```
 
 ## Backend Not Available
 
@@ -69,7 +69,7 @@ which claude codex gemini
 claude --version
 codex --version
 gemini --version
-```text
+```
 
 **2. Add to PATH**
 
@@ -79,7 +79,7 @@ export PATH="$PATH:/usr/local/bin"
 
 # Reload profile
 source ~/.bashrc  # or ~/.zshrc
-```text
+```
 
 **3. Check Permissions**
 
@@ -89,14 +89,14 @@ ls -la $(which claude)
 
 # Fix if needed
 chmod +x /path/to/claude
-```bash
+```
 
 **4. Verify clinvk Detection**
 
 ```bash
 # Check which backends clinvk can find
 clinvk config show | grep -A2 "available"
-```text
+```
 
 ## Session Issues
 
@@ -126,7 +126,7 @@ clinvk sessions delete <session-id>
 
 # Or clean all sessions
 rm -rf ~/.clinvk/sessions/*
-```bash
+```
 
 ### Session Locking Issues
 
@@ -154,7 +154,7 @@ rm -f ~/.clinvk/.store.lock
 
 # Verify lock file permissions
 ls -la ~/.clinvk/
-```text
+```
 
 ### Session Not Found
 
@@ -173,7 +173,7 @@ ls -la ~/.clinvk/sessions/
 
 # Search for session by partial ID
 find ~/.clinvk/sessions/ -name "*abc*"
-```text
+```
 
 ## API Server Problems
 
@@ -199,7 +199,7 @@ clinvk serve --port 3000
 
 # Or kill the existing process
 kill -9 <pid>
-```text
+```
 
 **Permission Denied (Low Ports):**
 
@@ -209,7 +209,7 @@ clinvk serve --port 8080
 
 # Or run with sudo (not recommended)
 sudo clinvk serve --port 80
-```text
+```
 
 ### Authentication Issues
 
@@ -231,7 +231,7 @@ echo $CLINVK_API_KEY
 
 # Test without authentication (if no keys configured)
 curl http://localhost:8080/health
-```text
+```
 
 ### Rate Limiting Issues
 
@@ -250,7 +250,7 @@ clinvk config set server.rate_limit_rps 100
 
 # For parallel execution, reduce concurrency
 clinvk parallel --max-parallel 2 --file tasks.json
-```text
+```
 
 ## Performance Issues
 
@@ -281,7 +281,7 @@ clinvk config set timeout 300
 
 # Use faster model
 clinvk -m fast "prompt"
-```bash
+```
 
 ### High Memory Usage
 
@@ -303,7 +303,7 @@ clinvk sessions clean --older-than 7d
 
 # Use ephemeral mode (no session storage)
 clinvk --ephemeral "prompt"
-```text
+```
 
 ### Disk Space Issues
 
@@ -325,7 +325,7 @@ clinvk sessions clean --older-than 30d
 
 # Or manually clean
 rm -rf ~/.clinvk/sessions/*.json
-```text
+```
 
 ## Configuration Issues
 
@@ -353,7 +353,7 @@ clinvk config show
 # Check for environment variable overrides
 echo $CLINVK_BACKEND
 echo $CLINVK_TIMEOUT
-```text
+```
 
 ### Environment Variables Not Applied
 
@@ -371,7 +371,7 @@ export CLINVK_BACKEND=codex
 env | grep CLINVK
 
 # Remember priority: CLI flags > Environment > Config file
-```text
+```
 
 ## Platform-Specific Issues
 
@@ -384,7 +384,7 @@ env | grep CLINVK
 xattr -d com.apple.quarantine /path/to/clinvk
 
 # Or allow in System Preferences > Security & Privacy
-```text
+```
 
 **Notarization Issues:**
 
@@ -393,7 +393,7 @@ xattr -d com.apple.quarantine /path/to/clinvk
 sudo spctl --master-disable  # Temporarily disable (use with caution)
 # Then re-enable after first run
 sudo spctl --master-enable
-```text
+```
 
 ### Windows
 
@@ -405,7 +405,7 @@ $env:Path += ";C:\path\to\clinvk"
 
 # Or permanently via System Properties
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\path\to\clinvk", "User")
-```bash
+```
 
 **Antivirus False Positives:**
 
@@ -417,7 +417,7 @@ Some antivirus software may flag clinvk. Add an exclusion if necessary.
 
 ```bash
 chmod +x /path/to/clinvk
-```text
+```
 
 **SELinux Issues:**
 
@@ -431,7 +431,7 @@ ausearch -m avc -ts recent
 # Create policy module if needed
 audit2allow -a -M clinvk
 semodule -i clinvk.pp
-```text
+```
 
 ## Debug Mode Usage
 
@@ -446,7 +446,7 @@ clinvk --verbose "prompt"
 
 # For server mode
 CLINVK_DEBUG=1 clinvk serve
-```bash
+```
 
 ### Log Locations
 
@@ -466,21 +466,21 @@ CLINVK_DEBUG=1 clinvk serve
 [DEBUG] Executing: claude --print --model sonnet "prompt"
 [DEBUG] Working directory: /home/user/project
 [DEBUG] Exit code: 0
-```text
+```
 
 **Session Operations:**
 ```text
 [DEBUG] Loading session: abc123
 [DEBUG] Acquiring file lock
 [DEBUG] Session saved successfully
-```text
+```
 
 **API Requests:**
 ```text
 [DEBUG] POST /api/v1/prompt
 [DEBUG] Request body: {...}
 [DEBUG] Response: 200 OK
-```text
+```
 
 ## Getting Help
 

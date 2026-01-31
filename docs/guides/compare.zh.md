@@ -19,7 +19,7 @@
 
 ```bash
 clinvk compare --all-backends "解释这个算法"
-```text
+```
 
 ### 对比特定后端
 
@@ -28,7 +28,7 @@ clinvk compare --all-backends "解释这个算法"
 ```bash
 clinvk compare --backends claude,codex "这段代码是做什么的"
 clinvk compare --backends claude,gemini "审查这个 PR"
-```text
+```
 
 ## 执行模式
 
@@ -38,7 +38,7 @@ clinvk compare --backends claude,gemini "审查这个 PR"
 
 ```bash
 clinvk compare --all-backends "解释这段代码"
-```text
+```
 
 ### 顺序
 
@@ -46,7 +46,7 @@ clinvk compare --all-backends "解释这段代码"
 
 ```bash
 clinvk compare --all-backends --sequential "审查这个实现"
-```text
+```
 
 顺序模式适用于：
 
@@ -80,7 +80,7 @@ Model: gemini-2.5-pro
 Duration: 2.8s
 
 这是一个经典的二分查找实现...
-```text
+```
 
 ### JSON 输出
 
@@ -88,7 +88,7 @@ Duration: 2.8s
 
 ```bash
 clinvk compare --all-backends --json "解释这段代码"
-```text
+```
 
 输出：
 
@@ -121,7 +121,7 @@ clinvk compare --all-backends --json "解释这段代码"
   ],
   "total_duration_seconds": 3.2
 }
-```text
+```
 
 ## 使用场景
 
@@ -131,7 +131,7 @@ clinvk compare --all-backends --json "解释这段代码"
 
 ```bash
 clinvk compare --all-backends "审查这段代码的 bug 和改进建议"
-```text
+```
 
 ### 架构决策
 
@@ -139,7 +139,7 @@ clinvk compare --all-backends "审查这段代码的 bug 和改进建议"
 
 ```bash
 clinvk compare --backends claude,gemini "这里实现缓存的最佳方式是什么？"
-```text
+```
 
 ### 学习
 
@@ -147,7 +147,7 @@ clinvk compare --backends claude,gemini "这里实现缓存的最佳方式是什
 
 ```bash
 clinvk compare --all-backends "解释 JavaScript 中的 async/await 工作原理"
-```text
+```
 
 ### 验证
 
@@ -155,7 +155,7 @@ clinvk compare --all-backends "解释 JavaScript 中的 async/await 工作原理
 
 ```bash
 clinvk compare --all-backends "这个实现安全吗？"
-```text
+```
 
 ## 失败处理
 
@@ -180,7 +180,7 @@ codex        FAILED     0.50s        o3
 gemini       OK         2.80s        gemini-2.5-pro
 ------------------------------------------------------------
 Total time: 2.80s
-```text
+```
 
 ## 命令选项
 

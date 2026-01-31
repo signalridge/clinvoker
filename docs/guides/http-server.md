@@ -16,7 +16,7 @@ The `clinvk serve` command starts an HTTP server that provides:
 
 ```bash
 clinvk serve
-```text
+```
 
 The server starts on `http://127.0.0.1:8080` by default.
 
@@ -24,13 +24,13 @@ The server starts on `http://127.0.0.1:8080` by default.
 
 ```bash
 clinvk serve --port 3000
-```text
+```
 
 ### Bind to All Interfaces
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 8080
-```text
+```
 
 !!! warning "Security"
     Binding to `0.0.0.0` exposes the server to the network. Enable API keys and restrict CORS/workdirs for production use.
@@ -46,7 +46,7 @@ Clients must send `Authorization: Bearer <key>` or `X-Api-Key: <key>`.
 
 ```bash
 curl http://localhost:8080/health
-```text
+```
 
 Response includes `status`, `version`, `uptime`, backend availability, and session store health.
 
@@ -54,7 +54,7 @@ Response includes `status`, `version`, `uptime`, backend availability, and sessi
 
 ```bash
 curl http://localhost:8080/api/v1/backends
-```text
+```
 
 ### Execute a Prompt
 
@@ -62,7 +62,7 @@ curl http://localhost:8080/api/v1/backends
 curl -X POST http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "claude", "prompt": "hello world"}'
-```text
+```
 
 ## Endpoints Overview
 
@@ -118,7 +118,7 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
-```text
+```
 
 ### Python (Anthropic SDK)
 
@@ -136,7 +136,7 @@ message = client.messages.create(
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(message.content[0].text)
-```text
+```
 
 ### JavaScript/TypeScript
 
@@ -152,7 +152,7 @@ const response = await fetch('http://localhost:8080/api/v1/prompt', {
 
 const data = await response.json();
 console.log(data.output);
-```text
+```
 
 ### cURL
 
@@ -171,7 +171,7 @@ curl -X POST http://localhost:8080/api/v1/parallel \
       {"backend": "codex", "prompt": "task 2"}
     ]
   }'
-```bash
+```
 
 ## Configuration
 
@@ -201,13 +201,13 @@ server:
 
   # Optional API keys via gopass (leave empty to disable)
   api_keys_gopass_path: ""
-```text
+```
 
 ### Via CLI Flags
 
 ```bash
 clinvk serve --host 0.0.0.0 --port 3000
-```bash
+```
 
 CLI flags override config file settings.
 
@@ -231,14 +231,14 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-```text
+```
 
 Enable and start:
 
 ```bash
 sudo systemctl enable clinvk
 sudo systemctl start clinvk
-```text
+```
 
 ### Docker
 
@@ -247,7 +247,7 @@ docker run -d \
   --name clinvk \
   -p 8080:8080 \
   ghcr.io/signalridge/clinvk serve --host 0.0.0.0
-```bash
+```
 
 ### launchd (macOS)
 
@@ -273,13 +273,13 @@ Create `~/Library/LaunchAgents/com.clinvk.server.plist`:
     <true/>
 </dict>
 </plist>
-```text
+```
 
 Load the service:
 
 ```bash
 launchctl load ~/Library/LaunchAgents/com.clinvk.server.plist
-```text
+```
 
 ## Security Notes
 
@@ -303,10 +303,10 @@ The server provides an OpenAPI specification at `/openapi.json`:
 curl http://localhost:8080/openapi.json > openapi.json
 
 # View in Swagger UI or import into API tools
-```text
+```
 
 ## Next Steps
 
-- [REST API Reference](../reference/api/rest-api.md) - Full API documentation
-- [OpenAI Compatible](../reference/api/openai-compatible.md) - Use with OpenAI clients
-- [Anthropic Compatible](../reference/api/anthropic-compatible.md) - Use with Anthropic clients
+- [REST API Reference](../reference/api/rest.md) - Full API documentation
+- [OpenAI Compatible](../reference/api/openai-compat.md) - Use with OpenAI clients
+- [Anthropic Compatible](../reference/api/anthropic-compat.md) - Use with Anthropic clients

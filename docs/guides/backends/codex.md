@@ -19,7 +19,7 @@ Install Codex CLI from [OpenAI](https://github.com/openai/codex-cli):
 # Verify installation
 which codex
 codex --version
-```text
+```
 
 ## Basic Usage
 
@@ -27,7 +27,7 @@ codex --version
 # Use Codex with clinvk
 clinvk --backend codex "implement a REST API handler"
 clinvk -b codex "generate unit tests for user.go"
-```text
+```
 
 ## Models
 
@@ -40,7 +40,7 @@ Specify a model:
 
 ```bash
 clinvk -b codex -m o3-mini "quick code generation"
-```bash
+```
 
 ## Configuration
 
@@ -57,13 +57,13 @@ backends:
 
     # Extra CLI flags
     extra_flags: []
-```text
+```
 
 ### Environment Variable
 
 ```bash
 export CLINVK_CODEX_MODEL=o3-mini
-```bash
+```
 
 ## Session Management
 
@@ -73,7 +73,7 @@ Codex resumes sessions via the `codex exec resume` subcommand (handled automatic
 # Resume with clinvk
 clinvk resume --last --backend codex
 clinvk resume <session-id>
-```text
+```
 
 ## Unified Options
 
@@ -94,7 +94,7 @@ backends:
   codex:
     extra_flags:
       - "--quiet"
-```text
+```
 
 Common flags:
 
@@ -119,25 +119,25 @@ Common flags:
 
 ```bash
 clinvk -b codex "create a CRUD API for the User model"
-```text
+```
 
 ### Write Tests
 
 ```bash
 clinvk -b codex "generate comprehensive unit tests for the auth module"
-```text
+```
 
 ### Code Transformation
 
 ```bash
 clinvk -b codex "convert this callback-based code to async/await"
-```text
+```
 
 ### Quick Implementations
 
 ```bash
 clinvk -b codex "implement a binary search function"
-```text
+```
 
 ## Comparison with Claude
 
@@ -167,7 +167,7 @@ Use Codex and Claude together:
     }
   ]
 }
-```text
+```
 
 ## Troubleshooting
 
@@ -179,7 +179,7 @@ which codex
 
 # Check clinvk detection
 clinvk config show | grep codex
-```text
+```
 
 ### Model Errors
 
@@ -191,7 +191,7 @@ codex models list
 
 # Update config to use available model
 clinvk config set backends.codex.model o3
-```text
+```
 
 ## Next Steps
 

@@ -19,7 +19,7 @@ Gemini CLI 是 Google 的 Gemini AI 模型命令行接口。它擅长：
 # 验证安装
 which gemini
 gemini --version
-```text
+```
 
 ## 基本用法
 
@@ -27,7 +27,7 @@ gemini --version
 # 使用 clinvk 调用 Gemini
 clinvk --backend gemini "解释这个算法是如何工作的"
 clinvk -b gemini "为这个 API 编写文档"
-```text
+```
 
 ## 模型
 
@@ -40,7 +40,7 @@ clinvk -b gemini "为这个 API 编写文档"
 
 ```bash
 clinvk -b gemini -m gemini-2.5-flash "快速解释"
-```bash
+```
 
 ## 配置
 
@@ -57,13 +57,13 @@ backends:
 
     # 额外 CLI 参数
     extra_flags: []
-```text
+```
 
 ### 环境变量
 
 ```bash
 export CLINVK_GEMINI_MODEL=gemini-2.5-flash
-```text
+```
 
 ## 会话管理
 
@@ -73,7 +73,7 @@ Gemini 使用 `--resume` 进行会话恢复：
 # 使用 clinvk 恢复
 clinvk resume --last --backend gemini
 clinvk resume <session-id>
-```text
+```
 
 ## 沙箱模式
 
@@ -84,7 +84,7 @@ backends:
   gemini:
     extra_flags:
       - "--sandbox"
-```text
+```
 
 ## 统一选项
 
@@ -113,25 +113,25 @@ backends:
 
 ```bash
 clinvk -b gemini "为这个模块编写全面的文档"
-```text
+```
 
 ### 解释
 
 ```bash
 clinvk -b gemini "解释这个微服务的架构"
-```text
+```
 
 ### 研究
 
 ```bash
 clinvk -b gemini "实现速率限制的最佳实践是什么"
-```text
+```
 
 ### 代码审查
 
 ```bash
 clinvk -b gemini "审查这段代码并解释潜在问题"
-```text
+```
 
 ## 与其他后端的对比
 
@@ -166,7 +166,7 @@ clinvk -b gemini "审查这段代码并解释潜在问题"
     }
   ]
 }
-```text
+```
 
 ## 下一步
 

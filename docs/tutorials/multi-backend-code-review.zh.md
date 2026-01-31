@@ -56,7 +56,7 @@ description: 使用多个 AI 后端并行构建全面的代码审查系统，涵
                  聚合结果
                          |
               可操作的反馈
-```text
+```
 
 ### 工作原理
 
@@ -84,7 +84,7 @@ clinvk config show
 
 jq --version
 # 应显示 1.6 或更高版本
-```yaml
+```
 
 ---
 
@@ -164,7 +164,7 @@ templates:
       ```
 
       将发现分类为严重、高、中或低风险。
-```text
+```
 
 ### 配置结构说明
 
@@ -328,13 +328,13 @@ esac
 
 echo ""
 echo "审查完成!"
-```text
+```
 
 使脚本可执行：
 
 ```bash
 chmod +x run-review.sh
-```yaml
+```
 
 ---
 
@@ -426,7 +426,7 @@ func init() {
         panic(err)
     }
 }
-```text
+```
 
 这段代码在架构、性能和安全性维度包含多个问题。
 
@@ -439,7 +439,7 @@ func init() {
 ```bash
 ./run-review.sh -o markdown sample-auth.go > review-report.md
 cat review-report.md
-```text
+```
 
 ### 预期的架构审查 (Claude)
 
@@ -520,7 +520,7 @@ echo ""
 echo "## 详细报告"
 echo ""
 jq -r '.results[] | "### \(.name | split("-") | map(ascii_upcase) | join(" "))\n\n**后端:** \(.backend)\n\n\(.output)\n"' "$RESULTS_FILE"
-```yaml
+```
 
 ---
 
@@ -545,7 +545,7 @@ jq -r '.results[] | "### \(.name | split("-") | map(ascii_upcase) | join(" "))\n
 5. 等待所有任务完成
    |
 6. 将结果聚合为 JSON 响应
-```text
+```
 
 ### 工作池配置
 
@@ -556,7 +556,7 @@ parallel:
   max_workers: 3        # 并发任务数
   fail_fast: false      # 即使一个任务失败也继续
   aggregate_output: true # 组合所有输出
-```text
+```
 
 ### 执行保证
 
@@ -633,7 +633,7 @@ jobs:
             echo "::error::发现严重问题!"
             exit 1
           fi
-```text
+```
 
 ### GitLab CI 集成
 
@@ -660,7 +660,7 @@ multi-backend-review:
       fi
   rules:
     - if: $CI_MERGE_REQUEST_IID
-```text
+```
 
 ### Jenkins Pipeline
 
@@ -700,7 +700,7 @@ pipeline {
         }
     }
 }
-```yaml
+```
 
 ---
 
@@ -716,7 +716,7 @@ clinvk -b claude "审查 auth.go 中的 Login 函数的架构问题"
 
 # 按 diff 审查
 clinvk -b codex "审查此 diff 的性能问题: $(git diff HEAD~1)"
-```text
+```
 
 ### 2. 结果优先级排序
 
@@ -736,7 +736,7 @@ clinvk -b codex "审查此 diff 的性能问题: $(git diff HEAD~1)"
 ```bash
 git add review-config.yaml run-review.sh
 git commit -m "添加多后端审查配置"
-```text
+```
 
 ### 4. 成本优化
 
@@ -760,7 +760,7 @@ parallel:
 backends:
   claude:
     model: claude-sonnet-4-20250514  # 比 Opus 更快
-```text
+```
 
 ### 问题：结果不一致
 
@@ -772,7 +772,7 @@ prompt: |
   - 适用的行号
   - 演示问题的代码片段
   - 修复的具体建议
-```text
+```
 
 ### 问题：后端超时
 
@@ -781,7 +781,7 @@ prompt: |
 ```yaml
 unified_flags:
   command_timeout_secs: 600  # 10 分钟
-```text
+```
 
 ---
 

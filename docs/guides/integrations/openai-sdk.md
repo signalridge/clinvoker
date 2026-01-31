@@ -29,7 +29,7 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
-```text
+```
 
 ### TypeScript/JavaScript
 
@@ -47,7 +47,7 @@ const response = await client.chat.completions.create({
 });
 
 console.log(response.choices[0].message.content);
-```text
+```
 
 ### Go
 
@@ -82,7 +82,7 @@ func main() {
 
     fmt.Println(resp.Choices[0].Message.Content)
 }
-```text
+```
 
 ## Model Mapping
 
@@ -102,7 +102,7 @@ response = client.chat.completions.create(
     model="claude-sonnet-4",
     messages=[...]
 )
-```text
+```
 
 ## Streaming Responses
 
@@ -117,7 +117,7 @@ stream = client.chat.completions.create(
 for chunk in stream:
     if chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="")
-```text
+```
 
 ## Error Handling
 
@@ -130,7 +130,7 @@ except RateLimitError:
     print("Rate limit exceeded")
 except OpenAIError as e:
     print(f"Error: {e}")
-```text
+```
 
 ## Advanced Configuration
 
@@ -144,7 +144,7 @@ client = OpenAI(
         "X-Custom-Header": "value"
     }
 )
-```text
+```
 
 ### Timeout Configuration
 
@@ -156,7 +156,7 @@ client = OpenAI(
     api_key="your-key",
     timeout=httpx.Timeout(300.0)  # 5 minutes
 )
-```text
+```
 
 ## Best Practices
 
@@ -173,7 +173,7 @@ Ensure the clinvoker server is running:
 
 ```bash
 clinvk serve --port 8080
-```text
+```
 
 ### Model Not Found
 
@@ -181,7 +181,7 @@ Check available models:
 
 ```bash
 curl http://localhost:8080/openai/v1/models
-```text
+```
 
 ### Authentication Errors
 

@@ -26,7 +26,7 @@ Sessions are stored as JSON files in `~/.clinvk/sessions/`:
     ├── abc123def.json
     ├── def456ghi.json
     └── ghi789jkl.json
-```text
+```
 
 ### JSON Format
 
@@ -55,7 +55,7 @@ Each session file contains:
     "duration_seconds": 2.5
   }
 }
-```bash
+```
 
 ### Field Descriptions
 
@@ -88,7 +88,7 @@ flowchart LR
     WRITE --> UNLOCK["Release Lock"]
     UNLOCK --> C["Process B acquires lock"]
     C --> D["Write to File"]
-```text
+```
 
 ### Lock Behavior
 
@@ -101,7 +101,7 @@ flowchart LR
 
 ```text
 ~/.clinvk/sessions/.lock
-```text
+```
 
 !!! note "Implementation Detail"
     The locking mechanism uses POSIX advisory file locks on Unix systems and Windows file locking APIs on Windows.
@@ -122,7 +122,7 @@ flowchart LR
     style COMPLETED fill:#e8f5e9,stroke:#388e3c
     style EXPIRED fill:#f5f5f5,stroke:#9e9e9e
     style ERROR fill:#ffebee,stroke:#c62828
-```text
+```
 
 **States:**
 
@@ -150,7 +150,7 @@ View all your sessions:
 
 ```bash
 clinvk sessions list
-```text
+```
 
 **Output:**
 
@@ -159,7 +159,7 @@ ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1234         fix the bug in auth.go
 def456    codex     completed  2 hours ago     5678         implement user registration
 ghi789    gemini    active     1 day ago       890          explain algorithm
-```text
+```
 
 ### Filtering Sessions
 
@@ -167,25 +167,25 @@ ghi789    gemini    active     1 day ago       890          explain algorithm
 
 ```bash
 clinvk sessions list --backend claude
-```text
+```
 
 #### By Status
 
 ```bash
 clinvk sessions list --status active
-```text
+```
 
 #### Limit Results
 
 ```bash
 clinvk sessions list --limit 10
-```text
+```
 
 #### Combined Filters
 
 ```bash
 clinvk sessions list --backend claude --status active --limit 5
-```text
+```
 
 ### JSON Output
 
@@ -193,7 +193,7 @@ For programmatic processing:
 
 ```bash
 clinvk sessions list --json
-```text
+```
 
 ```json
 [
@@ -206,7 +206,7 @@ clinvk sessions list --json
     "prompt": "fix the bug in auth.go"
   }
 ]
-```text
+```
 
 ## Resuming Sessions
 
@@ -216,13 +216,13 @@ The quickest way to continue your last conversation:
 
 ```bash
 clinvk resume --last
-```text
+```
 
 Or with a follow-up prompt:
 
 ```bash
 clinvk resume --last "add error handling"
-```text
+```
 
 ### Interactive Picker
 
@@ -230,7 +230,7 @@ Browse and select from recent sessions:
 
 ```bash
 clinvk resume --interactive
-```bash
+```
 
 If you run `clinvk resume` with no arguments, the interactive picker opens by default.
 
@@ -241,7 +241,7 @@ Resume a specific session:
 ```bash
 clinvk resume abc123
 clinvk resume abc123 "continue with tests"
-```text
+```
 
 ### Resume from Current Directory
 
@@ -249,13 +249,13 @@ Only show sessions from the current working directory:
 
 ```bash
 clinvk resume --here
-```text
+```
 
 ### Filter by Backend
 
 ```bash
 clinvk resume --backend claude
-```text
+```
 
 ### Resume Requirements
 
@@ -266,7 +266,7 @@ clinvk resume --backend claude
 
 ```bash
 clinvk sessions show abc123
-```text
+```
 
 Look for `backend_session_id` in the output.
 
@@ -278,7 +278,7 @@ For simple continuation, use the `--continue` flag:
 clinvk "implement the feature"
 clinvk -c "now add tests"
 clinvk -c "update the documentation"
-```bash
+```
 
 **How it works:**
 
@@ -298,7 +298,7 @@ clinvk -c "update the documentation"
 
 ```bash
 clinvk sessions show abc123
-```text
+```
 
 **Output:**
 
@@ -317,7 +317,7 @@ Token Usage:
   Cached:          500
   Total:           6,912
 Tags:              bugfix, auth
-```text
+```
 
 ### Check Session Status
 
@@ -327,7 +327,7 @@ clinvk sessions show abc123 > /dev/null 2>&1 && echo "Exists" || echo "Not found
 
 # Get specific field
 clinvk sessions show abc123 --json | jq '.status'
-```text
+```
 
 ## Session Forking
 
@@ -339,7 +339,7 @@ clinvk sessions fork abc123
 
 # Fork with a new prompt
 clinvk sessions fork abc123 "explore alternative approach"
-```bash
+```
 
 **Use Cases:**
 
@@ -366,7 +366,7 @@ clinvk config set session.default_tags '["project-x", "feature-y"]'
 
 # Or add to existing session
 clinvk sessions tag abc123 "urgent"
-```bash
+```
 
 ### Default Tags
 
@@ -377,7 +377,7 @@ session:
   default_tags:
     - "clinvk"
     - "${USER}"
-```text
+```
 
 ### Tag-Based Filtering
 
@@ -387,7 +387,7 @@ clinvk sessions list --tag "urgent"
 
 # Multiple tags (AND logic)
 clinvk sessions list --tag "project-x" --tag "bugfix"
-```text
+```
 
 ## Search Functionality
 
@@ -399,7 +399,7 @@ clinvk sessions list | grep "auth"
 
 # Using JSON output with jq
 clinvk sessions list --json | jq '.[] | select(.prompt | contains("auth"))'
-```text
+```
 
 ### Search by Date Range
 
@@ -411,7 +411,7 @@ clinvk sessions list --json | \
 # Sessions from specific date
 clinvk sessions list --json | \
   jq '.[] | select(.created_at | startswith("2025-01-27"))'
-```bash
+```
 
 ## Cleanup Strategies
 
@@ -423,7 +423,7 @@ Configure automatic cleanup in `~/.clinvk/config.yaml`:
 session:
   # Days to keep sessions (0 = keep forever)
   retention_days: 30
-```text
+```
 
 Sessions older than `retention_days` are automatically removed during:
 - New session creation (periodic check)
@@ -444,13 +444,13 @@ clinvk sessions clean --older-than 7d
 
 # Use config default retention period
 clinvk sessions clean
-```text
+```
 
 #### Delete Specific Session
 
 ```bash
 clinvk sessions delete abc123
-```text
+```
 
 #### Bulk Deletion
 
@@ -464,7 +464,7 @@ clinvk sessions list --status completed --json | \
 clinvk sessions list --backend codex --json | \
   jq -r '.[].id' | \
   xargs -I {} clinvk sessions delete {}
-```bash
+```
 
 ### Cleanup Best Practices
 
@@ -500,7 +500,7 @@ session:
 
   # Tags automatically added to new sessions
   default_tags: []
-```text
+```
 
 ### Auto-Resume Behavior
 
@@ -512,7 +512,7 @@ clinvk "continue working on the feature"
 
 # Same as:
 clinvk resume --last "continue working on the feature"
-```text
+```
 
 **Priority:**
 
@@ -527,7 +527,7 @@ clinvk resume --last "continue working on the feature"
 ```yaml
 session:
   store_token_usage: true
-```text
+```
 
 ### Viewing Token Usage
 
@@ -542,7 +542,7 @@ clinvk sessions list --json | \
 # Usage by backend
 clinvk sessions list --json | \
   jq 'group_by(.backend) | map({backend: .[0].backend, total: [.[].token_usage.total] | add})'
-```text
+```
 
 ### Token Budgeting
 
@@ -558,7 +558,7 @@ monthly_tokens=$(clinvk sessions list --json | \
 if [ "$monthly_tokens" -gt 1000000 ]; then
   echo "Warning: Token usage high ($monthly_tokens)"
 fi
-```text
+```
 
 ## Stateless Mode
 
@@ -566,7 +566,7 @@ If you don't want to create a session, use ephemeral mode:
 
 ```bash
 clinvk --ephemeral "quick question that doesn't need history"
-```text
+```
 
 **When to Use Ephemeral Mode:**
 

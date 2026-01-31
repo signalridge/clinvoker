@@ -19,7 +19,7 @@ Codex CLI 是 OpenAI 的命令行工具，专注于代码生成和编程辅助�
 # 验证安装
 which codex
 codex --version
-```text
+```
 
 ## 基本用法
 
@@ -27,7 +27,7 @@ codex --version
 # 使用 clinvk 调用 Codex
 clinvk --backend codex "实现一个 REST API 处理器"
 clinvk -b codex "为 user.go 生成单元测试"
-```text
+```
 
 ## 模型
 
@@ -40,7 +40,7 @@ clinvk -b codex "为 user.go 生成单元测试"
 
 ```bash
 clinvk -b codex -m o3-mini "快速代码生成"
-```bash
+```
 
 ## 配置
 
@@ -57,13 +57,13 @@ backends:
 
     # 额外 CLI 参数
     extra_flags: []
-```text
+```
 
 ### 环境变量
 
 ```bash
 export CLINVK_CODEX_MODEL=o3-mini
-```bash
+```
 
 ## 会话管理
 
@@ -73,7 +73,7 @@ Codex 使用 `codex exec resume` 进行会话恢复（由 `clinvk` 自动处理�
 # 使用 clinvk 恢复
 clinvk resume --last --backend codex
 clinvk resume <session-id>
-```text
+```
 
 ## 统一选项
 
@@ -102,25 +102,25 @@ clinvk resume <session-id>
 
 ```bash
 clinvk -b codex "为 User 模型创建 CRUD API"
-```text
+```
 
 ### 编写测试
 
 ```bash
 clinvk -b codex "为 auth 模块生成全面的单元测试"
-```text
+```
 
 ### 代码转换
 
 ```bash
 clinvk -b codex "将这个基于回调的代码转换为 async/await"
-```text
+```
 
 ### 快速实现
 
 ```bash
 clinvk -b codex "实现一个二分查找函数"
-```text
+```
 
 ## 与 Claude 的对比
 
@@ -150,7 +150,7 @@ clinvk -b codex "实现一个二分查找函数"
     }
   ]
 }
-```text
+```
 
 ## 下一步
 

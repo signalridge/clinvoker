@@ -31,14 +31,14 @@ Analyzes data using Gemini CLI via clinvk.
 Run this skill when you need to analyze structured data.
 
 ## Script
-```bash
+```
 #!/bin/bash
 DATA="$1"
 
 clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $DATA"
-```text
+```
 
-```text
+```
 
 ### Using the Skill
 
@@ -48,7 +48,7 @@ In Claude Code, the skill can be invoked:
 
 User: /analyze-data {"sales": [100, 150, 200], "months": ["Jan", "Feb", "Mar"]}
 
-```text
+```
 
 ## Multi-Model Review Skill
 
@@ -65,7 +65,7 @@ Codex (performance), and Gemini (security).
 Provide a file path or code snippet for multi-perspective review.
 
 ## Script
-```bash
+```
 #!/bin/bash
 CODE="$1"
 
@@ -85,9 +85,9 @@ echo ""
 echo "### Security Review (Gemini)"
 clinvk -b gemini --ephemeral "Review this code for security vulnerabilities:
 $CODE"
-```text
+```
 
-```text
+```
 
 ## Parallel Review Skill
 
@@ -100,7 +100,7 @@ For faster multi-model review using parallel execution:
 Fast parallel code review using all backends simultaneously.
 
 ## Script
-```bash
+```
 #!/bin/bash
 CODE="$1"
 
@@ -120,9 +120,9 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
   "## Performance (Codex)\n" + .results[1].output + "\n\n" +
   "## Security (Gemini)\n" + .results[2].output
 '
-```text
+```
 
-```text
+```
 
 ## Chain Execution Skill
 
@@ -138,7 +138,7 @@ Generates polished documentation through a multi-step pipeline:
 3. Gemini polishes and improves readability
 
 ## Script
-```bash
+```
 #!/bin/bash
 CODE="$1"
 
@@ -166,9 +166,9 @@ cat > /tmp/doc-pipeline.json << EOF
 EOF
 
 clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
-```text
+```
 
-```text
+```
 
 ## Advanced Patterns
 
@@ -184,7 +184,7 @@ if ! OUTPUT=$(clinvk -b claude --ephemeral "$1" 2>&1); then
 fi
 
 echo "$OUTPUT"
-```text
+```
 
 ### Conditional Backend Selection
 
@@ -209,7 +209,7 @@ case "$TASK_TYPE" in
 esac
 
 clinvk -b "$BACKEND" --ephemeral "$PROMPT"
-```text
+```
 
 ### Compare Backends
 
@@ -217,7 +217,7 @@ clinvk -b "$BACKEND" --ephemeral "$PROMPT"
 #!/bin/bash
 # Get responses from all backends and compare
 clinvk compare --all-backends "$1"
-```text
+```
 
 ## Best Practices
 
@@ -227,7 +227,7 @@ For stateless skill execution, always use `--ephemeral`:
 
 ```bash
 clinvk -b claude --ephemeral "your prompt"
-```text
+```
 
 ### 2. Choose the Right Backend
 
@@ -245,7 +245,7 @@ When you need to process the output:
 
 ```bash
 clinvk -b claude -o json --ephemeral "..." | jq -r '.content'
-```text
+```
 
 ### 4. Format Output for Claude
 
@@ -256,7 +256,7 @@ echo "## Skill Results"
 echo ""
 echo "### Summary"
 clinvk -b gemini --ephemeral "Summarize: $INPUT"
-```text
+```
 
 ## Skill Directory Structure
 
@@ -270,7 +270,7 @@ clinvk -b gemini --ephemeral "Summarize: $INPUT"
 │   └── SKILL.md
 └── shared/
     └── clinvk-helpers.sh  # Shared functions
-```text
+```
 
 ## Troubleshooting
 
@@ -279,13 +279,13 @@ clinvk -b gemini --ephemeral "Summarize: $INPUT"
 ```bash
 # Check available backends
 clinvk config show | grep available
-```text
+```
 
 ### Check Version
 
 ```bash
 clinvk version
-```text
+```
 
 ## Next Steps
 

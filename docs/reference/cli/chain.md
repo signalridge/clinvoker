@@ -6,7 +6,7 @@ Execute a sequential pipeline of prompts.
 
 ```bash
 clinvk chain [flags]
-```text
+```
 
 ## Description
 
@@ -39,7 +39,7 @@ Execute a series of prompts sequentially, passing output from each step to the n
     }
   ]
 }
-```text
+```
 
 ### Step Fields
 
@@ -74,13 +74,13 @@ Execute a series of prompts sequentially, passing output from each step to the n
 
 ```bash
 clinvk chain --file pipeline.json
-```text
+```
 
 ### JSON Output
 
 ```bash
 clinvk chain --file pipeline.json --json
-```text
+```
 
 ## Output
 
@@ -112,7 +112,7 @@ STEP   BACKEND      STATUS   DURATION   NAME
 3      codex        OK       3.20s      implement
 --------------------------------------------------------------------------------
 Total: 3/3 steps completed (7.10s)
-```text
+```
 
 ### JSON Output
 
@@ -133,7 +133,7 @@ Total: 3/3 steps completed (7.10s)
     }
   ]
 }
-```text
+```
 
 ## Exit Codes
 

@@ -35,7 +35,7 @@ clinvk integrates with various tools and frameworks through its HTTP API:
                ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
                │  Claude CLI  │   │  Codex CLI   │   │  Gemini CLI  │
                └──────────────┘   └──────────────┘   └──────────────┘
-```text
+```
 
 ## Integration Methods
 
@@ -56,7 +56,7 @@ clinvk integrates with various tools and frameworks through its HTTP API:
 curl -s http://localhost:8080/api/v1/prompt \
   -H "Content-Type: application/json" \
   -d '{"backend": "gemini", "prompt": "Analyze this data"}'
-```text
+```
 
 ### LangChain
 
@@ -68,7 +68,7 @@ llm = ChatOpenAI(
     model="claude",
     api_key="not-needed"
 )
-```text
+```
 
 ### OpenAI SDK
 
@@ -79,7 +79,7 @@ client = OpenAI(
     base_url="http://localhost:8080/openai/v1",
     api_key="not-needed"
 )
-```text
+```
 
 ### GitHub Actions
 
@@ -90,7 +90,7 @@ client = OpenAI(
     curl -sS -X POST http://localhost:8080/api/v1/prompt \
       -H "Content-Type: application/json" \
       -d "$payload"
-```text
+```
 
 ## Prerequisites
 

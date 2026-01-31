@@ -7,7 +7,7 @@ Complete reference for all clinvk CLI commands.
 ```bash
 clinvk [global-flags] [prompt]
 clinvk [command] [subcommand] [flags]
-```text
+```
 
 ## Command Overview
 
@@ -49,7 +49,7 @@ Select the AI backend to use:
 clinvk --backend claude "prompt"
 clinvk -b codex "prompt"
 clinvk -b gemini "prompt"
-```text
+```
 
 Available backends: `claude`, `codex`, `gemini`
 
@@ -60,7 +60,7 @@ Override the default model for the selected backend:
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "prompt"
 clinvk -b codex -m o3-mini "prompt"
-```text
+```
 
 ### --workdir, -w
 
@@ -68,7 +68,7 @@ Set the working directory for the AI backend:
 
 ```bash
 clinvk --workdir /path/to/project "analyze this codebase"
-```text
+```
 
 ### --output-format, -o
 
@@ -83,7 +83,7 @@ Control output format:
 ```bash
 clinvk --output-format json "prompt"
 clinvk -o stream-json "prompt"
-```text
+```
 
 ### --config
 
@@ -91,7 +91,7 @@ Use a custom configuration file:
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```text
+```
 
 ### --dry-run
 
@@ -100,7 +100,7 @@ Show the command that would be executed without running it:
 ```bash
 clinvk --dry-run "implement feature X"
 # Output: Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
-```text
+```
 
 ### --ephemeral
 
@@ -108,7 +108,7 @@ Run in stateless mode without creating a session:
 
 ```bash
 clinvk --ephemeral "quick question"
-```text
+```
 
 ## Command Categories
 
@@ -153,7 +153,7 @@ clinvk -b codex "implement feature"
 
 # Specify model
 clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
-```text
+```
 
 ### Session Management
 
@@ -166,7 +166,7 @@ clinvk resume --last
 
 # Delete old sessions
 clinvk sessions clean --older-than 30d
-```text
+```
 
 ### Configuration
 
@@ -176,7 +176,7 @@ clinvk config show
 
 # Set a value
 clinvk config set default_backend codex
-```text
+```
 
 ### Advanced Execution
 
@@ -189,14 +189,14 @@ clinvk compare --all-backends "explain this code"
 
 # Execute a chain
 clinvk chain --file pipeline.json
-```text
+```
 
 ### Server
 
 ```bash
 # Start server
 clinvk serve --port 8080
-```text
+```
 
 ## Exit Codes
 
@@ -225,7 +225,7 @@ clinvk [command] --help
 
 # Example
 clinvk parallel --help
-```text
+```
 
 ## See Also
 

@@ -6,7 +6,7 @@
 
 ```bash
 clinvk sessions [command] [flags]
-```bash
+```
 
 ## 说明
 
@@ -41,31 +41,31 @@ clinvk sessions [command] [flags]
 
 ```bash
 clinvk sessions list
-```text
+```
 
 按后端过滤：
 
 ```bash
 clinvk sessions list --backend claude
-```text
+```
 
 按状态过滤：
 
 ```bash
 clinvk sessions list --status active
-```text
+```
 
 限制结果：
 
 ```bash
 clinvk sessions list --limit 10
-```text
+```
 
 组合过滤：
 
 ```bash
 clinvk sessions list --backend claude --status active --limit 5
-```text
+```
 
 ### 输出
 
@@ -74,7 +74,7 @@ ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1234         fix the bug in auth.go
 def456    codex     completed  2 hours ago     5678         implement user registration
 ghi789    gemini    error      1 day ago       -            failed task
-```yaml
+```
 
 ---
 
@@ -86,13 +86,13 @@ ghi789    gemini    error      1 day ago       -            failed task
 
 ```bash
 clinvk sessions show <session-id>
-```text
+```
 
 ### 示例
 
 ```bash
 clinvk sessions show abc123
-```text
+```
 
 ### 输出
 
@@ -111,7 +111,7 @@ Token Usage:
   Output:          5678
   Total:           6912
 Tags:              [feature-auth, urgent]
-```yaml
+```
 
 ---
 
@@ -123,19 +123,19 @@ Tags:              [feature-auth, urgent]
 
 ```bash
 clinvk sessions delete <session-id>
-```text
+```
 
 ### 示例
 
 ```bash
 clinvk sessions delete abc123
-```text
+```
 
 ### 输出
 
 ```text
 Session abc123 deleted.
-```yaml
+```
 
 ---
 
@@ -157,25 +157,25 @@ Session abc123 deleted.
 
 ```bash
 clinvk sessions clean --older-than 30d
-```text
+```
 
 清理超过 7 天的会话：
 
 ```bash
 clinvk sessions clean --older-than 7
-```text
+```
 
 使用配置默认值：
 
 ```bash
 clinvk sessions clean
-```text
+```
 
 ### 输出
 
 ```text
 Deleted 15 session(s) older than 30 days.
-```text
+```
 
 ---
 

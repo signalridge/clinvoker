@@ -23,7 +23,7 @@ ai-code-review:
     # Run clinvoker review
   rules:
     - if: $CI_MERGE_REQUEST_IID
-```text
+```
 
 ## See Also
 

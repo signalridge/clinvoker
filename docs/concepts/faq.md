@@ -64,7 +64,7 @@ nix run github:signalridge/clinvoker
 
 # Download binary from GitHub releases
 # Visit: https://github.com/signalridge/clinvoker/releases
-```bash
+```
 
 See [Installation Guide](../tutorials/getting-started.md) for detailed instructions.
 
@@ -83,7 +83,7 @@ No. clinvoker works with any combination of backends. Install only the ones you 
 
 ```bash
 clinvk config show
-```text
+```
 
 Look for `available: true` under each backend section.
 
@@ -100,7 +100,7 @@ export CLINVK_BACKEND=codex
 
 # Or specify per-command
 clinvk -b claude "your prompt"
-```text
+```
 
 ### How do I continue a conversation?
 
@@ -113,7 +113,7 @@ clinvk resume <session-id> "follow up message"
 
 # Resume last session
 clinvk resume --last "follow up message"
-```text
+```
 
 ### Can I use different models?
 
@@ -130,7 +130,7 @@ clinvk -m best "task"      # Best quality
 
 # Set default in config
 clinvk config set backends.claude.model claude-opus-4
-```text
+```
 
 ### How do I run tasks in parallel?
 
@@ -148,7 +148,7 @@ Create a tasks file and use the parallel command:
 
 # Run in parallel
 clinvk parallel --file tasks.json --max-parallel 3
-```text
+```
 
 See [Parallel Execution Guide](../guides/parallel.md) for details.
 
@@ -163,7 +163,7 @@ clinvk compare -b claude -b codex "your prompt"
 
 # Save comparison to file
 clinvk compare --all-backends -o comparison.md "your prompt"
-```text
+```
 
 See [Backend Comparison](../guides/backends/index.md) for more.
 
@@ -181,7 +181,7 @@ See [Backend Comparison](../guides/backends/index.md) for more.
 
 # Execute chain
 clinvk chain --file chain.json
-```bash
+```
 
 See [Chain Execution Guide](../guides/chains.md) for details.
 
@@ -195,7 +195,7 @@ You can specify a different location:
 
 ```bash
 clinvk --config /path/to/config.yaml "prompt"
-```text
+```
 
 ### What's the configuration priority?
 
@@ -210,7 +210,7 @@ Configuration is resolved in this order (highest to lowest):
 
 ```bash
 clinvk config show
-```text
+```
 
 This displays the effective configuration after merging all sources.
 
@@ -222,7 +222,7 @@ Yes, prefix any config key with `CLINVK_`:
 export CLINVK_BACKEND=codex
 export CLINVK_TIMEOUT=120
 export CLINVK_SERVER_PORT=3000
-```text
+```
 
 ### How do I set backend-specific options?
 
@@ -235,7 +235,7 @@ backends:
   codex:
     model: gpt-5.2
     sandbox_mode: full
-```bash
+```
 
 ## Sessions
 
@@ -253,7 +253,7 @@ clinvk sessions list --backend claude
 
 # Show detailed info
 clinvk sessions list --verbose
-```text
+```
 
 ### How do I clean up old sessions?
 
@@ -266,7 +266,7 @@ clinvk sessions clean --all
 
 # Or manually delete
 rm -rf ~/.clinvk/sessions/*
-```text
+```
 
 ### Can I disable session tracking?
 
@@ -274,7 +274,7 @@ Yes, use ephemeral mode:
 
 ```bash
 clinvk --ephemeral "prompt"
-```bash
+```
 
 This runs without creating or loading any sessions.
 
@@ -286,7 +286,7 @@ clinvk sessions export <session-id> > session.json
 
 # Or copy the file directly
 cp ~/.clinvk/sessions/<session-id>.json ./backup.json
-```text
+```
 
 ## HTTP Server
 
@@ -301,7 +301,7 @@ clinvk serve --port 3000
 
 # Start with API key authentication
 clinvk serve --api-keys "key1,key2"
-```text
+```
 
 ### Is the server authenticated?
 
@@ -316,7 +316,7 @@ clinvk config set server.api_keys "key1,key2"
 
 # Use in requests
 curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
-```text
+```
 
 If no keys are configured, the server allows all requests.
 
@@ -327,7 +327,7 @@ Place it behind a reverse proxy (nginx, Apache, Caddy) and enable API keys:
 ```bash
 # Bind to all interfaces (use with caution)
 clinvk serve --host 0.0.0.0 --api-keys "your-secret-key"
-```text
+```
 
 ### Can I use OpenAI client libraries?
 
@@ -345,7 +345,7 @@ response = client.chat.completions.create(
     model="claude",
     messages=[{"role": "user", "content": "Hello!"}]
 )
-```text
+```
 
 ### Can I use Anthropic client libraries?
 
@@ -364,7 +364,7 @@ response = client.messages.create(
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello!"}]
 )
-```text
+```
 
 ## Integration
 
@@ -378,7 +378,7 @@ clinvk -b claude "your prompt"
 
 # Or start Claude Code's interactive mode
 claude
-```text
+```
 
 See [Claude Backend Guide](../guides/backends/claude.md) for details.
 
@@ -394,7 +394,7 @@ llm = ChatOpenAI(
 )
 
 response = llm.invoke("Hello!")
-```text
+```
 
 See [LangChain Integration Guide](../guides/integrations/langchain-langgraph.md) for more.
 
@@ -408,7 +408,7 @@ See [LangChain Integration Guide](../guides/integrations/langchain-langgraph.md)
   run: |
     echo '{"prompt": "Review this PR", "files": ["src/"] }' | \
     clinvk parallel --file - --output-format json
-```bash
+```
 
 See [CI/CD Integration Guide](../guides/integrations/ci-cd/index.md) for examples.
 
@@ -421,7 +421,7 @@ Check if the CLI is in your PATH:
 ```bash
 which claude codex gemini
 echo $PATH
-```text
+```
 
 ### Why is my configuration not applied?
 
@@ -430,7 +430,7 @@ Remember the priority order: CLI flags > Environment > Config file. Check for ov
 ```bash
 clinvk config show  # Shows effective configuration
 env | grep CLINVK   # Shows environment variables
-```text
+```
 
 ### Where can I get help?
 

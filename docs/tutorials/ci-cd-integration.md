@@ -33,7 +33,7 @@ flowchart LR
     CLAUDE --> RESULT["Review Results"]
     CODEX --> RESULT
     GEMINI --> RESULT
-```yaml
+```
 
 ---
 
@@ -63,14 +63,14 @@ services:
       - "8080:8080"
     volumes:
       - ./config.yaml:/root/.clinvk/config.yaml
-```text
+```
 
 Deploy the server:
 
 ```bash
 export CLINVK_API_KEYS="your-api-key-1,your-api-key-2"
 docker-compose -f docker-compose.ci.yml up -d
-```yaml
+```
 
 ---
 
@@ -279,7 +279,7 @@ jobs:
         run: |
           echo "::error::Critical issues found in AI review"
           exit 1
-```text
+```
 
 ### Pull Request Comment Automation
 
@@ -309,7 +309,7 @@ Configure fail conditions in your workflow:
       echo "::error::Critical issues found"
       exit 1
     fi
-```yaml
+```
 
 ---
 
@@ -424,7 +424,7 @@ post-review:
     expire_in: 1 week
   rules:
     - if: $CI_MERGE_REQUEST_IID
-```yaml
+```
 
 ---
 
@@ -587,7 +587,7 @@ pipeline {
         }
     }
 }
-```yaml
+```
 
 ---
 
@@ -615,7 +615,7 @@ Batch multiple files into single requests:
     # Combine multiple small files
     cat file1.go file2.go file3.go > combined.go
     clinvk -b claude "Review these files: $(cat combined.go)"
-```text
+```
 
 #### 2. Exponential Backoff
 
@@ -628,7 +628,7 @@ Implement retry logic with backoff:
       clinvk -b claude "Review this" && break
       sleep $((2 ** i))
     done
-```text
+```
 
 #### 3. clinvoker Server Rate Limiting
 
@@ -639,7 +639,7 @@ server:
   rate_limit_enabled: true
   rate_limit_rps: 10
   rate_limit_burst: 20
-```yaml
+```
 
 ---
 
@@ -655,7 +655,7 @@ env:
 # GOOD - Use secrets
 env:
   CLINVK_API_KEY: ${{ secrets.CLINVK_API_KEY }}
-```text
+```
 
 ### 2. Use Environment-Specific Secrets
 
@@ -671,7 +671,7 @@ env:
   if: github.ref != 'refs/heads/main'
   env:
     CLINVK_API_KEY: ${{ secrets.CLINVK_API_KEY_DEV }}
-```text
+```
 
 ### 3. Rotate Keys Regularly
 
@@ -679,7 +679,7 @@ env:
 # Set up key rotation reminder
 # Rotate every 90 days
 # Update in GitHub/GitLab/Jenkins secrets
-```text
+```
 
 ### 4. Limit Key Scope
 
@@ -705,7 +705,7 @@ Create separate API keys for CI/CD:
       echo "No code changes to review"
       exit 0
     fi
-```text
+```
 
 ### 2. Size Limits
 
@@ -717,7 +717,7 @@ Create separate API keys for CI/CD:
       echo "Diff too large for AI review"
       exit 0
     fi
-```text
+```
 
 ### 3. Selective Backend Usage
 
@@ -730,7 +730,7 @@ Create separate API keys for CI/CD:
 - name: Deep review
   run: |
     clinvk -b claude "Deep analysis"  # More expensive
-```text
+```
 
 ### 4. Caching Results
 
@@ -739,7 +739,7 @@ Create separate API keys for CI/CD:
   with:
     path: .ai-reviews
     key: ai-reviews-${{ hashFiles('**/*.go') }}
-```yaml
+```
 
 ---
 
@@ -753,7 +753,7 @@ Create separate API keys for CI/CD:
 - name: Review with timeout
   run: |
     clinvk -b claude --timeout 300 "Review this"
-```text
+```
 
 ### Issue: Rate Limit Exceeded
 
@@ -766,7 +766,7 @@ Create separate API keys for CI/CD:
       clinvk -b claude "Review $file"
       sleep 2  # Rate limit buffer
     done
-```text
+```
 
 ### Issue: Secrets Not Available
 
@@ -775,7 +775,7 @@ Create separate API keys for CI/CD:
 ```bash
 # Verify secret is set
 echo "Secret length: ${#CLINVK_API_KEY}"
-```text
+```
 
 ---
 

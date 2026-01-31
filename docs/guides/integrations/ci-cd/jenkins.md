@@ -36,7 +36,7 @@ pipeline {
         }
     }
 }
-```text
+```
 
 ## See Also
 

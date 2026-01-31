@@ -8,7 +8,7 @@ clinvk follows a consistent command structure:
 
 ```bash
 clinvk [global-flags] [command] [command-flags] [arguments]
-```bash
+```
 
 ### Command Types
 
@@ -31,7 +31,7 @@ The `--backend` flag determines which AI backend processes your prompt.
 clinvk --backend claude "fix the bug in auth.go"
 clinvk -b codex "implement user registration"
 clinvk -b gemini "explain this algorithm"
-```bash
+```
 
 **Backend Selection Strategy:**
 
@@ -53,7 +53,7 @@ Override the default model for the selected backend:
 clinvk --model claude-opus-4-5-20251101 "complex architecture task"
 clinvk -b codex -m o3 "implement feature"
 clinvk -b gemini -m gemini-2.5-flash "quick question"
-```text
+```
 
 **When to Override Models:**
 
@@ -68,7 +68,7 @@ Set the working directory for the AI to operate in:
 ```bash
 clinvk --workdir /path/to/project "review the codebase"
 clinvk -w ./subproject "fix tests"
-```text
+```
 
 **Working Directory Behavior:**
 
@@ -85,7 +85,7 @@ clinvk -w /home/user/projects/myapp "analyze code"
 
 # Risky: Full system access (depends on backend sandbox mode)
 clinvk -w / "search for files"
-```text
+```
 
 ### Output Format (`--output-format`, `-o`)
 
@@ -97,7 +97,7 @@ Human-readable output with formatting:
 
 ```bash
 clinvk --output-format text "explain this code"
-```text
+```
 
 **Best for:** Interactive use, reading in terminal, quick checks
 
@@ -107,7 +107,7 @@ Structured output for programmatic processing:
 
 ```bash
 clinvk --output-format json "explain this code"
-```text
+```
 
 **Output structure:**
 
@@ -119,7 +119,7 @@ clinvk --output-format json "explain this code"
   "duration_seconds": 2.5,
   "exit_code": 0
 }
-```text
+```
 
 **Best for:** Scripting, CI/CD pipelines, storing results, further processing
 
@@ -127,7 +127,7 @@ clinvk --output-format json "explain this code"
 
 ```bash
 clinvk -o stream-json "explain this code"
-```text
+```
 
 `stream-json` passes through the backend's native streaming output (NDJSON/JSONL). This provides real-time updates as the AI generates content.
 
@@ -149,7 +149,7 @@ Continue the last session without specifying a session ID:
 clinvk "implement the login feature"
 clinvk -c "now add password validation"
 clinvk -c "add rate limiting"
-```bash
+```
 
 **How Continue Works:**
 
@@ -169,7 +169,7 @@ Run in stateless mode without creating a session:
 
 ```bash
 clinvk --ephemeral "what is 2+2"
-```text
+```
 
 **When to Use Ephemeral Mode:**
 
@@ -192,13 +192,13 @@ Preview the command without executing:
 
 ```bash
 clinvk --dry-run "implement feature X"
-```text
+```
 
 **Output shows the exact command that would be run:**
 
 ```yaml
 Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
-```text
+```
 
 **Use Cases:**
 
@@ -213,7 +213,7 @@ Enable detailed logging:
 
 ```bash
 clinvk --verbose "complex task"
-```bash
+```
 
 **Shows:**
 
@@ -262,7 +262,7 @@ case $exit_code in
     echo "Backend returned code: $exit_code"
     ;;
 esac
-```text
+```
 
 ## Environment Variables
 
@@ -279,7 +279,7 @@ export CLINVK_GEMINI_MODEL=gemini-2.5-flash
 
 # Run with environment settings
 clinvk "prompt"  # Uses codex with o3-mini
-```bash
+```
 
 **Priority Order** (highest to lowest):
 
@@ -298,7 +298,7 @@ Use `--continue` (or `-c`) to continue the last session:
 clinvk "implement the login feature"
 clinvk -c "now add password validation"
 clinvk -c "add rate limiting"
-```text
+```
 
 ### Resume Command
 
@@ -316,7 +316,7 @@ clinvk resume --last "continue from where we left off"
 
 # Resume by ID
 clinvk resume abc123 "add tests"
-```bash
+```
 
 See [Session Management](sessions.md) for complete details.
 
@@ -340,19 +340,19 @@ See [Session Management](sessions.md) for complete details.
 
 ```bash
 clinvk "there's a null pointer exception in utils.go line 45"
-```text
+```
 
 ### Code Generation
 
 ```bash
 clinvk -b codex "generate a REST API handler for user CRUD operations"
-```text
+```
 
 ### Code Explanation
 
 ```bash
 clinvk -b gemini "explain what the main function in cmd/server/main.go does"
-```text
+```
 
 ### Refactoring with Continuation
 
@@ -360,7 +360,7 @@ clinvk -b gemini "explain what the main function in cmd/server/main.go does"
 clinvk "refactor the database module to use connection pooling"
 clinvk -c "now add unit tests for the changes"
 clinvk -c "update the documentation"
-```text
+```
 
 ### CI/CD Integration
 
@@ -369,7 +369,7 @@ clinvk -c "update the documentation"
 clinvk --ephemeral --output-format json \
   --backend codex \
   "generate tests for the auth module"
-```text
+```
 
 ### Multi-Step Workflow
 
@@ -384,7 +384,7 @@ clinvk -c "implement the recommended changes"
 
 # Step 3: Verify
 clinvk -c "run the tests and fix any failures"
-```text
+```
 
 ## Common Patterns
 
@@ -396,7 +396,7 @@ clinvk -o text "explain this module"
 
 # Once satisfied, switch to JSON for automation
 clinvk -o json --ephemeral "generate the implementation"
-```text
+```
 
 ### Pattern 2: Backend per Task Type
 
@@ -409,7 +409,7 @@ clinvk -b codex "implement the endpoints"
 
 # Documentation - Gemini
 clinvk -b gemini "write API documentation"
-```text
+```
 
 ### Pattern 3: Dry Run Before Execution
 
@@ -419,7 +419,7 @@ clinvk --dry-run --backend codex "refactor the entire codebase"
 
 # If satisfied, run for real
 clinvk --backend codex "refactor the entire codebase"
-```text
+```
 
 ## Troubleshooting
 
@@ -431,7 +431,7 @@ clinvk config show | grep available
 
 # Verify CLI installation
 which claude codex gemini
-```text
+```
 
 ### Configuration Not Applied
 
@@ -441,7 +441,7 @@ clinvk config show
 
 # Verify file exists
 ls -la ~/.clinvk/config.yaml
-```text
+```
 
 ### Session Not Resuming
 
@@ -451,7 +451,7 @@ clinvk sessions list
 
 # Check if session has backend ID
 clinvk sessions show <session-id>
-```text
+```
 
 ## Next Steps
 

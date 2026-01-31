@@ -19,7 +19,7 @@ Install Claude Code from [Anthropic](https://claude.ai/claude-code):
 # Verify installation
 which claude
 claude --version
-```text
+```
 
 ## Basic Usage
 
@@ -27,7 +27,7 @@ claude --version
 # Use Claude with clinvk
 clinvk --backend claude "fix the bug in auth.go"
 clinvk -b claude "explain this codebase"
-```text
+```
 
 ## Models
 
@@ -40,7 +40,7 @@ Specify a model:
 
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
-```bash
+```
 
 ## Configuration
 
@@ -69,13 +69,13 @@ backends:
 
     # Extra CLI flags
     extra_flags: []
-```text
+```
 
 ### Environment Variable
 
 ```bash
 export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
-```text
+```
 
 ## Approval Modes
 
@@ -94,7 +94,7 @@ Set via config:
 backends:
   claude:
     approval_mode: auto
-```text
+```
 
 Or per-command (in tasks/chains):
 
@@ -104,7 +104,7 @@ Or per-command (in tasks/chains):
   "prompt": "refactor the module",
   "approval_mode": "auto"
 }
-```bash
+```
 
 ## Sandbox Modes
 
@@ -132,7 +132,7 @@ backends:
 
     # Specific tools only
     allowed_tools: read,write,edit
-```text
+```
 
 ## Session Resume
 
@@ -142,7 +142,7 @@ Claude Code stores sessions and supports resuming:
 # Resume with clinvk
 clinvk resume --last --backend claude
 clinvk resume <session-id>
-```text
+```
 
 Internally uses Claude's `--resume` flag.
 
@@ -156,7 +156,7 @@ backends:
     extra_flags:
       - "--add-dir"
       - "./docs"
-```bash
+```
 
 Common flags:
 
@@ -182,25 +182,25 @@ Common flags:
 
 ```bash
 clinvk -b claude "review this PR for security issues and code quality"
-```text
+```
 
 ### Complex Refactoring
 
 ```bash
 clinvk -b claude "refactor the authentication system to use JWT tokens"
-```text
+```
 
 ### Architecture Analysis
 
 ```bash
 clinvk -b claude "analyze this codebase architecture and suggest improvements"
-```text
+```
 
 ### Bug Investigation
 
 ```bash
 clinvk -b claude "investigate why the tests are failing in the CI pipeline"
-```text
+```
 
 ## Troubleshooting
 
@@ -212,7 +212,7 @@ which claude
 
 # Check clinvk detection
 clinvk config show | grep claude
-```text
+```
 
 ### Rate Limits
 

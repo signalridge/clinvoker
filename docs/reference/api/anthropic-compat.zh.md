@@ -10,7 +10,7 @@ clinvk 提供 Anthropic 兼容端点，允许你使用 Anthropic SDK 与 CLI 后
 
 ```text
 http://localhost:8080/anthropic/v1
-```text
+```
 
 ## 认证
 
@@ -45,7 +45,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
   ],
   "system": "You are a helpful assistant."
 }
-```text
+```
 
 **字段：**
 
@@ -79,7 +79,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
     "output_tokens": 15
   }
 }
-```text
+```
 
 **流式响应：**
 
@@ -106,7 +106,7 @@ data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":
 
 event: message_stop
 data: {"type":"message_stop"}
-```text
+```
 
 ## 模型映射
 
@@ -144,7 +144,7 @@ message = client.messages.create(
 )
 
 print(message.content[0].text)
-```text
+```
 
 ### TypeScript/JavaScript
 
@@ -163,7 +163,7 @@ const message = await client.messages.create({
 });
 
 console.log(message.content[0].text);
-```text
+```
 
 ### cURL
 
@@ -176,7 +176,7 @@ curl -X POST http://localhost:8080/anthropic/v1/messages \
     "max_tokens": 1024,
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
-```text
+```
 
 ### 流式示例（Python）
 
@@ -197,7 +197,7 @@ stream = client.messages.create(
 
 for text in stream.text_stream:
     print(text, end="", flush=True)
-```bash
+```
 
 ## 与 Anthropic API 的差异
 
@@ -222,7 +222,7 @@ server:
   request_timeout_secs: 300
   read_timeout_secs: 30
   write_timeout_secs: 300
-```text
+```
 
 ## 错误响应
 
@@ -235,7 +235,7 @@ server:
   "status": 400,
   "detail": "The requested backend 'unknown' is not available"
 }
-```text
+```
 
 ## 下一步
 

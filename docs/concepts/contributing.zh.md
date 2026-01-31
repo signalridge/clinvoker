@@ -24,13 +24,13 @@ description: clinvoker 的开发设置、编码标准和贡献流程。
 git clone https://github.com/YOUR_USERNAME/clinvoker.git
 cd clinvoker
 git remote add upstream https://github.com/signalridge/clinvoker.git
-```text
+```
 
 ### 使用 Nix（推荐）
 
 ```bash
 nix develop
-```text
+```
 
 这会在可复现环境中提供所有必需的工具。
 
@@ -40,14 +40,14 @@ nix develop
 go mod download
 go build ./cmd/clinvk
 ./clinvk version
-```text
+```
 
 ### 预提交钩子
 
 ```bash
 pre-commit install
 pre-commit install --hook-type commit-msg
-```text
+```
 
 ## 项目结构
 
@@ -70,7 +70,7 @@ clinvoker/
 ├── docs/                 # 文档
 ├── scripts/              # 构建和实用脚本
 └── test/                 # 集成测试
-```bash
+```
 
 ### 包职责
 
@@ -119,7 +119,7 @@ func exec(cfg *Config, c *exec.Cmd) (*Result, error) {
     res, _ := runWithTimeout(context.Background(), c, cfg.Timeout)
     return res, nil
 }
-```text
+```
 
 ### 错误处理
 
@@ -135,7 +135,7 @@ return apperrors.BackendError("claude", err)
 if apperrors.IsCode(err, apperrors.ErrCodeBackendUnavailable) {
     // 处理特定错误
 }
-```bash
+```
 
 ### 测试标准
 
@@ -182,7 +182,7 @@ func TestExecuteCommand(t *testing.T) {
         })
     }
 }
-```text
+```
 
 ## 测试要求
 
@@ -204,7 +204,7 @@ go test -short ./...
 
 # 特定包
 go test ./internal/backend/...
-```text
+```
 
 ### 集成测试
 
@@ -216,7 +216,7 @@ CLINVK_TEST_INTEGRATION=1 go test ./test/...
 
 # 使用特定后端运行
 CLINVK_TEST_BACKEND=claude go test ./test/...
-```text
+```
 
 ### 基准测试
 
@@ -226,7 +226,7 @@ go test -bench=. ./...
 
 # 带内存分析运行
 go test -bench=. -benchmem ./...
-```text
+```
 
 ## 文档要求
 
@@ -249,7 +249,7 @@ type Backend interface {
 func NewStore(dir string) (*Store, error) {
     // ...
 }
-```text
+```
 
 ### 用户文档
 
@@ -292,7 +292,7 @@ type(scope): description
 [可选正文]
 
 [可选页脚]
-```text
+```
 
 类型：`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
@@ -316,7 +316,7 @@ docs(readme): update installation instructions
 test(backend): add unit tests for registry
 
 chore(deps): update golang.org/x packages
-```text
+```
 
 ### Pull Request 模板
 
@@ -341,7 +341,7 @@ chore(deps): update golang.org/x packages
 
 Fixes #123
 Closes #456
-```text
+```
 
 ### 代码审查清单
 

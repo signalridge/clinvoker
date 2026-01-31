@@ -6,7 +6,7 @@ Execute a prompt with an AI backend.
 
 ```bash
 clinvk [flags] [prompt]
-```bash
+```
 
 ## Description
 
@@ -35,7 +35,7 @@ Execute a simple prompt:
 
 ```bash
 clinvk "fix the bug in auth.go"
-```text
+```
 
 ### Specify Backend
 
@@ -44,7 +44,7 @@ Use a specific backend:
 ```bash
 clinvk --backend codex "implement user registration"
 clinvk -b gemini "explain this algorithm"
-```text
+```
 
 ### Specify Model
 
@@ -53,7 +53,7 @@ Override the default model:
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
 clinvk -b codex -m o3-mini "simple task"
-```text
+```
 
 ### Continue Session
 
@@ -68,7 +68,7 @@ clinvk -c "now add password validation"
 
 # Continue again
 clinvk -c "add rate limiting"
-```text
+```
 
 ### JSON Output
 
@@ -76,7 +76,7 @@ Get structured JSON output:
 
 ```bash
 clinvk --output-format json "explain this code"
-```text
+```
 
 ### Dry Run
 
@@ -85,7 +85,7 @@ See what command would be executed:
 ```bash
 clinvk --dry-run "implement feature X"
 # Output: Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
-```text
+```
 
 ### Ephemeral Mode
 
@@ -93,7 +93,7 @@ Run without creating a session:
 
 ```bash
 clinvk --ephemeral "what is 2+2"
-```text
+```
 
 ### Set Working Directory
 
@@ -101,7 +101,7 @@ Specify the working directory:
 
 ```bash
 clinvk --workdir /path/to/project "review the codebase"
-```text
+```
 
 ## Output
 
@@ -111,7 +111,7 @@ When `--output-format text` is used, only the response text is printed:
 
 ```text
 The code implements a binary search algorithm...
-```text
+```
 
 ### JSON Format
 
@@ -132,7 +132,7 @@ The code implements a binary search algorithm...
     "events": []
   }
 }
-```text
+```
 
 ### Stream JSON Format
 

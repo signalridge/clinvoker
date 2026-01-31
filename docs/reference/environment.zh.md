@@ -48,7 +48,7 @@ clinvk 支持的所有环境变量完整参考。
 ```bash
 export CLINVK_BACKEND=codex
 clinvk "实现功能"  # 使用 codex
-```text
+```
 
 ### 为每个后端设置模型
 
@@ -58,7 +58,7 @@ export CLINVK_CODEX_MODEL=o3-mini
 
 clinvk -b claude "复杂任务"  # 使用 claude-sonnet
 clinvk -b codex "快速任务"   # 使用 o3-mini
-```text
+```
 
 ### 临时覆盖
 
@@ -66,14 +66,14 @@ clinvk -b codex "快速任务"   # 使用 o3-mini
 
 ```bash
 CLINVK_BACKEND=gemini clinvk "解释这个"
-```text
+```
 
 ### HTTP 服务器的 API Key
 
 ```bash
 export CLINVK_API_KEYS="prod-key-1,prod-key-2,dev-key-1"
 clinvk serve
-```text
+```
 
 客户端必须包含以下头之一：
 
@@ -85,7 +85,7 @@ curl -H "X-Api-Key: prod-key-1" http://localhost:8080/api/v1/prompt \
 # 选项 2：Authorization 头
 curl -H "Authorization: Bearer prod-key-1" http://localhost:8080/api/v1/prompt \
   -d '{"backend":"claude","prompt":"hello"}'
-```text
+```
 
 ## 优先级
 
@@ -101,7 +101,7 @@ curl -H "Authorization: Bearer prod-key-1" http://localhost:8080/api/v1/prompt \
 ```bash
 export CLINVK_BACKEND=codex
 clinvk -b claude "提示词"  # 使用 claude（CLI 参数优先）
-```text
+```
 
 ## Shell 配置
 
@@ -114,7 +114,7 @@ clinvk -b claude "提示词"  # 使用 claude（CLI 参数优先）
 export CLINVK_BACKEND=claude
 export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 export CLINVK_CODEX_MODEL=o3
-```text
+```
 
 ### Zsh
 
@@ -125,7 +125,7 @@ export CLINVK_CODEX_MODEL=o3
 export CLINVK_BACKEND=claude
 export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 export CLINVK_CODEX_MODEL=o3
-```text
+```
 
 ### Fish
 
@@ -136,7 +136,7 @@ export CLINVK_CODEX_MODEL=o3
 set -gx CLINVK_BACKEND claude
 set -gx CLINVK_CLAUDE_MODEL claude-opus-4-5-20251101
 set -gx CLINVK_CODEX_MODEL o3
-```text
+```
 
 ## 按目录配置
 
@@ -146,7 +146,7 @@ set -gx CLINVK_CODEX_MODEL o3
 # 项目根目录的 .envrc
 export CLINVK_BACKEND=codex
 export CLINVK_CODEX_MODEL=o3
-```text
+```
 
 当你进入该目录时，direnv 会自动加载这些变量。
 
@@ -169,7 +169,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Review code
         run: clinvk "review this PR for security issues"
-```text
+```
 
 ### GitLab CI
 
@@ -182,7 +182,7 @@ ai-review:
     ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
   script:
     - clinvk "review the changes"
-```text
+```
 
 ### Jenkins
 
@@ -202,7 +202,7 @@ pipeline {
         }
     }
 }
-```text
+```
 
 ## Docker 使用
 
@@ -216,13 +216,13 @@ ENV CLINVK_BACKEND=claude
 ENV CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
 
 ENTRYPOINT ["clinvk"]
-```text
+```
 
 ### Docker Run
 
 ```bash
 docker run -e CLINVK_BACKEND=codex -e OPENAI_API_KEY=$OPENAI_API_KEY clinvk "提示词"
-```text
+```
 
 ### Docker Compose
 
@@ -236,7 +236,7 @@ services:
       - CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     command: clinvk "analyze codebase"
-```text
+```
 
 ## Kubernetes 使用
 
@@ -270,7 +270,7 @@ spec:
             name: clinvk-config
         - secretRef:
             name: clinvk-secrets
-```bash
+```
 
 ## 故障排除
 
@@ -292,7 +292,7 @@ echo $CLINVK_BACKEND
 
 # 使用调试输出运行
 CLINVK_DEBUG=1 clinvk "提示词"
-```text
+```
 
 ## 另请参阅
 

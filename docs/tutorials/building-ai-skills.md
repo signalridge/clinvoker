@@ -39,7 +39,7 @@ flowchart TB
     CLINVK --> CLAUDE["Claude CLI"]
     CLINVK --> CODEX["Codex CLI"]
     CLINVK --> GEMINI["Gemini CLI"]
-```bash
+```
 
 ### Why Combine Skills with clinvoker?
 
@@ -72,7 +72,7 @@ clinvk version
 
 # Check available backends
 clinvk config show
-```yaml
+```
 
 ---
 
@@ -92,7 +92,7 @@ A Claude Code Skill consists of:
     "prefix": "@mention-prefix"
   }
 }
-```bash
+```
 
 | Field | Description | Required |
 |-------|-------------|----------|
@@ -110,7 +110,7 @@ When you include `clinvk` in the `tools` array, Claude Code can execute clinvoke
 {
   "tools": ["clinvk", "jq", "git"]
 }
-```text
+```
 
 This grants the skill permission to run these commands in your environment.
 
@@ -122,7 +122,7 @@ Create your first skill that coordinates multiple backends:
 
 ```bash
 mkdir -p .claude/skills
-```text
+```
 
 Create `.claude/skills/ai-team.json`:
 
@@ -133,7 +133,7 @@ Create `.claude/skills/ai-team.json`:
   "prompt": "You are coordinating an AI development team with three specialists:\n\n1. **Claude** (System Architect) - Best for design, architecture, and complex reasoning\n2. **Codex** (Implementer) - Best for writing, refactoring, and optimizing code\n3. **Gemini** (Security & Research) - Best for security analysis, documentation, and research\n\nWhen the user asks you to implement a feature or solve a problem:\n\n1. **First**, consult Claude to create an architecture/design plan\n2. **Then**, use Codex to implement the solution\n3. **Finally**, use Gemini to review for security issues\n4. **Synthesize** all feedback into a final recommendation\n\nUse the clinvk command to call different backends:\n- `clinvk -b claude \"<prompt>\"` - For architecture and design\n- `clinvk -b codex \"<prompt>\"` - For implementation\n- `clinvk -b gemini \"<prompt>\"` - For security and research\n\nAlways explain which team member you're consulting and why. Present the final solution with:\n- Architecture decisions and rationale\n- Implementation details\n- Security considerations\n- Any trade-offs made",
   "tools": ["clinvk"]
 }
-```bash
+```
 
 ### How This Skill Works
 
@@ -150,13 +150,13 @@ Start Claude Code in your project directory:
 
 ```bash
 claude
-```text
+```
 
 Invoke the skill:
 
 ```text
 /ai-team I need to implement a secure user authentication system in Go
-```bash
+```
 
 Claude should:
 
@@ -180,13 +180,13 @@ Create `.claude/skills/multi-review.json`:
   "prompt": "You are a code review coordinator. When the user shares code:\n\n1. **Create parallel review tasks** for:\n   - **Claude**: Architecture, design patterns, and maintainability\n   - **Codex**: Implementation quality, performance, and optimization\n   - **Gemini**: Security vulnerabilities and best practices\n\n2. **Execute parallel review** using clinvoker:\n   ```bash\n   echo '{\"tasks\":[\n     {\"backend\":\"claude\",\"prompt\":\"Review architecture...\"},\n     {\"backend\":\"codex\",\"prompt\":\"Review implementation...\"},\n     {\"backend\":\"gemini\",\"prompt\":\"Security audit...\"}\n   ]}' | clinvk parallel -f -\n   ```\n\n3. **Synthesize the feedback** into a structured report:\n   - Executive Summary (key findings)\n   - Detailed Feedback by category\n   - Prioritized Recommendations\n   - Positive highlights\n\n4. **Highlight critical issues** found by multiple backends\n\nFormat your response as:\n```\n## Code Review Report\n\n### Summary\n[Key findings in 2-3 sentences]\n\n### Critical Issues\n- [Issue] - Found by: [backends]\n\n### Architecture (Claude)\n[Feedback]\n\n### Implementation (Codex)\n[Feedback]\n\n### Security (Gemini)\n[Feedback]\n\n### Recommendations\n1. [Priority] [Recommendation]\n```",
   "tools": ["clinvk", "jq"]
 }
-```text
+```
 
 ### Usage Example
 
 ```text
 /multi-review
-```bash
+```
 
 Then paste your code when prompted. Claude will:
 
@@ -210,7 +210,7 @@ Create `.claude/skills/backend-router.json`:
   "prompt": "You are an intelligent task router. Analyze the user's request and route it to the most appropriate AI backend.\n\n## Routing Rules\n\n| Task Type | Best Backend | Reason |\n|-----------|--------------|--------|\n| Architecture, design, complex reasoning | Claude | Deep reasoning, safety focus |\n| Code generation, refactoring, debugging | Codex | Optimized for coding tasks |\n| Security analysis, research, documentation | Gemini | Broad knowledge, security focus |\n| Quick questions, explanations | Default | Fastest response |\n\n## How to Route\n\n1. **Analyze** the user's request\n2. **Determine** the best backend using the rules above\n3. **Execute** using clinvoker:\n   ```bash\n   clinvk -b <backend> \"<optimized prompt>\"\n   ```\n4. **Present** the result with context about why you chose that backend\n\n## Examples\n\nUser: \"Design a microservices architecture\"\n- Route to: Claude\n- Reason: Requires architectural thinking and trade-off analysis\n\nUser: \"Implement a quicksort algorithm\"\n- Route to: Codex\n- Reason: Straightforward implementation task\n\nUser: \"Check this code for SQL injection\"\n- Route to: Gemini\n- Reason: Security-focused analysis\n\nAlways explain your routing decision to help the user understand backend strengths.",
   "tools": ["clinvk"]
 }
-```yaml
+```
 
 ---
 
@@ -227,7 +227,7 @@ Create `.claude/skills/long-term-project.json`:
   "prompt": "You help manage long-term coding projects using clinvoker's session persistence and multiple backends.\n\n## Capabilities\n\n1. **Session Management**:\n   - List active sessions: `clinvk sessions list`\n   - Resume previous work: `clinvk resume --last`\n   - Continue specific session: `clinvk resume <session-id>`\n\n2. **Multi-Backend Coordination**:\n   - Switch backends based on task phase\n   - Maintain context across backend switches\n   - Aggregate results from multiple sources\n\n## Workflow\n\nWhen starting work:\n1. Check for existing sessions: `clinvk sessions list`\n2. If found, ask user whether to resume\n3. If resuming: `clinvk resume --last`\n4. If new: Proceed with new session\n\nDuring work:\n- Use Claude for planning and architecture decisions\n- Use Codex for implementation phases\n- Use Gemini for security reviews and documentation\n- Tag sessions appropriately: `clinvk config set session.default_tags [\"project-x\"]`\n\nAt session end:\n- Summarize progress\n- Note any blockers or next steps\n- Suggest which backend to use next\n\n## Best Practices\n\n- Tag sessions with project names\n- Summarize progress at end of each session\n- Use specific session IDs for important work\n- Clean up old sessions periodically: `clinvk sessions cleanup`",
   "tools": ["clinvk"]
 }
-```yaml
+```
 
 ---
 
@@ -243,7 +243,7 @@ When building skills that call clinvoker, handle these scenarios:
 {
   "prompt": "When calling clinvoker, handle backend errors:\n\nIf a backend is unavailable:\n1. Try an alternative backend:\n   - If Claude fails, try Gemini for analysis\n   - If Codex fails, try Claude for implementation\n2. Inform the user about the fallback\n3. Adjust expectations based on available backends\n\nExample error handling:\n```bash\n# Try primary backend\nresult=$(clinvk -b claude \"analyze this\" 2>&1) || {\n  # Fallback to Gemini\n  echo \"Claude unavailable, using Gemini...\"\n  result=$(clinvk -b gemini \"analyze this\" 2>&1)\n}\n```"
 }
-```text
+```
 
 #### Timeout Handling
 
@@ -251,7 +251,7 @@ When building skills that call clinvoker, handle these scenarios:
 {
   "prompt": "Handle timeouts gracefully:\n\n1. Set appropriate timeouts for long tasks:\n   ```bash\n   clinvk -b claude --timeout 300 \"complex analysis\"\n   ```\n\n2. If timeout occurs:\n   - Break task into smaller chunks\n   - Use a faster backend\n   - Ask user if they want to continue\n\n3. For critical tasks, retry with exponential backoff"
 }
-```yaml
+```
 
 ---
 
@@ -278,7 +278,7 @@ clinvk config show | grep -E "claude|codex|gemini"
 
 echo ""
 echo "All tests complete!"
-```text
+```
 
 ### Manual Testing Checklist
 
@@ -303,7 +303,7 @@ Execute tasks in sequence, passing output between backends:
 {
   "prompt": "For sequential workflows:\n\n1. Step 1 - Design (Claude):\n   ```bash\n   design=$(clinvk -b claude \"Design a caching layer\")\n   ```\n\n2. Step 2 - Implement (Codex):\n   ```bash\n   code=$(clinvk -b codex \"Implement: $design\")\n   ```\n\n3. Step 3 - Review (Gemini):\n   ```bash\n   review=$(clinvk -b gemini \"Review: $code\")\n   ```\n\n4. Present all three results"
 }
-```text
+```
 
 ### Pattern 2: Parallel Aggregation
 
@@ -313,7 +313,7 @@ Run tasks in parallel and combine results:
 {
   "prompt": "For parallel analysis:\n\n```bash\necho '{\"tasks\":[\n  {\"backend\":\"claude\",\"prompt\":\"Analyze architecture\"},\n  {\"backend\":\"codex\",\"prompt\":\"Analyze performance\"},\n  {\"backend\":\"gemini\",\"prompt\":\"Analyze security\"}\n]}' | clinvk parallel -f - -o json | jq '.results[]'\n```\n\nAggregate findings and present unified view"
 }
-```text
+```
 
 ### Pattern 3: Fallback Chain
 
@@ -323,7 +323,7 @@ Try backends in order until one succeeds:
 {
   "prompt": "For resilient execution:\n\n```bash\n# Try backends in order\nfor backend in claude gemini codex; do\n  result=$(clinvk -b $backend \"task\" 2>&1) && break\ndone\n```\n\nPresent the successful result"
 }
-```yaml
+```
 
 ---
 
@@ -340,7 +340,7 @@ mkdir -p .claude/skills
 # Add skills
 git add .claude/skills/
 git commit -m "Add AI team skills for multi-backend workflows"
-```text
+```
 
 ### Sharing Skills
 
@@ -352,7 +352,7 @@ tar czf ai-skills.tar.gz .claude/skills/
 
 # Others import
 tar xzf ai-skills.tar.gz
-```text
+```
 
 ### Organization-Wide Skills
 
@@ -377,7 +377,7 @@ Define what each backend does best:
 {
   "prompt": "Backend roles:\n- Claude: Architecture, reasoning, safety-critical decisions\n- Codex: Implementation, code generation, debugging\n- Gemini: Security, research, documentation"
 }
-```text
+```
 
 ### 2. Explicit Error Handling
 
@@ -387,7 +387,7 @@ Always include fallback instructions:
 {
   "prompt": "If a backend fails:\n1. Try alternative backend\n2. Inform user of the change\n3. Adjust approach accordingly"
 }
-```text
+```
 
 ### 3. Structured Output
 
@@ -397,7 +397,7 @@ Request structured output for easier parsing:
 {
   "prompt": "Format results as:\n## Backend: <name>\n### Output\n<content>\n### Confidence\n<high/medium/low>"
 }
-```text
+```
 
 ### 4. Session Awareness
 
@@ -407,7 +407,7 @@ Use sessions for context preservation:
 {
   "prompt": "For multi-step tasks:\n1. Check existing sessions\n2. Resume if relevant\n3. Tag new sessions appropriately"
 }
-```yaml
+```
 
 ---
 
@@ -427,7 +427,7 @@ jq . .claude/skills/your-skill.json
 # Restart Claude Code
 exit
 claude
-```bash
+```
 
 ### clinvoker Not Found
 
@@ -446,7 +446,7 @@ which clinvoker
 {
   "prompt": "Use full path: /usr/local/bin/clinvk"
 }
-```text
+```
 
 ### Backend Errors
 
@@ -456,7 +456,7 @@ Handle backend-specific errors:
 {
   "prompt": "If you get 'backend not available':\n1. Check available backends: clinvk config show\n2. Use available backend\n3. Inform user of limitation"
 }
-```text
+```
 
 ---
 

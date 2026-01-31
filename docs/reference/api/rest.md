@@ -6,7 +6,7 @@ Complete reference for the clinvk custom REST API.
 
 ```text
 http://localhost:8080/api/v1
-```text
+```
 
 ## Authentication
 
@@ -45,7 +45,7 @@ Execute a single prompt.
   "extra": ["--some-flag"],
   "metadata": {"project": "demo"}
 }
-```text
+```
 
 **Fields:**
 
@@ -83,7 +83,7 @@ Execute a single prompt.
     "reasoning_tokens": 0
   }
 }
-```text
+```
 
 **Streaming Response (`output_format: "stream-json"`):**
 
@@ -93,7 +93,7 @@ Streams NDJSON (`application/x-ndjson`) of unified events. Example (structure ab
 {"type":"init","backend":"claude","session_id":"...","content":{"model":"..."}}
 {"type":"message","backend":"claude","session_id":"...","content":{"text":"..."}}
 {"type":"done","backend":"claude","session_id":"..."}
-```yaml
+```
 
 ---
 
@@ -120,7 +120,7 @@ Execute multiple tasks in parallel.
   "max_parallel": 3,
   "fail_fast": false
 }
-```text
+```
 
 Each task accepts the same fields as `/api/v1/prompt` (including `workdir`, `approval_mode`, `output_format`, etc.).
 
@@ -141,7 +141,7 @@ Each task accepts the same fields as `/api/v1/prompt` (including `workdir`, `app
     }
   ]
 }
-```text
+```
 
 > Parallel tasks are always ephemeral; `session_id` may be omitted.
 
@@ -172,7 +172,7 @@ Execute a sequential pipeline.
   "stop_on_failure": false,
   "pass_working_dir": false
 }
-```text
+```
 
 **Fields:**
 
@@ -203,7 +203,7 @@ Execute a sequential pipeline.
     }
   ]
 }
-```yaml
+```
 
 ---
 
@@ -221,7 +221,7 @@ Compare responses from multiple backends.
   "backends": ["claude", "codex", "gemini"],
   "sequential": false
 }
-```text
+```
 
 **Response:**
 
@@ -240,7 +240,7 @@ Compare responses from multiple backends.
     }
   ]
 }
-```text
+```
 
 > Compare runs are ephemeral; `session_id` may be omitted.
 
@@ -262,7 +262,7 @@ List available backends.
     {"name": "gemini", "available": false}
   ]
 }
-```yaml
+```
 
 ---
 
@@ -305,7 +305,7 @@ List sessions.
   "limit": 100,
   "offset": 0
 }
-```text
+```
 
 ### GET /api/v1/sessions/{id}
 
@@ -339,7 +339,7 @@ Server health status.
     "session_count": 15
   }
 }
-```text
+```
 
 **Status Values:**
 
@@ -370,7 +370,7 @@ If API keys are configured and missing/invalid:
   "error": "unauthorized",
   "message": "missing API key"
 }
-```text
+```
 
 ### Rate Limiting (429)
 

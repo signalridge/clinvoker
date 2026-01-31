@@ -43,7 +43,7 @@ flowchart TB
     style CLAUDE fill:#f3e5f5,stroke:#7b1fa2
     style CODEX fill:#e8f5e9,stroke:#388e3c
     style GEMINI fill:#ffebee,stroke:#c62828
-```yaml
+```
 
 ---
 
@@ -60,7 +60,7 @@ flowchart TB
 
 ```bash
 pip install langchain langchain-openai langgraph
-```text
+```
 
 ### 验证 clinvoker 服务器
 
@@ -72,7 +72,7 @@ curl http://localhost:8080/health
 
 # 预期响应
 {"status":"ok"}
-```yaml
+```
 
 ---
 
@@ -133,7 +133,7 @@ messages = [
 
 response = llm.invoke(messages)
 print(response.content)
-```text
+```
 
 ### 工作原理
 
@@ -207,7 +207,7 @@ print("\n=== 实现审查 (Codex) ===")
 print(results["implementation"].content)
 print("\n=== 安全审查 (Gemini) ===")
 print(results["security"].content)
-```text
+```
 
 ### 顺序链执行
 
@@ -273,7 +273,7 @@ print("\n=== 实现 ===")
 print(result["implementation"])
 print("\n=== 审查 ===")
 print(result["review"])
-```yaml
+```
 
 ---
 
@@ -403,7 +403,7 @@ def process_payment(card_number, amount):
 
 print("=== 最终解决方案 ===")
 print(result["final_output"])
-```text
+```
 
 ### 条件路由
 
@@ -502,7 +502,7 @@ for task in tasks:
     print(f"\n任务：{task}")
     print(f"类型：{result['task_type']}")
     print(f"结果：{result['result'][:200]}...")
-```yaml
+```
 
 ---
 
@@ -535,7 +535,7 @@ for chunk in llm.stream(messages):
     sys.stdout.flush()
 
 print()  # 最终换行
-```text
+```
 
 ### 使用回调的流式
 
@@ -558,7 +558,7 @@ llm = ChatOpenAI(
 # 这将自动流式传输到 stdout
 messages = [HumanMessage(content="解释 SOLID 原则")]
 response = llm.invoke(messages)
-```yaml
+```
 
 ---
 
@@ -603,7 +603,7 @@ try:
     print(response.content)
 except Exception as e:
     print(f"重试后失败：{e}")
-```text
+```
 
 ### 回退链
 
@@ -634,7 +634,7 @@ def fallback_invoke(prompt, backends=["claude", "codex", "gemini"]):
 # 用法
 response = fallback_invoke("解释量子计算")
 print(response.content)
-```yaml
+```
 
 ---
 
@@ -689,7 +689,7 @@ llm = ChatOpenAI(
 
 response = llm.invoke([HumanMessage(content="解释机器学习")])
 print(f"\n响应：{response.content[:200]}...")
-```yaml
+```
 
 ---
 
@@ -710,7 +710,7 @@ claude_llm = ChatOpenAI(
 # 多次使用相同实例
 for prompt in prompts:
     response = claude_llm.invoke([HumanMessage(content=prompt)])
-```text
+```
 
 ### 2. 超时配置
 
@@ -723,7 +723,7 @@ llm = ChatOpenAI(
     openai_api_key="not-needed",
     request_timeout=60,  # 60 秒
 )
-```text
+```
 
 ### 3. 模型选择策略
 
@@ -747,7 +747,7 @@ def get_llm_for_task(task_type: str):
         openai_api_key="not-needed",
         temperature=temp,
     )
-```yaml
+```
 
 ---
 
@@ -769,7 +769,7 @@ llm = ChatOpenAI(
     # 如果使用 HTTPS 和自签名证书
     # http_client=httpx.Client(verify=False),
 )
-```text
+```
 
 ### 模型未找到
 
@@ -783,7 +783,7 @@ response = requests.get("http://localhost:8080/openai/v1/models")
 print(response.json())
 
 # 使用响应中的确切模型名称
-```text
+```
 
 ### 超时问题
 
@@ -797,7 +797,7 @@ llm = ChatOpenAI(
     request_timeout=300,  # 5 分钟
     max_retries=3,
 )
-```text
+```
 
 ---
 

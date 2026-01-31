@@ -29,7 +29,7 @@ The command completed successfully without errors.
 ```bash
 clinvk "hello world"
 echo $?  # Output: 0
-```text
+```
 
 ### 1 - General Error
 
@@ -43,7 +43,7 @@ A general error occurred during execution. Common causes include:
 ```bash
 clinvk --invalid-flag "prompt"
 echo $?  # Output: 1
-```text
+```
 
 ### 2 - Backend Not Available
 
@@ -52,7 +52,7 @@ The requested backend is not installed or not in PATH.
 ```bash
 clinvk -b nonexistent "prompt"
 echo $?  # Output: 2
-```text
+```
 
 ### 3 - Invalid Configuration
 
@@ -61,7 +61,7 @@ The configuration file has errors or contains invalid settings.
 ```bash
 clinvk --config /invalid/config.yaml "prompt"
 echo $?  # Output: 3
-```text
+```
 
 ### 4 - Session Error
 
@@ -70,7 +70,7 @@ A session-related operation failed.
 ```bash
 clinvk resume nonexistent-session
 echo $?  # Output: 4
-```bash
+```
 
 ### 5 - API Error
 
@@ -80,7 +80,7 @@ An HTTP API request failed (when using `clinvk serve` or API mode).
 # Server not running
 clinvk --api-mode "prompt"
 echo $?  # Output: 5
-```text
+```
 
 ### 6 - Timeout
 
@@ -89,7 +89,7 @@ The command execution exceeded the configured timeout.
 ```bash
 clinvk --timeout 5 "very long task"
 echo $?  # Output: 6
-```text
+```
 
 ### 7 - Cancelled
 
@@ -99,7 +99,7 @@ The user cancelled the operation (e.g., pressed Ctrl+C).
 clinvk "long running task"
 # Press Ctrl+C
 echo $?  # Output: 7
-```bash
+```
 
 ### Backend Exit Codes (8+)
 
@@ -173,7 +173,7 @@ if clinvk "implement feature"; then
 else
   echo "Failed!"
 fi
-```text
+```
 
 ### Handle Specific Codes
 
@@ -198,7 +198,7 @@ case $code in
     echo "Backend error: $code"
     ;;
 esac
-```text
+```
 
 ### Retry on Failure
 
@@ -221,7 +221,7 @@ while [ $attempt -le $max_attempts ]; do
   sleep 5
   attempt=$((attempt + 1))
 done
-```text
+```
 
 ### Exit on Error
 
@@ -234,7 +234,7 @@ clinvk "step 2"
 clinvk "step 3"
 
 echo "All steps completed successfully"
-```text
+```
 
 ### Ignore Specific Errors
 
@@ -246,7 +246,7 @@ clinvk "optional task" || true
 
 # This must succeed
 clinvk "critical task"
-```text
+```
 
 ## CI/CD Integration
 
@@ -263,7 +263,7 @@ clinvk "critical task"
   run: |
     echo "AI task failed with exit code $?"
     exit 1
-```text
+```
 
 ### GitLab CI
 
@@ -277,7 +277,7 @@ ai-task:
         2) echo "Backend not installed" ; exit 1 ;;
         *) echo "Error: $EXIT_CODE" ; exit 1 ;;
       esac
-```text
+```
 
 ### Make/Just
 
@@ -292,7 +292,7 @@ ai-review:
 
 lint-and-review: lint ai-review
  @echo "All checks passed"
-```bash
+```
 
 ## Exit Code Best Practices
 
@@ -323,7 +323,7 @@ echo "Exit code: $?"
 # Check backend directly
 claude "test"
 echo "Backend exit code: $?"
-```text
+```
 
 ## See Also
 

@@ -57,7 +57,7 @@ The combined feedback gives you confidence that nothing was missed.
                  Aggregate Results
                          |
               Actionable Feedback
-```text
+```
 
 ### How It Works
 
@@ -85,7 +85,7 @@ clinvk config show
 
 jq --version
 # Should show version 1.6 or later
-```yaml
+```
 
 ---
 
@@ -165,7 +165,7 @@ templates:
       ```
 
       Categorize findings as CRITICAL, HIGH, MEDIUM, or LOW risk.
-```text
+```
 
 ### Configuration Structure Explained
 
@@ -329,13 +329,13 @@ esac
 
 echo ""
 echo "Review complete!"
-```text
+```
 
 Make the script executable:
 
 ```bash
 chmod +x run-review.sh
-```yaml
+```
 
 ---
 
@@ -427,7 +427,7 @@ func init() {
         panic(err)
     }
 }
-```text
+```
 
 This code contains multiple issues across architecture, performance, and security dimensions.
 
@@ -440,7 +440,7 @@ Execute the multi-backend review:
 ```bash
 ./run-review.sh -o markdown sample-auth.go > review-report.md
 cat review-report.md
-```text
+```
 
 ### Expected Architecture Review (Claude)
 
@@ -521,7 +521,7 @@ echo ""
 echo "## Detailed Reports"
 echo ""
 jq -r '.results[] | "### \(.name | split("-") | map(ascii_upcase) | join(" "))\n\n**Backend:** \(.backend)\n\n\(.output)\n"' "$RESULTS_FILE"
-```yaml
+```
 
 ---
 
@@ -546,7 +546,7 @@ When you run `clinvk parallel`, here's what happens internally:
 5. Wait for all tasks to complete
    |
 6. Aggregate results into JSON response
-```text
+```
 
 ### Worker Pool Configuration
 
@@ -557,7 +557,7 @@ parallel:
   max_workers: 3        # Number of concurrent tasks
   fail_fast: false      # Continue even if one task fails
   aggregate_output: true # Combine all outputs
-```text
+```
 
 ### Execution Guarantees
 
@@ -634,7 +634,7 @@ jobs:
             echo "::error::Critical issues found!"
             exit 1
           fi
-```text
+```
 
 ### GitLab CI Integration
 
@@ -661,7 +661,7 @@ multi-backend-review:
       fi
   rules:
     - if: $CI_MERGE_REQUEST_IID
-```text
+```
 
 ### Jenkins Pipeline
 
@@ -701,7 +701,7 @@ pipeline {
         }
     }
 }
-```yaml
+```
 
 ---
 
@@ -717,7 +717,7 @@ clinvk -b claude "Review the Login function in auth.go for architecture issues"
 
 # Review by diff
 clinvk -b codex "Review this diff for performance issues: $(git diff HEAD~1)"
-```text
+```
 
 ### 2. Result Prioritization
 
@@ -737,7 +737,7 @@ Maintain templates in version control:
 ```bash
 git add review-config.yaml run-review.sh
 git commit -m "Add multi-backend review configuration"
-```text
+```
 
 ### 4. Cost Optimization
 
@@ -761,7 +761,7 @@ parallel:
 backends:
   claude:
     model: claude-sonnet-4-20250514  # Faster than Opus
-```text
+```
 
 ### Issue: Inconsistent Results
 
@@ -773,7 +773,7 @@ prompt: |
   - Line numbers where applicable
   - Code snippets demonstrating the issue
   - Specific recommendations for fixes
-```text
+```
 
 ### Issue: Backend Timeouts
 
@@ -782,7 +782,7 @@ prompt: |
 ```yaml
 unified_flags:
   command_timeout_secs: 600  # 10 minutes
-```text
+```
 
 ---
 

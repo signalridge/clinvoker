@@ -6,7 +6,7 @@
 
 ```bash
 clinvk [参数] [提示词]
-```bash
+```
 
 ## 说明
 
@@ -35,7 +35,7 @@ clinvk [参数] [提示词]
 
 ```bash
 clinvk "修复 auth.go 中的 bug"
-```text
+```
 
 ### 指定后端
 
@@ -44,7 +44,7 @@ clinvk "修复 auth.go 中的 bug"
 ```bash
 clinvk --backend codex "实现用户注册"
 clinvk -b gemini "解释这个算法"
-```text
+```
 
 ### 指定模型
 
@@ -53,7 +53,7 @@ clinvk -b gemini "解释这个算法"
 ```bash
 clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
 clinvk -b codex -m o3-mini "简单任务"
-```text
+```
 
 ### 继续会话
 
@@ -68,7 +68,7 @@ clinvk -c "现在添加密码验证"
 
 # 再次继续
 clinvk -c "添加限流"
-```text
+```
 
 ### JSON 输出
 
@@ -76,7 +76,7 @@ clinvk -c "添加限流"
 
 ```bash
 clinvk --output-format json "解释这段代码"
-```text
+```
 
 ### 模拟执行
 
@@ -85,7 +85,7 @@ clinvk --output-format json "解释这段代码"
 ```bash
 clinvk --dry-run "实现功能 X"
 # 输出：Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
-```text
+```
 
 ### 无状态模式
 
@@ -93,7 +93,7 @@ clinvk --dry-run "实现功能 X"
 
 ```bash
 clinvk --ephemeral "2+2 等于多少"
-```text
+```
 
 ### 设置工作目录
 
@@ -101,7 +101,7 @@ clinvk --ephemeral "2+2 等于多少"
 
 ```bash
 clinvk --workdir /path/to/project "审查代码库"
-```text
+```
 
 ## 输出
 
@@ -111,7 +111,7 @@ clinvk --workdir /path/to/project "审查代码库"
 
 ```text
 代码实现了二分查找算法...
-```text
+```
 
 ### JSON 格式
 
@@ -132,7 +132,7 @@ clinvk --workdir /path/to/project "审查代码库"
     "events": []
   }
 }
-```text
+```
 
 ### 流式 JSON 格式
 

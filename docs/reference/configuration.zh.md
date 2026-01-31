@@ -10,7 +10,7 @@ clinvk 所有配置选项的完整参考。
 
 ```bash
 clinvk --config /path/to/config.yaml "提示词"
-```text
+```
 
 ## 完整配置示例
 
@@ -111,7 +111,7 @@ parallel:
   max_workers: 3
   fail_fast: false
   aggregate_output: true
-```yaml
+```
 
 ---
 
@@ -127,7 +127,7 @@ parallel:
 
 ```yaml
 default_backend: claude
-```yaml
+```
 
 ---
 
@@ -251,7 +251,7 @@ backends:
     enabled: true
     extra_flags:
       - "--sandbox"
-```bash
+```
 
 !!! note "allowed_tools 限制"
     `allowed_tools` 选项目前仅 Claude 后端支持。为 Codex 或 Gemini 设置将无效，系统会记录警告。
@@ -275,7 +275,7 @@ session:
   retention_days: 30
   store_token_usage: true
   default_tags: []
-```yaml
+```
 
 ---
 
@@ -296,7 +296,7 @@ output:
   show_tokens: false
   show_timing: false
   color: true
-```yaml
+```
 
 ---
 
@@ -378,7 +378,7 @@ parallel:
   max_workers: 3
   fail_fast: false
   aggregate_output: true
-```text
+```
 
 ---
 
