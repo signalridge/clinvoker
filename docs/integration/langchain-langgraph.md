@@ -416,4 +416,4 @@ llm = ChatOpenAI(
 
 - [CI/CD Integration](ci-cd.md) - Automate with pipelines
 - [Client Libraries](client-libraries.md) - Other language bindings
-- [REST API Reference](../reference/rest-api.md) - Complete API docs
+- [REST API Reference](../reference/api/rest-api.md) - Complete API docs

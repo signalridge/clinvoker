@@ -413,6 +413,6 @@ except httpx.HTTPStatusError as e:
 
 ## 下一步
 
-- [REST API 参考](../reference/rest-api.md) - 完整 API 文档
-- [OpenAI 兼容](../reference/openai-compatible.md) - OpenAI 端点详情
-- [Anthropic 兼容](../reference/anthropic-compatible.md) - Anthropic 端点详情
+- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档
+- [OpenAI 兼容](../reference/api/openai-compatible.md) - OpenAI 端点详情
+- [Anthropic 兼容](../reference/api/anthropic-compatible.md) - Anthropic 端点详情

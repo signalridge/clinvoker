@@ -224,7 +224,7 @@ Gemini 建议这些优化：...
 
 - [Model Context Protocol 规范](https://spec.modelcontextprotocol.io/)
 - [Claude Desktop MCP 指南](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API 参考](../reference/rest-api.md) - 当前 HTTP API
+- [REST API 参考](../reference/api/rest-api.md) - 当前 HTTP API
 
 ## 反馈
 
