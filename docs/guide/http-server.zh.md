@@ -306,6 +306,6 @@ curl http://localhost:8080/openapi.json > openapi.json
 
 ## 下一步
 
-- [REST API 参考](../reference/rest-api.md) - 完整 API 文档
-- [OpenAI 兼容](../reference/openai-compatible.md) - 使用 OpenAI 客户端
-- [Anthropic 兼容](../reference/anthropic-compatible.md) - 使用 Anthropic 客户端
+- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档
+- [OpenAI 兼容](../reference/api/openai-compatible.md) - 使用 OpenAI 客户端
+- [Anthropic 兼容](../reference/api/anthropic-compatible.md) - 使用 Anthropic 客户端

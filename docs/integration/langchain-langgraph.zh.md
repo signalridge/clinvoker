@@ -416,4 +416,4 @@ llm = ChatOpenAI(
 
 - [CI/CD 集成](ci-cd.md) - 在流水线中自动化
 - [客户端库](client-libraries.md) - 其他语言绑定
-- [REST API 参考](../reference/rest-api.md) - 完整 API 文档
+- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档

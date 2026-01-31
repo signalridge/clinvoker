@@ -440,5 +440,5 @@ fi
 ## Next Steps
 
 - [Client Libraries](client-libraries.md) - Language-specific SDKs
-- [REST API Reference](../reference/rest-api.md) - Complete API docs
+- [REST API Reference](../reference/api/rest-api.md) - Complete API docs
 - [Troubleshooting](../development/troubleshooting.md) - Common issues

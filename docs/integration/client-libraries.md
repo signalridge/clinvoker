@@ -413,6 +413,6 @@ except httpx.HTTPStatusError as e:
 
 ## Next Steps
 
-- [REST API Reference](../reference/rest-api.md) - Complete API documentation
-- [OpenAI Compatible](../reference/openai-compatible.md) - OpenAI endpoint details
-- [Anthropic Compatible](../reference/anthropic-compatible.md) - Anthropic endpoint details
+- [REST API Reference](../reference/api/rest-api.md) - Complete API documentation
+- [OpenAI Compatible](../reference/api/openai-compatible.md) - OpenAI endpoint details
+- [Anthropic Compatible](../reference/api/anthropic-compatible.md) - Anthropic endpoint details
