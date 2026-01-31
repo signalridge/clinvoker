@@ -372,13 +372,77 @@ clinvoker follows [Semantic Versioning](https://semver.org/):
 - `MINOR`: New features, backwards compatible
 - `PATCH`: Bug fixes, backwards compatible
 
-### Creating a Release
+### Automated Releases with release-please
 
-1. Update version in `internal/version/version.go`
-2. Update CHANGELOG.md
-3. Create git tag: `git tag v1.2.3`
-4. Push tag: `git push origin v1.2.3`
-5. GitHub Actions builds and publishes release
+We use [release-please](https://github.com/googleapis/release-please) for automated versioning and changelog generation.
+
+#### How It Works
+
+```text
+feat: add new feature  →  push to main  →  Release PR created automatically
+                                                  ↓
+                                         merge Release PR
+                                                  ↓
+                                         tag created (v1.1.0)
+                                                  ↓
+                                         GoReleaser builds binaries
+```
+
+1. **Write code** using [Conventional Commits](#commit-message-conventions)
+2. **Push to main** - release-please automatically creates/updates a Release PR
+3. **Merge Release PR** - this creates a git tag and GitHub Release
+4. **GoReleaser triggers** - builds binaries for all platforms
+
+#### Conventional Commits and Versioning
+
+| Commit Type | Version Bump | Changelog Section |
+|-------------|--------------|-------------------|
+| `feat:` | Minor (0.1.0 → 0.2.0) | Features |
+| `fix:` | Patch (0.1.0 → 0.1.1) | Bug Fixes |
+| `feat!:` or `BREAKING CHANGE:` | Major (0.1.0 → 1.0.0) | Breaking Changes |
+| `perf:` | Patch | Performance |
+| `refactor:` | Patch | Refactoring |
+| `deps:` | Patch | Dependencies |
+| `security:` | Patch | Security |
+| `docs:`, `chore:`, `test:`, `ci:` | No release | Hidden |
+
+#### Example Workflow
+
+```bash
+# 1. Create feature branch
+git checkout -b feat/new-feature
+
+# 2. Make changes and commit with conventional format
+git commit -m "feat(backend): add support for new AI provider"
+
+# 3. Create PR and merge to main
+gh pr create && gh pr merge
+
+# 4. release-please automatically creates Release PR
+#    Title: "chore: release v0.2.0"
+#    Contains: Updated CHANGELOG.md and version bumps
+
+# 5. Review and merge Release PR
+#    → Tag v0.2.0 created
+#    → GoReleaser builds and publishes
+
+# 6. Done! Binaries available via:
+#    - GitHub Releases
+#    - Homebrew: brew install signalridge/tap/clinvk
+#    - go install: go install github.com/signalridge/clinvoker/cmd/clinvk@latest
+```
+
+#### Manual Release (Emergency Only)
+
+For emergency releases when automation is unavailable:
+
+```bash
+# 1. Update CHANGELOG.md manually
+# 2. Create and push tag
+git tag -a v1.2.3 -m "Release v1.2.3"
+git push origin v1.2.3
+# 3. GoReleaser workflow triggers automatically
+```
 
 ## Questions?
 
