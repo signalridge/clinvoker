@@ -93,82 +93,67 @@ extra:
     property: G-XXXXXXXXXX
 nav:
   - Home: index.md
-  - Getting Started:
-      - getting-started/index.md
-      - Installation: getting-started/installation.md
-      - First Prompt: getting-started/first-prompt.md
-      - Next Steps: getting-started/next-steps.md
   - Tutorials:
       - tutorials/index.md
+      - Getting Started: tutorials/getting-started.md
       - Multi-Backend Code Review: tutorials/multi-backend-code-review.md
       - Building AI Skills: tutorials/building-ai-skills.md
       - CI/CD Integration: tutorials/ci-cd-integration.md
       - LangChain Integration: tutorials/langchain-integration.md
-  - How-To Guides:
-      - how-to/index.md
-      - Basic Usage: how-to/basic-usage.md
-      - Session Management: how-to/session-management.md
-      - Parallel Execution: how-to/parallel-execution.md
-      - Chain Execution: how-to/chain-execution.md
-      - Backend Comparison: how-to/backend-comparison.md
-      - Configuration: how-to/configuration.md
+  - Guides:
+      - guides/index.md
+      - Basic Usage: guides/basic-usage.md
+      - Sessions: guides/sessions.md
+      - Parallel Execution: guides/parallel.md
+      - Chain Execution: guides/chains.md
+      - HTTP Server: guides/http-server.md
+      - Configuration: guides/configuration.md
+      - Backend Comparison: guides/compare.md
       - Backends:
-          - how-to/backends/index.md
-          - Claude Code: how-to/backends/claude.md
-          - Codex CLI: how-to/backends/codex.md
-          - Gemini CLI: how-to/backends/gemini.md
-  - Use Cases:
-      - use-cases/index.md
-      - AI Team Collaboration: use-cases/ai-team-collaboration.md
-      - Automated Code Review: use-cases/automated-code-review.md
-      - Multi-Model Research: use-cases/multi-model-research.md
-      - Smart Documentation: use-cases/smart-documentation.md
-      - Test Generation Pipeline: use-cases/test-generation-pipeline.md
-      - API Gateway Pattern: use-cases/api-gateway-pattern.md
+          - guides/backends/index.md
+          - Claude Code: guides/backends/claude.md
+          - Codex CLI: guides/backends/codex.md
+          - Gemini CLI: guides/backends/gemini.md
+      - Integrations:
+          - guides/integrations/index.md
+          - OpenAI SDK: guides/integrations/openai-sdk.md
+          - Anthropic SDK: guides/integrations/anthropic-sdk.md
+          - LangChain/LangGraph: guides/integrations/langchain-langgraph.md
+          - Claude Code Skills: guides/integrations/claude-code-skills.md
+          - MCP Server: guides/integrations/mcp-server.md
+          - CI/CD Platforms:
+              - guides/integrations/ci-cd/index.md
+              - GitHub Actions: guides/integrations/ci-cd/github-actions.md
+              - GitLab CI: guides/integrations/ci-cd/gitlab-ci.md
+              - Jenkins: guides/integrations/ci-cd/jenkins.md
   - Reference:
       - reference/index.md
-      - Commands:
-          - reference/commands/index.md
-          - Prompt: reference/commands/prompt.md
-          - Resume: reference/commands/resume.md
-          - Sessions: reference/commands/sessions.md
-          - Config: reference/commands/config.md
-          - Parallel: reference/commands/parallel.md
-          - Compare: reference/commands/compare.md
-          - Chain: reference/commands/chain.md
-          - Serve: reference/commands/serve.md
+      - CLI Commands:
+          - reference/cli/index.md
+          - clinvk prompt: reference/cli/prompt.md
+          - clinvk resume: reference/cli/resume.md
+          - clinvk sessions: reference/cli/sessions.md
+          - clinvk config: reference/cli/config.md
+          - clinvk parallel: reference/cli/parallel.md
+          - clinvk compare: reference/cli/compare.md
+          - clinvk chain: reference/cli/chain.md
+          - clinvk serve: reference/cli/serve.md
       - API:
-          - reference/api/rest-api.md
-          - reference/api/openai-compatible.md
-          - reference/api/anthropic-compatible.md
+          - reference/api/index.md
+          - REST API: reference/api/rest.md
+          - OpenAI Compatible: reference/api/openai-compat.md
+          - Anthropic Compatible: reference/api/anthropic-compat.md
       - Configuration: reference/configuration.md
       - Environment Variables: reference/environment.md
       - Exit Codes: reference/exit-codes.md
-  - Integration:
-      - integration/index.md
-      - Claude Code Skills: integration/claude-code-skills.md
-      - LangChain/LangGraph: integration/langchain-langgraph.md
-      - OpenAI SDK: integration/openai-sdk.md
-      - Anthropic SDK: integration/anthropic-sdk.md
-      - CI/CD Platforms:
-          - integration/ci-cd-platforms/github-actions.md
-          - integration/ci-cd-platforms/gitlab-ci.md
-          - integration/ci-cd-platforms/jenkins.md
-  - Architecture:
-      - architecture/index.md
-      - Overview: architecture/overview.md
-      - Backend System: architecture/backend-system.md
-      - Session System: architecture/session-system.md
-      - API Design: architecture/api-design.md
-      - Design Decisions: architecture/design-decisions.md
-  - Development:
-      - development/index.md
-      - Contributing: development/contributing.md
-      - Adding Backends: development/adding-backends.md
-      - Testing: development/testing.md
-      - Troubleshooting: development/troubleshooting.md
-      - FAQ: development/faq.md
-      - Changelog: development/changelog.md
-  - About:
-      - about/index.md
-      - License: about/license.md
+  - Concepts:
+      - concepts/index.md
+      - Architecture: concepts/architecture.md
+      - Backend System: concepts/backend-system.md
+      - Session System: concepts/session-system.md
+      - API Design: concepts/api-design.md
+      - Design Decisions: concepts/design-decisions.md
+      - Contributing: concepts/contributing.md
+      - Troubleshooting: concepts/troubleshooting.md
+      - FAQ: concepts/faq.md
+      - License: concepts/license.md
