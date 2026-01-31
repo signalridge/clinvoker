@@ -372,13 +372,77 @@ clinvoker 遵循 [语义化版本](https://semver.org/)：
 - `MINOR`：新功能，向后兼容
 - `PATCH`：错误修复，向后兼容
 
-### 创建发布
+### 使用 release-please 自动发布
 
-1. 更新 `internal/version/version.go` 中的版本
-2. 更新 CHANGELOG.md
-3. 创建 git 标签：`git tag v1.2.3`
-4. 推送标签：`git push origin v1.2.3`
-5. GitHub Actions 构建并发布
+我们使用 [release-please](https://github.com/googleapis/release-please) 进行自动化版本管理和变更日志生成。
+
+#### 工作原理
+
+```text
+feat: 添加新功能  →  推送到 main  →  自动创建 Release PR
+                                            ↓
+                                     合并 Release PR
+                                            ↓
+                                     创建标签 (v1.1.0)
+                                            ↓
+                                     GoReleaser 构建二进制文件
+```
+
+1. **编写代码** 使用 [Conventional Commits](#提交消息约定)
+2. **推送到 main** - release-please 自动创建/更新 Release PR
+3. **合并 Release PR** - 创建 git 标签和 GitHub Release
+4. **GoReleaser 触发** - 为所有平台构建二进制文件
+
+#### Conventional Commits 与版本控制
+
+| 提交类型 | 版本变更 | 变更日志分类 |
+|----------|----------|--------------|
+| `feat:` | Minor (0.1.0 → 0.2.0) | 新功能 |
+| `fix:` | Patch (0.1.0 → 0.1.1) | Bug 修复 |
+| `feat!:` 或 `BREAKING CHANGE:` | Major (0.1.0 → 1.0.0) | 破坏性变更 |
+| `perf:` | Patch | 性能优化 |
+| `refactor:` | Patch | 重构 |
+| `deps:` | Patch | 依赖更新 |
+| `security:` | Patch | 安全修复 |
+| `docs:`, `chore:`, `test:`, `ci:` | 不发布 | 隐藏 |
+
+#### 工作流示例
+
+```bash
+# 1. 创建功能分支
+git checkout -b feat/new-feature
+
+# 2. 使用约定格式提交更改
+git commit -m "feat(backend): add support for new AI provider"
+
+# 3. 创建 PR 并合并到 main
+gh pr create && gh pr merge
+
+# 4. release-please 自动创建 Release PR
+#    标题: "chore: release v0.2.0"
+#    内容: 更新的 CHANGELOG.md 和版本号
+
+# 5. 审查并合并 Release PR
+#    → 创建标签 v0.2.0
+#    → GoReleaser 构建并发布
+
+# 6. 完成！二进制文件可通过以下方式获取：
+#    - GitHub Releases
+#    - Homebrew: brew install signalridge/tap/clinvk
+#    - go install: go install github.com/signalridge/clinvoker/cmd/clinvk@latest
+```
+
+#### 手动发布（仅紧急情况）
+
+当自动化不可用时的紧急发布：
+
+```bash
+# 1. 手动更新 CHANGELOG.md
+# 2. 创建并推送标签
+git tag -a v1.2.3 -m "Release v1.2.3"
+git push origin v1.2.3
+# 3. GoReleaser 工作流自动触发
+```
 
 ## 问题？
 
