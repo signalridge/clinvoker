@@ -82,7 +82,7 @@ var sessionsListCmd = &cobra.Command{
 
 func init() {
 	sessionsListCmd.Flags().StringVarP(&listBackendFilter, "backend", "b", "", "filter by backend")
-	sessionsListCmd.Flags().StringVar(&listStatusFilter, "status", "", "filter by status (active, completed, error)")
+	sessionsListCmd.Flags().StringVar(&listStatusFilter, "status", "", "filter by status (active, completed, error, paused)")
 	sessionsListCmd.Flags().IntVarP(&listLimit, "limit", "n", 0, "limit number of sessions shown")
 }
 

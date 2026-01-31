@@ -74,12 +74,12 @@ echo $?  # Output: 4
 
 ### 5 - API Error
 
-An HTTP API request failed (when using `clinvk serve` or API mode).
+An HTTP API request failed (when using `clinvk serve`).
 
 ```bash
-# Server not running
-clinvk --api-mode "prompt"
-echo $?  # Output: 5
+# Example: API endpoint returns error
+curl -X POST http://localhost:8080/api/v1/prompt \
+  -d '{"backend": "invalid"}' 2>/dev/null || echo "API error"
 ```
 
 ### 6 - Timeout
@@ -87,7 +87,9 @@ echo $?  # Output: 5
 The command execution exceeded the configured timeout.
 
 ```bash
-clinvk --timeout 5 "very long task"
+# Set timeout via config: unified_flags.command_timeout_secs
+clinvk "very long task"
+# If command_timeout_secs is set and exceeded, exits with code 6
 echo $?  # Output: 6
 ```
 

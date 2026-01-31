@@ -39,6 +39,14 @@ clinvk [命令] [子命令] [参数]
 | `--ephemeral` | | bool | `false` | 无状态模式 |
 | `--help` | `-h` | | | 显示帮助 |
 
+### 提示词命令特定参数
+
+这些参数仅适用于默认提示词命令：
+
+| 参数 | 简写 | 类型 | 默认值 | 描述 |
+|------|-------|------|---------|-------------|
+| `--continue` | `-c` | bool | `false` | 继续最近的会话 |
+
 ## 参数详情
 
 ### --backend, -b
@@ -160,6 +168,9 @@ clinvk -b claude -m claude-sonnet-4-20250514 "快速审查"
 ```bash
 # 列出会话
 clinvk sessions list
+
+# 显示会话详情
+clinvk sessions show abc123
 
 # 恢复最近会话
 clinvk resume --last

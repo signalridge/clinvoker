@@ -39,6 +39,14 @@ These flags work with all commands:
 | `--ephemeral` | | bool | `false` | Stateless mode |
 | `--help` | `-h` | | | Show help |
 
+### Prompt-Specific Flags
+
+These flags work only with the default prompt command:
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--continue` | `-c` | bool | `false` | Continue the most recent session |
+
 ## Flag Details
 
 ### --backend, -b
@@ -160,6 +168,9 @@ clinvk -b claude -m claude-sonnet-4-20250514 "quick review"
 ```bash
 # List sessions
 clinvk sessions list
+
+# Show session details
+clinvk sessions show abc123
 
 # Resume last session
 clinvk resume --last
