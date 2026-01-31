@@ -5,252 +5,215 @@ description: Transform AI CLI tools into programmable infrastructure with SDK co
 
 # clinvoker
 
-<div align="center">
-
-Unified AI CLI wrapper for orchestrating multiple AI CLI backends
-
 [![GitHub](https://img.shields.io/badge/GitHub-signalridge%2Fclinvoker-blue?logo=github)](https://github.com/signalridge/clinvoker)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](about/license.md)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](concepts/license.md)
 
-</div>
+## What is clinvoker?
 
-## Installation
+clinvoker is a unified AI CLI wrapper that transforms multiple AI CLI backends into programmable infrastructure. It provides a single interface to orchestrate Claude Code, Codex CLI, and Gemini CLI while maintaining full compatibility with OpenAI and Anthropic SDKs. Whether you are building AI-powered automation, integrating with existing applications, or managing complex multi-model workflows, clinvoker bridges the gap between interactive CLI tools and production-ready APIs.
 
-```bash
-curl -sSL https://raw.githubusercontent.com/signalridge/clinvoker/main/install.sh | bash
-```
-
-Or install from source:
-
-```bash
-go install github.com/signalridge/clinvoker/cmd/clinvk@latest
-```
-
-## Three Core Capabilities
-
-<div class="grid cards" markdown>
-
--   :material-lightning-bolt-circle:{ .lg .middle } __Skills Integration__
-
-    ---
-
-    Claude Code Skills calling other AI backends for specialized tasks.
-    Route tasks to the best-suited model automatically.
-
-    [:octicons-arrow-right-24: Learn more](use-cases/ai-team-collaboration.md)
-
--   :material-api:{ .lg .middle } __HTTP API Transformation__
-
-    ---
-
-    Use OpenAI/Anthropic SDKs with any CLI backend. Drop-in compatibility
-    with existing applications and frameworks.
-
-    [:octicons-arrow-right-24: API Reference](reference/api/rest-api.md)
-
--   :material-source-branch:{ .lg .middle } __Orchestration__
-
-    ---
-
-    Parallel execution, chain workflows, and backend comparison.
-    Build complex AI pipelines with simple commands.
-
-    [:octicons-arrow-right-24: See examples](use-cases/index.md)
-
-</div>
-
-## Quick Start
-
-### 1. First Prompt
-
-```bash
-# Run with default backend (Claude Code)
-clinvk "fix the bug in auth.go"
-
-# Specify a backend
-clinvk --backend codex "implement user registration"
-```
-
-### 2. Compare Backends
-
-```bash
-# Run the same prompt on all backends
-clinvk compare --all-backends "explain this code"
-```
-
-### 3. Start HTTP Server
-
-```bash
-# Start the API server
-clinvk serve --port 8080
-
-# Test with curl
-curl -X POST http://localhost:8080/api/v1/prompt \
-  -H "Content-Type: application/json" \
-  -d '{"backend":"claude","prompt":"Hello"}'
-```
-
-## Use Cases Gallery
-
-<div class="grid cards" markdown>
-
--   :material-account-group:{ .lg .middle } __AI Team Collaboration__
-
-    ---
-
-    Simulate a multi-AI development team with Claude as architect,
-    Codex as implementer, and Gemini as reviewer.
-
-    [:octicons-arrow-right-24: Explore](use-cases/ai-team-collaboration.md)
-
--   :material-file-code:{ .lg .middle } __Automated Code Review__
-
-    ---
-
-    CI/CD pipeline that sends PR diffs to multiple backends for
-    comprehensive architecture, performance, and security reviews.
-
-    [:octicons-arrow-right-24: Explore](use-cases/automated-code-review.md)
-
--   :material-book-search:{ .lg .middle } __Multi-Model Research__
-
-    ---
-
-    Complex technical research with multiple perspectives.
-    Compare answers and synthesize comprehensive reports.
-
-    [:octicons-arrow-right-24: Explore](use-cases/multi-model-research.md)
-
--   :material-file-document:{ .lg .middle } __Smart Documentation__
-
-    ---
-
-    Automatically generate architecture docs, API references,
-    and usage examples from your codebase.
-
-    [:octicons-arrow-right-24: Explore](use-cases/smart-documentation.md)
-
--   :material-test-tube:{ .lg .middle } __Test Generation Pipeline__
-
-    ---
-
-    End-to-end test generation: from test case design to
-    implementation to coverage review.
-
-    [:octicons-arrow-right-24: Explore](use-cases/test-generation-pipeline.md)
-
--   :material-server:{ .lg .middle } __API Gateway Pattern__
-
-    ---
-
-    Deploy clinvk as a unified AI gateway for your organization.
-    Centralized routing, authentication, and monitoring.
-
-    [:octicons-arrow-right-24: Explore](use-cases/api-gateway-pattern.md)
-
--   :material-alert:{ .lg .middle } __Incident Response War Room__
-
-    ---
-
-    Triage production incidents with parallel analysis and a synthesis chain.
-
-    [:octicons-arrow-right-24: Explore](use-cases/incident-response-war-room.md)
-
-</div>
+- **Use familiar SDKs with any CLI backend** - Drop-in compatibility with OpenAI and Anthropic SDKs means existing applications work without modification
+- **Orchestrate multi-backend workflows** - Route tasks to the most appropriate model, run comparisons across backends, or chain multiple AI steps into cohesive pipelines
+- **Maintain persistent sessions** - Cross-process file locking ensures session state persists across CLI invocations and server restarts
+- **Deploy as HTTP API server** - Transform any CLI backend into a REST API with built-in rate limiting, authentication, and metrics
 
 ## Architecture
 
+clinvoker follows a layered architecture that separates CLI concerns from HTTP API functionality while sharing core components. The design emphasizes modularity, testability, and clear separation of responsibilities.
+
 ```mermaid
 flowchart TB
-    subgraph Clients["Clients"]
-        SDK[OpenAI/Anthropic SDK]
-        SKILL[Claude Code Skills]
-        CLI[CLI Users]
-        API[HTTP Clients]
+    subgraph CLI["CLI Layer"]
+        MAIN["cmd/clinvk/main.go"]
+        APP["internal/app/"]
     end
 
-    subgraph clinvk["clinvk Server"]
-        ROUTER[API Router]
-        SESSION[Session Manager]
-        EXEC[Executor]
-        RATE[Rate Limiter]
+    subgraph CORE["Core Components"]
+        REG["Backend Registry<br/>internal/backend/registry.go"]
+        SESS["Session Store<br/>internal/session/store.go"]
+        EXEC["Executor<br/>internal/executor/executor.go"]
+        CFG["Config Manager<br/>internal/config/config.go"]
     end
 
-    subgraph Backends["AI CLI Backends"]
-        CLAUDE[Claude Code]
-        CODEX[Codex CLI]
-        GEMINI[Gemini CLI]
+    subgraph HTTP["HTTP Server"]
+        ROUTER["Chi Router<br/>internal/server/server.go"]
+        MW["Middleware Stack<br/>internal/server/middleware/"]
+        HANDLERS["API Handlers<br/>internal/server/handlers/"]
     end
 
-    SDK -->|/openai/v1/*| ROUTER
-    SKILL -->|/api/v1/*| ROUTER
-    CLI -->|Direct| EXEC
-    API -->|/api/v1/*| ROUTER
+    subgraph BACKENDS["AI CLI Backends"]
+        CLAUDE["Claude Code<br/>internal/backend/claude.go"]
+        CODEX["Codex CLI<br/>internal/backend/codex.go"]
+        GEMINI["Gemini CLI<br/>internal/backend/gemini.go"]
+    end
 
-    ROUTER --> RATE
-    RATE --> SESSION
-    SESSION --> EXEC
+    MAIN --> APP
+    APP --> REG
+    APP --> SESS
+    APP --> EXEC
+    APP --> CFG
+
+    ROUTER --> MW
+    MW --> HANDLERS
+    HANDLERS --> EXEC
+    HANDLERS --> SESS
+
     EXEC --> CLAUDE
     EXEC --> CODEX
     EXEC --> GEMINI
-```
+
+    REG -.-> CLAUDE
+    REG -.-> CODEX
+    REG -.-> GEMINI
+```bash
+
+**CLI Layer** (`cmd/clinvk/main.go`, `internal/app/`)
+: Entry point and command definitions using Cobra framework. Handles flag parsing, configuration initialization, and command routing for prompt execution, session management, and workflow orchestration.
+
+**Backend Registry** (`internal/backend/registry.go`)
+: Thread-safe registry managing backend registration and discovery. Provides cached availability checks and supports concurrent access from multiple goroutines.
+
+**Session Store** (`internal/session/store.go`)
+: Persistent session management with cross-process file locking. Maintains session metadata, backend session IDs for resume functionality, and handles session lifecycle across CLI and HTTP contexts.
+
+**Executor** (`internal/executor/executor.go`)
+: Process execution engine with PTY support for interactive CLI tools. Handles stdin/stdout/stderr streaming, signal management, and timeout handling.
+
+**Config Manager** (`internal/config/config.go`)
+: Viper-based configuration management supporting YAML config files, environment variables, and command-line flags. Includes validation and hot-reload capabilities.
+
+**Chi Router** (`internal/server/server.go`)
+: HTTP router using go-chi/chi with middleware chaining for request ID, real IP extraction, recovery, logging, rate limiting, authentication, and CORS.
+
+**Middleware Stack** (`internal/server/middleware/`)
+: Composable middleware components including API key authentication, rate limiting, request size limits, metrics collection, and distributed tracing.
+
+**API Handlers** (`internal/server/handlers/`)
+: Huma-based HTTP handlers providing OpenAI-compatible and Anthropic-compatible endpoints, custom REST API, and streaming responses.
+
+## Core Features
+
+### Multi-Backend Orchestration
+
+clinvoker abstracts the differences between AI CLI tools into a unified interface. The backend system handles command building, output parsing, and session management for each supported CLI tool. You can route tasks to specific backends based on their strengths, run the same prompt across multiple backends for comparison, or build chains where the output of one backend feeds into another.
+
+### HTTP API Transformation
+
+The built-in HTTP server transforms any CLI backend into a REST API with OpenAI-compatible and Anthropic-compatible endpoints. Existing applications using OpenAI SDKs can point to clinvoker and immediately access Claude Code, Codex CLI, or Gemini CLI without code changes. The API supports streaming responses, function calling patterns, and proper error handling.
+
+### Session Persistence
+
+Sessions are persisted to disk with cross-process file locking, allowing you to start a conversation via CLI and continue it through the HTTP API, or resume a session days later. Each session maintains the backend session ID, working directory, model configuration, and conversation history metadata.
+
+### Parallel and Chain Execution
+
+The `parallel` command executes prompts across multiple backends simultaneously, aggregating results for comparison. The `chain` command creates sequential workflows where each step can use a different backend, enabling patterns like "Claude architects, Codex implements, Gemini reviews."
+
+## Quick Start
+
+### Installation
+
+```bash
+curl -sSL https://raw.githubusercontent.com/signalridge/clinvoker/main/install.sh | bash
+```text
+
+### Basic Usage
+
+Run a prompt with the default backend:
+
+```bash
+clinvk "Explain the architecture of this codebase"
+```text
+
+Specify a backend and model:
+
+```bash
+clinvk --backend claude --model claude-opus-4.5 "Refactor this function for better error handling"
+```text
+
+Use Codex CLI with the latest GPT model:
+
+```bash
+clinvk --backend codex --model gpt-5.2 "Generate unit tests for auth.go"
+```text
+
+### SDK Integration Example
+
+Use clinvoker as a drop-in replacement for OpenAI API:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/openai/v1",
+    api_key="your-api-key"
+)
+
+response = client.chat.completions.create(
+    model="claude-opus-4.5",
+    messages=[{"role": "user", "content": "Hello, world!"}]
+)
+print(response.choices[0].message.content)
+```text
 
 ## Feature Comparison
 
-| Feature | clinvoker | Direct CLI | Other Wrappers |
-|---------|:---------:|:----------:|:--------------:|
-| Multi-backend support | :material-check:{ .green } | :material-close:{ .red } | Limited |
-| OpenAI SDK compatible | :material-check:{ .green } | :material-close:{ .red } | Sometimes |
-| Session persistence | :material-check:{ .green } | :material-close:{ .red } | Rare |
-| Parallel execution | :material-check:{ .green } | :material-close:{ .red } | :material-close:{ .red } |
-| Chain workflows | :material-check:{ .green } | :material-close:{ .red } | :material-close:{ .red } |
-| Backend comparison | :material-check:{ .green } | Manual | :material-close:{ .red } |
-| Rate limiting | :material-check:{ .green } | :material-close:{ .red } | Varies |
-| Self-hosted | :material-check:{ .green } | N/A | Varies |
+| Feature | clinvoker | AgentAPI | Aider | Direct CLI |
+|---------|:---------:|:--------:|:-----:|:----------:|
+| Multi-backend support | ✓ | ✓ | ✓ | ✗ |
+| OpenAI SDK compatible | ✓ | ✓ | ✗ | ✗ |
+| Anthropic SDK compatible | ✓ | ✗ | ✗ | ✗ |
+| Session persistence | ✓ | ✗ | ✓ | ✗ |
+| Parallel execution | ✓ | ✗ | ✗ | ✗ |
+| Chain workflows | ✓ | ✗ | ✗ | ✗ |
+| Backend comparison | ✓ | ✗ | ✗ | ✗ |
+| Rate limiting | ✓ | ✗ | ✗ | ✗ |
+| API key authentication | ✓ | ✗ | ✗ | ✗ |
+| Self-hosted | ✓ | ✓ | ✓ | N/A |
 
 ## Supported Backends
 
-| Backend | CLI Tool | Best For |
-|---------|----------|----------|
-| :material-robot: Claude Code | `claude` | Complex reasoning, architecture, analysis |
-| :material-code-tags: Codex CLI | `codex` | Code generation, quick implementations |
-| :material-google: Gemini CLI | `gemini` | Research, summarization, creative tasks |
+| Backend | CLI Tool | Models | Best For |
+|---------|----------|--------|----------|
+| Claude Code | `claude` | claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5 | Complex reasoning, architecture decisions, detailed analysis |
+| Codex CLI | `codex` | gpt-5.2, gpt-5.2-mini, gpt-5.2-nano | Code generation, quick implementations, iterative development |
+| Gemini CLI | `gemini` | gemini-2.5-pro, gemini-2.5-flash | Research, summarization, creative tasks, multimodal inputs |
 
 ## Next Steps
 
 <div class="grid cards" markdown>
 
--   :material-rocket:{ .lg .middle } __Getting Started__
+-   **Getting Started**
 
     ---
 
-    Install clinvk and run your first prompt in under 5 minutes.
+    Install clinvk and run your first prompt in under 5 minutes. Learn the basics of backend selection, session management, and configuration.
 
-    [:octicons-arrow-right-24: Installation](getting-started/installation.md)
+    [:octicons-arrow-right-24: Getting Started](tutorials/getting-started.md)
 
--   :material-school:{ .lg .middle } __Tutorials__
-
-    ---
-
-    Step-by-step guides for common use cases and integrations.
-
-    [:octicons-arrow-right-24: Tutorials](tutorials/index.md)
-
--   :material-book-open:{ .lg .middle } __How-To Guides__
+-   **Architecture**
 
     ---
 
-    Practical guides for specific tasks and configurations.
+    Deep dive into clinvoker's design principles, component interactions, and extension points for adding new backends.
 
-    [:octicons-arrow-right-24: How-To](how-to/index.md)
+    [:octicons-arrow-right-24: Architecture](concepts/architecture.md)
 
--   :material-code-braces:{ .lg .middle } __API Reference__
+-   **How-To Guides**
 
     ---
 
-    Complete REST API documentation with examples.
+    Practical guides for specific tasks including parallel execution, chain workflows, CI/CD integration, and backend configuration.
 
-    [:octicons-arrow-right-24: Reference](reference/index.md)
+    [:octicons-arrow-right-24: How-To Guides](guides/index.md)
+
+-   **API Reference**
+
+    ---
+
+    Complete REST API documentation with OpenAI-compatible and Anthropic-compatible endpoints, authentication, and examples.
+
+    [:octicons-arrow-right-24: API Reference](reference/api/rest.md)
 
 </div>
 
@@ -258,4 +221,4 @@ flowchart TB
 
 - **GitHub**: [signalridge/clinvoker](https://github.com/signalridge/clinvoker)
 - **Issues**: [Report bugs or request features](https://github.com/signalridge/clinvoker/issues)
-- **Contributing**: [Development guide](development/contributing.md)
+- **Contributing**: [Development guide](concepts/contributing.md)

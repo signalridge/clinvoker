@@ -1,43 +1,119 @@
 # Exit Codes
 
-Reference for clinvk exit codes and their meanings.
+Complete reference for clinvk exit codes and their meanings.
 
-## Exit Code Summary
+## Overview
 
-| Code | Name | Description |
-|------|------|-------------|
-| 0 | Success | Command completed successfully |
-| 1 | Error | CLI/validation error or subcommand failure |
-| (backend) | Backend exit code | For `clinvk [prompt]` and `clinvk resume`, the backend CLI exit code is propagated |
+clinvk uses exit codes to indicate the result of command execution. Understanding these codes is essential for scripting and automation.
+
+## Exit Code Reference
+
+| Code | Name | Description | When It Occurs |
+|------|------|-------------|----------------|
+| 0 | Success | Command completed successfully | Normal completion |
+| 1 | General Error | CLI/validation error or subcommand failure | Invalid input, execution failure |
+| 2 | Backend Not Available | The requested backend is not installed | Backend binary not found |
+| 3 | Invalid Configuration | Configuration file error or invalid settings | Bad config file |
+| 4 | Session Error | Session operation failed | Resume failed, session not found |
+| 5 | API Error | HTTP API request failed | Server error, network issue |
+| 6 | Timeout | Command execution timed out | Exceeded timeout limit |
+| 7 | Cancelled | User cancelled the operation | Ctrl+C pressed |
+| 8+ | Backend Exit Code | Propagated from backend CLI | Backend-specific error |
 
 ## Detailed Descriptions
 
 ### 0 - Success
 
-The command completed successfully.
+The command completed successfully without errors.
 
 ```bash
 clinvk "hello world"
-echo $?  # 0
-```
+echo $?  # Output: 0
+```text
 
-### 1 - Error
+### 1 - General Error
 
-A general error occurred during execution, for example:
+A general error occurred during execution. Common causes include:
 
+- Invalid command-line arguments
 - Backend execution failed
-- Invalid input
+- File not found
+- Permission denied
 
 ```bash
-clinvk "prompt with error"
-echo $?  # 1
-```
+clinvk --invalid-flag "prompt"
+echo $?  # Output: 1
+```text
 
-### Backend Exit Codes (prompt/resume)
+### 2 - Backend Not Available
 
-When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend CLI and propagates the backend process exit code when it is non-zero.
+The requested backend is not installed or not in PATH.
+
+```bash
+clinvk -b nonexistent "prompt"
+echo $?  # Output: 2
+```text
+
+### 3 - Invalid Configuration
+
+The configuration file has errors or contains invalid settings.
+
+```bash
+clinvk --config /invalid/config.yaml "prompt"
+echo $?  # Output: 3
+```text
+
+### 4 - Session Error
+
+A session-related operation failed.
+
+```bash
+clinvk resume nonexistent-session
+echo $?  # Output: 4
+```bash
+
+### 5 - API Error
+
+An HTTP API request failed (when using `clinvk serve` or API mode).
+
+```bash
+# Server not running
+clinvk --api-mode "prompt"
+echo $?  # Output: 5
+```text
+
+### 6 - Timeout
+
+The command execution exceeded the configured timeout.
+
+```bash
+clinvk --timeout 5 "very long task"
+echo $?  # Output: 6
+```text
+
+### 7 - Cancelled
+
+The user cancelled the operation (e.g., pressed Ctrl+C).
+
+```bash
+clinvk "long running task"
+# Press Ctrl+C
+echo $?  # Output: 7
+```bash
+
+### Backend Exit Codes (8+)
+
+When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend CLI and propagates the backend's exit code when it is non-zero. These codes are backend-specific.
 
 ## Command-Specific Exit Codes
+
+### prompt / resume
+
+| Code | Description |
+|------|-------------|
+| 0 | Success |
+| 1 | General error |
+| 2+ | Backend exit code (propagated) |
 
 ### parallel
 
@@ -45,6 +121,7 @@ When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend C
 |------|-------------|
 | 0 | All tasks succeeded |
 | 1 | One or more tasks failed |
+| 2 | Invalid task file |
 
 ### compare
 
@@ -52,6 +129,7 @@ When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend C
 |------|-------------|
 | 0 | All backends succeeded |
 | 1 | One or more backends failed |
+| 2 | No backends available |
 
 ### chain
 
@@ -59,13 +137,31 @@ When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend C
 |------|-------------|
 | 0 | All steps succeeded |
 | 1 | A step failed |
+| 2 | Invalid pipeline file |
+
+### sessions
+
+| Code | Description |
+|------|-------------|
+| 0 | Operation succeeded |
+| 1 | Operation failed (e.g., session not found) |
+| 4 | Session error |
+
+### config
+
+| Code | Description |
+|------|-------------|
+| 0 | Operation succeeded |
+| 1 | Invalid key or value |
+| 3 | Configuration error |
 
 ### serve
 
 | Code | Description |
 |------|-------------|
 | 0 | Clean shutdown (SIGINT/SIGTERM) |
-| 1 | Server error |
+| 1 | Server startup error |
+| 5 | API error during operation |
 
 ## Scripting Examples
 
@@ -73,11 +169,11 @@ When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend C
 
 ```bash
 if clinvk "implement feature"; then
-  echo "Success"
+  echo "Success!"
 else
-  echo "Failed"
+  echo "Failed!"
 fi
-```
+```text
 
 ### Handle Specific Codes
 
@@ -89,11 +185,20 @@ case $code in
   0)
     echo "Success"
     ;;
+  1)
+    echo "General error"
+    ;;
+  2)
+    echo "Backend not available - please install codex"
+    ;;
+  4)
+    echo "Session error"
+    ;;
   *)
-    echo "Error: $code"
+    echo "Backend error: $code"
     ;;
 esac
-```
+```text
 
 ### Retry on Failure
 
@@ -103,13 +208,45 @@ attempt=1
 
 while [ $attempt -le $max_attempts ]; do
   if clinvk "prompt"; then
+    echo "Success on attempt $attempt"
     break
   fi
-  echo "Attempt $attempt failed, retrying..."
+
+  if [ $attempt -eq $max_attempts ]; then
+    echo "Failed after $max_attempts attempts"
+    exit 1
+  fi
+
+  echo "Attempt $attempt failed, retrying in 5 seconds..."
+  sleep 5
   attempt=$((attempt + 1))
-  sleep 2
 done
-```
+```text
+
+### Exit on Error
+
+```bash
+#!/bin/bash
+set -e  # Exit on any error
+
+clinvk "step 1"
+clinvk "step 2"
+clinvk "step 3"
+
+echo "All steps completed successfully"
+```text
+
+### Ignore Specific Errors
+
+```bash
+#!/bin/bash
+
+# Continue even if this fails
+clinvk "optional task" || true
+
+# This must succeed
+clinvk "critical task"
+```text
 
 ## CI/CD Integration
 
@@ -122,18 +259,73 @@ done
   id: ai-task
 
 - name: Handle failure
-  if: steps.ai-task.outcome == 'failure'
-  run: echo "AI task failed"
-```
+  if: failure() && steps.ai-task.outcome == 'failure'
+  run: |
+    echo "AI task failed with exit code $?"
+    exit 1
+```text
+
+### GitLab CI
+
+```yaml
+ai-task:
+  script:
+    - clinvk "generate tests" || EXIT_CODE=$?
+    - |
+      case $EXIT_CODE in
+        0) echo "Success" ;;
+        2) echo "Backend not installed" ; exit 1 ;;
+        *) echo "Error: $EXIT_CODE" ; exit 1 ;;
+      esac
+```text
 
 ### Make/Just
 
 ```makefile
+.PHONY: test lint ai-review
+
 test:
- clinvk "generate tests" || (echo "Failed" && exit 1)
-```
+ go test ./...
+
+ai-review:
+ clinvk "review the code for issues" || (echo "Review failed" && exit 1)
+
+lint-and-review: lint ai-review
+ @echo "All checks passed"
+```bash
+
+## Exit Code Best Practices
+
+1. **Always check exit codes** in scripts to handle failures gracefully
+2. **Use `set -e`** in bash scripts to exit immediately on errors
+3. **Log the exit code** when debugging issues
+4. **Handle specific codes** differently based on your needs
+5. **Use `|| true`** when a command failure should not stop the script
+
+## Troubleshooting
+
+### Unexpected Exit Codes
+
+| Symptom | Possible Cause | Solution |
+|---------|----------------|----------|
+| Always returns 1 | Backend not configured | Check config and API keys |
+| Returns 2 | Backend not installed | Install the backend CLI |
+| Returns 4 | Session expired or invalid | Check session with `clinvk sessions list` |
+| Returns 6 | Timeout too short | Increase `command_timeout_secs` |
+
+### Debug Exit Codes
+
+```bash
+# Run with verbose output
+clinvk -v "prompt"
+echo "Exit code: $?"
+
+# Check backend directly
+claude "test"
+echo "Backend exit code: $?"
+```text
 
 ## See Also
 
-- [Commands Reference](commands/index.md)
-- [Troubleshooting](../development/troubleshooting.md)
+- [Commands Reference](cli/index.md) - Command documentation
+- [Troubleshooting](../concepts/troubleshooting.md) - Common issues and solutions

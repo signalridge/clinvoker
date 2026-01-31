@@ -172,16 +172,16 @@ Full documentation: **[signalridge.github.io/clinvoker](https://signalridge.gith
 
 | Section | Description |
 |---------|-------------|
-| [Getting Started](https://signalridge.github.io/clinvoker/getting-started/) | Installation and first steps |
-| [User Guide](https://signalridge.github.io/clinvoker/user-guide/) | Detailed usage instructions |
-| [HTTP API](https://signalridge.github.io/clinvoker/server/) | API server documentation |
+| [Getting Started](https://signalridge.github.io/clinvoker/tutorials/getting-started/) | Installation and first steps |
+| [Guides](https://signalridge.github.io/clinvoker/guides/) | Detailed usage instructions |
+| [HTTP API](https://signalridge.github.io/clinvoker/guides/http-server/) | API server documentation |
 | [Reference](https://signalridge.github.io/clinvoker/reference/) | CLI reference and configuration |
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! See [Contributing Guide](https://signalridge.github.io/clinvoker/development/contributing/).
+Contributions welcome! See [Contributing Guide](https://signalridge.github.io/clinvoker/concepts/contributing/).
 
 ```bash
 # Clone the repo
