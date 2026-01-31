@@ -21,6 +21,8 @@ Claude Code Skills extend Claude's capabilities, but sometimes you need:
 
 Create a skill that uses Gemini for data analysis:
 
+<!-- markdownlint-disable MD018 MD022 MD040 -->
+
 ```markdown
 <!-- ~/.claude/skills/analyze-data/SKILL.md -->
 # Data Analysis Skill
@@ -40,6 +42,8 @@ clinvk -b gemini -o json --ephemeral "Analyze this data and provide insights: $D
 
 ```
 
+<!-- markdownlint-enable MD018 MD022 MD040 -->
+
 ### Using the Skill
 
 In Claude Code, the skill can be invoked:
@@ -53,6 +57,8 @@ User: /analyze-data {"sales": [100, 150, 200], "months": ["Jan", "Feb", "Mar"]}
 ## Multi-Model Review Skill
 
 A more powerful skill that uses multiple backends for comprehensive code review:
+
+<!-- markdownlint-disable MD018 MD022 MD040 -->
 
 ```markdown
 <!-- ~/.claude/skills/multi-review/SKILL.md -->
@@ -89,9 +95,13 @@ $CODE"
 
 ```
 
+<!-- markdownlint-enable MD018 MD022 MD040 -->
+
 ## Parallel Review Skill
 
 For faster multi-model review using parallel execution:
+
+<!-- markdownlint-disable MD018 MD022 MD040 -->
 
 ```markdown
 <!-- ~/.claude/skills/parallel-review/SKILL.md -->
@@ -124,9 +134,13 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
 
 ```
 
+<!-- markdownlint-enable MD018 MD022 MD040 -->
+
 ## Chain Execution Skill
 
 A skill that pipelines output through multiple backends:
+
+<!-- markdownlint-disable MD018 MD022 MD040 -->
 
 ```markdown
 <!-- ~/.claude/skills/doc-pipeline/SKILL.md -->
@@ -169,6 +183,8 @@ clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
 ```
 
 ```
+
+<!-- markdownlint-enable MD018 MD022 MD040 -->
 
 ## Advanced Patterns
 

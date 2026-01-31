@@ -59,7 +59,7 @@ clinvk --dry-run "your prompt"
 
 ### Solutions
 
-**1. Verify Installation**
+#### 1. Verify Installation
 
 ```bash
 # Check if backend CLIs are installed
@@ -71,7 +71,7 @@ codex --version
 gemini --version
 ```
 
-**2. Add to PATH**
+#### 2. Add to PATH
 
 ```bash
 # Add to shell profile (~/.bashrc, ~/.zshrc, etc.)
@@ -81,7 +81,7 @@ export PATH="$PATH:/usr/local/bin"
 source ~/.bashrc  # or ~/.zshrc
 ```
 
-**3. Check Permissions**
+#### 3. Check Permissions
 
 ```bash
 # Verify executable permissions
@@ -91,7 +91,7 @@ ls -la $(which claude)
 chmod +x /path/to/claude
 ```
 
-**4. Verify clinvk Detection**
+#### 4. Verify clinvk Detection
 
 ```bash
 # Check which backends clinvk can find

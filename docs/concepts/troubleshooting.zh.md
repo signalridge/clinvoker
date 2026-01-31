@@ -59,7 +59,7 @@ clinvk --dry-run "your prompt"
 
 ### 解决方案
 
-**1. 验证安装**
+#### 1. 验证安装
 
 ```bash
 # 检查后端 CLI 是否已安装
@@ -71,7 +71,7 @@ codex --version
 gemini --version
 ```
 
-**2. 添加到 PATH**
+#### 2. 添加到 PATH
 
 ```bash
 # 添加到 shell 配置文件（~/.bashrc、~/.zshrc 等）
@@ -81,7 +81,7 @@ export PATH="$PATH:/usr/local/bin"
 source ~/.bashrc  # 或 ~/.zshrc
 ```
 
-**3. 检查权限**
+#### 3. 检查权限
 
 ```bash
 # 验证可执行权限
@@ -91,7 +91,7 @@ ls -la $(which claude)
 chmod +x /path/to/claude
 ```
 
-**4. 验证 clinvk 检测**
+#### 4. 验证 clinvk 检测
 
 ```bash
 # 检查 clinvk 可以找到哪些后端

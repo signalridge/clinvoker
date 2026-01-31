@@ -21,6 +21,8 @@ Claude Code Skills 扩展了 Claude 的能力，但有时你需要：
 
 创建一个使用 Gemini 进行数据分析的 skill：
 
+<!-- markdownlint-disable MD018 MD022 MD040 -->
+
 ```markdown
 <!-- ~/.claude/skills/analyze-data/SKILL.md -->
 # 数据分析 Skill
@@ -40,9 +42,13 @@ clinvk -b gemini -o json --ephemeral "分析此数据并提供洞察：$DATA"
 
 ```
 
+<!-- markdownlint-enable MD018 MD022 MD040 -->
+
 ## 多模型审查 Skill
 
 使用多个后端进行全面代码审查：
+
+<!-- markdownlint-disable MD018 MD022 MD040 -->
 
 ```markdown
 <!-- ~/.claude/skills/multi-review/SKILL.md -->
@@ -75,9 +81,13 @@ $CODE"
 
 ```
 
+<!-- markdownlint-enable MD018 MD022 MD040 -->
+
 ## 并行审查 Skill
 
 使用并行执行加速多模型审查：
+
+<!-- markdownlint-disable MD018 MD022 MD040 -->
 
 ```markdown
 <!-- ~/.claude/skills/parallel-review/SKILL.md -->
@@ -110,9 +120,13 @@ clinvk parallel -f /tmp/review-tasks.json --json | jq -r '
 
 ```
 
+<!-- markdownlint-enable MD018 MD022 MD040 -->
+
 ## 链式执行 Skill
 
 通过多个后端串联输出：
+
+<!-- markdownlint-disable MD018 MD022 MD040 -->
 
 ```markdown
 <!-- ~/.claude/skills/doc-pipeline/SKILL.md -->
@@ -155,6 +169,8 @@ clinvk chain -f /tmp/doc-pipeline.json --json | jq -r '.results[-1].output'
 ```
 
 ```
+
+<!-- markdownlint-enable MD018 MD022 MD040 -->
 
 ## 高级模式
 
