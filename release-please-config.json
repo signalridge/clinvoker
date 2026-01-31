@@ -1,0 +1,84 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "go",
+      "package-name": "clinvoker",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "changelog-sections": [
+        {
+          "type": "feat",
+          "section": "🚀 Features"
+        },
+        {
+          "type": "fix",
+          "section": "🐛 Bug Fixes"
+        },
+        {
+          "type": "perf",
+          "section": "⚡ Performance"
+        },
+        {
+          "type": "refactor",
+          "section": "🔧 Refactoring"
+        },
+        {
+          "type": "deps",
+          "section": "📦 Dependencies"
+        },
+        {
+          "type": "security",
+          "section": "🔒 Security"
+        },
+        {
+          "type": "revert",
+          "section": "⏪ Reverts"
+        },
+        {
+          "type": "docs",
+          "section": "📖 Documentation",
+          "hidden": true
+        },
+        {
+          "type": "style",
+          "section": "💄 Styles",
+          "hidden": true
+        },
+        {
+          "type": "chore",
+          "section": "🧹 Chores",
+          "hidden": true
+        },
+        {
+          "type": "test",
+          "section": "🧪 Tests",
+          "hidden": true
+        },
+        {
+          "type": "ci",
+          "section": "👷 CI",
+          "hidden": true
+        },
+        {
+          "type": "build",
+          "section": "📦 Build",
+          "hidden": true
+        }
+      ],
+      "extra-files": []
+    }
+  },
+  "separate-pull-requests": false,
+  "group-pull-request-title-pattern": "chore: release ${version}",
+  "pull-request-title-pattern": "chore: release ${version}",
+  "pull-request-header": "🤖 This PR was automatically created by [release-please](https://github.com/googleapis/release-please).",
+  "pull-request-footer": "---\n\n**How to use:**\n- Review the CHANGELOG.md changes\n- Merge this PR to create the release\n- GoReleaser will automatically build and publish",
+  "sequential-calls": false,
+  "plugins": []
+}
