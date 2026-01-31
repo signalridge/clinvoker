@@ -73,6 +73,7 @@ release:
     name: clinvoker
   draft: false
   prerelease: auto
+  mode: replace
   name_template: "v{{.Version}}"
   header: |
     ## What's New in {{ .Tag }}
