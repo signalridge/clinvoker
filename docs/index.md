@@ -128,13 +128,13 @@ clinvk "Explain the architecture of this codebase"
 Specify a backend and model:
 
 ```bash
-clinvk --backend claude --model claude-opus-4.5 "Refactor this function for better error handling"
+clinvk --backend claude --model claude-opus-4-5-20251101 "Refactor this function for better error handling"
 ```
 
-Use Codex CLI with the latest GPT model:
+Use Codex CLI:
 
 ```bash
-clinvk --backend codex --model gpt-5.2 "Generate unit tests for auth.go"
+clinvk --backend codex --model o3 "Generate unit tests for auth.go"
 ```
 
 ### SDK Integration Example
@@ -150,7 +150,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="claude-opus-4.5",
+    model="claude-opus-4-5-20251101",
     messages=[{"role": "user", "content": "Hello, world!"}]
 )
 print(response.choices[0].message.content)
@@ -175,8 +175,8 @@ print(response.choices[0].message.content)
 
 | Backend | CLI Tool | Models | Best For |
 |---------|----------|--------|----------|
-| Claude Code | `claude` | claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5 | Complex reasoning, architecture decisions, detailed analysis |
-| Codex CLI | `codex` | gpt-5.2, gpt-5.2-mini, gpt-5.2-nano | Code generation, quick implementations, iterative development |
+| Claude Code | `claude` | claude-opus-4-5-20251101, claude-sonnet-4-20250514 | Complex reasoning, architecture decisions, detailed analysis |
+| Codex CLI | `codex` | o3, o3-mini, o4-mini | Code generation, quick implementations, iterative development |
 | Gemini CLI | `gemini` | gemini-2.5-pro, gemini-2.5-flash | Research, summarization, creative tasks, multimodal inputs |
 
 ## Next Steps

@@ -23,6 +23,8 @@
   <a href="#-installation"><img alt="Go" src="https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
 </p>
 
+English | **[简体中文](README.zh.md)**
+
 </div>
 
 ---
@@ -117,11 +119,14 @@ clinvk compare --all-backends "explain this algorithm"
 # List all sessions
 clinvk sessions list
 
+# Show session details
+clinvk sessions show <session-id>
+
 # Resume a specific session
 clinvk resume <session-id>
 
-# Export session history
-clinvk sessions export <session-id> -o history.json
+# Clean up old sessions
+clinvk sessions clean --older-than 30d
 ```
 
 ---
@@ -134,17 +139,18 @@ Start an OpenAI/Anthropic-compatible API server:
 # Start server on port 8080
 clinvk serve --port 8080
 
-# With specific backend
-clinvk serve --port 8080 --backend claude
+# Bind to all interfaces
+clinvk serve --host 0.0.0.0 --port 8080
 ```
 
 ### API Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
-| `POST /v1/chat/completions` | OpenAI-compatible chat completions |
-| `POST /v1/messages` | Anthropic-compatible messages |
-| `GET /v1/models` | List available models |
+| `POST /openai/v1/chat/completions` | OpenAI-compatible chat completions |
+| `POST /anthropic/v1/messages` | Anthropic-compatible messages |
+| `GET /openai/v1/models` | List available models |
+| `POST /api/v1/prompt` | Custom REST API for prompts |
 | `GET /health` | Health check |
 
 ---

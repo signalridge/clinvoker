@@ -74,12 +74,12 @@ echo $?  # 输出：4
 
 ### 5 - API 错误
 
-HTTP API 请求失败（使用 `clinvk serve` 或 API 模式时）。
+HTTP API 请求失败（使用 `clinvk serve` 时）。
 
 ```bash
-# 服务器未运行
-clinvk --api-mode "提示词"
-echo $?  # 输出：5
+# 示例：API 端点返回错误
+curl -X POST http://localhost:8080/api/v1/prompt \
+  -d '{"backend": "invalid"}' 2>/dev/null || echo "API 错误"
 ```
 
 ### 6 - 超时
@@ -87,7 +87,9 @@ echo $?  # 输出：5
 命令执行超过了配置的超时时间。
 
 ```bash
-clinvk --timeout 5 "非常长的任务"
+# 通过配置设置超时：unified_flags.command_timeout_secs
+clinvk "非常长的任务"
+# 如果设置了 command_timeout_secs 且超时，退出码为 6
 echo $?  # 输出：6
 ```
 

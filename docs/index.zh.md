@@ -128,13 +128,13 @@ clinvk "解释此代码库的架构"
 指定后端和模型：
 
 ```bash
-clinvk --backend claude --model claude-opus-4.5 "重构此函数以改进错误处理"
+clinvk --backend claude --model claude-opus-4-5-20251101 "重构此函数以改进错误处理"
 ```
 
-使用最新 GPT 模型的 Codex CLI：
+使用 Codex CLI：
 
 ```bash
-clinvk --backend codex --model gpt-5.2 "为 auth.go 生成单元测试"
+clinvk --backend codex --model o3 "为 auth.go 生成单元测试"
 ```
 
 ### SDK 集成示例
@@ -150,7 +150,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="claude-opus-4.5",
+    model="claude-opus-4-5-20251101",
     messages=[{"role": "user", "content": "Hello, world!"}]
 )
 print(response.choices[0].message.content)
@@ -175,8 +175,8 @@ print(response.choices[0].message.content)
 
 | 后端 | CLI 工具 | 模型 | 最适用于 |
 |---------|----------|--------|----------|
-| Claude Code | `claude` | claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5 | 复杂推理、架构决策、详细分析 |
-| Codex CLI | `codex` | gpt-5.2, gpt-5.2-mini, gpt-5.2-nano | 代码生成、快速实现、迭代开发 |
+| Claude Code | `claude` | claude-opus-4-5-20251101, claude-sonnet-4-20250514 | 复杂推理、架构决策、详细分析 |
+| Codex CLI | `codex` | o3, o3-mini, o4-mini | 代码生成、快速实现、迭代开发 |
 | Gemini CLI | `gemini` | gemini-2.5-pro, gemini-2.5-flash | 研究、摘要、创意任务、多模态输入 |
 
 ## 下一步
