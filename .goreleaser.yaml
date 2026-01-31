@@ -97,6 +97,7 @@ brews:
     repository:
       owner: signalridge
       name: homebrew-tap
+      token: "{{ .Env.GH_PAT }}"
     homepage: "https://github.com/signalridge/clinvoker"
     description: "Unified AI CLI wrapper for multiple backends"
     license: "MIT"
@@ -110,6 +111,7 @@ scoops:
     repository:
       owner: signalridge
       name: scoop-bucket
+      token: "{{ .Env.GH_PAT }}"
     homepage: "https://github.com/signalridge/clinvoker"
     description: "Unified AI CLI wrapper for multiple backends"
     license: MIT
