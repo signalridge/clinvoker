@@ -444,6 +444,6 @@ fi
 
 ## 下一步
 
-- [客户端库](openai-sdk.md) - 特定语言的 SDK
-- [REST API 参考](../reference/api/rest.md) - 完整 API 文档
-- [故障排除](../../concepts/troubleshooting.md) - 常见问题
+- [客户端库](../openai-sdk.md) - 特定语言的 SDK
+- [REST API 参考](../../../reference/api/rest.md) - 完整 API 文档
+- [故障排除](../../../concepts/troubleshooting.md) - 常见问题

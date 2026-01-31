@@ -439,6 +439,6 @@ fi
 
 ## Next Steps
 
-- [Client Libraries](openai-sdk.md) - Language-specific SDKs
-- [REST API Reference](../reference/api/rest.md) - Complete API docs
-- [Troubleshooting](../../concepts/troubleshooting.md) - Common issues
+- [Client Libraries](../openai-sdk.md) - Language-specific SDKs
+- [REST API Reference](../../../reference/api/rest.md) - Complete API docs
+- [Troubleshooting](../../../concepts/troubleshooting.md) - Common issues
