@@ -38,9 +38,9 @@ test_compare_basic() {
 	fi
 
 	# Verify each result has required fields
+	# Note: session_id is omitted in dry_run mode (omitempty)
 	for i in 0 1; do
 		assert_json_field "$response" "results[$i].backend"
-		assert_json_field "$response" "results[$i].session_id"
 		assert_json_field "$response" "results[$i].exit_code"
 	done
 }
@@ -155,12 +155,12 @@ test_compare_response_structure() {
 	fi
 
 	# Verify each result has complete structure
-	local result_0_backend result_0_session result_0_exit
+	# Note: session_id is omitted in dry_run mode (omitempty)
+	local result_0_backend result_0_exit
 	result_0_backend=$(echo "$response" | jq -r '.results[0].backend // empty')
-	result_0_session=$(echo "$response" | jq -r '.results[0].session_id // empty')
 	result_0_exit=$(echo "$response" | jq -r '.results[0].exit_code // empty')
 
-	if [[ -z "$result_0_backend" || -z "$result_0_session" || -z "$result_0_exit" ]]; then
+	if [[ -z "$result_0_backend" || -z "$result_0_exit" ]]; then
 		log_error "Result structure incomplete"
 		return 1
 	fi
