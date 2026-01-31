@@ -26,6 +26,9 @@ unified_flags:
   dry_run: false
   max_turns: 0
   max_tokens: 0
+  command_timeout_secs: 0
+
+> **说明**：`max_tokens` 目前不会映射为任何后端 CLI 参数，可能被后端忽略。
 
 # 后端特定配置
 backends:
@@ -62,6 +65,7 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  api_keys_gopass_path: ""
   rate_limit_enabled: false
   rate_limit_rps: 10
   rate_limit_burst: 20
@@ -127,6 +131,10 @@ parallel:
 - Gemini：`read-only` 与 `workspace` 都会映射为 `--sandbox`（无法区分）。
 - Codex：映射为 `--sandbox read-only|workspace-write|danger-full-access`。
 
+#### command_timeout_secs
+
+命令超时时间（秒）。`0` 表示不超时。
+
 ### backends
 
 后端特定配置：
@@ -139,6 +147,7 @@ parallel:
 | `extra_flags` | array | 额外 CLI 参数 |
 
 > **注意**：`allowed_tools` 选项目前仅 Claude 后端支持。为 Codex 或 Gemini 设置此选项将无效，系统会在日志中记录警告。
+> **说明**：`enabled` 会被写入配置，但当前 CLI/Server 不会强制禁用该后端。
 
 ### session
 
@@ -146,7 +155,7 @@ parallel:
 
 | 字段 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
-| `auto_resume` | bool | `true` | 在同一目录自动恢复 |
+| `auto_resume` | bool | `true` | 运行 `clinvk [prompt]` 时自动恢复最近可恢复会话 |
 | `retention_days` | int | `30` | 会话保留天数 |
 | `store_token_usage` | bool | `true` | 跟踪 token 使用量 |
 
@@ -168,6 +177,9 @@ HTTP 服务器设置：
 | `rate_limit_cleanup_secs` | int | `180` | 限流表清理间隔 |
 | `trusted_proxies` | array | `[]` | 可信代理；为空时忽略代理头 |
 | `max_request_body_bytes` | int | `10485760` | 请求体最大大小（0 表示不限制） |
+| `api_keys_gopass_path` | string | `` | gopass 中的 API Key 路径（也可用 `CLINVK_API_KEYS`） |
+
+> **API Key**：可通过环境变量 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_path` 提供，不建议直接写入配置文件。
 
 ### parallel
 

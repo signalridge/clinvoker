@@ -1,94 +1,109 @@
 # clinvk serve
 
-启动 HTTP API 服务器。
+启动 HTTP API 服务。
 
-## 概要
+## 用法
 
 ```bash
 clinvk serve [flags]
 ```
 
-## 描述
+## 说明
 
-启动一个通过 REST API 暴露 clinvk 功能的 HTTP 服务器。服务器提供三种 API 风格：
+启动 HTTP 服务器并暴露三类 API：
 
-- 自定义 REST API (`/api/v1/`)
-- OpenAI 兼容 API (`/openai/v1/`)
-- Anthropic 兼容 API (`/anthropic/v1/`)
+- 自定义 REST API（`/api/v1/`）
+- OpenAI 兼容 API（`/openai/v1/`）
+- Anthropic 兼容 API（`/anthropic/v1/`）
 
-## 标志
+## 参数
 
-| 标志 | 简写 | 类型 | 默认值 | 描述 |
+| 参数 | 简写 | 类型 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| `--host` | | string | `127.0.0.1` | 绑定的主机 |
-| `--port` | `-p` | int | `8080` | 监听端口 |
+| `--host` | | string | `127.0.0.1` | 绑定地址（可由配置覆盖） |
+| `--port` | `-p` | int | `8080` | 监听端口（可由配置覆盖） |
 
-## 示例
+## 认证
 
-### 使用默认设置启动
+可选 API Key 认证（未配置时默认放行）：
 
-```bash
-clinvk serve
-# 服务器运行在 http://127.0.0.1:8080
-```
+- 环境变量 `CLINVK_API_KEYS`（逗号分隔）
+- 配置 `server.api_keys_gopass_path`（gopass）
 
-### 自定义端口
+请求需带：
 
-```bash
-clinvk serve --port 3000
-```
-
-### 绑定到所有接口
-
-```bash
-clinvk serve --host 0.0.0.0 --port 8080
-```
-
-!!! warning "安全"
-    绑定到 `0.0.0.0` 会将服务器暴露到网络。没有内置认证。
+- `X-Api-Key: <key>`
+- 或 `Authorization: Bearer <key>`
 
 ## 端点
 
 ### 自定义 REST API
 
-| 方法 | 端点 | 描述 |
+| 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/v1/prompt` | 执行提示 |
+| POST | `/api/v1/prompt` | 执行单次提示 |
 | POST | `/api/v1/parallel` | 并行执行 |
-| POST | `/api/v1/chain` | 链式执行 |
+| POST | `/api/v1/chain` | 串行执行 |
 | POST | `/api/v1/compare` | 后端对比 |
 | GET | `/api/v1/backends` | 列出后端 |
 | GET | `/api/v1/sessions` | 列出会话 |
+| GET | `/api/v1/sessions/{id}` | 查看会话 |
+| DELETE | `/api/v1/sessions/{id}` | 删除会话 |
 
 ### OpenAI 兼容
 
-| 方法 | 端点 | 描述 |
+| 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/openai/v1/models` | 列出模型 |
-| POST | `/openai/v1/chat/completions` | 聊天补全 |
+| POST | `/openai/v1/chat/completions` | 对话补全 |
 
 ### Anthropic 兼容
 
-| 方法 | 端点 | 描述 |
+| 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/anthropic/v1/messages` | 创建消息 |
 
-### 元数据
+### Meta
 
-| 方法 | 端点 | 描述 |
+| 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/health` | 健康检查 |
-| GET | `/openapi.json` | OpenAPI 规范 |
+| GET | `/openapi.json` | OpenAPI 说明 |
+| GET | `/docs` | API 文档 UI |
+| GET | `/metrics` | Prometheus 指标（需开启） |
 
-## 退出码
+## 配置示例
 
-| 代码 | 描述 |
-|------|------|
-| 0 | 正常关闭 |
-| 1 | 服务器错误 |
+```yaml
+server:
+  host: "127.0.0.1"
+  port: 8080
+  request_timeout_secs: 300
+  read_timeout_secs: 30
+  write_timeout_secs: 300
+  idle_timeout_secs: 120
+  api_keys_gopass_path: "myproject/server/api-keys"
+  rate_limit_enabled: false
+  metrics_enabled: false
+```
+
+## 启动输出
+
+```text
+clinvk API server starting on http://127.0.0.1:8080
+
+Available endpoints:
+  Custom API:     /api/v1/prompt, /api/v1/parallel, /api/v1/chain, /api/v1/compare
+  OpenAI:         /openai/v1/models, /openai/v1/chat/completions
+  Anthropic:      /anthropic/v1/messages
+  Docs:           /openapi.json
+  Health:         /health
+
+Press Ctrl+C to stop
+```
 
 ## 另请参阅
 
-- [REST API 参考](../rest-api.md)
-- [OpenAI 兼容](../openai-compatible.md)
-- [Anthropic 兼容](../anthropic-compatible.md)
+- [REST API](../api/rest-api.md)
+- [OpenAI Compatible](../api/openai-compatible.md)
+- [Anthropic Compatible](../api/anthropic-compatible.md)

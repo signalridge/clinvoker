@@ -47,16 +47,16 @@ Configuration values are resolved in this order (highest to lowest priority):
 
 ### Backends
 
-| Backend | Binary | Models |
+| Backend | Binary | Example Models |
 |---------|--------|--------|
-| Claude | `claude` | claude-opus-4-5-20251101, claude-sonnet-4-20250514 |
-| Codex | `codex` | o3, o3-mini |
-| Gemini | `gemini` | gemini-2.5-pro, gemini-2.5-flash |
+| Claude | `claude` | (backend default or configured) |
+| Codex | `codex` | (backend default or configured) |
+| Gemini | `gemini` | (backend default or configured) |
 
 ### Output Formats
 
 | Format | Description |
 |--------|-------------|
-| `text` | Plain text output (default) |
-| `json` | Structured JSON |
-| `stream-json` | Streaming JSON events |
+| `text` | Plain text output |
+| `json` | Structured JSON (default via `output.format`) |
+| `stream-json` | Streaming JSON (backend-specific) |

@@ -2,72 +2,91 @@
 
 恢复之前的会话。
 
-## 概要
+## 用法
 
 ```bash
 clinvk resume [session-id] [prompt] [flags]
 ```
 
-## 描述
+## 说明
 
-恢复之前的会话以继续对话。会话保持之前交互的上下文。
+恢复之前的会话继续对话。只有包含后端会话 ID 的会话才可恢复。
 
 ## 参数
 
-| 参数 | 描述 |
+| 参数 | 说明 |
 |------|------|
-| `session-id` | 要恢复的会话 ID（使用 `--last` 或 `--interactive` 时可选） |
-| `prompt` | 后续提示（可选） |
+| `session-id` | 会话 ID 或前缀（可配合 `--last` 或交互选择） |
+| `prompt` | 追问内容（可选） |
 
-## 标志
+## 参数
 
-| 标志 | 简写 | 类型 | 默认值 | 描述 |
+| 参数 | 简写 | 类型 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| `--last` | | bool | `false` | 恢复最近的会话 |
-| `--interactive` | `-i` | bool | `false` | 交互式会话选择器 |
-| `--here` | | bool | `false` | 按当前目录筛选 |
-| `--backend` | `-b` | string | | 按后端筛选 |
+| `--last` | | bool | `false` | 恢复最近的会话（会应用过滤条件） |
+| `--interactive` | `-i` | bool | `false` | 打开交互选择列表 |
+| `--here` | | bool | `false` | 仅显示当前目录会话 |
+| `--backend` | `-b` | string | | 按后端过滤 |
 
 ## 示例
 
-### 恢复上一个会话
+### 恢复最近会话
 
 ```bash
 clinvk resume --last
 ```
 
-### 恢复并带上后续提示
+### 带追问恢复
 
 ```bash
 clinvk resume --last "从上次中断的地方继续"
 ```
 
-### 交互式选择器
+### 交互选择
 
 ```bash
 clinvk resume --interactive
 ```
 
-### 从当前目录恢复
+如果不带参数执行 `clinvk resume`，将默认进入交互选择。
+
+### 当前目录过滤
 
 ```bash
 clinvk resume --here
 ```
 
-### 按后端筛选
+### 按后端过滤
 
 ```bash
 clinvk resume --backend claude
 ```
 
-### 恢复特定会话
+### 指定会话
 
 ```bash
 clinvk resume abc123
 clinvk resume abc123 "现在添加测试"
 ```
 
+## 行为优先级
+
+1. 指定 `--last` 时，恢复满足过滤条件的最近可恢复会话
+2. 否则如果提供了会话 ID，则恢复该会话
+3. 否则进入交互选择（无可恢复会话时返回错误）
+
+## 输出
+
+恢复会话并输出模型响应，输出格式与 root 命令一致。
+
+## 退出码
+
+| 退出码 | 说明 |
+|--------|------|
+| 0 | 成功 |
+| 1 | 会话不存在或执行失败 |
+
 ## 另请参阅
 
-- [sessions](sessions.md) - 列出和管理会话
-- [prompt](prompt.md) - 执行新提示
+- [sessions](sessions.md) - 管理会话
+- [prompt](prompt.md) - 新建会话

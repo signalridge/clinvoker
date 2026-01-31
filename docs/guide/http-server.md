@@ -33,7 +33,12 @@ clinvk serve --host 0.0.0.0 --port 8080
 ```
 
 !!! warning "Security"
-    Binding to `0.0.0.0` exposes the server to the network. There is no built-in authentication.
+    Binding to `0.0.0.0` exposes the server to the network. Enable API keys and restrict CORS/workdirs for production use.
+
+## Authentication
+
+API key auth is optional and enabled when you configure keys via `CLINVK_API_KEYS` or `server.api_keys_gopass_path`.
+Clients must send `Authorization: Bearer <key>` or `X-Api-Key: <key>`.
 
 ## Testing the Server
 
@@ -43,11 +48,7 @@ clinvk serve --host 0.0.0.0 --port 8080
 curl http://localhost:8080/health
 ```
 
-Response:
-
-```json
-{"status": "ok"}
-```
+Response includes `status`, `version`, `uptime`, backend availability, and session store health.
 
 ### List Backends
 
@@ -97,6 +98,8 @@ curl -X POST http://localhost:8080/api/v1/prompt \
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 | GET | `/openapi.json` | OpenAPI spec |
+| GET | `/docs` | API docs UI |
+| GET | `/metrics` | Prometheus metrics (if enabled) |
 
 ## Using with Client Libraries
 
@@ -107,7 +110,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:8080/openai/v1",
-    api_key="not-needed"  # clinvk doesn't require auth
+    api_key="not-needed"  # only required if API keys are enabled
 )
 
 response = client.chat.completions.create(
@@ -124,7 +127,7 @@ import anthropic
 
 client = anthropic.Client(
     base_url="http://localhost:8080/anthropic/v1",
-    api_key="not-needed"
+    api_key="not-needed"  # only required if API keys are enabled
 )
 
 message = client.messages.create(
@@ -195,6 +198,9 @@ server:
 
   # Idle connection timeout (seconds)
   idle_timeout_secs: 120
+
+  # Optional API keys via gopass (leave empty to disable)
+  api_keys_gopass_path: ""
 ```
 
 ### Via CLI Flags

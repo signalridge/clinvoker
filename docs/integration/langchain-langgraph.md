@@ -28,7 +28,7 @@ from openai import OpenAI
 # Configure clinvk as the base URL
 client = OpenAI(
     base_url="http://localhost:8080/openai/v1",
-    api_key="not-needed"  # clinvk doesn't require API key
+    api_key="not-needed"  # only required if API keys are enabled
 )
 
 # Use any backend by setting the model name

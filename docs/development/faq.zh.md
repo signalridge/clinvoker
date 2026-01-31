@@ -129,7 +129,7 @@ clinvk config show
 
 ### 服务器有认证吗？
 
-没有。服务器没有内置认证，设计用于本地使用。
+有。内置可选的 API Key 认证，可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_path` 启用。未配置时默认放行。
 
 ### 可以使用 OpenAI 客户端库吗？
 
@@ -137,7 +137,7 @@ clinvk config show
 
 ```python
 from openai import OpenAI
-client = OpenAI(base_url="http://localhost:8080/openai/v1", api_key="not-needed")
+client = OpenAI(base_url="http://localhost:8080/openai/v1", api_key="not-needed")  # 开启 API Key 时才需要
 ```
 
 ## 故障排除

@@ -40,12 +40,12 @@ clinvk -w ./subproject "修复测试"
 
 ## 输出格式
 
-控制输出的显示方式：
+默认输出由 `output.format` 配置决定（内置默认值为 `json`）。
 
-### 文本（默认）
+### 文本
 
 ```bash
-clinvk "解释这段代码"
+clinvk --output-format text "解释这段代码"
 ```
 
 ### JSON
@@ -59,6 +59,8 @@ clinvk --output-format json "解释这段代码"
 ```bash
 clinvk -o stream-json "解释这段代码"
 ```
+
+`stream-json` 会直接透传后端的流式输出（NDJSON/JSONL）。
 
 ## 继续对话
 
@@ -120,7 +122,7 @@ clinvk --ephemeral "2+2 等于多少"
 | `--backend` | `-b` | 使用的 AI 后端 | `claude` |
 | `--model` | `-m` | 使用的模型 | (后端默认) |
 | `--workdir` | `-w` | 工作目录 | (当前目录) |
-| `--output-format` | `-o` | 输出格式 | `json` |
+| `--output-format` | `-o` | 输出格式 | `json`（可配置） |
 | `--continue` | `-c` | 继续上一个会话 | `false` |
 | `--dry-run` | | 只显示命令 | `false` |
 | `--ephemeral` | | 无状态模式 | `false` |
