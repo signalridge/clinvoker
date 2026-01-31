@@ -136,29 +136,28 @@ test_openai_chat_completions_parameters() {
 	assert_json_field "$response" "model"
 }
 
-# Test OpenAI error handling
-test_openai_error_handling() {
-	if ! skip_if_missing_backends "codex"; then
+# Test OpenAI unknown model handling (defaults to claude backend)
+test_openai_unknown_model() {
+	if ! skip_if_missing_backends "claude"; then
 		return 0
 	fi
 
-	# Test with invalid model
+	# Unknown models default to claude backend (see mapModelToBackend)
 	local payload
 	payload=$(jq -n '{
-        model: "invalid-model-name",
+        model: "unknown-model-xyz",
         messages: [
+            {role: "system", content: "dry_run: true"},
             {role: "user", content: "Test"}
         ]
     }')
 
-	local response http_code
-	response=$(http_post_status "/openai/v1/chat/completions" "$payload")
-	http_code=$(echo "$response" | tail -n1)
+	local response
+	response=$(http_post "/openai/v1/chat/completions" "$payload")
 
-	if [[ "$http_code" -lt 400 ]]; then
-		log_error "Expected error status for invalid model, got $http_code"
-		return 1
-	fi
+	# Should succeed using default backend (claude)
+	assert_json_field "$response" "id"
+	assert_json_equals "$response" "object" "chat.completion"
 }
 
 # Test OpenAI response format compliance
@@ -215,7 +214,7 @@ main() {
 	run_test "Chat completions" test_openai_chat_completions
 	run_test "Chat completions streaming" test_openai_chat_completions_streaming
 	run_test "Chat completions with parameters" test_openai_chat_completions_parameters
-	run_test "Error handling" test_openai_error_handling
+	run_test "Unknown model handling" test_openai_unknown_model
 	run_test "Response format compliance" test_openai_response_format
 
 	print_summary

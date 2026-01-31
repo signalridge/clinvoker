@@ -40,8 +40,8 @@ test_parallel_basic() {
 	fi
 
 	# Verify each result has required fields
+	# Note: session_id is omitted in dry_run mode (omitempty)
 	for i in 0 1 2; do
-		assert_json_field "$response" "results[$i].session_id"
 		assert_json_field "$response" "results[$i].backend"
 		assert_json_field "$response" "results[$i].exit_code"
 	done
