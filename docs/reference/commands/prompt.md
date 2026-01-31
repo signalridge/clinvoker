@@ -10,19 +10,20 @@ clinvk [flags] [prompt]
 
 ## Description
 
-The root command executes a prompt using the configured AI backend. This is the primary way to interact with clinvk.
+The root command executes a prompt using the configured backend. It also supports session persistence, output formatting, and auto-resume behavior.
 
 ## Flags
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--backend` | `-b` | string | `claude` | AI backend to use |
-| `--model` | `-m` | string | | Model to use |
-| `--workdir` | `-w` | string | cwd | Working directory |
-| `--output-format` | `-o` | string | `text` | Output format |
-| `--continue` | `-c` | bool | `false` | Continue last session |
-| `--dry-run` | | bool | `false` | Show command only |
-| `--ephemeral` | | bool | `false` | Stateless mode |
+| `--backend` | `-b` | string | `claude` | AI backend to use (`claude`, `codex`, `gemini`) |
+| `--model` | `-m` | string | | Model override for the selected backend |
+| `--workdir` | `-w` | string | | Working directory passed to the backend |
+| `--output-format` | `-o` | string | `json` | Output format: `text`, `json`, `stream-json` (config `output.format` overrides when flag not set) |
+| `--continue` | `-c` | bool | `false` | Continue the most recent resumable session |
+| `--dry-run` | | bool | `false` | Print the backend command without executing |
+| `--ephemeral` | | bool | `false` | Stateless mode: do not persist a session |
+| `--config` | | string | `~/.clinvk/config.yaml` | Custom config file path |
 
 ## Examples
 
@@ -80,9 +81,9 @@ clinvk --workdir /path/to/project "review the codebase"
 
 ## Output
 
-### Text Format (Default)
+### Text Format
 
-The AI's response is printed to stdout.
+When `--output-format text` is used, only the response text is printed.
 
 ### JSON Format
 
@@ -98,20 +99,16 @@ The AI's response is printed to stdout.
     "input_tokens": 123,
     "output_tokens": 456,
     "total_tokens": 579
+  },
+  "raw": {
+    "events": []
   }
 }
 ```
 
 ### Stream JSON Format
 
-Stream JSON passes through the backend's native streaming format (NDJSON/JSONL).
-The exact event shape depends on the backend.
-
-```json
-{"type": "start", "backend": "claude"}
-{"type": "content", "text": "chunk of response"}
-{"type": "end", "session_id": "abc123"}
-```
+`stream-json` passes through the backend's native streaming format (NDJSON/JSONL). The event shape depends on the backend CLI and is not unified.
 
 ## Exit Codes
 

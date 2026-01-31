@@ -20,8 +20,8 @@ Start an HTTP server that exposes clinvk functionality via REST APIs. The server
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--host` | | string | `127.0.0.1` | Host to bind to |
-| `--port` | `-p` | int | `8080` | Port to listen on |
+| `--host` | | string | `127.0.0.1` | Host to bind to (config fallback) |
+| `--port` | `-p` | int | `8080` | Port to listen on (config fallback) |
 
 ## Examples
 
@@ -45,7 +45,21 @@ clinvk serve --host 0.0.0.0 --port 8080
 ```
 
 !!! warning "Security"
-    Binding to `0.0.0.0` exposes the server to the network. There is no built-in authentication.
+    Binding to `0.0.0.0` exposes the server to the network. Enable API keys and restrict CORS/workdirs for production use.
+
+## Authentication
+
+API key auth is **optional** and enabled when you configure keys:
+
+- `CLINVK_API_KEYS` environment variable (comma-separated)
+- `server.api_keys_gopass_path` in config (gopass)
+
+Clients must send either:
+
+- `X-Api-Key: <key>`
+- `Authorization: Bearer <key>`
+
+If no keys are configured, requests are allowed by default.
 
 ## Endpoints
 
@@ -81,6 +95,8 @@ clinvk serve --host 0.0.0.0 --port 8080
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 | GET | `/openapi.json` | OpenAPI spec |
+| GET | `/docs` | API docs (Huma UI) |
+| GET | `/metrics` | Prometheus metrics (if enabled) |
 
 ## Quick Test
 
@@ -111,6 +127,9 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  api_keys_gopass_path: "myproject/server/api-keys"
+  rate_limit_enabled: false
+  metrics_enabled: false
 ```
 
 ## Output
@@ -118,14 +137,16 @@ server:
 On start:
 
 ```text
-clinvk HTTP server starting
-  Listening: <http://127.0.0.1:8080>
-  Endpoints:
-    /api/v1/       - Custom REST API
-    /openai/v1/    - OpenAI compatible
-    /anthropic/v1/ - Anthropic compatible
-    /health        - Health check
-    /openapi.json  - OpenAPI specification
+clinvk API server starting on http://127.0.0.1:8080
+
+Available endpoints:
+  Custom API:     /api/v1/prompt, /api/v1/parallel, /api/v1/chain, /api/v1/compare
+  OpenAI:         /openai/v1/models, /openai/v1/chat/completions
+  Anthropic:      /anthropic/v1/messages
+  Docs:           /openapi.json
+  Health:         /health
+
+Press Ctrl+C to stop
 ```
 
 ## Exit Codes
@@ -137,6 +158,6 @@ clinvk HTTP server starting
 
 ## See Also
 
-- [REST API Reference](../rest-api.md)
-- [OpenAI Compatible](../openai-compatible.md)
-- [Anthropic Compatible](../anthropic-compatible.md)
+- [REST API Reference](../api/rest-api.md)
+- [OpenAI Compatible](../api/openai-compatible.md)
+- [Anthropic Compatible](../api/anthropic-compatible.md)

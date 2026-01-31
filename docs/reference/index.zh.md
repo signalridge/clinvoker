@@ -47,16 +47,16 @@ clinvk 技术参考文档。
 
 ### 后端
 
-| 后端 | 二进制文件 | 模型 |
+| 后端 | 二进制文件 | 示例模型 |
 |------|-----------|------|
-| Claude | `claude` | claude-opus-4-5-20251101, claude-sonnet-4-20250514 |
-| Codex | `codex` | o3, o3-mini |
-| Gemini | `gemini` | gemini-2.5-pro, gemini-2.5-flash |
+| Claude | `claude` | （后端默认或配置覆盖） |
+| Codex | `codex` | （后端默认或配置覆盖） |
+| Gemini | `gemini` | （后端默认或配置覆盖） |
 
 ### 输出格式
 
 | 格式 | 描述 |
 |------|------|
-| `text` | 纯文本输出（默认） |
-| `json` | 结构化 JSON |
-| `stream-json` | 流式 JSON 事件 |
+| `text` | 纯文本输出 |
+| `json` | 结构化 JSON（默认由 `output.format` 决定） |
+| `stream-json` | 流式 JSON（后端格式） |

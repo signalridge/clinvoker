@@ -40,6 +40,9 @@ unified_flags:
   # Maximum response tokens (0 = backend default)
   max_tokens: 0
 
+  # Command timeout in seconds (0 = no timeout)
+  command_timeout_secs: 0
+
 # Backend-specific configuration
 backends:
   claude:
@@ -83,6 +86,8 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  # Optional API keys via gopass (leave empty to disable)
+  api_keys_gopass_path: ""
   # Rate limiting
   rate_limit_enabled: false
   rate_limit_rps: 10
@@ -138,6 +143,9 @@ unified_flags:
   dry_run: false
   max_turns: 0
   max_tokens: 0
+  command_timeout_secs: 0
+
+> **Note**: `max_tokens` is accepted but currently not mapped to any backend CLI flags (it may be ignored depending on backend).
 ```
 
 #### approval_mode
@@ -175,6 +183,10 @@ unified_flags:
 - Gemini: `read-only` and `workspace` both map to `--sandbox` (no distinction).
 - Codex: maps to `--sandbox read-only|workspace-write|danger-full-access`.
 
+#### command_timeout_secs
+
+Maximum time (in seconds) to allow a backend command to run. Set to `0` for no timeout.
+
 ### backends
 
 Backend-specific configuration:
@@ -204,6 +216,7 @@ backends:
 | `extra_flags` | array | Additional CLI flags |
 
 > **Note**: The `allowed_tools` option is currently only supported by the Claude backend. Setting it for Codex or Gemini will have no effect. A warning will be logged if configured for unsupported backends.
+> **Note**: `enabled` is stored in config but not currently enforced by the CLI/server.
 
 #### extra_flags Examples
 
@@ -239,7 +252,7 @@ session:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `auto_resume` | bool | `true` | Auto-resume in same directory |
+| `auto_resume` | bool | `true` | Auto-resume the most recent resumable session when running `clinvk [prompt]` |
 | `retention_days` | int | `30` | Days to keep sessions (0 = forever) |
 | `store_token_usage` | bool | `true` | Track token usage |
 | `default_tags` | array | `[]` | Tags for new sessions |
@@ -279,6 +292,7 @@ server:
   read_timeout_secs: 30
   write_timeout_secs: 300
   idle_timeout_secs: 120
+  api_keys_gopass_path: ""
   rate_limit_enabled: false
   rate_limit_rps: 10
   rate_limit_burst: 20
@@ -301,12 +315,15 @@ server:
 | `rate_limit_cleanup_secs` | int | `180` | Cleanup interval for rate limiter entries |
 | `trusted_proxies` | array | `[]` | Trusted proxies; if empty, proxy headers are ignored |
 | `max_request_body_bytes` | int | `10485760` | Max request body size (0 disables limit) |
+| `api_keys_gopass_path` | string | `` | gopass path for API keys (see `CLINVK_API_KEYS` env) |
 | `cors_allowed_origins` | array | `[]` | Allowed CORS origins (empty = localhost only) |
 | `cors_allow_credentials` | bool | `false` | Allow credentials in CORS requests |
 | `cors_max_age` | int | `300` | CORS preflight cache max age in seconds |
 | `allowed_workdir_prefixes` | array | `[]` | Allowed working directory prefixes |
 | `blocked_workdir_prefixes` | array | `[]` | Blocked working directory prefixes |
 | `metrics_enabled` | bool | `false` | Enable Prometheus `/metrics` endpoint |
+
+> **API keys**: You can provide keys via `CLINVK_API_KEYS` (comma-separated) or `server.api_keys_gopass_path`. Keys are not stored directly in the config file for security.
 
 ---
 

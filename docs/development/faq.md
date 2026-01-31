@@ -159,11 +159,11 @@ clinvk --ephemeral "prompt"
 
 ### Is the server authenticated?
 
-No. The server has no built-in authentication and is designed for local use only.
+Yes, optional API key authentication is built in. Configure `CLINVK_API_KEYS` (comma-separated) or `server.api_keys_gopass_path`. If no keys are configured, the server allows requests by default.
 
 ### How do I expose the server publicly?
 
-Place it behind a reverse proxy with authentication:
+Place it behind a reverse proxy and enable API keys:
 
 ```bash
 # Bind to all interfaces (use with caution)
@@ -176,7 +176,7 @@ Yes, the server provides OpenAI-compatible endpoints at `/openai/v1/`:
 
 ```python
 from openai import OpenAI
-client = OpenAI(base_url="http://localhost:8080/openai/v1", api_key="not-needed")
+client = OpenAI(base_url="http://localhost:8080/openai/v1", api_key="not-needed")  # only required if API keys are enabled
 ```
 
 ## Troubleshooting
