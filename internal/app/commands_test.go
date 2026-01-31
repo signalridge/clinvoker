@@ -203,7 +203,8 @@ func TestChainDefinition_JSONParsing(t *testing.T) {
 	}
 }
 
-func TestSubstitutePromptPlaceholders(t *testing.T) {
+// TestSubstitutePromptPlaceholders_Basic is a basic test - see cmd_chain_test.go for comprehensive tests
+func TestSubstitutePromptPlaceholders_Basic(t *testing.T) {
 	prompt := "prev={{previous}}"
 	got := substitutePromptPlaceholders(prompt, "OUT", true)
 	if got != "prev=OUT" {
