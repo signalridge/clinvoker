@@ -224,7 +224,7 @@ Gemini suggests these optimizations: ...
 
 - [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
 - [Claude Desktop MCP Guide](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API Reference](../reference/api/rest.md) - Current HTTP API
+- [REST API Reference](../../reference/api/rest.md) - Current HTTP API
 
 ## Feedback
 
