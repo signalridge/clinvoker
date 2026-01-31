@@ -307,6 +307,6 @@ curl http://localhost:8080/openapi.json > openapi.json
 
 ## Next Steps
 
-- [REST API Reference](../reference/rest-api.md) - Full API documentation
-- [OpenAI Compatible](../reference/openai-compatible.md) - Use with OpenAI clients
-- [Anthropic Compatible](../reference/anthropic-compatible.md) - Use with Anthropic clients
+- [REST API Reference](../reference/api/rest-api.md) - Full API documentation
+- [OpenAI Compatible](../reference/api/openai-compatible.md) - Use with OpenAI clients
+- [Anthropic Compatible](../reference/api/anthropic-compatible.md) - Use with Anthropic clients

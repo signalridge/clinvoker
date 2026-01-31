@@ -440,5 +440,5 @@ fi
 ## 下一步
 
 - [客户端库](client-libraries.md) - 特定语言的 SDK
-- [REST API 参考](../reference/rest-api.md) - 完整 API 文档
+- [REST API 参考](../reference/api/rest-api.md) - 完整 API 文档
 - [故障排除](../development/troubleshooting.md) - 常见问题
