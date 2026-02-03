@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/signalridge/clinvoker/compare/v0.2.0...v0.3.0) (2026-02-03)
+
+
+### 🚀 Features
+
+* **session:** add stale session handling with interactive recovery ([#57](https://github.com/signalridge/clinvoker/issues/57)) ([e1243ba](https://github.com/signalridge/clinvoker/commit/e1243baa1fea91b2e9d61dce42bf813bd2644f5e))
+
+
+### 📦 Dependencies
+
+* **actions:** bump the actions group with 2 updates ([#56](https://github.com/signalridge/clinvoker/issues/56)) ([a8cd2f2](https://github.com/signalridge/clinvoker/commit/a8cd2f278e685a544feec43e92294a9db6ce0085))
+
 ## [0.2.0](https://github.com/signalridge/clinvoker/compare/v0.1.0...v0.2.0) (2026-01-31)
 
 
