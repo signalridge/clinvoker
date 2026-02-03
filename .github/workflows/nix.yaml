@@ -5,7 +5,7 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
-      - "**.go"
+      - "**/*.go"
       - "go.mod"
       - "go.sum"
   pull_request:
@@ -13,9 +13,11 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
-      - "**.go"
+      - "**/*.go"
       - "go.mod"
       - "go.sum"
+permissions:
+  contents: read
 jobs:
   flake-check:
     name: Flake Check
