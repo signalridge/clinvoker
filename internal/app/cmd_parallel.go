@@ -46,7 +46,7 @@ Extended task format with per-task options:
         "prompt": "review auth module",
         "id": "task-1",
         "name": "Auth Review",
-        "model": "claude-opus-4-5-20251101",
+        "model": "sonnet",
         "approval_mode": "auto",
         "sandbox_mode": "workspace",
         "max_turns": 10
