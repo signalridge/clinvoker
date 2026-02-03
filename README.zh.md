@@ -23,7 +23,7 @@
   <a href="#-安装"><img alt="Go" src="https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white"></a>
 </p>
 
-**[English](README.md)** | 简体中文
+**[English](README.md)** | 简体中文 | **[日本語](README.ja.md)** | [Documentation](https://clinvoker.dev)
 
 </div>
 
