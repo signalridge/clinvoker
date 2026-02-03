@@ -80,9 +80,124 @@ plugins:
           name: English
           default: true
           build: true
+        - locale: ja
+          name: 日本語
+          build: true
+          nav_translations:
+            Home: ホーム
+            Tutorials: チュートリアル
+            Getting Started: はじめに
+            Multi-Backend Code Review: マルチバックエンドのコードレビュー
+            Building AI Skills: AI スキルの構築
+            CI/CD Integration: CI/CD 統合
+            LangChain Integration: LangChain 連携
+            Guides: ガイド
+            Basic Usage: 基本的な使い方
+            Sessions: セッション
+            Parallel Execution: 並列実行
+            Chain Execution: チェーン実行
+            HTTP Server: HTTP サーバー
+            Configuration: 設定
+            Backend Comparison: バックエンド比較
+            Backends: バックエンド
+            Claude Code: Claude Code
+            Codex CLI: Codex CLI
+            Gemini CLI: Gemini CLI
+            Integrations: 連携
+            OpenAI SDK: OpenAI SDK
+            Anthropic SDK: Anthropic SDK
+            LangChain/LangGraph: LangChain/LangGraph
+            Claude Code Skills: Claude Codeスキル
+            MCP Server: MCPサーバー
+            CI/CD Platforms: CI/CDプラットフォーム
+            GitHub Actions: GitHub Actions
+            GitLab CI: GitLab CI
+            Jenkins: Jenkins
+            Reference: リファレンス
+            CLI Commands: CLIコマンド
+            clinvk prompt: clinvk prompt
+            clinvk resume: clinvk resume
+            clinvk sessions: clinvk sessions
+            clinvk config: clinvk config
+            clinvk parallel: clinvk parallel
+            clinvk compare: clinvk compare
+            clinvk chain: clinvk chain
+            clinvk serve: clinvk serve
+            API: API
+            REST API: REST API
+            OpenAI Compatible: OpenAI互換
+            Anthropic Compatible: Anthropic互換
+            Environment Variables: 環境変数
+            Exit Codes: 終了コード
+            Concepts: 概念
+            Architecture: アーキテクチャ
+            Backend System: バックエンドシステム
+            Session System: セッションシステム
+            API Design: API設計
+            Design Decisions: 設計判断
+            Contributing: 貢献
+            Troubleshooting: トラブルシューティング
+            FAQ: FAQ
+            License: ライセンス
         - locale: zh
           name: 中文
           build: true
+          nav_translations:
+            Home: 首页
+            Tutorials: 教程
+            Getting Started: 快速开始
+            Multi-Backend Code Review: 多后端代码审查
+            Building AI Skills: 构建 AI 技能
+            CI/CD Integration: CI/CD 集成
+            LangChain Integration: LangChain 集成
+            Guides: 指南
+            Basic Usage: 基本用法
+            Sessions: 会话
+            Parallel Execution: 并行执行
+            Chain Execution: 链式执行
+            HTTP Server: HTTP 服务器
+            Configuration: 配置
+            Backend Comparison: 后端对比
+            Backends: 后端
+            Claude Code: Claude Code
+            Codex CLI: Codex CLI
+            Gemini CLI: Gemini CLI
+            Integrations: 集成
+            OpenAI SDK: OpenAI SDK
+            Anthropic SDK: Anthropic SDK
+            LangChain/LangGraph: LangChain/LangGraph
+            Claude Code Skills: Claude Code 技能
+            MCP Server: MCP 服务器
+            CI/CD Platforms: CI/CD 平台
+            GitHub Actions: GitHub Actions
+            GitLab CI: GitLab CI
+            Jenkins: Jenkins
+            Reference: 参考
+            CLI Commands: CLI 命令
+            clinvk prompt: clinvk prompt
+            clinvk resume: clinvk resume
+            clinvk sessions: clinvk sessions
+            clinvk config: clinvk config
+            clinvk parallel: clinvk parallel
+            clinvk compare: clinvk compare
+            clinvk chain: clinvk chain
+            clinvk serve: clinvk serve
+            API: API
+            REST API: REST API
+            OpenAI Compatible: OpenAI 兼容
+            Anthropic Compatible: Anthropic 兼容
+            Environment Variables: 环境变量
+            Exit Codes: 退出码
+            Concepts: 概念
+            Architecture: 架构
+            Backend System: 后端系统
+            Session System: 会话系统
+            API Design: API 设计
+            Design Decisions: 设计决策
+            Contributing: 贡献
+            Troubleshooting: 故障排除
+            FAQ: 常见问题
+            License: 许可证
 extra:
   social:
     - icon: fontawesome/brands/github
