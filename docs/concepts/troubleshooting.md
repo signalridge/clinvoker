@@ -279,8 +279,9 @@ iostat -x 1
 # Increase timeout
 clinvk config set timeout 300
 
-# Use faster model
-clinvk -m fast "prompt"
+# Use faster model (model names passed directly to backend CLI)
+clinvk -b claude -m haiku "prompt"
+clinvk -b gemini -m gemini-2.5-flash "prompt"
 ```
 
 ### High Memory Usage

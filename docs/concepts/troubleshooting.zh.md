@@ -279,8 +279,9 @@ iostat -x 1
 # 增加超时时间
 clinvk config set timeout 300
 
-# 使用更快的模型
-clinvk -m fast "prompt"
+# 使用更快的模型（模型名称直接传递给后端 CLI）
+clinvk -b claude -m haiku "prompt"
+clinvk -b gemini -m gemini-2.5-flash "prompt"
 ```
 
 ### 内存使用过高
