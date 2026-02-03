@@ -12,6 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
@@ -97,17 +98,20 @@ type OpenAIModelsInput struct{}
 
 // HandleModels handles the GET /v1/models endpoint.
 func (h *OpenAIHandlers) HandleModels(ctx context.Context, _ *OpenAIModelsInput) (*OpenAIModelsResponse, error) {
-	backends := backend.List()
+	backends := config.EnabledBackends()
 	created := time.Now().Unix()
 
-	models := make([]OpenAIModel, len(backends))
-	for i, name := range backends {
-		models[i] = OpenAIModel{
+	models := make([]OpenAIModel, 0, len(backends))
+	for _, name := range backends {
+		if !backend.IsAvailableCached(name) {
+			continue
+		}
+		models = append(models, OpenAIModel{
 			ID:      name,
 			Object:  "model",
 			Created: created,
 			OwnedBy: "clinvoker",
-		}
+		})
 	}
 
 	return &OpenAIModelsResponse{
@@ -137,6 +141,7 @@ type OpenAIChatCompletionRequest struct {
 	PresencePenalty  float64         `json:"presence_penalty,omitempty" doc:"Presence penalty"`
 	FrequencyPenalty float64         `json:"frequency_penalty,omitempty" doc:"Frequency penalty"`
 	User             string          `json:"user,omitempty" doc:"User identifier"`
+	DryRun           bool            `json:"dry_run,omitempty" doc:"Non-standard: simulate execution without running commands"`
 }
 
 // OpenAIChatCompletionChoice represents a completion choice.
@@ -232,6 +237,9 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 
 	// Map model to backend
 	backendName := mapModelToBackend(input.Body.Model)
+	if !config.IsBackendEnabled(backendName) {
+		return nil, huma.Error400BadRequest(fmt.Sprintf("backend %q is disabled", backendName))
+	}
 
 	// Execute prompt (non-streaming)
 	req := &service.PromptRequest{
@@ -240,6 +248,7 @@ func (h *OpenAIHandlers) HandleChatCompletions(ctx context.Context, input *OpenA
 		Model:        input.Body.Model,
 		MaxTokens:    input.Body.MaxTokens,
 		SystemPrompt: systemPrompt,
+		DryRun:       input.Body.DryRun,
 	}
 
 	if !input.Body.Stream {

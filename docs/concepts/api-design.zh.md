@@ -85,7 +85,8 @@ OpenAI 兼容 API（`/openai/v1/*`）支持 OpenAI SDK 客户端的即插即用�
 |-----------------|-------------------|
 | `POST /v1/chat/completions` | `POST /openai/v1/chat/completions` |
 | `GET /v1/models` | `GET /openai/v1/models` |
-| `GET /v1/models/{model}` | `GET /openai/v1/models/{model}` |
+
+备注：`GET /v1/models/{model}` 尚未实现。
 
 ### 请求转换
 
@@ -170,7 +171,8 @@ Anthropic 兼容 API（`/anthropic/v1/*`）支持 Anthropic SDK 客户端的即�
 | Anthropic 端点 | clinvoker 处理器 |
 |--------------------|-------------------|
 | `POST /v1/messages` | `POST /anthropic/v1/messages` |
-| `GET /v1/models` | `GET /anthropic/v1/models` |
+
+备注：`GET /v1/models` 尚未实现。
 
 ### 请求转换
 

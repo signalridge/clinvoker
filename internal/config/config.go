@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -202,9 +203,15 @@ var (
 	cfg        *Config
 	cfgMu      sync.RWMutex
 	once       sync.Once
-	watchers   []func(*Config)
+	watchers   []configWatcher
 	watchersMu sync.RWMutex
+	watcherID  int64
 )
+
+type configWatcher struct {
+	id int64
+	fn func(*Config)
+}
 
 // Init initializes the configuration.
 func Init(cfgFile string) error {
@@ -304,16 +311,19 @@ func Get() *Config {
 // OnConfigChange registers a callback that will be called when the config changes.
 // Returns a function to unregister the callback.
 func OnConfigChange(callback func(*Config)) func() {
+	id := atomic.AddInt64(&watcherID, 1)
 	watchersMu.Lock()
-	watchers = append(watchers, callback)
-	index := len(watchers) - 1
+	watchers = append(watchers, configWatcher{id: id, fn: callback})
 	watchersMu.Unlock()
 
 	return func() {
 		watchersMu.Lock()
 		defer watchersMu.Unlock()
-		if index < len(watchers) {
-			watchers = append(watchers[:index], watchers[index+1:]...)
+		for i, w := range watchers {
+			if w.id == id {
+				watchers = append(watchers[:i], watchers[i+1:]...)
+				break
+			}
 		}
 	}
 }
@@ -340,8 +350,10 @@ func reloadConfig() {
 
 	// Notify watchers
 	watchersMu.RLock()
-	currentWatchers := make([]func(*Config), len(watchers))
-	copy(currentWatchers, watchers)
+	currentWatchers := make([]func(*Config), 0, len(watchers))
+	for _, w := range watchers {
+		currentWatchers = append(currentWatchers, w.fn)
+	}
 	watchersMu.RUnlock()
 
 	for _, watcher := range currentWatchers {
@@ -451,6 +463,15 @@ func EnabledBackends() []string {
 		enabled = append(enabled, name)
 	}
 	return enabled
+}
+
+// IsBackendEnabled returns true if a backend is enabled in config (defaults to true).
+func IsBackendEnabled(name string) bool {
+	c := Get()
+	if bc, ok := c.Backends[name]; ok {
+		return bc.IsBackendEnabled()
+	}
+	return true
 }
 
 // Reset resets the configuration (mainly for testing).

@@ -54,6 +54,12 @@ func runResume(cmd *cobra.Command, args []string) error {
 	} else {
 		outputFormat = util.ApplyOutputFormatDefault(outputFormat, cfg)
 	}
+	switch backend.OutputFormat(outputFormat) {
+	case backend.OutputDefault, backend.OutputText, backend.OutputJSON, backend.OutputStreamJSON, "":
+		// Valid formats
+	default:
+		return fmt.Errorf("invalid output format %q: must be one of: text, json, stream-json", outputFormat)
+	}
 
 	var sess *session.Session
 	var prompt string
@@ -112,6 +118,9 @@ func runResume(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get backend
+	if !config.IsBackendEnabled(sess.Backend) {
+		return fmt.Errorf("backend %q is disabled in config", sess.Backend)
+	}
 	b, err := backend.Get(sess.Backend)
 	if err != nil {
 		return fmt.Errorf("backend error: %w", err)

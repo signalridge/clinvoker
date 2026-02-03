@@ -48,12 +48,11 @@ test_openai_chat_completions() {
 		return 0
 	fi
 
-	# Note: We use dry_run via system message hack or just test request format
 	local payload
 	payload=$(jq -n '{
         model: "gpt-3.5-turbo",
+        dry_run: true,
         messages: [
-            {role: "system", content: "dry_run: true"},
             {role: "user", content: "What is 2+2?"}
         ]
     }')
@@ -88,8 +87,8 @@ test_openai_chat_completions_streaming() {
 	local payload
 	payload=$(jq -n '{
         model: "gpt-3.5-turbo",
+        dry_run: true,
         messages: [
-            {role: "system", content: "dry_run: true"},
             {role: "user", content: "Count to 3"}
         ],
         stream: true
@@ -116,8 +115,8 @@ test_openai_chat_completions_parameters() {
 	local payload
 	payload=$(jq -n '{
         model: "gpt-4",
+        dry_run: true,
         messages: [
-            {role: "system", content: "dry_run: true"},
             {role: "user", content: "Test"}
         ],
         temperature: 0.7,
@@ -146,8 +145,8 @@ test_openai_unknown_model() {
 	local payload
 	payload=$(jq -n '{
         model: "unknown-model-xyz",
+        dry_run: true,
         messages: [
-            {role: "system", content: "dry_run: true"},
             {role: "user", content: "Test"}
         ]
     }')
@@ -169,8 +168,8 @@ test_openai_response_format() {
 	local payload
 	payload=$(jq -n '{
         model: "gpt-3.5-turbo",
+        dry_run: true,
         messages: [
-            {role: "system", content: "dry_run: true"},
             {role: "user", content: "Hello"}
         ]
     }')

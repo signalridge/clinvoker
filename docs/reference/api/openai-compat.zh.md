@@ -37,19 +37,19 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
       "id": "claude",
       "object": "model",
       "created": 1704067200,
-      "owned_by": "anthropic"
+      "owned_by": "clinvoker"
     },
     {
       "id": "codex",
       "object": "model",
       "created": 1704067200,
-      "owned_by": "openai"
+      "owned_by": "clinvoker"
     },
     {
       "id": "gemini",
       "object": "model",
       "created": 1704067200,
-      "owned_by": "google"
+      "owned_by": "clinvoker"
     }
   ]
 }
@@ -90,6 +90,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
 | `frequency_penalty` | number | 否 | 频率惩罚（被忽略） |
 | `logit_bias` | object | 否 | Logit 偏置（被忽略） |
 | `user` | string | 否 | 用户标识符（被忽略） |
+| `dry_run` | boolean | 否 | **非标准扩展：** 仅模拟执行，不实际运行命令 |
 
 **响应：**
 

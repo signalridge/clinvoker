@@ -85,7 +85,8 @@ The OpenAI-compatible API (`/openai/v1/*`) enables drop-in replacement for OpenA
 |-----------------|-------------------|
 | `POST /v1/chat/completions` | `POST /openai/v1/chat/completions` |
 | `GET /v1/models` | `GET /openai/v1/models` |
-| `GET /v1/models/{model}` | `GET /openai/v1/models/{model}` |
+
+Note: `GET /v1/models/{model}` is not implemented.
 
 ### Request Transformation
 
@@ -170,7 +171,8 @@ The Anthropic-compatible API (`/anthropic/v1/*`) enables drop-in replacement for
 | Anthropic Endpoint | clinvoker Handler |
 |--------------------|-------------------|
 | `POST /v1/messages` | `POST /anthropic/v1/messages` |
-| `GET /v1/models` | `GET /anthropic/v1/models` |
+
+Note: `GET /v1/models` is not implemented.
 
 ### Request Transformation
 

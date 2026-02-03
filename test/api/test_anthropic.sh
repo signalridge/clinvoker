@@ -15,11 +15,11 @@ test_anthropic_messages() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "What is 2+2?"}
         ],
-        max_tokens: 100,
-        system: "dry_run: true"
+        max_tokens: 100
     }')
 
 	local response
@@ -52,11 +52,12 @@ test_anthropic_messages_with_system() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-sonnet-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "Hello"}
         ],
         max_tokens: 50,
-        system: "You are a helpful assistant. dry_run: true"
+        system: "You are a helpful assistant."
     }')
 
 	local response
@@ -76,12 +77,12 @@ test_anthropic_messages_streaming() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "Count to 3"}
         ],
         max_tokens: 100,
-        stream: true,
-        system: "dry_run: true"
+        stream: true
     }')
 
 	# For streaming, we just verify the request is accepted
@@ -104,12 +105,12 @@ test_anthropic_messages_with_temperature() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "Test"}
         ],
         max_tokens: 100,
-        temperature: 0.7,
-        system: "dry_run: true"
+        temperature: 0.7
     }')
 
 	local response
@@ -128,13 +129,13 @@ test_anthropic_messages_multi_content() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "First question"},
             {role: "assistant", content: "First answer"},
             {role: "user", content: "Second question"}
         ],
-        max_tokens: 100,
-        system: "dry_run: true"
+        max_tokens: 100
     }')
 
 	local response
@@ -177,11 +178,11 @@ test_anthropic_response_format() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "Hello"}
         ],
-        max_tokens: 50,
-        system: "dry_run: true"
+        max_tokens: 50
     }')
 
 	local response
@@ -246,12 +247,12 @@ test_anthropic_stop_sequences() {
 	local payload
 	payload=$(jq -n '{
         model: "claude-3-opus-20240229",
+        dry_run: true,
         messages: [
             {role: "user", content: "Count to 10"}
         ],
         max_tokens: 100,
-        stop_sequences: ["5", "six"],
-        system: "dry_run: true"
+        stop_sequences: ["5", "six"]
     }')
 
 	local response

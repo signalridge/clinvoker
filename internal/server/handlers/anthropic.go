@@ -12,6 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/output"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
@@ -84,6 +85,7 @@ type AnthropicMessagesRequest struct {
 	TopP          float64            `json:"top_p,omitempty" doc:"Nucleus sampling parameter"`
 	TopK          int                `json:"top_k,omitempty" doc:"Top-k sampling parameter"`
 	Metadata      map[string]string  `json:"metadata,omitempty" doc:"Request metadata"`
+	DryRun        bool               `json:"dry_run,omitempty" doc:"Non-standard: simulate execution without running commands"`
 }
 
 // AnthropicContentBlock represents a content block in the response.
@@ -222,6 +224,9 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 
 	// Map model to backend
 	backendName := mapAnthropicModelToBackend(input.Body.Model)
+	if !config.IsBackendEnabled(backendName) {
+		return nil, huma.Error400BadRequest(fmt.Sprintf("backend %q is disabled", backendName))
+	}
 
 	// Execute prompt (non-streaming)
 	req := &service.PromptRequest{
@@ -231,6 +236,7 @@ func (h *AnthropicHandlers) HandleMessages(ctx context.Context, input *Anthropic
 		MaxTokens:    input.Body.MaxTokens,
 		SystemPrompt: input.Body.System,
 		Metadata:     input.Body.Metadata,
+		DryRun:       input.Body.DryRun,
 	}
 
 	if !input.Body.Stream {

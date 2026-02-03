@@ -41,8 +41,8 @@ backends:
     enabled: true
     # Default system prompt for this backend.
     # system_prompt: "You are a helpful coding assistant."
-  # Extra flags to pass to the backend CLI.
-  # extra_flags: ["--add-dir", "./docs"]
+    # Extra flags to pass to the backend CLI.
+    # extra_flags: ["--add-dir", "./docs"]
 
   codex:
     # Default model for Codex CLI (optional).

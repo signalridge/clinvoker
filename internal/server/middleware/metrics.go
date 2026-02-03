@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/signalridge/clinvoker/internal/metrics"
@@ -52,13 +53,13 @@ func Metrics(next http.Handler) http.Handler {
 func normalizePath(path string) string {
 	// Normalize common dynamic path patterns
 	switch {
-	case len(path) > 16 && path[:16] == "/api/v1/sessions/":
+	case strings.HasPrefix(path, "/api/v1/sessions/"):
 		return "/api/v1/sessions/:id"
-	case len(path) > 16 && path[:16] == "/api/v1/backends/":
+	case strings.HasPrefix(path, "/api/v1/backends/"):
 		return "/api/v1/backends/:name"
-	case len(path) > 10 && path[:10] == "/sessions/":
+	case strings.HasPrefix(path, "/sessions/"):
 		return "/sessions/:id"
-	case len(path) > 10 && path[:10] == "/backends/":
+	case strings.HasPrefix(path, "/backends/"):
 		return "/backends/:name"
 	default:
 		return path

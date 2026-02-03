@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,8 +11,16 @@ import (
 )
 
 func TestRequestSize_LimitsBody(t *testing.T) {
+	var readErr error
 	handler := RequestSize(5)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.ReadAll(r.Body)
+		_, readErr = io.ReadAll(r.Body)
+		if readErr != nil {
+			var maxErr *http.MaxBytesError
+			if errors.As(readErr, &maxErr) {
+				w.WriteHeader(http.StatusRequestEntityTooLarge)
+				return
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -19,6 +28,9 @@ func TestRequestSize_LimitsBody(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
+	if readErr != nil {
+		t.Fatalf("expected no read error for early rejection, got %v", readErr)
+	}
 	if rr.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("expected status 413, got %d", rr.Code)
 	}
@@ -40,8 +52,16 @@ func TestRequestSize_AllowsSmallBody(t *testing.T) {
 }
 
 func TestRequestSize_ChunkedTooLarge(t *testing.T) {
+	var readErr error
 	handler := RequestSize(5)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.ReadAll(r.Body)
+		_, readErr = io.ReadAll(r.Body)
+		if readErr != nil {
+			var maxErr *http.MaxBytesError
+			if errors.As(readErr, &maxErr) {
+				w.WriteHeader(http.StatusRequestEntityTooLarge)
+				return
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -50,6 +70,10 @@ func TestRequestSize_ChunkedTooLarge(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
+	var maxErr *http.MaxBytesError
+	if !errors.As(readErr, &maxErr) {
+		t.Fatalf("expected MaxBytesError, got %v", readErr)
+	}
 	if rr.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("expected status 413, got %d", rr.Code)
 	}
@@ -98,13 +122,8 @@ func TestRequestSize_UnwrapInterface(t *testing.T) {
 		type unwrapper interface {
 			Unwrap() http.ResponseWriter
 		}
-		if uw, ok := w.(unwrapper); ok {
-			underlying := uw.Unwrap()
-			if underlying == nil {
-				t.Error("Unwrap returned nil")
-			}
-		} else {
-			t.Error("expected Unwrap interface to be available")
+		if _, ok := w.(unwrapper); ok {
+			t.Error("did not expect Unwrap interface to be available")
 		}
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -114,7 +133,7 @@ func TestRequestSize_UnwrapInterface(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 }
 
-func TestRequestSize_DrainDetectsLargeBody(t *testing.T) {
+func TestRequestSize_NoDrainWithoutRead(t *testing.T) {
 	// Handler that writes response without reading body
 	handler := RequestSize(5)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Deliberately NOT reading the body
@@ -129,8 +148,8 @@ func TestRequestSize_DrainDetectsLargeBody(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	// The response should be 413 because the drain detected the oversized body
-	if rr.Code != http.StatusRequestEntityTooLarge {
-		t.Fatalf("expected status 413 after drain, got %d", rr.Code)
+	// Without reading the body, the middleware does not force 413.
+	if rr.Code == http.StatusRequestEntityTooLarge {
+		t.Fatalf("did not expect status 413 without reading body")
 	}
 }

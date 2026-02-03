@@ -70,15 +70,22 @@ func (l *FileLock) Unlock() error {
 	}
 
 	// We're locked, so we hold l.mu from Lock() call
+	// Always release in-process mutex to avoid deadlocks, even on unlock errors.
+	defer func() {
+		l.locked.Store(false)
+		l.mu.Unlock()
+	}()
+
+	var unlockErr error
 	// Release flock first
 	if l.file != nil {
 		if err := syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN); err != nil {
-			return fmt.Errorf("failed to unlock file: %w", err)
+			unlockErr = fmt.Errorf("failed to unlock file: %w", err)
 		}
 
 		// Close and remove the lock file
-		if err := l.file.Close(); err != nil {
-			return fmt.Errorf("failed to close lock file: %w", err)
+		if err := l.file.Close(); err != nil && unlockErr == nil {
+			unlockErr = fmt.Errorf("failed to close lock file: %w", err)
 		}
 		l.file = nil
 
@@ -86,11 +93,7 @@ func (l *FileLock) Unlock() error {
 		_ = os.Remove(l.path)
 	}
 
-	// Mark as unlocked and release in-process mutex
-	l.locked.Store(false)
-	l.mu.Unlock()
-
-	return nil
+	return unlockErr
 }
 
 // lockWithTimeout acquires a lock with optional timeout.
