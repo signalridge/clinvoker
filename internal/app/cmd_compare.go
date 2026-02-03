@@ -12,6 +12,7 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/backend"
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/util"
 )
 
 // compareCmd runs the same prompt on multiple backends for comparison.
@@ -70,7 +71,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 	// Determine which backends to use
 	var backends []string
 	if compareAllBackends {
-		backends = backend.List()
+		backends = config.EnabledBackends()
 	} else if compareBackends != "" {
 		backends = strings.Split(compareBackends, ",")
 		for i := range backends {
@@ -83,6 +84,9 @@ func runCompare(cmd *cobra.Command, args []string) error {
 	// Validate backends
 	var availableBackends []string
 	for _, name := range backends {
+		if !config.IsBackendEnabled(name) {
+			return fmt.Errorf("backend %q is disabled in config", name)
+		}
 		b, err := backend.Get(name)
 		if err != nil {
 			return fmt.Errorf("unknown backend %q: %w", name, err)
@@ -234,15 +238,12 @@ func runCompareTask(backendName, prompt string, cfg *config.Config) CompareResul
 	// Always use internal JSON format to capture errors properly
 	opts := &backend.UnifiedOptions{
 		Model:        model,
-		ApprovalMode: backend.ApprovalMode(cfg.UnifiedFlags.ApprovalMode),
-		SandboxMode:  backend.SandboxMode(cfg.UnifiedFlags.SandboxMode),
-		MaxTurns:     cfg.UnifiedFlags.MaxTurns,
-		MaxTokens:    cfg.UnifiedFlags.MaxTokens,
-		Verbose:      cfg.UnifiedFlags.Verbose,
 		DryRun:       dryRun,
 		OutputFormat: backend.OutputJSON, // Force JSON for proper error capture
 		Ephemeral:    true,               // Compare is always ephemeral
 	}
+	util.ApplyUnifiedDefaults(opts, cfg, dryRun)
+	util.ApplyBackendDefaults(opts, backendName, cfg)
 
 	// Build command
 	execCmd := b.BuildCommandUnified(prompt, opts)

@@ -42,6 +42,9 @@ func readInputFromFileOrStdin(filePath string) ([]byte, error) {
 // getBackendOrError gets a backend by name and validates it's available.
 // Returns the backend and nil error on success, or nil and an error on failure.
 func getBackendOrError(backendName string) (backend.Backend, error) {
+	if !config.IsBackendEnabled(backendName) {
+		return nil, fmt.Errorf("backend %q is disabled in config", backendName)
+	}
 	b, err := backend.Get(backendName)
 	if err != nil {
 		return nil, err

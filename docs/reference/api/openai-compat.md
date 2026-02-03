@@ -37,19 +37,19 @@ List available models (backends mapped as models).
       "id": "claude",
       "object": "model",
       "created": 1704067200,
-      "owned_by": "anthropic"
+      "owned_by": "clinvoker"
     },
     {
       "id": "codex",
       "object": "model",
       "created": 1704067200,
-      "owned_by": "openai"
+      "owned_by": "clinvoker"
     },
     {
       "id": "gemini",
       "object": "model",
       "created": 1704067200,
-      "owned_by": "google"
+      "owned_by": "clinvoker"
     }
   ]
 }
@@ -90,6 +90,7 @@ Create a chat completion.
 | `frequency_penalty` | number | No | Frequency penalty (ignored) |
 | `logit_bias` | object | No | Logit bias (ignored) |
 | `user` | string | No | User identifier (ignored) |
+| `dry_run` | boolean | No | **Non-standard:** simulate execution without running commands |
 
 **Response:**
 

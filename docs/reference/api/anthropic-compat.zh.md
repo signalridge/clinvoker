@@ -43,7 +43,8 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
   "messages": [
     {"role": "user", "content": "Hello!"}
   ],
-  "system": "You are a helpful assistant."
+  "system": "You are a helpful assistant.",
+  "dry_run": true
 }
 ```
 
@@ -61,6 +62,7 @@ API Key 认证是可选的。如果配置了 Key，请包含以下之一：
 | `stop_sequences` | array | 否 | 停止序列（被忽略） |
 | `stream` | boolean | 否 | 启用流式（SSE）时为 `true` |
 | `metadata` | object | 否 | 请求元数据（被忽略） |
+| `dry_run` | boolean | 否 | **非标准扩展：** 仅模拟执行，不实际运行命令 |
 
 **响应：**
 

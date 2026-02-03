@@ -152,6 +152,10 @@ func preparePromptContext(cmd *cobra.Command, _ string) (*promptContext, error) 
 		bn = "claude"
 	}
 
+	if !config.IsBackendEnabled(bn) {
+		return nil, fmt.Errorf("backend %q is disabled in config", bn)
+	}
+
 	// Get backend
 	b, err := backend.Get(bn)
 	if err != nil {
@@ -317,6 +321,10 @@ func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFl
 	}
 
 	sess := resumable[0]
+
+	if !config.IsBackendEnabled(sess.Backend) {
+		return fmt.Errorf("backend %q is disabled in config", sess.Backend)
+	}
 
 	// Get backend from session (not default backend)
 	b, err := backend.Get(sess.Backend)

@@ -51,6 +51,10 @@ func preparePrompt(req *PromptRequest, forceStateless bool) (*preparedPrompt, er
 		return nil, err
 	}
 
+	if !config.IsBackendEnabled(req.Backend) {
+		return nil, fmt.Errorf("backend %q is disabled in config", req.Backend)
+	}
+
 	b, err := backend.Get(req.Backend)
 	if err != nil {
 		return nil, err

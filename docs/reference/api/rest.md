@@ -380,6 +380,10 @@ When rate limiting is enabled and the limit is exceeded.
 
 When request body exceeds `max_request_body_bytes`.
 
+Notes:
+- Requests with a known `Content-Length` over the limit are rejected early with 413.
+- For chunked/unknown sizes, handlers will receive `MaxBytesError` when reading the body; if the body is never read, the request may not be rejected.
+
 ---
 
 ## OpenAPI Specification

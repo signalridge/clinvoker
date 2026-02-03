@@ -202,6 +202,18 @@ Key 可通过 `CLINVK_API_KEYS`（逗号分隔）或 `server.api_keys_gopass_pat
 }
 ```
 
+### 429 请求过多
+
+当启用限流且超过限制。
+
+### 413 请求体过大
+
+当请求体超过 `max_request_body_bytes`。
+
+说明：
+- 如果 `Content-Length` 已知且超限，会直接返回 413。
+- 对于分块/未知长度，读取请求体时会触发 `MaxBytesError`；如果处理逻辑未读取请求体，请求可能不会被拒绝。
+
 ---
 
 ## OpenAPI

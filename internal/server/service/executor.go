@@ -711,7 +711,7 @@ type BackendInfo struct {
 // ListBackends returns all registered backends.
 // Uses cached availability checks for better performance during frequent health checks.
 func (e *Executor) ListBackends(ctx context.Context) []BackendInfo {
-	names := backend.List()
+	names := config.EnabledBackends()
 	result := make([]BackendInfo, len(names))
 
 	for i, name := range names {

@@ -43,7 +43,8 @@ Create a message (chat completion).
   "messages": [
     {"role": "user", "content": "Hello!"}
   ],
-  "system": "You are a helpful assistant."
+  "system": "You are a helpful assistant.",
+  "dry_run": true
 }
 ```
 
@@ -61,6 +62,7 @@ Create a message (chat completion).
 | `stop_sequences` | array | No | Stop sequences (ignored) |
 | `stream` | boolean | No | Enable streaming (SSE) when `true` |
 | `metadata` | object | No | Request metadata (ignored) |
+| `dry_run` | boolean | No | **Non-standard:** simulate execution without running commands |
 
 **Response:**
 
