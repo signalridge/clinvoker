@@ -15,17 +15,19 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      go: ${{ steps.filter.outputs.go }}
+      go: ${{ steps.go.outputs.any_changed }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
-        id: filter
         with:
-          filters: |
-            go:
-              - '**/*.go'
-              - 'go.mod'
-              - 'go.sum'
+          fetch-depth: 0
+      - name: Check Go changes
+        id: go
+        uses: tj-actions/changed-files@v46
+        with:
+          files: |
+            **/*.go
+            go.mod
+            go.sum
   govulncheck:
     name: Go Vulnerability Check
     runs-on: ubuntu-latest

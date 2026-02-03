@@ -13,33 +13,50 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      go: ${{ steps.filter.outputs.go }}
-      yaml: ${{ steps.filter.outputs.yaml }}
-      workflows: ${{ steps.filter.outputs.workflows }}
-      markdown: ${{ steps.filter.outputs.markdown }}
-      tests: ${{ steps.filter.outputs.tests }}
+      go: ${{ steps.go.outputs.any_changed }}
+      yaml: ${{ steps.yaml.outputs.any_changed }}
+      workflows: ${{ steps.workflows.outputs.any_changed }}
+      markdown: ${{ steps.markdown.outputs.any_changed }}
+      tests: ${{ steps.tests.outputs.any_changed }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
-        id: filter
         with:
-          filters: |
-            go:
-              - '**/*.go'
-              - 'go.mod'
-              - 'go.sum'
-            yaml:
-              - '**/*.yaml'
-              - '**/*.yml'
-            workflows:
-              - '.github/workflows/**'
-            markdown:
-              - '**/*.md'
-              - '!CHANGELOG.md'
-              - '!**/*.yaml'
-              - '!**/*.yml'
-            tests:
-              - 'test/**'
+          fetch-depth: 0
+      - name: Check Go changes
+        id: go
+        uses: tj-actions/changed-files@v46
+        with:
+          files: |
+            **/*.go
+            go.mod
+            go.sum
+      - name: Check YAML changes
+        id: yaml
+        uses: tj-actions/changed-files@v46
+        with:
+          files: |
+            **/*.yaml
+            **/*.yml
+          files_ignore: |
+            .github/workflows/**
+      - name: Check workflow changes
+        id: workflows
+        uses: tj-actions/changed-files@v46
+        with:
+          files: .github/workflows/**
+      - name: Check markdown changes
+        id: markdown
+        uses: tj-actions/changed-files@v46
+        with:
+          files: |
+            **/*.md
+          files_ignore: |
+            CHANGELOG.md
+      - name: Check test changes
+        id: tests
+        uses: tj-actions/changed-files@v46
+        with:
+          files: test/**
   lint-yaml:
     name: Lint YAML
     runs-on: ubuntu-latest
