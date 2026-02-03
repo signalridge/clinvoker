@@ -6,12 +6,16 @@ on:
       - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - '.golangci.yaml'
+      - 'test/**'
   pull_request:
     branches: [main]
     paths:
       - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - '.golangci.yaml'
+      - 'test/**'
 permissions:
   contents: read
 env:

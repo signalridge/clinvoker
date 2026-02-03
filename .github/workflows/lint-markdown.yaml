@@ -5,11 +5,13 @@ on:
     paths:
       - '**/*.md'
       - '!CHANGELOG.md'
+      - '.markdownlint.yaml'
   pull_request:
     branches: [main]
     paths:
       - '**/*.md'
       - '!CHANGELOG.md'
+      - '.markdownlint.yaml'
 permissions:
   contents: read
 jobs:
