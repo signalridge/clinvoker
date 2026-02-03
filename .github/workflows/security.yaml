@@ -15,7 +15,7 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      go: ${{ steps.changes.outputs.go }}
+      go: ${{ steps.changes.outputs.go_any_changed }}
     steps:
       - uses: actions/checkout@v6
       - name: Detect file changes

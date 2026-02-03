@@ -13,11 +13,11 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      go: ${{ steps.changes.outputs.go }}
-      yaml: ${{ steps.changes.outputs.yaml }}
-      workflows: ${{ steps.changes.outputs.workflows }}
-      markdown: ${{ steps.changes.outputs.markdown }}
-      tests: ${{ steps.changes.outputs.tests }}
+      go: ${{ steps.changes.outputs.go_any_changed }}
+      yaml: ${{ steps.changes.outputs.yaml_any_changed }}
+      workflows: ${{ steps.changes.outputs.workflows_any_changed }}
+      markdown: ${{ steps.changes.outputs.markdown_any_changed }}
+      tests: ${{ steps.changes.outputs.tests_any_changed }}
     steps:
       - uses: actions/checkout@v6
       - name: Detect file changes
