@@ -26,8 +26,9 @@ unified_flags:
 # Each backend can override unified settings and specify custom options.
 backends:
   claude:
-    # Default model for Claude Code.
-    model: claude-opus-4-5-20251101
+    # Default model for Claude Code (optional).
+    # If not set, uses the backend CLI's default model.
+    # model: claude-sonnet-4-20250514
     # Allowed tools (all = all tools, or comma-separated list).
     allowed_tools: all
     # Override approval mode for this backend only.
@@ -44,12 +45,14 @@ backends:
   # extra_flags: ["--add-dir", "./docs"]
 
   codex:
-    # Default model for Codex CLI.
-    model: o3
+    # Default model for Codex CLI (optional).
+    # If not set, uses the backend CLI's default model.
+    # model: o3
     enabled: true
   gemini:
-    # Default model for Gemini CLI.
-    model: gemini-2.5-pro
+    # Default model for Gemini CLI (optional).
+    # If not set, uses the backend CLI's default model.
+    # model: gemini-2.5-pro
     enabled: true
 # Session management settings.
 session:

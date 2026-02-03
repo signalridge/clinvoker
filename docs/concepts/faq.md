@@ -120,16 +120,13 @@ clinvk resume --last "follow up message"
 Yes, specify the model with `--model`:
 
 ```bash
-# Use specific model
-clinvk -b claude -m claude-sonnet-4 "quick task"
-
-# Use model aliases
-clinvk -m fast "task"      # Fastest model
-clinvk -m balanced "task"  # Balanced speed/quality
-clinvk -m best "task"      # Best quality
+# Use specific model (passed directly to backend CLI)
+clinvk -b claude -m sonnet "quick task"
+clinvk -b gemini -m gemini-2.5-flash "quick task"
+clinvk -b codex -m o3 "quick task"
 
 # Set default in config
-clinvk config set backends.claude.model claude-opus-4
+clinvk config set backends.claude.model sonnet
 ```
 
 ### How do I run tasks in parallel?

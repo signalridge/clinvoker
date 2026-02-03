@@ -339,54 +339,8 @@ func (m *flagMapper) mapModel(model string) string {
 		return ""
 	}
 
-	// Map unified model aliases to backend-specific names
-	switch m.backend {
-	case "claude":
-		return m.mapClaudeModel(model)
-	case "gemini":
-		return m.mapGeminiModel(model)
-	case "codex":
-		return m.mapCodexModel(model)
-	default:
-		return model
-	}
-}
-
-func (m *flagMapper) mapClaudeModel(model string) string {
-	switch model {
-	case "fast", "quick":
-		return "haiku"
-	case "balanced", "default":
-		return "sonnet"
-	case "best", "powerful":
-		return "opus"
-	default:
-		return model
-	}
-}
-
-func (m *flagMapper) mapGeminiModel(model string) string {
-	switch model {
-	case "fast", "quick":
-		return "gemini-2.5-flash"
-	case "balanced", "default", "best", "powerful":
-		return "gemini-2.5-pro"
-	default:
-		return model
-	}
-}
-
-func (m *flagMapper) mapCodexModel(model string) string {
-	switch model {
-	case "fast", "quick":
-		return "gpt-4.1-mini"
-	case "balanced", "default":
-		return "gpt-5.2"
-	case "best", "powerful":
-		return "gpt-5-codex"
-	default:
-		return model
-	}
+	// Pass model directly to backend CLI - let the backend handle model resolution
+	return model
 }
 
 // mapApprovalMode maps approval mode to backend-specific flags.

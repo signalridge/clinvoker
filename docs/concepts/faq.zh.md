@@ -120,16 +120,13 @@ clinvk resume --last "follow up message"
 可以，使用 `--model` 指定：
 
 ```bash
-# 使用特定模型
-clinvk -b claude -m claude-sonnet-4 "quick task"
-
-# 使用模型别名
-clinvk -m fast "task"      # 最快模型
-clinvk -m balanced "task"  # 速度/质量平衡
-clinvk -m best "task"      # 最佳质量
+# 使用特定模型（直接传递给后端 CLI）
+clinvk -b claude -m sonnet "quick task"
+clinvk -b gemini -m gemini-2.5-flash "quick task"
+clinvk -b codex -m o3 "quick task"
 
 # 在配置中设置默认值
-clinvk config set backends.claude.model claude-opus-4
+clinvk config set backends.claude.model sonnet
 ```
 
 ### 如何并行运行任务？

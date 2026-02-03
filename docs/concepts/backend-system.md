@@ -275,15 +275,16 @@ flowchart TB
     MAP_OUTPUT --> GEMINI
 ```
 
-### Model Name Mapping
+### Model Passthrough
 
-Unified model aliases are mapped to backend-specific names:
+Model names are passed directly to backend CLIs without transformation. Each backend CLI handles its own model resolution and aliases:
 
-| Unified Alias | Claude | Codex | Gemini |
-|--------------|--------|-------|--------|
-| `fast` | `haiku` | `gpt-4.1-mini` | `gemini-2.5-flash` |
-| `balanced` | `sonnet` | `gpt-5.2` | `gemini-2.5-pro` |
-| `best` | `opus` | `gpt-5-codex` | `gemini-2.5-pro` |
+```bash
+# Models are passed through to the backend CLI
+clinvk -b claude -m sonnet "task"           # Claude CLI resolves "sonnet"
+clinvk -b gemini -m gemini-2.5-flash "task" # Gemini CLI uses the model directly
+clinvk -b codex -m o3 "task"                # Codex CLI uses the model directly
+```
 
 ### Approval Mode Mapping
 
@@ -470,30 +471,7 @@ func init() {
 }
 ```
 
-### Step 3: Add Unified Options Mapping
-
-Update `internal/backend/unified.go` to add flag mappings:
-
-```go
-func (m *flagMapper) mapModel(model string) string {
-    switch m.backend {
-    case "newbackend":
-        switch model {
-        case "fast":
-            return "newbackend-fast"
-        case "balanced":
-            return "newbackend-balanced"
-        case "best":
-            return "newbackend-pro"
-        default:
-            return model
-        }
-    // ...
-    }
-}
-```
-
-### Step 4: Add Allowed Flags
+### Step 3: Add Allowed Flags
 
 Update the allowlist in `internal/backend/unified.go:10-27`:
 

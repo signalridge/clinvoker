@@ -275,15 +275,16 @@ flowchart TB
     MAP_OUTPUT --> GEMINI
 ```
 
-### 模型名称映射
+### 模型直通
 
-统一模型别名映射到后端特定名称：
+模型名称直接传递给后端 CLI，不进行转换。每个后端 CLI 处理自己的模型解析和别名：
 
-| 统一别名 | Claude | Codex | Gemini |
-|--------------|--------|-------|--------|
-| `fast` | `haiku` | `gpt-4.1-mini` | `gemini-2.5-flash` |
-| `balanced` | `sonnet` | `gpt-5.2` | `gemini-2.5-pro` |
-| `best` | `opus` | `gpt-5-codex` | `gemini-2.5-pro` |
+```bash
+# 模型直接传递给后端 CLI
+clinvk -b claude -m sonnet "task"           # Claude CLI 解析 "sonnet"
+clinvk -b gemini -m gemini-2.5-flash "task" # Gemini CLI 直接使用该模型
+clinvk -b codex -m o3 "task"                # Codex CLI 直接使用该模型
+```
 
 ### 审批模式映射
 
@@ -470,30 +471,7 @@ func init() {
 }
 ```
 
-### 步骤 3：添加统一选项映射
-
-更新 `internal/backend/unified.go` 以添加标志映射：
-
-```go
-func (m *flagMapper) mapModel(model string) string {
-    switch m.backend {
-    case "newbackend":
-        switch model {
-        case "fast":
-            return "newbackend-fast"
-        case "balanced":
-            return "newbackend-balanced"
-        case "best":
-            return "newbackend-pro"
-        default:
-            return model
-        }
-    // ...
-    }
-}
-```
-
-### 步骤 4：添加允许的标志
+### 步骤 3：添加允许的标志
 
 更新 `internal/backend/unified.go:10-27` 中的允许列表：
 

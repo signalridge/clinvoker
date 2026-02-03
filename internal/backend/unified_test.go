@@ -54,79 +54,29 @@ func TestMapFromUnified_ExtraFlags(t *testing.T) {
 
 // ==================== Model Mapping Tests ====================
 
-func TestMapModel_Claude(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"fast", "haiku"},
-		{"quick", "haiku"},
-		{"balanced", "sonnet"},
-		{"default", "sonnet"},
-		{"best", "opus"},
-		{"powerful", "opus"},
-		{"claude-opus-4-5-20251101", "claude-opus-4-5-20251101"}, // passthrough
-		{"", ""},
+// TestMapModel_Passthrough verifies that models are passed through directly
+// to the backend CLI without any mapping. Backend CLIs handle model resolution.
+func TestMapModel_Passthrough(t *testing.T) {
+	backends := []string{"claude", "gemini", "codex", "unknown"}
+	models := []string{
+		"fast", "quick", "balanced", "default", "best", "powerful",
+		"haiku", "sonnet", "opus",
+		"gemini-2.5-flash", "gemini-2.5-pro",
+		"gpt-4.1-mini", "gpt-5.2", "o3",
+		"claude-opus-4-5-20251101",
+		"",
 	}
 
-	m := newFlagMapper("claude")
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := m.mapModel(tt.input)
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
-}
-
-func TestMapModel_Gemini(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"fast", "gemini-2.5-flash"},
-		{"quick", "gemini-2.5-flash"},
-		{"balanced", "gemini-2.5-pro"},
-		{"default", "gemini-2.5-pro"},
-		{"best", "gemini-2.5-pro"},
-		{"powerful", "gemini-2.5-pro"},
-		{"gemini-1.5-pro", "gemini-1.5-pro"}, // passthrough
-	}
-
-	m := newFlagMapper("gemini")
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := m.mapModel(tt.input)
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
-}
-
-func TestMapModel_Codex(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"fast", "gpt-4.1-mini"},
-		{"quick", "gpt-4.1-mini"},
-		{"balanced", "gpt-5.2"},
-		{"default", "gpt-5.2"},
-		{"best", "gpt-5-codex"},
-		{"powerful", "gpt-5-codex"},
-		{"o3", "o3"}, // passthrough
-	}
-
-	m := newFlagMapper("codex")
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := m.mapModel(tt.input)
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
+	for _, backend := range backends {
+		m := newFlagMapper(backend)
+		for _, model := range models {
+			t.Run(backend+"/"+model, func(t *testing.T) {
+				result := m.mapModel(model)
+				if result != model {
+					t.Errorf("expected passthrough %q, got %q", model, result)
+				}
+			})
+		}
 	}
 }
 
@@ -533,8 +483,9 @@ func TestMapToOptions_FullClaude(t *testing.T) {
 	if opts.WorkDir != "/project" {
 		t.Errorf("expected WorkDir '/project', got %q", opts.WorkDir)
 	}
-	if opts.Model != "haiku" {
-		t.Errorf("expected Model 'haiku', got %q", opts.Model)
+	// Model is passed through directly (no mapping)
+	if opts.Model != "fast" {
+		t.Errorf("expected Model 'fast' (passthrough), got %q", opts.Model)
 	}
 
 	// Check flags
@@ -566,8 +517,9 @@ func TestMapToOptions_FullGemini(t *testing.T) {
 
 	opts := MapFromUnified("gemini", unified)
 
-	if opts.Model != "gemini-2.5-pro" {
-		t.Errorf("expected Model 'gemini-2.5-pro', got %q", opts.Model)
+	// Model is passed through directly (no mapping)
+	if opts.Model != "balanced" {
+		t.Errorf("expected Model 'balanced' (passthrough), got %q", opts.Model)
 	}
 
 	flags := strings.Join(opts.ExtraFlags, " ")
@@ -596,8 +548,9 @@ func TestMapToOptions_FullCodex(t *testing.T) {
 
 	opts := MapFromUnified("codex", unified)
 
-	if opts.Model != "gpt-5-codex" {
-		t.Errorf("expected Model 'gpt-5-codex', got %q", opts.Model)
+	// Model is passed through directly (no mapping)
+	if opts.Model != "best" {
+		t.Errorf("expected Model 'best' (passthrough), got %q", opts.Model)
 	}
 
 	flags := strings.Join(opts.ExtraFlags, " ")
@@ -628,8 +581,9 @@ func TestClaude_BuildCommandUnified(t *testing.T) {
 	cmd := b.BuildCommandUnified("test prompt", unified)
 
 	args := strings.Join(cmd.Args, " ")
-	if !strings.Contains(args, "--model haiku") {
-		t.Errorf("expected --model haiku, got: %s", args)
+	// Model is passed through directly (no mapping)
+	if !strings.Contains(args, "--model fast") {
+		t.Errorf("expected --model fast (passthrough), got: %s", args)
 	}
 	if !strings.Contains(args, "--permission-mode acceptEdits") {
 		t.Errorf("expected --permission-mode acceptEdits, got: %s", args)
@@ -655,8 +609,9 @@ func TestClaude_ResumeCommandUnified(t *testing.T) {
 	if !strings.Contains(args, "--resume session-123") {
 		t.Errorf("expected --resume session-123, got: %s", args)
 	}
-	if !strings.Contains(args, "--model sonnet") {
-		t.Errorf("expected --model sonnet, got: %s", args)
+	// Model is passed through directly (no mapping)
+	if !strings.Contains(args, "--model balanced") {
+		t.Errorf("expected --model balanced (passthrough), got: %s", args)
 	}
 }
 
@@ -672,8 +627,9 @@ func TestCodex_BuildCommandUnified(t *testing.T) {
 	cmd := b.BuildCommandUnified("test prompt", unified)
 
 	args := strings.Join(cmd.Args, " ")
-	if !strings.Contains(args, "--model gpt-4.1-mini") {
-		t.Errorf("expected --model gpt-4.1-mini, got: %s", args)
+	// Model is passed through directly (no mapping)
+	if !strings.Contains(args, "--model quick") {
+		t.Errorf("expected --model quick (passthrough), got: %s", args)
 	}
 	if !strings.Contains(args, "--ask-for-approval never") {
 		t.Errorf("expected --ask-for-approval never, got: %s", args)
@@ -695,8 +651,9 @@ func TestGemini_BuildCommandUnified(t *testing.T) {
 	cmd := b.BuildCommandUnified("test prompt", unified)
 
 	args := strings.Join(cmd.Args, " ")
-	if !strings.Contains(args, "--model gemini-2.5-pro") {
-		t.Errorf("expected --model gemini-2.5-pro, got: %s", args)
+	// Model is passed through directly (no mapping)
+	if !strings.Contains(args, "--model best") {
+		t.Errorf("expected --model best (passthrough), got: %s", args)
 	}
 	if !strings.Contains(args, "--sandbox") {
 		t.Errorf("expected --sandbox, got: %s", args)
