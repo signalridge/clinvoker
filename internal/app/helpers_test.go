@@ -339,3 +339,72 @@ func TestUpdateSessionAfterExecutionWithBackendID(t *testing.T) {
 		updateSessionAfterExecutionWithBackendID(store, nil, 0, "", "test-id", true)
 	})
 }
+
+func TestFilterResumableSessions(t *testing.T) {
+	t.Run("filters sessions without backend ID", func(t *testing.T) {
+		sess1, _ := session.NewSession("claude", "/tmp")
+		sess1.BackendSessionID = "backend-1"
+
+		sess2, _ := session.NewSession("claude", "/tmp")
+		// No backend session ID
+
+		sess3, _ := session.NewSession("codex", "/tmp")
+		sess3.BackendSessionID = "backend-3"
+
+		sessions := []*session.Session{sess1, sess2, sess3}
+		result := filterResumableSessions(sessions)
+
+		if len(result) != 2 {
+			t.Errorf("expected 2 resumable sessions, got %d", len(result))
+		}
+	})
+
+	t.Run("filters expired sessions", func(t *testing.T) {
+		sess1, _ := session.NewSession("claude", "/tmp")
+		sess1.BackendSessionID = "backend-1"
+
+		sess2, _ := session.NewSession("claude", "/tmp")
+		sess2.BackendSessionID = "backend-2"
+		sess2.MarkExpired() // Mark as expired
+
+		sess3, _ := session.NewSession("codex", "/tmp")
+		sess3.BackendSessionID = "backend-3"
+
+		sessions := []*session.Session{sess1, sess2, sess3}
+		result := filterResumableSessions(sessions)
+
+		if len(result) != 2 {
+			t.Errorf("expected 2 resumable sessions (excluding expired), got %d", len(result))
+		}
+
+		for _, s := range result {
+			if s.Status == session.StatusExpired {
+				t.Error("result should not contain expired sessions")
+			}
+		}
+	})
+
+	t.Run("handles empty input", func(t *testing.T) {
+		result := filterResumableSessions(nil)
+		if result != nil {
+			t.Errorf("expected nil, got %v", result)
+		}
+
+		result = filterResumableSessions([]*session.Session{})
+		if result != nil {
+			t.Errorf("expected nil for empty slice, got %v", result)
+		}
+	})
+
+	t.Run("handles nil sessions in slice", func(t *testing.T) {
+		sess1, _ := session.NewSession("claude", "/tmp")
+		sess1.BackendSessionID = "backend-1"
+
+		sessions := []*session.Session{sess1, nil}
+		result := filterResumableSessions(sessions)
+
+		if len(result) != 1 {
+			t.Errorf("expected 1 resumable session, got %d", len(result))
+		}
+	})
+}

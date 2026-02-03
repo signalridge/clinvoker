@@ -50,7 +50,6 @@ output:
 # 保留会话 60 天
 session:
   retention_days: 60
-  auto_resume: true
 ```
 
 ## 常见场景
@@ -305,7 +304,6 @@ output:
   color: true
 
 session:
-  auto_resume: true
   retention_days: 30
 ```
 

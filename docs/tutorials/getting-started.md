@@ -284,7 +284,6 @@ backends:
 
 # Session management
 session:
-  auto_resume: true
   retention_days: 30
 ```
 

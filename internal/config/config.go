@@ -153,9 +153,6 @@ type BackendConfig struct {
 
 // SessionConfig contains session management configuration.
 type SessionConfig struct {
-	// AutoResume enables automatic session resumption.
-	AutoResume bool `mapstructure:"auto_resume"`
-
 	// RetentionDays specifies how long to keep sessions.
 	RetentionDays int `mapstructure:"retention_days"`
 
@@ -222,7 +219,6 @@ func Init(cfgFile string) error {
 			},
 			Backends: make(map[string]BackendConfig),
 			Session: SessionConfig{
-				AutoResume:      true,
 				RetentionDays:   30,
 				StoreTokenUsage: true,
 			},

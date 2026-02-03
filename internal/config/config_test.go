@@ -48,10 +48,6 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.Session.RetentionDays != 30 {
 		t.Errorf("expected retention days 30, got %d", cfg.Session.RetentionDays)
 	}
-
-	if !cfg.Session.AutoResume {
-		t.Error("expected auto resume to be true")
-	}
 }
 
 func TestEnsureConfigDir(t *testing.T) {
@@ -471,7 +467,6 @@ func TestSessionConfigDefaults(t *testing.T) {
 		got      any
 		expected any
 	}{
-		{"AutoResume", cfg.Session.AutoResume, true},
 		{"RetentionDays", cfg.Session.RetentionDays, 30},
 		{"StoreTokenUsage", cfg.Session.StoreTokenUsage, true},
 	}

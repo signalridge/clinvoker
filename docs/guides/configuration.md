@@ -50,7 +50,6 @@ output:
 # Keep sessions for 60 days
 session:
   retention_days: 60
-  auto_resume: true
 ```
 
 ## Common Scenarios
@@ -371,7 +370,6 @@ output:
   color: true
 
 session:
-  auto_resume: true
   retention_days: 30
 ```
 

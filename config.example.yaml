@@ -53,8 +53,6 @@ backends:
     enabled: true
 # Session management settings.
 session:
-  # Automatically resume the last session in the same directory.
-  auto_resume: true
   # Number of days to keep sessions (0 = keep forever).
   retention_days: 30
   # Store token usage in session metadata.

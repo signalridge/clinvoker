@@ -26,6 +26,7 @@ const (
 	StatusCompleted SessionStatus = "completed"
 	StatusError     SessionStatus = "error"
 	StatusPaused    SessionStatus = "paused"
+	StatusExpired   SessionStatus = "expired" // Backend session no longer exists
 )
 
 // TokenUsage tracks token consumption for a session.
@@ -208,6 +209,18 @@ func (s *Session) SetError(msg string) {
 // Complete marks the session as completed.
 func (s *Session) Complete() {
 	s.Status = StatusCompleted
+}
+
+// MarkExpired marks the session as expired (backend session no longer exists).
+func (s *Session) MarkExpired() {
+	s.Status = StatusExpired
+	s.ErrorMessage = "backend session expired"
+}
+
+// IsResumable checks if the session can be resumed.
+// A session is resumable if it has a backend session ID and is not expired.
+func (s *Session) IsResumable() bool {
+	return s.BackendSessionID != "" && s.Status != StatusExpired
 }
 
 // AddTag adds a tag to the session.

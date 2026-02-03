@@ -58,7 +58,6 @@ backends:
     enabled: true
 
 session:
-  auto_resume: true
   retention_days: 30
   store_token_usage: true
 
@@ -96,7 +95,7 @@ Use dot notation for nested keys:
 ```bash
 clinvk config get default_backend
 clinvk config get backends.claude.model
-clinvk config get session.auto_resume
+clinvk config get session.retention_days
 ```
 
 ### Examples
