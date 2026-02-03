@@ -31,12 +31,13 @@ jobs:
             yaml:
               - '**/*.yaml'
               - '**/*.yml'
-              - '!.github/workflows/**'
             workflows:
               - '.github/workflows/**'
             markdown:
               - '**/*.md'
               - '!CHANGELOG.md'
+              - '!**/*.yaml'
+              - '!**/*.yml'
             tests:
               - 'test/**'
   lint-yaml:
