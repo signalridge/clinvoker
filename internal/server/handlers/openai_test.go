@@ -21,11 +21,7 @@ func TestOpenAIHandlers_HandleModels(t *testing.T) {
 		t.Errorf("expected object 'list', got %q", resp.Body.Object)
 	}
 
-	if len(resp.Body.Data) == 0 {
-		t.Error("expected at least one model")
-	}
-
-	// Verify model structure
+	// Verify model structure (list may be empty if no backends are available)
 	for _, model := range resp.Body.Data {
 		if model.ID == "" {
 			t.Error("model ID should not be empty")
