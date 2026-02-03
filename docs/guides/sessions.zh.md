@@ -488,10 +488,6 @@ clinvk sessions list --backend codex --json | \
 
 ```yaml
 session:
-  # 运行 `clinvk [prompt]` 时自动恢复最近可恢复会话
-  # 不带 --ephemeral
-  auto_resume: true
-
   # 会话保留天数（0 = 永久保留）
   retention_days: 30
 
@@ -502,23 +498,20 @@ session:
   default_tags: []
 ```
 
-### 自动恢复行为
+### 恢复行为
 
-当 `auto_resume: true` 时：
+每次 `clinvk [prompt]` 默认启动新会话。使用 `-c` 或 `--continue` 恢复：
 
 ```bash
-# 如果存在上一个会话，这将恢复它
-clinvk "继续处理功能"
+# 启动新会话（默认）
+clinvk "修复 auth.go 中的 bug"
 
-# 等同于：
-clinvk resume --last "继续处理功能"
+# 显式恢复上一个会话
+clinvk -c "继续处理"
+
+# 或使用 resume 命令
+clinvk resume --last "继续处理"
 ```
-
-**优先级：**
-
-1. 显式 `--continue` 或 `resume` 命令
-2. `auto_resume` 配置
-3. 创建新会话（默认）
 
 ## Token 使用跟踪
 

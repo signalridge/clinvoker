@@ -66,7 +66,6 @@ backends:
 
 # 会话管理设置
 session:
-  auto_resume: true
   retention_days: 30
   store_token_usage: true
   default_tags: []
@@ -260,18 +259,16 @@ backends:
 
 ## 会话设置
 
-配置会话持久化和管理。
+配置会话持久化和管理。使用 `-c` 或 `--continue` 标志恢复上一个会话。
 
 | 字段 | 类型 | 默认值 | 描述 |
 |-------|------|---------|-------------|
-| `auto_resume` | boolean | `true` | 运行 `clinvk [prompt]` 时自动恢复最近可恢复会话 |
 | `retention_days` | integer | `30` | 保留会话的天数（0 = 永久） |
 | `store_token_usage` | boolean | `true` | 跟踪并存储 token 使用统计 |
 | `default_tags` | array | `[]` | 新会话的默认标签 |
 
 ```yaml
 session:
-  auto_resume: true
   retention_days: 30
   store_token_usage: true
   default_tags: []

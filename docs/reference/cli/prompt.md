@@ -10,7 +10,7 @@ clinvk [flags] [prompt]
 
 ## Description
 
-The root command executes a prompt using the configured backend. It supports session persistence, output formatting, and auto-resume behavior.
+The root command executes a prompt using the configured backend. It supports session persistence and output formatting. Use `-c` flag to resume the last session.
 
 This is the default command - when you run `clinvk` followed by text, it executes as a prompt.
 

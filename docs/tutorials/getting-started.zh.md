@@ -284,7 +284,6 @@ backends:
 
 # 会话管理
 session:
-  auto_resume: true
   retention_days: 30
 ```
 

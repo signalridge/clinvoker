@@ -165,15 +165,15 @@ func shortSessionID(id string) string {
 	return id[:8]
 }
 
-// filterResumableSessions returns sessions that have a backend session ID.
-// Sessions without a backend session ID cannot be resumed.
+// filterResumableSessions returns sessions that can be resumed.
+// A session is resumable if it has a backend session ID and is not expired.
 func filterResumableSessions(sessions []*session.Session) []*session.Session {
 	if len(sessions) == 0 {
 		return nil
 	}
 	resumable := make([]*session.Session, 0, len(sessions))
 	for _, s := range sessions {
-		if s != nil && s.BackendSessionID != "" {
+		if s != nil && s.IsResumable() {
 			resumable = append(resumable, s)
 		}
 	}

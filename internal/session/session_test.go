@@ -511,3 +511,99 @@ func TestNewSessionWithOptions_NilOpts(t *testing.T) {
 		t.Errorf("expected empty prompt, got %q", sess.InitialPrompt)
 	}
 }
+
+// ==================== Expired Status Tests ====================
+
+func TestSession_MarkExpired(t *testing.T) {
+	sess, _ := NewSession("claude", "/tmp")
+	sess.BackendSessionID = "backend-123"
+
+	sess.MarkExpired()
+
+	if sess.Status != StatusExpired {
+		t.Errorf("status = %q, want %q", sess.Status, StatusExpired)
+	}
+	if sess.ErrorMessage != "backend session expired" {
+		t.Errorf("error message = %q, want %q", sess.ErrorMessage, "backend session expired")
+	}
+}
+
+func TestSession_IsResumable(t *testing.T) {
+	tests := []struct {
+		name      string
+		backendID string
+		status    SessionStatus
+		want      bool
+	}{
+		{
+			name:      "active with backend ID",
+			backendID: "backend-123",
+			status:    StatusActive,
+			want:      true,
+		},
+		{
+			name:      "completed with backend ID",
+			backendID: "backend-123",
+			status:    StatusCompleted,
+			want:      true,
+		},
+		{
+			name:      "paused with backend ID",
+			backendID: "backend-123",
+			status:    StatusPaused,
+			want:      true,
+		},
+		{
+			name:      "error with backend ID",
+			backendID: "backend-123",
+			status:    StatusError,
+			want:      true,
+		},
+		{
+			name:      "expired with backend ID",
+			backendID: "backend-123",
+			status:    StatusExpired,
+			want:      false,
+		},
+		{
+			name:      "active without backend ID",
+			backendID: "",
+			status:    StatusActive,
+			want:      false,
+		},
+		{
+			name:      "expired without backend ID",
+			backendID: "",
+			status:    StatusExpired,
+			want:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sess, _ := NewSession("claude", "/tmp")
+			sess.BackendSessionID = tt.backendID
+			sess.Status = tt.status
+
+			got := sess.IsResumable()
+			if got != tt.want {
+				t.Errorf("IsResumable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStatusExpired_Constant(t *testing.T) {
+	// Verify StatusExpired is distinct from other statuses
+	statuses := []SessionStatus{StatusActive, StatusCompleted, StatusError, StatusPaused}
+	for _, s := range statuses {
+		if s == StatusExpired {
+			t.Errorf("StatusExpired should be distinct from %q", s)
+		}
+	}
+
+	// Verify the string value
+	if StatusExpired != "expired" {
+		t.Errorf("StatusExpired = %q, want %q", StatusExpired, "expired")
+	}
+}

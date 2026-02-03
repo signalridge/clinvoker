@@ -204,28 +204,19 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		prompt = args[0]
 	}
 
-	// If --continue flag is set or auto-resume config is true, resume the last session
-	// Use normalizeFlags directly to avoid checking default backend availability
-	// (the session's backend is what matters, not the default backend)
-	cfg := config.Get()
-	if continueLastSession || (cfg.Session.AutoResume && !ephemeralMode) {
+	// If --continue flag is set, resume the last session
+	if continueLastSession {
 		flags := normalizeFlags(cmd)
-		// Check if there is any session to resume
 		store := session.NewStore()
 		filter := &session.ListFilter{}
 		if backendName != "" {
 			filter.Backend = backendName
 		}
 		sessions, err := store.ListWithFilter(filter)
-		if err == nil && len(sessions) > 0 {
-			if continueLastSession {
-				return runContinueLastSession(cmd, prompt, flags)
-			}
-			if len(filterResumableSessions(sessions)) > 0 {
-				return runContinueLastSession(cmd, prompt, flags)
-			}
+		if err == nil && len(filterResumableSessions(sessions)) > 0 {
+			return runContinueLastSession(cmd, prompt, flags)
 		}
-		// If no sessions found, fall back to creating new session
+		return fmt.Errorf("no resumable sessions found (use 'clinvk resume' to see available sessions)")
 	}
 
 	ctx, err := preparePromptContext(cmd, prompt)
@@ -247,7 +238,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		sessOpts := &session.SessionOptions{
 			Model:         ctx.opts.Model,
 			InitialPrompt: prompt,
-			Tags:          append([]string{}, cfg.Session.DefaultTags...),
+			Tags:          append([]string{}, ctx.cfg.Session.DefaultTags...),
 		}
 		ctx.sess, err = ctx.store.CreateWithOptions(ctx.backendName, workDir, sessOpts)
 		if err != nil {
@@ -390,6 +381,19 @@ func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFl
 		Timeout:    GetCommandTimeout(),
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
+
+	// Check for stale session error and handle interactively
+	if result != nil && isStaleSessionError(result.Error) {
+		ctx := &staleSessionContext{
+			store:   store,
+			sess:    sess,
+			prompt:  prompt,
+			flags:   flags,
+			backend: b,
+			opts:    opts,
+		}
+		return handleStaleSession(ctx)
+	}
 
 	// Persist session updates (including backend session ID) after execution.
 	if result != nil && sess != nil {

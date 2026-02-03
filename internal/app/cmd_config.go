@@ -32,7 +32,6 @@ var configShowCmd = &cobra.Command{
 			}
 		}
 		fmt.Printf("\nSession:\n")
-		fmt.Printf("  auto_resume: %v\n", cfg.Session.AutoResume)
 		fmt.Printf("  retention_days: %d\n", cfg.Session.RetentionDays)
 
 		fmt.Printf("\nAvailable backends:\n")

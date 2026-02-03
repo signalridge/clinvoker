@@ -66,7 +66,6 @@ backends:
 
 # Session management settings
 session:
-  auto_resume: true
   retention_days: 30
   store_token_usage: true
   default_tags: []
@@ -260,18 +259,16 @@ backends:
 
 ## Session Settings
 
-Configure session persistence and management.
+Configure session persistence and management. Use `-c` or `--continue` flag to resume the last session.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `auto_resume` | boolean | `true` | Auto-resume the most recent resumable session when running `clinvk [prompt]` |
 | `retention_days` | integer | `30` | Days to keep sessions (0 = forever) |
 | `store_token_usage` | boolean | `true` | Track and store token usage statistics |
 | `default_tags` | array | `[]` | Default tags for new sessions |
 
 ```yaml
 session:
-  auto_resume: true
   retention_days: 30
   store_token_usage: true
   default_tags: []

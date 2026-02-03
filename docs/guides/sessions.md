@@ -488,10 +488,6 @@ Configure in `~/.clinvk/config.yaml`:
 
 ```yaml
 session:
-  # Automatically resume the most recent resumable session
-  # when running `clinvk [prompt]` without --ephemeral
-  auto_resume: true
-
   # Days to keep sessions (0 = keep forever)
   retention_days: 30
 
@@ -502,23 +498,20 @@ session:
   default_tags: []
 ```
 
-### Auto-Resume Behavior
+### Resume Behavior
 
-When `auto_resume: true`:
+Each `clinvk [prompt]` starts a new session by default. Use `-c` or `--continue` to resume:
 
 ```bash
-# This will resume the last session if it exists
-clinvk "continue working on the feature"
+# Start a new session (default)
+clinvk "fix the bug in auth.go"
 
-# Same as:
-clinvk resume --last "continue working on the feature"
+# Resume the last session explicitly
+clinvk -c "continue working on it"
+
+# Or use the resume command
+clinvk resume --last "continue working"
 ```
-
-**Priority:**
-
-1. Explicit `--continue` or `resume` command
-2. `auto_resume` configuration
-3. Create new session (default)
 
 ## Token Usage Tracking
 

@@ -167,6 +167,23 @@ func runResume(cmd *cobra.Command, args []string) error {
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 
+	// Check for stale session error and handle interactively
+	if result != nil && isStaleSessionError(result.Error) {
+		flags := &normalizedFlags{
+			outputFormat: outputFormat,
+			dryRun:       dryRun,
+		}
+		ctx := &staleSessionContext{
+			store:   store,
+			sess:    sess,
+			prompt:  prompt,
+			flags:   flags,
+			backend: b,
+			opts:    opts,
+		}
+		return handleStaleSession(ctx)
+	}
+
 	// Persist session updates (including backend session ID) after execution.
 	if result != nil && sess != nil {
 		sess.MarkUsed()
