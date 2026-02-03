@@ -139,8 +139,7 @@ func TestOpenAIModelsEndpoint(t *testing.T) {
 		t.Errorf("expected object 'list', got %v", resp["object"])
 	}
 
-	data, ok := resp["data"].([]interface{})
-	if !ok {
+	if _, ok := resp["data"].([]interface{}); !ok {
 		t.Fatal("expected data array in response")
 	}
 
