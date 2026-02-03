@@ -471,11 +471,7 @@ func init() {
 }
 ```
 
-### Step 3: Add Unified Options Mapping
-
-Models are passed through directly to backend CLIs without transformation. No model mapping code is needed - each backend CLI handles its own model resolution.
-
-### Step 4: Add Allowed Flags
+### Step 3: Add Allowed Flags
 
 Update the allowlist in `internal/backend/unified.go:10-27`:
 
