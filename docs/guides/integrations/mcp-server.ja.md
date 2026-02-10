@@ -1,154 +1,98 @@
 # MCP サーバー連携
 
-!!! note "将来機能"
-    MCP（Model Context Protocol）サーバーのサポートは、将来のリリースで提供予定です。本ドキュメントでは、想定している設計と利用パターンを説明します。
-
 ## 概要
 
-Model Context Protocol（MCP）は、AI モデルと外部ツール/データソースを接続するための標準です。clinvk は MCP をサポートすることで、次を実現する予定です。
+clinvk には MCP (Model Context Protocol) サーバーが組み込まれており、既存の機能を MCP ツールとして公開します。以下のトランスポートをサポートします。
 
-- Claude Desktop との直接連携
-- 標準化されたツール呼び出しインターフェース
-- MCP 対応ツールとのエコシステム互換性
+- **stdio**: ローカル/デスクトップ用途
+- **HTTP + SSE**: サーバー配信用途
 
-## Planned Architecture
+ツールの schema は既存の REST モデルから生成されるため、MCP と REST の整合性が保たれます。
 
-```mermaid
-flowchart TB
-    subgraph clients ["MCP clients"]
-        direction TB
-        A1["Claude Desktop"]
-        A2["MCP-enabled IDEs"]
-        A3["Custom MCP Clients"]
-    end
+## トランスポート
 
-    subgraph server ["clinvk MCP server"]
-        direction TB
-        B1["MCP transport"]
-        B2["Tool registry"]
-        B3["Resource handler"]
-    end
+### stdio (ローカル)
 
-    subgraph backends ["AI CLI backends"]
-        direction TB
-        C1["Claude CLI"]
-        C2["Codex CLI"]
-        C3["Gemini CLI"]
-    end
-
-    A1 <--> B1
-    A2 <--> B1
-    A3 <--> B1
-
-    B1 --> B2
-    B1 --> B3
-
-    B2 --> C1
-    B2 --> C2
-    B2 --> C3
-
-    style clients fill:#e3f2fd,stroke:#1976d2
-    style server fill:#fff3e0,stroke:#f57c00
-    style backends fill:#f3e5f5,stroke:#7b1fa2
+```bash
+clinvk mcp --transport stdio
 ```
 
-## Planned Tools
+stdin/stdout 上の line-delimited JSON-RPC を使用します。
 
-### `clinvk_prompt`
+### HTTP + SSE (サーバー)
 
-指定したバックエンドでプロンプトを実行します。
-
-```json
-{
-  "name": "clinvk_prompt",
-  "description": "Execute a prompt using an AI CLI backend",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "backend": {
-        "type": "string",
-        "enum": ["claude", "codex", "gemini"],
-        "description": "AI backend to use"
-      },
-      "prompt": {
-        "type": "string",
-        "description": "The prompt to send"
-      },
-      "session_id": {
-        "type": "string",
-        "description": "Optional session ID for context"
-      }
-    },
-    "required": ["backend", "prompt"]
-  }
-}
+```bash
+clinvk mcp --transport http --host 0.0.0.0 --port 3000 --path /mcp
 ```
 
-### `clinvk_parallel`
+`/mcp` へ JSON-RPC を POST し、Streaming 時は SSE を利用します。
 
-複数プロンプトを並列に実行します。
+## ツール一覧
 
-```json
-{
-  "name": "clinvk_parallel",
-  "description": "Execute multiple prompts across backends in parallel",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "tasks": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "backend": {"type": "string"},
-            "prompt": {"type": "string"}
-          }
-        }
-      }
-    },
-    "required": ["tasks"]
-  }
-}
+- `clinvk_prompt`
+- `clinvk_parallel`
+- `clinvk_chain`
+- `clinvk_compare`
+- `clinvk_backends`
+- `clinvk_sessions`
+- `clinvk_session_get`
+- `clinvk_session_delete`
+- `clinvk_health`
+
+各ツールは **input/output schema** を含みます。
+
+## Streaming ゲート
+
+Streaming は明示的に指定します。
+
+- **stdio**: `output_format=stream-json` のときのみ Streaming
+- **HTTP**: `output_format=stream-json` かつ `Accept: text/event-stream` のときのみ Streaming
+
+SSE の Accept がない場合は JSON-RPC エラーを返します。
+
+## 設定
+
+### CLI フラグ
+
+```bash
+clinvk mcp --transport stdio|http
+clinvk mcp --transport http --host 127.0.0.1 --port 8081 --path /mcp
+clinvk mcp --expose-health
 ```
 
-### `clinvk_chain`
+### 設定ファイル (`~/.clinvk/config.yaml`)
 
-プロンプトチェーンを逐次実行します。
-
-```json
-{
-  "name": "clinvk_chain",
-  "description": "Execute prompts in sequence, passing results forward",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "steps": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"},
-            "backend": {"type": "string"},
-            "prompt": {"type": "string"}
-          }
-        }
-      }
-    },
-    "required": ["steps"]
-  }
-}
+```yaml
+mcp:
+  transport: stdio
+  host: "127.0.0.1"
+  port: 8081
+  http_path: "/mcp"
+  expose_health: false
 ```
 
-## Planned Usage
+### 環境変数
 
-### Claude Desktop Configuration
+```text
+CLINVK_MCP_TRANSPORT
+CLINVK_MCP_HOST
+CLINVK_MCP_PORT
+CLINVK_MCP_HTTP_PATH
+CLINVK_MCP_EXPOSE_HEALTH
+```
+
+優先順位: CLI フラグ > 環境変数 > 設定ファイル > 既定値
+
+## 例
+
+### Claude Desktop (stdio)
 
 ```json
 {
   "mcpServers": {
     "clinvk": {
       "command": "clinvk",
-      "args": ["mcp", "--port", "stdio"],
+      "args": ["mcp", "--transport", "stdio"],
       "env": {
         "CLINVK_BACKEND": "claude"
       }
@@ -157,75 +101,37 @@ flowchart TB
 }
 ```
 
-### Starting the MCP Server
+### HTTP tools/list
 
 ```bash
-# Stdio transport (for Claude Desktop)
-clinvk mcp --transport stdio
-
-# HTTP transport (for network clients)
-clinvk mcp --transport http --port 3000
+curl -sS -X POST http://127.0.0.1:8081/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-## Use Cases
+### HTTP Streaming prompt
 
-### 1. Multi-Backend Code Review in Claude Desktop
-
-Claude Desktop は clinvk を利用して、複数の AI モデルから異なる観点のレビューを取得できます。
-
-```yaml
-User: Review this code from multiple perspectives
-
-Claude: I'll use the clinvk_parallel tool to get reviews from different AI models.
-
-[Calls clinvk_parallel with Claude, Codex, and Gemini tasks]
-
-Here are the combined perspectives:
-- Architecture (Claude): ...
-- Performance (Codex): ...
-- Security (Gemini): ...
+```bash
+curl -N -X POST http://127.0.0.1:8081/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"claude","prompt":"hello","output_format":"stream-json"}}}'
 ```
 
-### 2. Documentation Pipeline
+## 認証/制限/CORS
 
-```yaml
-User: Generate documentation for this codebase
+HTTP モードは `clinvk serve` と同じ middleware stack を使用します。
 
-Claude: I'll use the clinvk_chain tool to create documentation through a pipeline.
+- API key 認証 (設定時)
+- Rate limiting
+- Request size limits
+- Timeouts
+- CORS
 
-[Calls clinvk_chain with analyze → generate → polish steps]
+API key を設定している場合は `Authorization: Bearer <key>` または `X-API-Key` を送信してください。
 
-Here's the polished documentation: ...
-```
-
-### 3. Specialized Task Routing
-
-```yaml
-User: Optimize this SQL query
-
-Claude: I'll route this to Gemini, which excels at data analysis.
-
-[Calls clinvk_prompt with backend="gemini"]
-
-Gemini suggests these optimizations: ...
-```
-
-## Development Status
-
-| Feature | Status |
-|---------|--------|
-| MCP プロトコル対応 | Planned |
-| stdio トランスポート | Planned |
-| HTTP トランスポート | Planned |
-| ツール登録 | Planned |
-| リソース対応 | Under Consideration |
-
-## Related Resources
+## 参考リンク
 
 - [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
 - [Claude Desktop MCP Guide](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API リファレンス](../../reference/api/rest.md) - 現在の HTTP API
-
-## Feedback
-
-MCP 連携の設計に関するフィードバックを歓迎します。提案やユースケースがあれば、[GitHub](https://github.com/signalridge/clinvoker/issues) で Issue を作成してください。
+- [REST API Reference](../../reference/api/rest.md)

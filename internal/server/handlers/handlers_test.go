@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -10,8 +11,23 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
+
+func TestMain(m *testing.M) {
+	tempDir, err := os.MkdirTemp("", "clinvk-handlers-tests-")
+	if err != nil {
+		os.Exit(1)
+	}
+	_ = os.Setenv("HOME", tempDir)
+	config.Reset()
+
+	code := m.Run()
+
+	_ = os.RemoveAll(tempDir)
+	os.Exit(code)
+}
 
 func TestNewCustomHandlers(t *testing.T) {
 	executor := service.NewExecutor()

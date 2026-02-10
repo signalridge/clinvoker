@@ -1,154 +1,104 @@
 # MCP Server Integration
 
-!!! note "Future Feature"
-    MCP (Model Context Protocol) server support is planned for a future release. This document describes the intended design and usage patterns.
-
 ## Overview
 
-The Model Context Protocol (MCP) is a standard for connecting AI models with external tools and data sources. clinvk plans to support MCP to enable:
+clinvk includes a built-in MCP (Model Context Protocol) server that exposes existing capabilities as MCP tools. It supports:
 
-- Direct integration with Claude Desktop
-- Standardized tool calling interface
-- Ecosystem compatibility with MCP-enabled tools
+- **Stdio** for local/desktop usage (e.g., Claude Desktop)
+- **HTTP + SSE** for server deployments with streaming notifications
 
-## Planned Architecture
+All tool schemas are derived from the existing REST request/response models, so MCP and REST stay in sync.
 
-```mermaid
-flowchart TB
-    subgraph clients ["MCP clients"]
-        direction TB
-        A1["Claude Desktop"]
-        A2["MCP-enabled IDEs"]
-        A3["Custom MCP Clients"]
-    end
+## Transports
 
-    subgraph server ["clinvk MCP server"]
-        direction TB
-        B1["MCP transport"]
-        B2["Tool registry"]
-        B3["Resource handler"]
-    end
+### Stdio (local)
 
-    subgraph backends ["AI CLI backends"]
-        direction TB
-        C1["Claude CLI"]
-        C2["Codex CLI"]
-        C3["Gemini CLI"]
-    end
+Use stdio for local integrations and desktop clients:
 
-    A1 <--> B1
-    A2 <--> B1
-    A3 <--> B1
-
-    B1 --> B2
-    B1 --> B3
-
-    B2 --> C1
-    B2 --> C2
-    B2 --> C3
-
-    style clients fill:#e3f2fd,stroke:#1976d2
-    style server fill:#fff3e0,stroke:#f57c00
-    style backends fill:#f3e5f5,stroke:#7b1fa2
+```bash
+clinvk mcp --transport stdio
 ```
 
-## Planned Tools
+Requests are line-delimited JSON-RPC over stdin/stdout.
 
-### `clinvk_prompt`
+### HTTP + SSE (server)
 
-Execute a prompt with a specified backend.
+Use HTTP + SSE for network clients:
 
-```json
-{
-  "name": "clinvk_prompt",
-  "description": "Execute a prompt using an AI CLI backend",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "backend": {
-        "type": "string",
-        "enum": ["claude", "codex", "gemini"],
-        "description": "AI backend to use"
-      },
-      "prompt": {
-        "type": "string",
-        "description": "The prompt to send"
-      },
-      "session_id": {
-        "type": "string",
-        "description": "Optional session ID for context"
-      }
-    },
-    "required": ["backend", "prompt"]
-  }
-}
+```bash
+clinvk mcp --transport http --host 0.0.0.0 --port 3000 --path /mcp
 ```
 
-### `clinvk_parallel`
+Requests are JSON-RPC over HTTP POST to `/mcp`. Streaming notifications are emitted over SSE when enabled (see Streaming Gate below).
 
-Execute multiple prompts in parallel.
+## Tool Surface
 
-```json
-{
-  "name": "clinvk_parallel",
-  "description": "Execute multiple prompts across backends in parallel",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "tasks": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "backend": {"type": "string"},
-            "prompt": {"type": "string"}
-          }
-        }
-      }
-    },
-    "required": ["tasks"]
-  }
-}
+The MCP server exposes the following tools:
+
+- `clinvk_prompt`
+- `clinvk_parallel`
+- `clinvk_chain`
+- `clinvk_compare`
+- `clinvk_backends`
+- `clinvk_sessions`
+- `clinvk_session_get`
+- `clinvk_session_delete`
+- `clinvk_health`
+
+Each tool includes **input and output schemas** derived from `internal/server/handlers/models.go`.
+
+## Streaming Gate
+
+Streaming is explicit:
+
+- **Stdio**: streaming only when `output_format=stream-json`
+- **HTTP**: streaming only when `output_format=stream-json` **and** `Accept: text/event-stream`
+
+If streaming is requested without `Accept: text/event-stream`, the server returns a JSON-RPC error.
+
+## Configuration
+
+### CLI Flags
+
+```bash
+clinvk mcp --transport stdio|http
+clinvk mcp --transport http --host 127.0.0.1 --port 8081 --path /mcp
+clinvk mcp --expose-health
 ```
 
-### `clinvk_chain`
+### Config File (`~/.clinvk/config.yaml`)
 
-Execute a chain of prompts sequentially.
-
-```json
-{
-  "name": "clinvk_chain",
-  "description": "Execute prompts in sequence, passing results forward",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "steps": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"},
-            "backend": {"type": "string"},
-            "prompt": {"type": "string"}
-          }
-        }
-      }
-    },
-    "required": ["steps"]
-  }
-}
+```yaml
+mcp:
+  transport: stdio
+  host: "127.0.0.1"
+  port: 8081
+  http_path: "/mcp"
+  expose_health: false
 ```
 
-## Planned Usage
+### Environment Variables
 
-### Claude Desktop Configuration
+```text
+CLINVK_MCP_TRANSPORT
+CLINVK_MCP_HOST
+CLINVK_MCP_PORT
+CLINVK_MCP_HTTP_PATH
+CLINVK_MCP_EXPOSE_HEALTH
+```
+
+Priority: CLI flags > Environment variables > Config file > Defaults.
+
+## Examples
+
+### Claude Desktop (stdio)
 
 ```json
 {
   "mcpServers": {
     "clinvk": {
       "command": "clinvk",
-      "args": ["mcp", "--port", "stdio"],
+      "args": ["mcp", "--transport", "stdio"],
       "env": {
         "CLINVK_BACKEND": "claude"
       }
@@ -157,75 +107,37 @@ Execute a chain of prompts sequentially.
 }
 ```
 
-### Starting the MCP Server
+### HTTP tools/list
 
 ```bash
-# Stdio transport (for Claude Desktop)
-clinvk mcp --transport stdio
-
-# HTTP transport (for network clients)
-clinvk mcp --transport http --port 3000
+curl -sS -X POST http://127.0.0.1:8081/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-## Use Cases
+### HTTP streaming prompt
 
-### 1. Multi-Backend Code Review in Claude Desktop
-
-Claude Desktop could use clinvk to get perspectives from multiple AI models:
-
-```yaml
-User: Review this code from multiple perspectives
-
-Claude: I'll use the clinvk_parallel tool to get reviews from different AI models.
-
-[Calls clinvk_parallel with Claude, Codex, and Gemini tasks]
-
-Here are the combined perspectives:
-- Architecture (Claude): ...
-- Performance (Codex): ...
-- Security (Gemini): ...
+```bash
+curl -N -X POST http://127.0.0.1:8081/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"claude","prompt":"hello","output_format":"stream-json"}}}'
 ```
 
-### 2. Documentation Pipeline
+## Auth, Limits, and CORS
 
-```yaml
-User: Generate documentation for this codebase
+HTTP mode uses the same router/middleware stack as `clinvk serve`, including:
 
-Claude: I'll use the clinvk_chain tool to create documentation through a pipeline.
+- API key auth (if configured)
+- Rate limiting
+- Request size limits
+- Timeouts
+- CORS
 
-[Calls clinvk_chain with analyze → generate → polish steps]
-
-Here's the polished documentation: ...
-```
-
-### 3. Specialized Task Routing
-
-```yaml
-User: Optimize this SQL query
-
-Claude: I'll route this to Gemini, which excels at data analysis.
-
-[Calls clinvk_prompt with backend="gemini"]
-
-Gemini suggests these optimizations: ...
-```
-
-## Development Status
-
-| Feature | Status |
-|---------|--------|
-| MCP Protocol Support | Planned |
-| Stdio Transport | Planned |
-| HTTP Transport | Planned |
-| Tool Registration | Planned |
-| Resource Support | Under Consideration |
+If API keys are configured, include `Authorization: Bearer <key>` or `X-API-Key`.
 
 ## Related Resources
 
 - [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
 - [Claude Desktop MCP Guide](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API Reference](../../reference/api/rest.md) - Current HTTP API
-
-## Feedback
-
-We welcome feedback on the MCP integration design. Please open an issue on [GitHub](https://github.com/signalridge/clinvoker/issues) with your suggestions or use cases.
+- [REST API Reference](../../reference/api/rest.md)

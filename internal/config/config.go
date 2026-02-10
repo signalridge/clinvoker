@@ -20,6 +20,7 @@ type Config struct {
 	Output         OutputConfig             `mapstructure:"output"`
 	Parallel       ParallelConfig           `mapstructure:"parallel"`
 	Server         ServerConfig             `mapstructure:"server"`
+	MCP            MCPConfig                `mapstructure:"mcp"`
 }
 
 // ServerConfig contains HTTP server settings.
@@ -101,6 +102,24 @@ type ServerConfig struct {
 	// MetricsEnabled enables the /metrics endpoint for Prometheus scraping.
 	// Default: false
 	MetricsEnabled bool `mapstructure:"metrics_enabled"`
+}
+
+// MCPConfig contains MCP server settings.
+type MCPConfig struct {
+	// Transport is the default MCP transport (stdio or http).
+	Transport string `mapstructure:"transport"`
+
+	// Host is the address to bind to for HTTP transport.
+	Host string `mapstructure:"host"`
+
+	// Port is the port to listen on for HTTP transport.
+	Port int `mapstructure:"port"`
+
+	// HTTPPath is the HTTP endpoint path for MCP requests.
+	HTTPPath string `mapstructure:"http_path"`
+
+	// ExposeHealth controls whether to expose /health in MCP mode.
+	ExposeHealth bool `mapstructure:"expose_health"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -253,6 +272,13 @@ func Init(cfgFile string) error {
 				RateLimitCleanupSecs: 180,
 				MaxRequestBodyBytes:  10 * 1024 * 1024, // 10MB
 			},
+			MCP: MCPConfig{
+				Transport:    "stdio",
+				Host:         "127.0.0.1",
+				Port:         8081,
+				HTTPPath:     "/mcp",
+				ExposeHealth: false,
+			},
 		}
 
 		if cfgFile != "" {
@@ -279,6 +305,11 @@ func Init(cfgFile string) error {
 		viper.BindEnv("backends.claude.model", "CLINVK_CLAUDE_MODEL")
 		viper.BindEnv("backends.codex.model", "CLINVK_CODEX_MODEL")
 		viper.BindEnv("backends.gemini.model", "CLINVK_GEMINI_MODEL")
+		viper.BindEnv("mcp.transport", "CLINVK_MCP_TRANSPORT")
+		viper.BindEnv("mcp.host", "CLINVK_MCP_HOST")
+		viper.BindEnv("mcp.port", "CLINVK_MCP_PORT")
+		viper.BindEnv("mcp.http_path", "CLINVK_MCP_HTTP_PATH")
+		viper.BindEnv("mcp.expose_health", "CLINVK_MCP_EXPOSE_HEALTH")
 
 		// Read config file (ignore if not found)
 		if err := viper.ReadInConfig(); err != nil {

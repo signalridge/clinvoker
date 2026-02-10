@@ -20,6 +20,7 @@ clinvk [命令] [子命令] [参数]
 | [`parallel`](parallel.md) | 并行执行任务 | 运行多个任务 |
 | [`compare`](compare.md) | 对比后端响应 | 评估不同 AI |
 | [`chain`](chain.md) | 链式执行提示词 | 多步骤工作流 |
+| [`mcp`](mcp.md) | 启动 MCP 服务器 | MCP 集成 |
 | [`serve`](serve.md) | 启动 HTTP API 服务器 | 应用程序集成 |
 | `version` | 显示版本信息 | 检查已安装版本 |
 | `help` | 显示帮助 | 获取命令帮助 |
@@ -146,6 +147,7 @@ clinvk --ephemeral "快速问题"
 
 运行 HTTP API 的命令：
 
+- `mcp` - 启动 MCP 服务器
 - `serve` - 启动 API 服务器
 
 ## 使用示例
@@ -206,6 +208,7 @@ clinvk chain --file pipeline.json
 
 ```bash
 # 启动服务器
+clinvk mcp --transport stdio
 clinvk serve --port 8080
 ```
 

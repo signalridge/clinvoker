@@ -1,154 +1,98 @@
 # MCP 服务器集成
 
-!!! note "未来功能"
-    MCP（Model Context Protocol）服务器支持计划在未来版本中发布。本文档描述了预期的设计和使用模式。
+## 概览
 
-## 概述
+clinvk 内置 MCP (Model Context Protocol) 服务器，用 MCP 工具暴露现有能力，支持以下传输：
 
-Model Context Protocol（MCP）是一个将 AI 模型与外部工具和数据源连接的标准。clinvk 计划支持 MCP 以实现：
+- **stdio**：本地/桌面使用
+- **HTTP + SSE**：服务器部署使用
 
-- 与 Claude Desktop 直接集成
-- 标准化的工具调用接口
-- 与 MCP 启用工具的生态系统兼容性
+工具 schema 由现有 REST 模型生成，确保 MCP 与 REST 保持一致。
 
-## 计划架构
+## 传输方式
 
-```mermaid
-flowchart TB
-    subgraph clients ["MCP 客户端"]
-        direction TB
-        A1["Claude Desktop"]
-        A2["支持 MCP 的 IDE"]
-        A3["自定义 MCP 客户端"]
-    end
+### stdio (本地)
 
-    subgraph server ["clinvk MCP 服务器"]
-        direction TB
-        B1["MCP 传输层"]
-        B2["工具注册表"]
-        B3["资源处理器"]
-    end
-
-    subgraph backends ["AI CLI 后端"]
-        direction TB
-        C1["Claude CLI"]
-        C2["Codex CLI"]
-        C3["Gemini CLI"]
-    end
-
-    A1 <--> B1
-    A2 <--> B1
-    A3 <--> B1
-
-    B1 --> B2
-    B1 --> B3
-
-    B2 --> C1
-    B2 --> C2
-    B2 --> C3
-
-    style clients fill:#e3f2fd,stroke:#1976d2
-    style server fill:#fff3e0,stroke:#f57c00
-    style backends fill:#f3e5f5,stroke:#7b1fa2
+```bash
+clinvk mcp --transport stdio
 ```
 
-## 计划工具
+使用 stdin/stdout 的 line-delimited JSON-RPC。
 
-### `clinvk_prompt`
+### HTTP + SSE (服务器)
 
-使用指定后端执行提示。
-
-```json
-{
-  "name": "clinvk_prompt",
-  "description": "使用 AI CLI 后端执行提示",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "backend": {
-        "type": "string",
-        "enum": ["claude", "codex", "gemini"],
-        "description": "要使用的 AI 后端"
-      },
-      "prompt": {
-        "type": "string",
-        "description": "要发送的提示"
-      },
-      "session_id": {
-        "type": "string",
-        "description": "可选的会话 ID 用于上下文"
-      }
-    },
-    "required": ["backend", "prompt"]
-  }
-}
+```bash
+clinvk mcp --transport http --host 0.0.0.0 --port 3000 --path /mcp
 ```
 
-### `clinvk_parallel`
+向 `/mcp` POST JSON-RPC，Streaming 时使用 SSE。
 
-并行执行多个提示。
+## 工具列表
 
-```json
-{
-  "name": "clinvk_parallel",
-  "description": "跨后端并行执行多个提示",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "tasks": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "backend": {"type": "string"},
-            "prompt": {"type": "string"}
-          }
-        }
-      }
-    },
-    "required": ["tasks"]
-  }
-}
+- `clinvk_prompt`
+- `clinvk_parallel`
+- `clinvk_chain`
+- `clinvk_compare`
+- `clinvk_backends`
+- `clinvk_sessions`
+- `clinvk_session_get`
+- `clinvk_session_delete`
+- `clinvk_health`
+
+每个工具都包含 **input/output schema**。
+
+## Streaming 开关
+
+Streaming 必须显式开启：
+
+- **stdio**：仅当 `output_format=stream-json`
+- **HTTP**：`output_format=stream-json` 且 `Accept: text/event-stream`
+
+如果请求 Streaming 但缺少 SSE 的 Accept，会返回 JSON-RPC 错误。
+
+## 配置
+
+### CLI 参数
+
+```bash
+clinvk mcp --transport stdio|http
+clinvk mcp --transport http --host 127.0.0.1 --port 8081 --path /mcp
+clinvk mcp --expose-health
 ```
 
-### `clinvk_chain`
+### 配置文件 (`~/.clinvk/config.yaml`)
 
-顺序执行提示链。
-
-```json
-{
-  "name": "clinvk_chain",
-  "description": "顺序执行提示，传递结果",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "steps": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"},
-            "backend": {"type": "string"},
-            "prompt": {"type": "string"}
-          }
-        }
-      }
-    },
-    "required": ["steps"]
-  }
-}
+```yaml
+mcp:
+  transport: stdio
+  host: "127.0.0.1"
+  port: 8081
+  http_path: "/mcp"
+  expose_health: false
 ```
 
-## 计划用法
+### 环境变量
 
-### Claude Desktop 配置
+```text
+CLINVK_MCP_TRANSPORT
+CLINVK_MCP_HOST
+CLINVK_MCP_PORT
+CLINVK_MCP_HTTP_PATH
+CLINVK_MCP_EXPOSE_HEALTH
+```
+
+优先级：CLI 参数 > 环境变量 > 配置文件 > 默认值
+
+## 示例
+
+### Claude Desktop (stdio)
 
 ```json
 {
   "mcpServers": {
     "clinvk": {
       "command": "clinvk",
-      "args": ["mcp", "--port", "stdio"],
+      "args": ["mcp", "--transport", "stdio"],
       "env": {
         "CLINVK_BACKEND": "claude"
       }
@@ -157,75 +101,37 @@ flowchart TB
 }
 ```
 
-### 启动 MCP 服务器
+### HTTP tools/list
 
 ```bash
-# Stdio 传输（用于 Claude Desktop）
-clinvk mcp --transport stdio
-
-# HTTP 传输（用于网络客户端）
-clinvk mcp --transport http --port 3000
+curl -sS -X POST http://127.0.0.1:8081/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-## 使用场景
+### HTTP Streaming prompt
 
-### 1. Claude Desktop 中的多后端代码审查
-
-Claude Desktop 可以使用 clinvk 获取多个 AI 模型的视角：
-
-```text
-用户：从多个角度审查这段代码
-
-Claude：我将使用 clinvk_parallel 工具从不同 AI 模型获取审查。
-
-[使用 Claude、Codex 和 Gemini 任务调用 clinvk_parallel]
-
-这是综合视角：
-- 架构（Claude）：...
-- 性能（Codex）：...
-- 安全（Gemini）：...
+```bash
+curl -N -X POST http://127.0.0.1:8081/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"claude","prompt":"hello","output_format":"stream-json"}}}'
 ```
 
-### 2. 文档流水线
+## 认证、限制与 CORS
 
-```text
-用户：为这个代码库生成文档
+HTTP 模式复用 `clinvk serve` 的 middleware stack，包括：
 
-Claude：我将使用 clinvk_chain 工具通过流水线创建文档。
+- API key 认证（如果配置）
+- Rate limiting
+- Request size limits
+- Timeouts
+- CORS
 
-[使用 analyze → generate → polish 步骤调用 clinvk_chain]
-
-这是精修后的文档：...
-```
-
-### 3. 专业任务路由
-
-```text
-用户：优化这个 SQL 查询
-
-Claude：我将把这个路由到擅长数据分析的 Gemini。
-
-[使用 backend="gemini" 调用 clinvk_prompt]
-
-Gemini 建议这些优化：...
-```
-
-## 开发状态
-
-| 功能 | 状态 |
-|------|------|
-| MCP 协议支持 | 计划中 |
-| Stdio 传输 | 计划中 |
-| HTTP 传输 | 计划中 |
-| 工具注册 | 计划中 |
-| 资源支持 | 考虑中 |
+如配置了 API key，请携带 `Authorization: Bearer <key>` 或 `X-API-Key`。
 
 ## 相关资源
 
-- [Model Context Protocol 规范](https://spec.modelcontextprotocol.io/)
-- [Claude Desktop MCP 指南](https://docs.anthropic.com/claude/docs/mcp)
-- [REST API 参考](../../reference/api/rest.md) - 当前 HTTP API
-
-## 反馈
-
-我们欢迎对 MCP 集成设计的反馈。请在 [GitHub](https://github.com/signalridge/clinvoker/issues) 上提交 issue，分享您的建议或使用场景。
+- [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
+- [Claude Desktop MCP Guide](https://docs.anthropic.com/claude/docs/mcp)
+- [REST API Reference](../../reference/api/rest.md)

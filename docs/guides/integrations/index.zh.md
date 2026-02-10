@@ -54,7 +54,7 @@ flowchart LR
 | [LangChain/LangGraph](langchain-langgraph.md) | AI 框架集成 | `/openai/v1/*` |
 | [CI/CD](ci-cd/index.md) | 自动化代码审查、文档 | `/api/v1/*` |
 | [客户端库](../../reference/api/index.md) | Python、TypeScript、Go 客户端 | 所有端点 |
-| [MCP 服务器](mcp-server.md) | Model Context Protocol 集成 | 未来 |
+| [MCP 服务器](mcp-server.md) | Model Context Protocol 集成 | 可用 |
 
 ## 快速集成示例
 
