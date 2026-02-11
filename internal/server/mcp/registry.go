@@ -433,6 +433,14 @@ func executeStreamingPrompt(ctx context.Context, executor *service.Executor, req
 		return nil, NewRPCErrorDetail(code, msg, nil)
 	}
 
+	if result.ExitCode != 0 {
+		return nil, NewRPCErrorDetail(
+			CodeToolExecutionError,
+			fmt.Sprintf("execution failed with exit code %d", result.ExitCode),
+			nil,
+		)
+	}
+
 	durationMS := time.Since(start).Milliseconds()
 	payload := &handlers.PromptResponseBody{
 		Backend:    req.Backend,

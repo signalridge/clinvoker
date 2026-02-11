@@ -52,7 +52,7 @@ func MapExecutorError(err error) (int, string) {
 	case strings.Contains(lower, "unknown backend"):
 		return CodeInvalidParams, msg
 	case strings.Contains(lower, "not found"):
-		return CodeToolNotFound, msg
+		return CodeInvalidParams, msg
 	case strings.Contains(lower, "timed out"), strings.Contains(lower, "deadline exceeded"):
 		return CodeTimeout, msg
 	case strings.Contains(lower, "invalid"),

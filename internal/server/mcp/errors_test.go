@@ -39,7 +39,7 @@ func TestMapExecutorError(t *testing.T) {
 		{
 			name:         "not found",
 			err:          errors.New("session '123' not found"),
-			wantCode:     CodeToolNotFound,
+			wantCode:     CodeInvalidParams,
 			wantContains: "not found",
 		},
 		{

@@ -4,9 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os/exec"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/mock"
 	"github.com/signalridge/clinvoker/internal/server/handlers"
 	"github.com/signalridge/clinvoker/internal/server/service"
 )
@@ -100,6 +104,51 @@ func TestPromptTool_StreamSendsErrorNotification(t *testing.T) {
 	}
 	if sender.count == 0 {
 		t.Fatal("expected error notification to be sent")
+	}
+}
+
+func TestPromptTool_StreamExitCodeNonZeroReturnsRPCError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires sh to force non-zero exit")
+	}
+
+	setTempHome(t)
+	mockBackend := mock.NewMockBackend("mock-exit", mock.WithCommandFunc(func(prompt string, opts *backend.UnifiedOptions) *exec.Cmd {
+		return exec.Command("sh", "-c", "exit 1")
+	}))
+	cleanup := mock.WithMockBackend(t, mockBackend)
+	t.Cleanup(cleanup)
+
+	executor := service.NewExecutor()
+	tool := promptTool(executor)
+
+	args, err := json.Marshal(handlers.PromptRequest{
+		Backend:      "mock-exit",
+		Prompt:       "hello",
+		OutputFormat: "stream-json",
+	})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	ctx := WithNotificationSender(context.Background(), &countingSender{})
+	result, err := tool.Handler(ctx, args)
+	if err == nil {
+		t.Fatal("expected error for non-zero exit code")
+	}
+	if result != nil {
+		t.Fatal("expected nil result on error")
+	}
+
+	var rpcErr *RPCErrorDetail
+	if !errors.As(err, &rpcErr) {
+		t.Fatalf("expected RPCErrorDetail, got %T", err)
+	}
+	if rpcErr.Code != CodeToolExecutionError {
+		t.Fatalf("code = %d, want %d", rpcErr.Code, CodeToolExecutionError)
+	}
+	if !strings.Contains(rpcErr.Message, "exit code") {
+		t.Fatalf("message = %q, want to contain %q", rpcErr.Message, "exit code")
 	}
 }
 
