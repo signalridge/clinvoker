@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/signalridge/clinvoker/internal/server/service"
@@ -31,26 +32,82 @@ func TestDispatcher_Dispatch_Initialize(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	dispatcher := NewDispatcher(registry, logger)
 
+	t.Run("exact protocol version accepted", func(t *testing.T) {
+		req := &Request{
+			JSONRPC: "2.0",
+			ID:      json.RawMessage(`1`),
+			Method:  "initialize",
+			Params:  json.RawMessage(`{"protocolVersion":"2024-11-05"}`),
+		}
+
+		resp := dispatcher.Dispatch(context.Background(), req)
+		if resp == nil {
+			t.Fatal("expected response, got nil")
+		}
+		if resp.Error != nil {
+			t.Fatalf("unexpected error: %v", resp.Error)
+		}
+		if resp.Result == nil {
+			t.Fatal("expected result")
+		}
+	})
+
+	t.Run("empty protocol version accepted", func(t *testing.T) {
+		req := &Request{
+			JSONRPC: "2.0",
+			ID:      json.RawMessage(`2`),
+			Method:  "initialize",
+			Params:  json.RawMessage(`{}`),
+		}
+
+		resp := dispatcher.Dispatch(context.Background(), req)
+		if resp == nil {
+			t.Fatal("expected response, got nil")
+		}
+		if resp.Error != nil {
+			t.Fatalf("unexpected error: %v", resp.Error)
+		}
+		if resp.Result == nil {
+			t.Fatal("expected result")
+		}
+	})
+
+	t.Run("unsupported protocol version rejected", func(t *testing.T) {
+		req := &Request{
+			JSONRPC: "2.0",
+			ID:      json.RawMessage(`3`),
+			Method:  "initialize",
+			Params:  json.RawMessage(`{"protocolVersion":"9999-01-01"}`),
+		}
+
+		resp := dispatcher.Dispatch(context.Background(), req)
+		if resp == nil {
+			t.Fatal("expected response, got nil")
+		}
+		if resp.Error == nil {
+			t.Fatal("expected error")
+		}
+		if resp.Error.Code != CodeInvalidParams {
+			t.Fatalf("error code = %d, want %d", resp.Error.Code, CodeInvalidParams)
+		}
+		if !strings.Contains(resp.Error.Message, "unsupported protocol version") {
+			t.Fatalf("error message = %q, want to contain %q", resp.Error.Message, "unsupported protocol version")
+		}
+	})
+
+	// Verify successful initialize result structure
 	req := &Request{
 		JSONRPC: "2.0",
-		ID:      json.RawMessage(`1`),
+		ID:      json.RawMessage(`4`),
 		Method:  "initialize",
 		Params:  json.RawMessage(`{"protocolVersion":"2024-11-05"}`),
 	}
 
 	resp := dispatcher.Dispatch(context.Background(), req)
-
-	if resp == nil {
-		t.Fatal("expected response, got nil")
-	}
-	if resp.Error != nil {
-		t.Errorf("unexpected error: %v", resp.Error)
-	}
-	if resp.Result == nil {
-		t.Fatal("expected result")
+	if resp == nil || resp.Error != nil || resp.Result == nil {
+		t.Fatal("expected successful initialize response")
 	}
 
-	// Verify result structure
 	var result struct {
 		ProtocolVersion string `json:"protocolVersion"`
 		Capabilities    struct {
@@ -182,9 +239,9 @@ func TestDispatcher_Dispatch_ToolsCall_UnknownTool(t *testing.T) {
 	if resp.Error == nil {
 		t.Fatal("expected error")
 	}
-	// The dispatcher returns CodeInvalidParams for unknown tools
-	if resp.Error.Code != CodeInvalidParams {
-		t.Errorf("error code = %d, want %d", resp.Error.Code, CodeInvalidParams)
+	// Unknown tool should return CodeToolNotFound
+	if resp.Error.Code != CodeToolNotFound {
+		t.Errorf("error code = %d, want %d", resp.Error.Code, CodeToolNotFound)
 	}
 }
 
@@ -329,7 +386,7 @@ func TestDispatcher_Dispatch_ToolsCall_Backends(t *testing.T) {
 	}
 }
 
-func TestDispatcher_Dispatch_ToolsCall_NotificationExecutes(t *testing.T) {
+func TestDispatcher_Dispatch_ToolsCall_NotificationIgnored(t *testing.T) {
 	registry := NewRegistry()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	dispatcher := NewDispatcher(registry, logger)
@@ -359,8 +416,8 @@ func TestDispatcher_Dispatch_ToolsCall_NotificationExecutes(t *testing.T) {
 	if resp != nil {
 		t.Fatal("expected nil response for notification")
 	}
-	if !called {
-		t.Fatal("expected notification to execute handler")
+	if called {
+		t.Fatal("expected notification to be ignored without executing handler")
 	}
 }
 

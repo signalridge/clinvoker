@@ -145,6 +145,39 @@ func TestHTTPTransport_Handler_Initialize(t *testing.T) {
 	}
 }
 
+func TestHTTPTransport_Handler_Initialize_UnsupportedProtocolVersion(t *testing.T) {
+	registry := NewRegistry()
+	logger := slog.Default()
+	dispatcher := NewDispatcher(registry, logger)
+	transport := NewHTTPTransport(dispatcher, logger)
+	handler := transport.Handler()
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"9999-01-01"}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	var resp Response
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("response is not valid JSON: %v", err)
+	}
+	if resp.Error == nil {
+		t.Fatal("expected error in response")
+	}
+	if resp.Error.Code != CodeInvalidParams {
+		t.Errorf("error code = %d, want %d", resp.Error.Code, CodeInvalidParams)
+	}
+	if !strings.Contains(resp.Error.Message, "unsupported protocol version") {
+		t.Errorf("error message = %q, want contains %q", resp.Error.Message, "unsupported protocol version")
+	}
+}
+
 func TestHTTPTransport_Handler_ToolsList(t *testing.T) {
 	registry := NewRegistry()
 	RegisterAllTools(registry, nil)
@@ -272,6 +305,74 @@ func TestHTTPTransport_Handler_ToolsCall_NonStreaming(t *testing.T) {
 	}
 	if bodyResp.Backends == nil {
 		t.Fatal("expected backends to be non-nil")
+	}
+}
+
+func TestHTTPTransport_Handler_ToolsCall_UnknownTool(t *testing.T) {
+	registry := NewRegistry()
+	logger := slog.Default()
+	dispatcher := NewDispatcher(registry, logger)
+	transport := NewHTTPTransport(dispatcher, logger)
+	handler := transport.Handler()
+
+	body := `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"unknown_tool","arguments":{}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	var resp Response
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("response is not valid JSON: %v", err)
+	}
+	if resp.Error == nil {
+		t.Fatal("expected error")
+	}
+	if resp.Error.Code != CodeToolNotFound {
+		t.Errorf("error code = %d, want %d", resp.Error.Code, CodeToolNotFound)
+	}
+}
+
+func TestHTTPTransport_Handler_ToolsCallNotification_IgnoredNoExecution(t *testing.T) {
+	registry := NewRegistry()
+	called := false
+	registry.Register(&ToolDefinition{
+		Tool: Tool{
+			Name:         "test_tool",
+			Description:  "test tool",
+			InputSchema:  json.RawMessage(`{}`),
+			OutputSchema: json.RawMessage(`{}`),
+		},
+		Handler: func(ctx context.Context, args json.RawMessage) (*ToolCallResult, error) {
+			called = true
+			return &ToolCallResult{Content: []ContentBlock{TextContent("ok")}}, nil
+		},
+	})
+	logger := slog.Default()
+	dispatcher := NewDispatcher(registry, logger)
+	transport := NewHTTPTransport(dispatcher, logger)
+	handler := transport.Handler()
+
+	body := `{"jsonrpc":"2.0","method":"tools/call","params":{"name":"test_tool","arguments":{}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusNoContent)
+	}
+	if rec.Body.Len() != 0 {
+		t.Error("notification response should have empty body")
+	}
+	if called {
+		t.Fatal("expected tools/call notification to be ignored without executing handler")
 	}
 }
 

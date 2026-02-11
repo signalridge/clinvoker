@@ -27,6 +27,11 @@ func NewDispatcher(registry *Registry, logger *slog.Logger) *Dispatcher {
 func (d *Dispatcher) Dispatch(ctx context.Context, req *Request) *Response {
 	d.logger.Debug("dispatching MCP request", "method", req.Method, "id", string(req.ID))
 
+	if req.Method == MethodToolsCall && req.IsNotification() {
+		// tools/call notifications are ignored to avoid side effects.
+		return nil
+	}
+
 	var resp *Response
 	switch req.Method {
 	case MethodInitialize:
@@ -62,6 +67,15 @@ func (d *Dispatcher) handleInitialize(req *Request) *Response {
 		if err := json.Unmarshal(req.Params, &params); err != nil {
 			return NewErrorResponse(req.ID, CodeInvalidParams, "invalid initialize params", nil)
 		}
+	}
+
+	if params.ProtocolVersion != "" && params.ProtocolVersion != ProtocolVersion {
+		return NewErrorResponse(
+			req.ID,
+			CodeInvalidParams,
+			fmt.Sprintf("unsupported protocol version: %s", params.ProtocolVersion),
+			nil,
+		)
 	}
 
 	d.logger.Info("MCP client initialized",
@@ -100,9 +114,13 @@ func (d *Dispatcher) handleToolsCall(ctx context.Context, req *Request) *Respons
 		return NewErrorResponse(req.ID, CodeInvalidParams, "invalid tools/call params", nil)
 	}
 
+	if params.Name == "" {
+		return NewErrorResponse(req.ID, CodeInvalidParams, "missing tool name", nil)
+	}
+
 	def, ok := d.registry.Get(params.Name)
 	if !ok {
-		return NewErrorResponse(req.ID, CodeInvalidParams,
+		return NewErrorResponse(req.ID, CodeToolNotFound,
 			fmt.Sprintf("unknown tool: %s", params.Name), nil)
 	}
 

@@ -91,6 +91,107 @@ func TestNewRouter_EnforcesAPIKeyOnMCP(t *testing.T) {
 	}
 }
 
+func TestNewRouter_MCP_SSE_RequiresAPIKey(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"invalid-backend","prompt":"hello","output_format":"stream-json"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestNewRouter_MCP_SSE_WithAPIKey_Succeeds(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"invalid-backend","prompt":"hello","output_format":"stream-json"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("X-Api-Key", "test-key")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "text/event-stream" {
+		t.Errorf("content-type = %q, want %q", got, "text/event-stream")
+	}
+}
+
+func TestNewRouter_MCP_NonStream_AcceptSSE_StillJSON(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("X-Api-Key", "test-key")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/json" {
+		t.Errorf("content-type = %q, want %q", got, "application/json")
+	}
+}
+
 func setTempHome(t *testing.T) {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
