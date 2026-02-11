@@ -22,8 +22,8 @@
 
 ## Architecture
 
-- Add server.NewWithOptions (or NewMCP) to build a chi router with existing middleware while allowing docs/openapi/schemas to be disabled.
-- runMCPHTTP uses this server builder and registers /mcp and optional /health only.
+- Use server.NewRouter to build a chi router with the shared middleware stack.
+- runMCPHTTP mounts only /mcp (configurable) and optional /health; REST/OpenAI/Anthropic/docs/openapi/schemas are not mounted in MCP mode.
 - MCP stdio remains standalone.
 
 ## Configuration
@@ -37,12 +37,19 @@
 ## Routing and Middleware
 
 - /mcp goes through RequestSize, RateLimit, APIKeyAuth, Timeout, CORS, Metrics, and logging middleware.
-- SkipAuthPaths is configurable so MCP mode can omit docs/openapi/schemas and only allow /health if enabled.
+- SkipAuthPaths uses the shared fixed list (/health, /docs, /openapi.json, /schemas, /metrics). MCP mode only mounts /health when enabled.
 
 ## JSON-RPC Semantics
 
-- If request id is missing or null, treat as notification and never return a response, even for initialize/tools/list/tools/call/ping.
+- If request id is missing or null, treat as notification and never return a response.
+- tools/call notifications are ignored (no execution) to avoid side effects.
 - Unknown notification methods are ignored.
+
+## Initialize Negotiation
+
+- protocolVersion is optional; if provided and unsupported, return CodeInvalidParams.
+- clientInfo is logged; capabilities are accepted but ignored (no negotiation yet).
+- tools capability is returned; listChanged is omitted (not supported).
 
 ## Tool Schema Derivation
 
@@ -58,7 +65,7 @@
 
 - Each tool returns JSON-encoded response body in content[0].text.
 - Response bodies match handlers/models.go types (PromptResponseBody, ParallelResponseBody, etc).
-- Streaming prompt accumulates output and builds PromptResponseBody using StreamResult for exit_code, error, token_usage, duration_ms.
+- Streaming prompt accumulates output and builds PromptResponseBody using StreamResult for exit_code, token_usage, duration_ms. Errors return JSON-RPC error responses (no body error).
 
 ## Streaming Gate
 
