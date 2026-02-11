@@ -399,6 +399,31 @@ func TestHTTPTransport_Handler_Notification(t *testing.T) {
 	}
 }
 
+func TestHTTPTransport_Handler_NotificationStreamRequest_NoResponse(t *testing.T) {
+	setTempHome(t)
+	registry := NewRegistry()
+	RegisterAllTools(registry, service.NewExecutor())
+	logger := slog.Default()
+	dispatcher := NewDispatcher(registry, logger)
+	transport := NewHTTPTransport(dispatcher, logger)
+	handler := transport.Handler()
+
+	body := `{"jsonrpc":"2.0","method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"invalid-backend","prompt":"hello","output_format":"stream-json"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusNoContent)
+	}
+	if rec.Body.Len() != 0 {
+		t.Error("notification response should have empty body")
+	}
+}
+
 func TestHTTPTransport_Handler_AcceptSSEWithoutStreaming(t *testing.T) {
 	registry := NewRegistry()
 	RegisterAllTools(registry, nil)

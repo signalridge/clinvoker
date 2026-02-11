@@ -57,6 +57,11 @@ func (t *HTTPTransport) Handler() http.Handler {
 			return
 		}
 
+		if req.IsNotification() {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		accept := r.Header.Get("Accept")
 		useSSE := acceptsEventStream(accept)
 		streamRequested := isStreamRequest(&req)
