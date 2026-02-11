@@ -22,6 +22,13 @@ SERVER_PORT="${SERVER_PORT:-18080}"
 SERVER_URL="http://${SERVER_HOST}:${SERVER_PORT}"
 export SERVER_HOST SERVER_PORT SERVER_URL
 
+# MCP HTTP test server configuration
+MCP_SERVER_PORT="${MCP_SERVER_PORT:-18083}"
+MCP_SERVER_PATH="${MCP_SERVER_PATH:-/mcp}"
+MCP_SERVER_URL="http://${SERVER_HOST}:${MCP_SERVER_PORT}"
+MCP_ENDPOINT_URL="${MCP_SERVER_URL}${MCP_SERVER_PATH}"
+export MCP_SERVER_PORT MCP_SERVER_PATH MCP_SERVER_URL MCP_ENDPOINT_URL
+
 # Test configuration
 TEST_TIMEOUT="${TEST_TIMEOUT:-60}"
 SIMPLE_PROMPT="${SIMPLE_PROMPT:-echo hello world}"
@@ -225,8 +232,56 @@ server_running() {
 }
 
 # =============================================================================
-# HTTP Request Helpers
+# MCP Server Management
 # =============================================================================
+
+MCP_SERVER_PID=""
+
+# Start MCP HTTP server
+start_mcp_http_server() {
+	if mcp_server_running; then
+		log_info "MCP server already running on ${MCP_ENDPOINT_URL}"
+		return 0
+	fi
+
+	log_info "Starting MCP HTTP server on ${MCP_SERVER_URL}${MCP_SERVER_PATH}..."
+
+	"$CLINVK_BIN" mcp --transport http --host "$SERVER_HOST" --port "$MCP_SERVER_PORT" --path "$MCP_SERVER_PATH" &
+	MCP_SERVER_PID=$!
+
+	local retries=30
+	while ((retries > 0)); do
+		if curl -sf "${MCP_ENDPOINT_URL}" \
+			-H "Content-Type: application/json" \
+			-d '{"jsonrpc":"2.0","id":1,"method":"ping"}' >/dev/null 2>&1; then
+			log_success "MCP HTTP server started (PID: $MCP_SERVER_PID)"
+			return 0
+		fi
+		sleep 0.5
+		((retries--))
+	done
+
+	log_error "MCP HTTP server failed to start"
+	stop_mcp_http_server
+	return 1
+}
+
+# Stop MCP HTTP server
+stop_mcp_http_server() {
+	if [[ -n "$MCP_SERVER_PID" ]]; then
+		log_info "Stopping MCP HTTP server (PID: $MCP_SERVER_PID)..."
+		kill "$MCP_SERVER_PID" 2>/dev/null || true
+		wait "$MCP_SERVER_PID" 2>/dev/null || true
+		MCP_SERVER_PID=""
+	fi
+}
+
+# Check if MCP HTTP server is running
+mcp_server_running() {
+	curl -sf "${MCP_ENDPOINT_URL}" \
+		-H "Content-Type: application/json" \
+		-d '{"jsonrpc":"2.0","id":1,"method":"ping"}' >/dev/null 2>&1
+}
 
 # GET request
 http_get() {
@@ -307,6 +362,7 @@ setup_test_env() {
 # Cleanup test environment
 cleanup_test_env() {
 	stop_server
+	stop_mcp_http_server
 	if [[ -n "${TEST_TEMP_DIR:-}" && -d "$TEST_TEMP_DIR" ]]; then
 		rm -rf "$TEST_TEMP_DIR"
 	fi

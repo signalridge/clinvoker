@@ -79,6 +79,12 @@ integration-cli: build
 integration-api: build
     ./test/run_api_tests.sh
 
+# Run MCP integration tests only (protocol + auth)
+[group('integration')]
+integration-mcp: build
+    ./test/api/test_mcp.sh
+    ./test/api/test_mcp_auth.sh
+
 # Run a specific test file (e.g., just integration-file cli/test_version)
 [group('integration')]
 integration-file file: build
