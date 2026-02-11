@@ -13,13 +13,23 @@ import (
 	"github.com/signalridge/clinvoker/internal/server/middleware"
 )
 
+var defaultSkipAuthPaths = []string{"/health", "/docs", "/openapi.json", "/schemas", "/metrics"}
+
 // NewRouter creates a chi router configured with the shared middleware stack.
 func NewRouter(logger *slog.Logger) (chi.Router, *middleware.RateLimiter) {
+	return NewRouterWithSkipAuthPaths(logger, defaultSkipAuthPaths...)
+}
+
+// NewRouterWithSkipAuthPaths creates a chi router with configurable auth skip paths.
+func NewRouterWithSkipAuthPaths(logger *slog.Logger, skipPaths ...string) (chi.Router, *middleware.RateLimiter) {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
 	router := chi.NewRouter()
+	if len(skipPaths) == 0 {
+		skipPaths = defaultSkipAuthPaths
+	}
 
 	// Get app config for middleware configuration
 	appCfg := config.Get()
@@ -58,7 +68,7 @@ func NewRouter(logger *slog.Logger) (chi.Router, *middleware.RateLimiter) {
 	}
 
 	// Add API key authentication (skips health, docs, and metrics endpoints)
-	router.Use(middleware.SkipAuthPaths("/health", "/docs", "/openapi.json", "/schemas", "/metrics"))
+	router.Use(middleware.SkipAuthPaths(skipPaths...))
 
 	// Get timeout from config, with fallback to 5 minutes
 	requestTimeout := time.Duration(appCfg.Server.RequestTimeoutSecs) * time.Second

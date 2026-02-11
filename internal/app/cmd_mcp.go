@@ -156,7 +156,7 @@ func runMCPHTTP(logger *slog.Logger, exposeHealth bool) error {
 	dispatcher, executor := newMCPDispatcher(logger)
 	transport := mcp.NewHTTPTransport(dispatcher, logger)
 
-	router, limiter := server.NewRouter(logger)
+	router, limiter := server.NewRouterWithSkipAuthPaths(logger, "/docs", "/openapi.json", "/schemas", "/metrics")
 	if limiter != nil {
 		defer limiter.Stop()
 	}

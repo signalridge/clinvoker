@@ -192,6 +192,42 @@ func TestNewRouter_MCP_NonStream_AcceptSSE_StillJSON(t *testing.T) {
 	}
 }
 
+func TestNewRouter_MCP_HealthRequiresAPIKey(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouterWithSkipAuthPaths(logger, "/docs", "/openapi.json", "/schemas", "/metrics")
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
+	req.Header.Set("X-Api-Key", "test-key")
+	rec = httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
 func setTempHome(t *testing.T) {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
