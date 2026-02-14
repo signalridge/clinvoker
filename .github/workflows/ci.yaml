@@ -193,9 +193,10 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-      - name: Build
+      - name: Build Instrumented Binary
         run: |
-          go build -o bin/clinvk ./cmd/clinvk
+          mkdir -p .cov/e2e/raw
+          go build -cover -coverpkg=./... -o bin/clinvk ./cmd/clinvk
           chmod +x bin/clinvk
       - name: Install jq
         run: |
@@ -214,6 +215,7 @@ jobs:
           ./test/run_cli_tests.sh
         env:
           CLINVK_BIN: ${{ github.workspace }}/bin/clinvk
+          GOCOVERDIR: ${{ github.workspace }}/.cov/e2e/raw
       - name: Run API integration tests
         run: |
           chmod +x test/run_api_tests.sh test/api/*.sh
@@ -221,3 +223,73 @@ jobs:
         env:
           CLINVK_BIN: ${{ github.workspace }}/bin/clinvk
           SERVER_PORT: "18080"
+          GOCOVERDIR: ${{ github.workspace }}/.cov/e2e/raw
+      - name: Coverage Gate (Unit + E2E Union)
+        env:
+          COVERAGE_MIN_TOTAL: "75"
+          COVERAGE_MIN_CONFIG: "60"
+          COVERAGE_MIN_EXECUTOR: "60"
+        run: |
+          set -euo pipefail
+
+          mkdir -p .cov
+          go test ./... -coverpkg=./... -covermode=set -coverprofile=.cov/unit.set.cover.out
+          go tool covdata textfmt -i=.cov/e2e/raw -o .cov/e2e.cover.out
+
+          awk '
+            $1=="mode:" {next}
+            {
+              k=$1" "$2
+              v=$3+0
+              if (!(k in cov) || v > cov[k]) cov[k]=v
+            }
+            END {
+              for (k in cov) print k" "cov[k]
+            }
+          ' \
+            .cov/unit.set.cover.out .cov/e2e.cover.out | sort > .cov/combined.body
+          { echo 'mode: set'; cat .cov/combined.body; } > .cov/combined.cover.out
+
+          total_pct=$(go tool cover -func=.cov/combined.cover.out | awk '$1=="total:" {gsub(/%/,"",$3); print $3}')
+          echo "Combined coverage: ${total_pct}%"
+
+          awk -v actual="${total_pct}" -v min="${COVERAGE_MIN_TOTAL}" 'BEGIN { exit((actual+0) < (min+0)) }' || {
+            echo "::error::Combined coverage ${total_pct}% is below threshold ${COVERAGE_MIN_TOTAL}%"
+            exit 1
+          }
+
+          awk '
+            NR==1 {next}
+            {
+              split($1,p,":")
+              file=p[1]
+              stm=$2+0
+              cnt=$3+0
+              pkg=file
+              sub(/\/[^\/]+$/, "", pkg)
+              total[pkg]+=stm
+              covered[pkg]+=(cnt>0?stm:0)
+            }
+            END {
+              for (k in total) printf "%s %.2f\n", k, (100*covered[k]/total[k])
+            }
+          ' \
+            .cov/combined.cover.out > .cov/combined.by_pkg.txt
+
+          config_pkg="github.com/signalridge/clinvoker/internal/config"
+          executor_pkg="github.com/signalridge/clinvoker/internal/executor"
+          config_pct=$(awk -v target="${config_pkg}" '$1==target {print $2}' .cov/combined.by_pkg.txt)
+          executor_pct=$(awk -v target="${executor_pkg}" '$1==target {print $2}' .cov/combined.by_pkg.txt)
+
+          echo "Package coverage: ${config_pkg}=${config_pct}%"
+          echo "Package coverage: ${executor_pkg}=${executor_pct}%"
+
+          awk -v actual="${config_pct}" -v min="${COVERAGE_MIN_CONFIG}" 'BEGIN { exit((actual+0) < (min+0)) }' || {
+            echo "::error::${config_pkg} coverage ${config_pct}% is below threshold ${COVERAGE_MIN_CONFIG}%"
+            exit 1
+          }
+
+          awk -v actual="${executor_pct}" -v min="${COVERAGE_MIN_EXECUTOR}" 'BEGIN { exit((actual+0) < (min+0)) }' || {
+            echo "::error::${executor_pkg} coverage ${executor_pct}% is below threshold ${COVERAGE_MIN_EXECUTOR}%"
+            exit 1
+          }

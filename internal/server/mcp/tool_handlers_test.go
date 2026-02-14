@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/signalridge/clinvoker/internal/backend"
@@ -60,6 +61,36 @@ func TestParallelTool_ReturnsResponseBody(t *testing.T) {
 	}
 }
 
+func TestParallelTool_EmptyTasksReturnsRPCError(t *testing.T) {
+	setTempHome(t)
+	executor := service.NewExecutor()
+	tool := parallelTool(executor)
+
+	args, err := json.Marshal(handlers.ParallelRequest{})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	result, err := tool.Handler(context.Background(), args)
+	if err == nil {
+		t.Fatal("expected error for empty tasks")
+	}
+	if result != nil {
+		t.Fatal("expected nil result on error")
+	}
+
+	var rpcErr *RPCErrorDetail
+	if !errors.As(err, &rpcErr) {
+		t.Fatalf("expected RPCErrorDetail, got %T", err)
+	}
+	if rpcErr.Code != CodeInvalidParams {
+		t.Fatalf("code = %d, want %d", rpcErr.Code, CodeInvalidParams)
+	}
+	if rpcErr.Message != "tasks are required" {
+		t.Fatalf("message = %q, want %q", rpcErr.Message, "tasks are required")
+	}
+}
+
 func TestChainTool_ReturnsResponseBody(t *testing.T) {
 	setTempHome(t)
 	executor := service.NewExecutor()
@@ -104,6 +135,81 @@ func TestChainTool_ReturnsResponseBody(t *testing.T) {
 	}
 }
 
+func TestChainTool_ValidationErrors(t *testing.T) {
+	setTempHome(t)
+	executor := service.NewExecutor()
+	tool := chainTool(executor)
+
+	cases := []struct {
+		name string
+		req  handlers.ChainRequest
+		want string
+	}{
+		{
+			name: "missing steps",
+			req:  handlers.ChainRequest{},
+			want: "steps are required",
+		},
+		{
+			name: "pass_session_id not supported",
+			req: handlers.ChainRequest{
+				PassSessionID: true,
+				Steps: []handlers.ChainStep{
+					{Backend: "invalid-backend", Prompt: "hello"},
+				},
+			},
+			want: "chain is always ephemeral; pass_session_id and persist_sessions are not supported",
+		},
+		{
+			name: "persist_sessions not supported",
+			req: handlers.ChainRequest{
+				PersistSessions: true,
+				Steps: []handlers.ChainStep{
+					{Backend: "invalid-backend", Prompt: "hello"},
+				},
+			},
+			want: "chain is always ephemeral; pass_session_id and persist_sessions are not supported",
+		},
+		{
+			name: "session placeholder not allowed",
+			req: handlers.ChainRequest{
+				Steps: []handlers.ChainStep{
+					{Backend: "invalid-backend", Prompt: "hello {{session}}"},
+				},
+			},
+			want: "chain step 1 uses {{session}} but sessions are not persisted",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			args, err := json.Marshal(tc.req)
+			if err != nil {
+				t.Fatalf("marshal args: %v", err)
+			}
+
+			result, err := tool.Handler(context.Background(), args)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if result != nil {
+				t.Fatal("expected nil result on error")
+			}
+
+			var rpcErr *RPCErrorDetail
+			if !errors.As(err, &rpcErr) {
+				t.Fatalf("expected RPCErrorDetail, got %T", err)
+			}
+			if rpcErr.Code != CodeInvalidParams {
+				t.Fatalf("code = %d, want %d", rpcErr.Code, CodeInvalidParams)
+			}
+			if rpcErr.Message != tc.want {
+				t.Fatalf("message = %q, want %q", rpcErr.Message, tc.want)
+			}
+		})
+	}
+}
+
 func TestCompareTool_ReturnsResponseBody(t *testing.T) {
 	setTempHome(t)
 	executor := service.NewExecutor()
@@ -145,6 +251,57 @@ func TestCompareTool_ReturnsResponseBody(t *testing.T) {
 	}
 	if body.Results[0].Error == "" {
 		t.Error("expected error for invalid backend")
+	}
+}
+
+func TestCompareTool_ValidationErrors(t *testing.T) {
+	setTempHome(t)
+	executor := service.NewExecutor()
+	tool := compareTool(executor)
+
+	cases := []struct {
+		name string
+		req  handlers.CompareRequest
+		want string
+	}{
+		{
+			name: "missing backends",
+			req:  handlers.CompareRequest{Prompt: "hello"},
+			want: "backends are required",
+		},
+		{
+			name: "missing prompt",
+			req:  handlers.CompareRequest{Backends: []string{"invalid-backend"}},
+			want: "prompt is required",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			args, err := json.Marshal(tc.req)
+			if err != nil {
+				t.Fatalf("marshal args: %v", err)
+			}
+
+			result, err := tool.Handler(context.Background(), args)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if result != nil {
+				t.Fatal("expected nil result on error")
+			}
+
+			var rpcErr *RPCErrorDetail
+			if !errors.As(err, &rpcErr) {
+				t.Fatalf("expected RPCErrorDetail, got %T", err)
+			}
+			if rpcErr.Code != CodeInvalidParams {
+				t.Fatalf("code = %d, want %d", rpcErr.Code, CodeInvalidParams)
+			}
+			if rpcErr.Message != tc.want {
+				t.Fatalf("message = %q, want %q", rpcErr.Message, tc.want)
+			}
+		})
 	}
 }
 

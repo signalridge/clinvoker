@@ -87,6 +87,9 @@ func promptTool(executor *service.Executor) *ToolDefinition {
 			if err := json.Unmarshal(args, &req); err != nil {
 				return nil, NewRPCErrorDetail(CodeInvalidParams, fmt.Sprintf("invalid arguments: %v", err), nil)
 			}
+			if err := handlers.ValidatePromptRequest(req); err != nil {
+				return nil, NewRPCErrorDetail(CodeInvalidParams, err.Error(), nil)
+			}
 
 			serviceReq := req.ToServiceRequest()
 			requestedFormat := strings.ToLower(strings.TrimSpace(req.OutputFormat))
@@ -130,11 +133,38 @@ func parallelTool(executor *service.Executor) *ToolDefinition {
 			OutputSchema: mustSchemaJSON(handlers.ParallelResponseBody{}),
 		},
 		Handler: func(ctx context.Context, args json.RawMessage) (*ToolCallResult, error) {
-			var req service.ParallelRequest
+			var req handlers.ParallelRequest
 			if err := json.Unmarshal(args, &req); err != nil {
 				return nil, NewRPCErrorDetail(CodeInvalidParams, fmt.Sprintf("invalid arguments: %v", err), nil)
 			}
-			result, err := executor.ExecuteParallel(ctx, &req)
+			if err := handlers.ValidateParallelRequest(req); err != nil {
+				return nil, NewRPCErrorDetail(CodeInvalidParams, err.Error(), nil)
+			}
+			serviceReq := &service.ParallelRequest{
+				MaxParallel: req.MaxParallel,
+				FailFast:    req.FailFast,
+				DryRun:      req.DryRun,
+				Tasks:       make([]service.PromptRequest, len(req.Tasks)),
+			}
+			for i, t := range req.Tasks {
+				serviceReq.Tasks[i] = service.PromptRequest{
+					Backend:      t.Backend,
+					Prompt:       t.Prompt,
+					Model:        t.Model,
+					WorkDir:      t.WorkDir,
+					ApprovalMode: t.ApprovalMode,
+					SandboxMode:  t.SandboxMode,
+					OutputFormat: t.OutputFormat,
+					MaxTokens:    t.MaxTokens,
+					MaxTurns:     t.MaxTurns,
+					SystemPrompt: t.SystemPrompt,
+					Verbose:      t.Verbose,
+					Ephemeral:    t.Ephemeral,
+					Extra:        t.Extra,
+					Metadata:     t.Metadata,
+				}
+			}
+			result, err := executor.ExecuteParallel(ctx, serviceReq)
 			if err != nil {
 				code, msg := MapExecutorError(err)
 				return nil, NewRPCErrorDetail(code, msg, nil)
@@ -153,11 +183,36 @@ func chainTool(executor *service.Executor) *ToolDefinition {
 			OutputSchema: mustSchemaJSON(handlers.ChainResponseBody{}),
 		},
 		Handler: func(ctx context.Context, args json.RawMessage) (*ToolCallResult, error) {
-			var req service.ChainRequest
+			var req handlers.ChainRequest
 			if err := json.Unmarshal(args, &req); err != nil {
 				return nil, NewRPCErrorDetail(CodeInvalidParams, fmt.Sprintf("invalid arguments: %v", err), nil)
 			}
-			result, err := executor.ExecuteChain(ctx, &req)
+			if err := handlers.ValidateChainRequest(req); err != nil {
+				return nil, NewRPCErrorDetail(CodeInvalidParams, err.Error(), nil)
+			}
+			serviceReq := &service.ChainRequest{
+				StopOnFailure:  req.StopOnFailure,
+				PassWorkingDir: req.PassWorkingDir,
+				DryRun:         req.DryRun,
+				Steps:          make([]service.ChainStep, len(req.Steps)),
+			}
+			for i, s := range req.Steps {
+				serviceReq.Steps[i] = service.ChainStep{
+					Backend:      s.Backend,
+					Prompt:       s.Prompt,
+					Model:        s.Model,
+					WorkDir:      s.WorkDir,
+					ApprovalMode: s.ApprovalMode,
+					SandboxMode:  s.SandboxMode,
+					MaxTokens:    s.MaxTokens,
+					MaxTurns:     s.MaxTurns,
+					SystemPrompt: s.SystemPrompt,
+					Verbose:      s.Verbose,
+					Extra:        s.Extra,
+					Name:         s.Name,
+				}
+			}
+			result, err := executor.ExecuteChain(ctx, serviceReq)
 			if err != nil {
 				code, msg := MapExecutorError(err)
 				return nil, NewRPCErrorDetail(code, msg, nil)
@@ -176,11 +231,22 @@ func compareTool(executor *service.Executor) *ToolDefinition {
 			OutputSchema: mustSchemaJSON(handlers.CompareResponseBody{}),
 		},
 		Handler: func(ctx context.Context, args json.RawMessage) (*ToolCallResult, error) {
-			var req service.CompareRequest
+			var req handlers.CompareRequest
 			if err := json.Unmarshal(args, &req); err != nil {
 				return nil, NewRPCErrorDetail(CodeInvalidParams, fmt.Sprintf("invalid arguments: %v", err), nil)
 			}
-			result, err := executor.ExecuteCompare(ctx, &req)
+			if err := handlers.ValidateCompareRequest(req); err != nil {
+				return nil, NewRPCErrorDetail(CodeInvalidParams, err.Error(), nil)
+			}
+			serviceReq := &service.CompareRequest{
+				Backends:   req.Backends,
+				Prompt:     req.Prompt,
+				Model:      req.Model,
+				WorkDir:    req.WorkDir,
+				Sequential: req.Sequential,
+				DryRun:     req.DryRun,
+			}
+			result, err := executor.ExecuteCompare(ctx, serviceReq)
 			if err != nil {
 				code, msg := MapExecutorError(err)
 				return nil, NewRPCErrorDetail(code, msg, nil)

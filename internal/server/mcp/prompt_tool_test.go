@@ -53,6 +53,70 @@ func TestPromptTool_NonStreaming_InvalidBackendReturnsRPCError(t *testing.T) {
 	}
 }
 
+func TestPromptTool_MissingBackendReturnsRPCError(t *testing.T) {
+	setTempHome(t)
+	executor := service.NewExecutor()
+	tool := promptTool(executor)
+
+	args, err := json.Marshal(handlers.PromptRequest{
+		Prompt: "hello",
+	})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	result, err := tool.Handler(context.Background(), args)
+	if err == nil {
+		t.Fatal("expected error for missing backend")
+	}
+	if result != nil {
+		t.Fatal("expected nil result on error")
+	}
+
+	var rpcErr *RPCErrorDetail
+	if !errors.As(err, &rpcErr) {
+		t.Fatalf("expected RPCErrorDetail, got %T", err)
+	}
+	if rpcErr.Code != CodeInvalidParams {
+		t.Fatalf("code = %d, want %d", rpcErr.Code, CodeInvalidParams)
+	}
+	if rpcErr.Message != "backend is required" {
+		t.Fatalf("message = %q, want %q", rpcErr.Message, "backend is required")
+	}
+}
+
+func TestPromptTool_MissingPromptReturnsRPCError(t *testing.T) {
+	setTempHome(t)
+	executor := service.NewExecutor()
+	tool := promptTool(executor)
+
+	args, err := json.Marshal(handlers.PromptRequest{
+		Backend: "claude",
+	})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	result, err := tool.Handler(context.Background(), args)
+	if err == nil {
+		t.Fatal("expected error for missing prompt")
+	}
+	if result != nil {
+		t.Fatal("expected nil result on error")
+	}
+
+	var rpcErr *RPCErrorDetail
+	if !errors.As(err, &rpcErr) {
+		t.Fatalf("expected RPCErrorDetail, got %T", err)
+	}
+	if rpcErr.Code != CodeInvalidParams {
+		t.Fatalf("code = %d, want %d", rpcErr.Code, CodeInvalidParams)
+	}
+	if rpcErr.Message != "prompt is required" {
+		t.Fatalf("message = %q, want %q", rpcErr.Message, "prompt is required")
+	}
+}
+
 func TestPromptTool_StreamRequiresNotificationSender(t *testing.T) {
 	setTempHome(t)
 	executor := service.NewExecutor()

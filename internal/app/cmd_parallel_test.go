@@ -2,8 +2,18 @@ package app
 
 import (
 	"encoding/json"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/signalridge/clinvoker/internal/backend"
+	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/mock"
 )
 
 func TestSanitizeFilename(t *testing.T) {
@@ -655,6 +665,193 @@ func TestTaskResultJSONSerialization(t *testing.T) {
 			t.Errorf("error = %q, want %q", decoded.Error, "command failed: timeout")
 		}
 	})
+}
+
+func TestCreateCanceledResult(t *testing.T) {
+	task := &ParallelTask{
+		Backend: "mock",
+		ID:      "task-id",
+		Name:    "Task Name",
+		Tags:    []string{"a", "b"},
+		Meta:    map[string]string{"k": "v"},
+	}
+
+	result := createCanceledResult(2, task)
+	if result.ExitCode != -1 {
+		t.Fatalf("ExitCode = %d, want -1", result.ExitCode)
+	}
+	if result.Error != "canceled (fail-fast)" {
+		t.Fatalf("Error = %q, want %q", result.Error, "canceled (fail-fast)")
+	}
+	if result.Index != 2 {
+		t.Fatalf("Index = %d, want 2", result.Index)
+	}
+	if result.Backend != "mock" {
+		t.Fatalf("Backend = %q, want %q", result.Backend, "mock")
+	}
+}
+
+func TestFailTaskResult(t *testing.T) {
+	start := time.Now().Add(-250 * time.Millisecond)
+	result := &TaskResult{}
+	failTaskResult(result, start, "boom")
+
+	if result.ExitCode != 1 {
+		t.Fatalf("ExitCode = %d, want 1", result.ExitCode)
+	}
+	if result.Error != "boom" {
+		t.Fatalf("Error = %q, want %q", result.Error, "boom")
+	}
+	if result.Duration <= 0 {
+		t.Fatalf("Duration = %f, want > 0", result.Duration)
+	}
+}
+
+func TestPrintParallelHeader(t *testing.T) {
+	origStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe failed: %v", err)
+	}
+
+	os.Stdout = w
+	printParallelHeader(3, 2, true)
+	_ = w.Close()
+	os.Stdout = origStdout
+
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("ReadAll failed: %v", err)
+	}
+	output := string(out)
+	if !strings.Contains(output, "Running 3 tasks (max 2 parallel, fail-fast)") {
+		t.Fatalf("unexpected header output: %q", output)
+	}
+}
+
+func TestPersistParallelOutputs(t *testing.T) {
+	outputDir := t.TempDir()
+	tasks := &ParallelTasks{
+		OutputDir: outputDir,
+		Tasks: []ParallelTask{
+			{
+				Backend: "mock",
+				Prompt:  "hello",
+				ID:      "task-1",
+			},
+		},
+	}
+	results := &ParallelResults{
+		TotalTasks:    1,
+		Completed:     1,
+		Failed:        0,
+		TotalDuration: 0.2,
+		Results: []TaskResult{
+			{
+				Index:    0,
+				Backend:  "mock",
+				ExitCode: 0,
+				Output:   "ok",
+			},
+		},
+	}
+
+	if err := persistParallelOutputs(results, tasks); err != nil {
+		t.Fatalf("persistParallelOutputs failed: %v", err)
+	}
+
+	summaryPath := filepath.Join(outputDir, "summary.json")
+	if _, err := os.Stat(summaryPath); err != nil {
+		t.Fatalf("summary.json not created: %v", err)
+	}
+
+	taskPath := filepath.Join(outputDir, "001_task-1.json")
+	if _, err := os.Stat(taskPath); err != nil {
+		t.Fatalf("task output file not created: %v", err)
+	}
+}
+
+func TestRunParallel_NonDryRun_PersistsOutputs(t *testing.T) {
+	config.Reset()
+	t.Cleanup(config.Reset)
+	t.Setenv("HOME", t.TempDir())
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+
+	registered := mock.NewMockBackend(
+		"mock-nondry",
+		mock.WithAvailable(true),
+		mock.WithJSONResponse(&backend.UnifiedResponse{
+			Content:   "captured content",
+			SessionID: "backend-session-id",
+		}),
+		mock.WithCommandFunc(func(_ string, _ *backend.UnifiedOptions) *exec.Cmd {
+			if runtime.GOOS == "windows" {
+				return exec.Command("cmd", "/c", "echo", "ok")
+			}
+			return exec.Command("sh", "-c", "echo ok")
+		}),
+	)
+	t.Cleanup(mock.WithMockBackend(t, registered))
+
+	outputDir := t.TempDir()
+	tasksPath := filepath.Join(t.TempDir(), "tasks.json")
+	definition, err := json.Marshal(ParallelTasks{
+		Tasks: []ParallelTask{
+			{Backend: "mock-nondry", Prompt: "hello world", ID: "task-1"},
+		},
+		OutputDir: outputDir,
+	})
+	if err != nil {
+		t.Fatalf("failed to marshal tasks definition: %v", err)
+	}
+	if err := os.WriteFile(tasksPath, definition, 0o600); err != nil {
+		t.Fatalf("failed to write tasks file: %v", err)
+	}
+
+	origParallelFile := parallelFile
+	origParallelJSON := parallelJSON
+	origParallelQuiet := parallelQuiet
+	origDryRun := dryRun
+	origMaxParallel := maxParallel
+	origFailFast := parallelFailFast
+	t.Cleanup(func() {
+		parallelFile = origParallelFile
+		parallelJSON = origParallelJSON
+		parallelQuiet = origParallelQuiet
+		dryRun = origDryRun
+		maxParallel = origMaxParallel
+		parallelFailFast = origFailFast
+	})
+
+	parallelFile = tasksPath
+	parallelJSON = true
+	parallelQuiet = false
+	dryRun = false
+	maxParallel = 1
+	parallelFailFast = false
+
+	if err := runParallel(parallelCmd, nil); err != nil {
+		t.Fatalf("runParallel failed: %v", err)
+	}
+
+	summaryPath := filepath.Join(outputDir, "summary.json")
+	summaryData, err := os.ReadFile(summaryPath)
+	if err != nil {
+		t.Fatalf("failed to read summary: %v", err)
+	}
+
+	var summary ParallelResults
+	if err := json.Unmarshal(summaryData, &summary); err != nil {
+		t.Fatalf("failed to parse summary: %v", err)
+	}
+	if summary.TotalTasks != 1 || summary.Completed != 1 {
+		t.Fatalf("unexpected summary counts: %+v", summary)
+	}
+	if summary.Results[0].Output != "captured content" {
+		t.Fatalf("output = %q, want %q", summary.Results[0].Output, "captured content")
+	}
 }
 
 func TestParallelCmdStructure(t *testing.T) {

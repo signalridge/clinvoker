@@ -8,6 +8,13 @@ import (
 	"testing"
 )
 
+func runSuccessCmd() *exec.Cmd {
+	if runtime.GOOS == "windows" {
+		return exec.Command("cmd", "/c", "echo", "hello")
+	}
+	return exec.Command("sh", "-c", "echo hello")
+}
+
 func TestNew(t *testing.T) {
 	e := New()
 
@@ -44,6 +51,64 @@ func TestExecutor_RunSimple(t *testing.T) {
 	}
 	if exitCode != 0 {
 		t.Errorf("expected exit code 0, got %d", exitCode)
+	}
+}
+
+func TestExecutor_Run_Success(t *testing.T) {
+	e := New()
+	e.Stdin = bytes.NewBuffer(nil)
+
+	var stdout bytes.Buffer
+	e.Stdout = &stdout
+
+	cmd := runSuccessCmd()
+	exitCode, err := e.Run(cmd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("exitCode = %d, want 0", exitCode)
+	}
+	if stdout.Len() == 0 {
+		t.Fatal("expected captured stdout from Run")
+	}
+}
+
+func TestExecutor_Run_NonZeroExit(t *testing.T) {
+	e := New()
+	e.Stdin = bytes.NewBuffer(nil)
+	e.Stdout = &bytes.Buffer{}
+	e.Stderr = &bytes.Buffer{}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "exit", "3")
+	} else {
+		cmd = exec.Command("sh", "-c", "exit 3")
+	}
+
+	exitCode, err := e.Run(cmd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if exitCode != 3 {
+		t.Fatalf("exitCode = %d, want 3", exitCode)
+	}
+}
+
+func TestExecutor_Run_CommandNotFound(t *testing.T) {
+	e := New()
+	e.Stdin = bytes.NewBuffer(nil)
+	e.Stdout = &bytes.Buffer{}
+	e.Stderr = &bytes.Buffer{}
+
+	cmd := exec.Command("nonexistent-command-12345")
+	exitCode, err := e.Run(cmd)
+	if err == nil {
+		t.Fatal("expected error for nonexistent command")
+	}
+	if exitCode != 1 {
+		t.Fatalf("exitCode = %d, want 1", exitCode)
 	}
 }
 

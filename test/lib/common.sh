@@ -354,6 +354,8 @@ setup_test_env() {
 	# Create temp directory for test artifacts
 	TEST_TEMP_DIR="$(mktemp -d)"
 	export TEST_TEMP_DIR
+	mkdir -p "${TEST_TEMP_DIR}/home"
+	export HOME="${TEST_TEMP_DIR}/home"
 
 	# Trap for cleanup
 	trap cleanup_test_env EXIT INT TERM
@@ -562,6 +564,63 @@ create_temp_json() {
 	echo "$temp_file"
 }
 
+session_store_dir() {
+	echo "${HOME}/.clinvk/sessions"
+}
+
+generate_session_hex_id() {
+	LC_ALL=C od -An -N16 -tx1 /dev/urandom | tr -d ' \n'
+}
+
+create_session_fixture() {
+	local backend="${1:-claude}"
+	local prompt="${2:-fixture prompt}"
+	local id now dir path backend_session_id
+
+	id="$(generate_session_hex_id)"
+	now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+	dir="$(session_store_dir)"
+	path="${dir}/${id}.json"
+	backend_session_id="${backend}-fixture-${id:0:8}"
+
+	mkdir -p "$dir"
+	cat >"$path" <<JSON
+{
+  "id": "${id}",
+  "backend": "${backend}",
+  "created_at": "${now}",
+  "last_used": "${now}",
+  "working_dir": "${PROJECT_ROOT}",
+  "backend_session_id": "${backend_session_id}",
+  "initial_prompt": "${prompt}",
+  "status": "active",
+  "turn_count": 1
+}
+JSON
+
+	echo "$id"
+}
+
+seed_cli_session_fixtures() {
+	local backends=("$@")
+	local backend
+	local created=0
+	local dir
+
+	if ((${#backends[@]} == 0)); then
+		backends=("claude" "codex" "gemini")
+	fi
+
+	for backend in "${backends[@]}"; do
+		create_session_fixture "$backend" "fixture prompt for ${backend}" >/dev/null
+		((created++)) || true
+	done
+
+	dir="$(session_store_dir)"
+	rm -f "${dir}/index.json"
+	log_info "Seeded ${created} session fixture(s)"
+}
+
 # Wait for a condition with timeout
 wait_for() {
 	local condition="$1"
@@ -589,7 +648,21 @@ run_with_timeout() {
 # Extract session ID from output
 extract_session_id() {
 	local output="$1"
-	echo "$output" | sed -nE 's/.*session[_-]?id["[:space:]:]*([A-Za-z0-9-]+).*/\1/p' | head -1
+	local session_id
+
+	session_id="$(echo "$output" | sed -nE 's/.*session[_-]?id["[:space:]:]*([A-Za-z0-9-]+).*/\1/p' | head -1)"
+	if [[ -n "$session_id" ]]; then
+		echo "$session_id"
+		return 0
+	fi
+
+	session_id="$(echo "$output" | awk '/^[[:space:]]*[0-9a-f]{8,32}[[:space:]]/ {print $1; exit}')"
+	if [[ -n "$session_id" ]]; then
+		echo "$session_id"
+		return 0
+	fi
+
+	return 1
 }
 
 # Check if jq is available

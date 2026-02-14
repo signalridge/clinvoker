@@ -35,7 +35,7 @@ run_suite() {
 for test_script in "${API_TEST_DIR}"/test_*.sh; do
 	if [[ -x "$test_script" ]]; then
 		test_name="$(basename "$test_script" .sh)"
-		if [[ "$test_name" == "test_mcp" || "$test_name" == "test_mcp_auth" ]]; then
+		if [[ "$test_name" == "test_mcp" || "$test_name" == "test_mcp_auth" || "$test_name" == "test_mcp_stdio" ]]; then
 			continue
 		fi
 		run_suite "$test_script"
@@ -46,7 +46,7 @@ done
 stop_server
 
 # Run dedicated MCP suites
-for mcp_suite in "${API_TEST_DIR}/test_mcp.sh" "${API_TEST_DIR}/test_mcp_auth.sh"; do
+for mcp_suite in "${API_TEST_DIR}/test_mcp.sh" "${API_TEST_DIR}/test_mcp_auth.sh" "${API_TEST_DIR}/test_mcp_stdio.sh"; do
 	if [[ -x "$mcp_suite" ]]; then
 		run_suite "$mcp_suite"
 	fi

@@ -1,9 +1,11 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -130,6 +132,117 @@ func TestExecuteAndCapture_PrefersStdout(t *testing.T) {
 	// Should prefer stdout when available
 	if !strings.Contains(output, "stdout content") {
 		t.Errorf("output = %q, should contain stdout content", output)
+	}
+}
+
+func TestExecuteAndCaptureWithJSON_Success(t *testing.T) {
+	config.Reset()
+	t.Cleanup(config.Reset)
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+
+	b := &mockBackend{
+		name: "json-success",
+		jsonResponse: &backend.UnifiedResponse{
+			Content:   "parsed content",
+			SessionID: "backend-session-123",
+		},
+	}
+
+	cmd := exec.Command("echo", "raw")
+	result, err := ExecuteAndCaptureWithJSON(b, cmd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ExitCode != 0 {
+		t.Fatalf("ExitCode = %d, want 0", result.ExitCode)
+	}
+	if result.Content != "parsed content" {
+		t.Fatalf("Content = %q, want %q", result.Content, "parsed content")
+	}
+	if result.BackendSessionID != "backend-session-123" {
+		t.Fatalf("BackendSessionID = %q, want %q", result.BackendSessionID, "backend-session-123")
+	}
+}
+
+func TestExecuteAndCaptureWithJSON_FallbackToParseOutput(t *testing.T) {
+	config.Reset()
+	t.Cleanup(config.Reset)
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+
+	b := &mockBackend{
+		name:        "json-fallback",
+		parseOutput: "fallback output",
+		jsonError:   errors.New("bad json"),
+	}
+
+	cmd := exec.Command("echo", "raw")
+	result, err := ExecuteAndCaptureWithJSON(b, cmd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Content != "fallback output" {
+		t.Fatalf("Content = %q, want %q", result.Content, "fallback output")
+	}
+	if result.BackendSessionID != "" {
+		t.Fatalf("BackendSessionID = %q, want empty", result.BackendSessionID)
+	}
+}
+
+func TestExecuteAndCaptureWithJSON_BackendErrorSetsFailure(t *testing.T) {
+	config.Reset()
+	t.Cleanup(config.Reset)
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+
+	b := &mockBackend{
+		name: "json-error",
+		jsonResponse: &backend.UnifiedResponse{
+			Content: "partial",
+			Error:   "backend failed",
+		},
+	}
+
+	cmd := exec.Command("echo", "raw")
+	result, err := ExecuteAndCaptureWithJSON(b, cmd)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ExitCode != 1 {
+		t.Fatalf("ExitCode = %d, want 1 when backend response has error", result.ExitCode)
+	}
+	if result.Error != "backend failed" {
+		t.Fatalf("Error = %q, want %q", result.Error, "backend failed")
+	}
+}
+
+func TestExecuteAndCaptureWithJSON_Timeout(t *testing.T) {
+	config.Reset()
+	t.Cleanup(config.Reset)
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+	config.Get().UnifiedFlags.CommandTimeoutSecs = 1
+
+	b := &mockBackend{name: "json-timeout"}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "ping", "-n", "4", "127.0.0.1")
+	} else {
+		cmd = exec.Command("sh", "-c", "sleep 2")
+	}
+
+	result, err := ExecuteAndCaptureWithJSON(b, cmd)
+	if !errors.Is(err, ErrCommandTimeout) {
+		t.Fatalf("expected ErrCommandTimeout, got %v", err)
+	}
+	if result.ExitCode != 124 {
+		t.Fatalf("ExitCode = %d, want 124 for timeout", result.ExitCode)
 	}
 }
 
