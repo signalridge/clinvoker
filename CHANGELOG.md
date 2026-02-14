@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1](https://github.com/signalridge/clinvoker/compare/v0.4.0...v0.4.1) (2026-02-14)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** prevent release-please from stalling on merged release PR ([#70](https://github.com/signalridge/clinvoker/issues/70)) ([1ecc0c3](https://github.com/signalridge/clinvoker/commit/1ecc0c3e57e88e7f559d3de634d35f3efa4b7bfb))
+* harden circuit breaker, session atomic writes, and writer callback safety ([#73](https://github.com/signalridge/clinvoker/issues/73)) ([49735d2](https://github.com/signalridge/clinvoker/commit/49735d247d3111bdd53fb62300592492ae8351f0))
+
 ## [0.4.0](https://github.com/signalridge/clinvoker/compare/v0.3.0...v0.4.0) (2026-02-14)
 
 
