@@ -13,7 +13,9 @@ import (
 func startSleepProcess(t *testing.T) (*exec.Cmd, chan error) {
 	t.Helper()
 
-	cmd := exec.Command("sh", "-c", "sleep 30")
+	// Run sleep directly so forwarded signals target the long-running process
+	// itself; shell wrappers can absorb/transform signals on some platforms.
+	cmd := exec.Command("sleep", "30")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start sleep process: %v", err)
 	}
