@@ -282,6 +282,8 @@ func NewStore(dir string) (*Store, error) {
 | `test/` | テスト追加 | `test/backend-coverage` |
 | `chore/` | 保守 | `chore/update-deps` |
 
+<a id="commit-message-conventions"></a>
+
 ### コミットメッセージ規約
 
 [Conventional Commits](https://www.conventionalcommits.org/) に従ってください。
@@ -388,7 +390,7 @@ feat: add new feature  →  push to main  →  Release PR created automatically
                                          GoReleaser builds binaries
 ```
 
-1. [Conventional Commits](#コミットメッセージ規約) で **コミット** する
+1. [Conventional Commits](#commit-message-conventions) で **コミット** する
 2. **main へ push** - release-please が Release PR を作成/更新
 3. **Release PR をマージ** - tag と GitHub Release が作られる
 4. **GoReleaser が起動** - 各プラットフォーム向けバイナリをビルド

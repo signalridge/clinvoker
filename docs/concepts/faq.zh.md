@@ -85,7 +85,7 @@ nix run github:signalridge/clinvoker
 clinvk config show
 ```
 
-查看每个后端部分下的 `available: true`。
+查看 `Available backends` 区块里是否列出了各后端名称。
 
 ## 使用
 
@@ -213,13 +213,16 @@ clinvk config show
 
 ### 可以为所有设置使用环境变量吗？
 
-可以，为任何配置键添加 `CLINVK_` 前缀：
+不可以。仅支持一部分环境变量。
 
 ```bash
 export CLINVK_BACKEND=codex
-export CLINVK_TIMEOUT=120
-export CLINVK_SERVER_PORT=3000
+export CLINVK_CODEX_MODEL=o3
+export CLINVK_MCP_TRANSPORT=http
+export CLINVK_MCP_PORT=8081
 ```
+
+完整支持列表见 [环境变量](../reference/environment.zh.md)。
 
 ### 如何设置后端特定选项？
 
@@ -228,10 +231,12 @@ export CLINVK_SERVER_PORT=3000
 backends:
   claude:
     model: claude-sonnet-4
-    timeout: 120
+    allowed_tools: read,write,edit
   codex:
-    model: gpt-5.2
+    model: o3
     sandbox_mode: full
+    extra_flags:
+      - "--quiet"
 ```
 
 ## 会话
@@ -248,8 +253,8 @@ clinvk sessions list
 # 按后端过滤
 clinvk sessions list --backend claude
 
-# 显示详细信息
-clinvk sessions list --verbose
+# 显示会话详情
+clinvk sessions show <session-id>
 ```
 
 ### 如何清理旧会话？
@@ -258,10 +263,7 @@ clinvk sessions list --verbose
 # 清理 30 天前的会话
 clinvk sessions clean --older-than 30d
 
-# 清理所有会话
-clinvk sessions clean --all
-
-# 或手动删除
+# 手动删除全部会话
 rm -rf ~/.clinvk/sessions/*
 ```
 
@@ -279,7 +281,7 @@ clinvk --ephemeral "prompt"
 
 ```bash
 # 导出会话到文件
-clinvk sessions export <session-id> > session.json
+clinvk sessions show <session-id> --output-format json > session.json
 
 # 或直接复制文件
 cp ~/.clinvk/sessions/<session-id>.json ./backup.json
@@ -296,8 +298,8 @@ clinvk serve
 # 使用自定义端口启动
 clinvk serve --port 3000
 
-# 使用 API 密钥认证启动
-clinvk serve --api-keys "key1,key2"
+# 使用 API 密钥认证启动（环境变量）
+CLINVK_API_KEYS="key1,key2" clinvk serve
 ```
 
 ### 服务器有认证吗？
@@ -308,8 +310,8 @@ clinvk serve --api-keys "key1,key2"
 # 配置密钥
 export CLINVK_API_KEYS="key1,key2,key3"
 
-# 或在配置中
-clinvk config set server.api_keys "key1,key2"
+# 或从 gopass 读取
+export CLINVK_API_KEYS_GOPASS_PATH="myproject/server/api-keys"
 
 # 在请求中使用
 curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
@@ -323,7 +325,7 @@ curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
 
 ```bash
 # 绑定到所有接口（谨慎使用）
-clinvk serve --host 0.0.0.0 --api-keys "your-secret-key"
+CLINVK_API_KEYS="your-secret-key" clinvk serve --host 0.0.0.0
 ```
 
 ### 可以使用 OpenAI 客户端库吗？

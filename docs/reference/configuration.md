@@ -220,7 +220,7 @@ Configure individual backends under the `backends` section.
 | `allowed_tools` | string | `all` | Comma-separated list or `all` (**Claude only**) |
 | `approval_mode` | string | `""` | Override unified `approval_mode` (empty = use unified) |
 | `sandbox_mode` | string | `""` | Override unified `sandbox_mode` (empty = use unified) |
-| `enabled` | boolean | `true` | Enable/disable backend (stored but not currently enforced) |
+| `enabled` | boolean | `true` | Enable/disable backend (disabled backends are excluded from execution) |
 | `system_prompt` | string | `""` | Default system prompt for this backend |
 | `extra_flags` | array | `[]` | Additional CLI flags to pass to the backend |
 

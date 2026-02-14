@@ -316,16 +316,19 @@ Configuration follows a cascade: CLI flags -> Environment -> Config file -> Defa
 
 ```yaml
 # Config file: ~/.clinvk/config.yaml
-backend: claude
-timeout: 60
+default_backend: claude
+backends:
+  codex:
+    model: o3
 
 # Environment
-CLINVK_TIMEOUT=120
+CLINVK_BACKEND=codex
+CLINVK_CODEX_MODEL=o3-mini
 
 # CLI
 clinvk --backend codex "prompt"
 
-# Result: backend=codex (CLI), timeout=120 (env)
+# Result: backend=codex (CLI), model=o3-mini (env)
 ```
 
 ## HTTP Server Design
@@ -399,11 +402,19 @@ Propagate errors with context, fail gracefully.
 
 ### MCP Server Support
 
-We're evaluating adding Model Context Protocol (MCP) server support to enable:
+MCP support is implemented via `clinvk mcp`, with both `stdio` and `http` transports.
 
-- Direct integration with Claude Desktop
-- Standardized tool calling interface
-- Ecosystem compatibility
+Current capabilities include:
+
+- Tool exposure for prompt, parallel, chain, compare, and session operations
+- Transport selection for local and server deployment scenarios
+- Optional health endpoint in HTTP transport mode
+
+Future MCP-focused improvements:
+
+- Additional authentication patterns for remote deployments
+- Broader MCP ecosystem interoperability testing
+- More granular policy controls for tool exposure
 
 ### Additional Backends
 

@@ -33,6 +33,7 @@
 
 - **マルチバックエンド** — Claude Code / Codex CLI / Gemini CLI をシームレスに切り替え
 - **OpenAI 互換 API** — OpenAI/Anthropic API エンドポイントのドロップイン置換
+- **MCP サーバー** — stdio / HTTP(SSE) トランスポート対応の内蔵 MCP サーバー
 - **セッション管理** — プロセス間ロックにより会話を永続化し、再開可能
 - **並列実行** — 複数バックエンドでタスクを同時実行
 - **セキュリティ** — レート制限、リクエストサイズ制限、信頼済みプロキシのサポート
@@ -50,6 +51,7 @@
 - [💡 使い方](#-使い方)
   - [基本コマンド](#基本コマンド)
   - [セッション管理](#セッション管理)
+- [🔌 MCP サーバー](#-mcp-サーバー)
 - [🌐 HTTP API サーバー](#-http-api-サーバー)
   - [API エンドポイント](#api-エンドポイント)
 - [⚙️ 設定](#️-設定)
@@ -72,6 +74,9 @@ clinvk "auth.go のバグを修正して"
 
 # HTTP API サーバーを起動
 clinvk serve --port 8080
+
+# MCP サーバーを起動（stdio）
+clinvk mcp --transport stdio
 ```
 
 ---
@@ -90,7 +95,7 @@ clinvk serve --port 8080
 | Alpine | apk | [Releases](https://github.com/signalridge/clinvoker/releases) からダウンロード |
 | Go | go install | `go install github.com/signalridge/clinvoker/cmd/clinvk@latest` |
 
-詳しい手順は [インストールガイド](https://signalridge.github.io/clinvoker/getting-started/installation/) を参照してください。
+詳しい手順は [はじめに](https://signalridge.github.io/clinvoker/tutorials/getting-started/) を参照してください。
 
 ---
 
@@ -128,6 +133,22 @@ clinvk resume <session-id>
 # 古いセッションをクリーンアップ
 clinvk sessions clean --older-than 30d
 ```
+
+---
+
+## 🔌 MCP サーバー
+
+clinvk の機能を MCP ツールとして stdio / HTTP で公開できます。
+
+```bash
+# ローカル MCP クライアント向け（stdio）
+clinvk mcp --transport stdio
+
+# リモート MCP クライアント向け（HTTP + SSE）
+clinvk mcp --transport http --host 0.0.0.0 --port 8081 --path /mcp
+```
+
+詳細: [MCP サーバー連携](https://signalridge.github.io/clinvoker/guides/integrations/mcp-server/)
 
 ---
 
@@ -180,6 +201,7 @@ export GOOGLE_API_KEY="..."
 |---------|-------------|
 | [はじめに](https://signalridge.github.io/clinvoker/tutorials/getting-started/) | インストールと最初のステップ |
 | [ガイド](https://signalridge.github.io/clinvoker/guides/) | 詳細な利用手順 |
+| [MCP ガイド](https://signalridge.github.io/clinvoker/guides/integrations/mcp-server/) | MCP サーバー設定とトランスポート |
 | [HTTP API](https://signalridge.github.io/clinvoker/guides/http-server/) | API サーバーのドキュメント |
 | [リファレンス](https://signalridge.github.io/clinvoker/reference/) | CLI リファレンスと設定 |
 

@@ -11,14 +11,14 @@ This guide covers common issues you may encounter when using clinvoker, along wi
 
 Before diving into specific issues, here are general diagnostic approaches:
 
-### Enable Debug Mode
+### Collect Execution Details
 
 ```bash
-# Verbose output shows detailed execution information
-clinvk --verbose "your prompt"
+# Show resolved backend command without executing
+clinvk --dry-run "your prompt"
 
-# Debug mode includes backend command output
-CLINVK_DEBUG=1 clinvk "your prompt"
+# Capture structured output for inspection
+clinvk --output-format json "your prompt"
 ```
 
 ### Check System Status
@@ -30,8 +30,8 @@ clinvk version
 # Check available backends
 clinvk config show
 
-# Verify configuration file
-clinvk config validate
+# Quick health check on recent sessions
+clinvk sessions list --limit 5
 ```
 
 ### Dry Run Mode
@@ -353,7 +353,8 @@ clinvk config show
 
 # Check for environment variable overrides
 echo $CLINVK_BACKEND
-echo $CLINVK_TIMEOUT
+echo $CLINVK_CLAUDE_MODEL
+echo $CLINVK_CODEX_MODEL
 ```
 
 ### Environment Variables Not Applied
@@ -434,19 +435,19 @@ audit2allow -a -M clinvk
 semodule -i clinvk.pp
 ```
 
-## Debug Mode Usage
+## Diagnostic Workflow
 
-### Enable Comprehensive Logging
+### Increase Logging Signal
 
 ```bash
-# Set debug environment variable
-export CLINVK_DEBUG=1
+# Inspect the exact command that would run
+clinvk --dry-run "prompt"
 
-# Run with verbose output
-clinvk --verbose "prompt"
+# Use JSON output to inspect response payloads
+clinvk --output-format json "prompt"
 
-# For server mode
-CLINVK_DEBUG=1 clinvk serve
+# Start server with explicit bind settings
+clinvk serve --host 127.0.0.1 --port 8080
 ```
 
 ### Log Locations

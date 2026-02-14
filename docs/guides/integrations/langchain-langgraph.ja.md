@@ -414,6 +414,6 @@ llm = ChatOpenAI(
 
 ## Next Steps
 
-- [CI/CD](ci-cd/) - パイプラインで自動化
+- [CI/CD](ci-cd/index.md) - パイプラインで自動化
 - [クライアントライブラリ](openai-sdk.md) - 他言語のバインディング
 - [REST API リファレンス](../../reference/api/rest.md) - API ドキュメント一式

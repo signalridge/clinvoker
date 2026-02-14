@@ -85,7 +85,7 @@ nix run github:signalridge/clinvoker
 clinvk config show
 ```
 
-各バックエンドの `available: true` を確認してください。
+`Available backends` セクションにバックエンド名が表示されることを確認してください。
 
 ## 使い方
 
@@ -213,13 +213,16 @@ clinvk config show
 
 ### すべての設定を環境変数で指定できますか？
 
-はい。任意の設定キーに `CLINVK_` を付けることで上書きできます。
+いいえ。サポートされる環境変数は一部のみです。
 
 ```bash
 export CLINVK_BACKEND=codex
-export CLINVK_TIMEOUT=120
-export CLINVK_SERVER_PORT=3000
+export CLINVK_CODEX_MODEL=o3
+export CLINVK_MCP_TRANSPORT=http
+export CLINVK_MCP_PORT=8081
 ```
+
+サポート対象の一覧は [環境変数](../reference/environment.ja.md) を参照してください。
 
 ### バックエンド別の設定を行うには？
 
@@ -228,10 +231,12 @@ export CLINVK_SERVER_PORT=3000
 backends:
   claude:
     model: claude-sonnet-4
-    timeout: 120
+    allowed_tools: read,write,edit
   codex:
-    model: gpt-5.2
+    model: o3
     sandbox_mode: full
+    extra_flags:
+      - "--quiet"
 ```
 
 ## セッション
@@ -248,8 +253,8 @@ clinvk sessions list
 # バックエンドで絞り込み
 clinvk sessions list --backend claude
 
-# 詳細を表示
-clinvk sessions list --verbose
+# セッション詳細を表示
+clinvk sessions show <session-id>
 ```
 
 ### 古いセッションを掃除するには？
@@ -258,10 +263,7 @@ clinvk sessions list --verbose
 # 30 日より古いセッションを削除
 clinvk sessions clean --older-than 30d
 
-# すべて削除
-clinvk sessions clean --all
-
-# 手動削除
+# 手動ですべて削除
 rm -rf ~/.clinvk/sessions/*
 ```
 
@@ -279,7 +281,7 @@ clinvk --ephemeral "prompt"
 
 ```bash
 # セッションをファイルへエクスポート
-clinvk sessions export <session-id> > session.json
+clinvk sessions show <session-id> --output-format json > session.json
 
 # もしくはファイルを直接コピー
 cp ~/.clinvk/sessions/<session-id>.json ./backup.json
@@ -296,8 +298,8 @@ clinvk serve
 # ポートを指定
 clinvk serve --port 3000
 
-# API キー認証を有効化
-clinvk serve --api-keys "key1,key2"
+# API キー認証を有効化（環境変数）
+CLINVK_API_KEYS="key1,key2" clinvk serve
 ```
 
 ### サーバーは認証されますか？
@@ -308,8 +310,8 @@ clinvk serve --api-keys "key1,key2"
 # キーを設定
 export CLINVK_API_KEYS="key1,key2,key3"
 
-# もしくは設定で（例）
-clinvk config set server.api_keys "key1,key2"
+# もしくは gopass から読み込み
+export CLINVK_API_KEYS_GOPASS_PATH="myproject/server/api-keys"
 
 # リクエストで使用
 curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
@@ -323,7 +325,7 @@ curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
 
 ```bash
 # 全インターフェースでバインド（注意して使用）
-clinvk serve --host 0.0.0.0 --api-keys "your-secret-key"
+CLINVK_API_KEYS="your-secret-key" clinvk serve --host 0.0.0.0
 ```
 
 ### OpenAI のクライアントライブラリを使えますか？

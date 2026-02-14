@@ -220,7 +220,7 @@ default_backend: claude
 | `allowed_tools` | string | `all` | カンマ区切りの一覧または `all`（**Claude のみ**） |
 | `approval_mode` | string | `\"\"` | 統一 `approval_mode` の上書き（空 = 統一設定を使用） |
 | `sandbox_mode` | string | `\"\"` | 統一 `sandbox_mode` の上書き（空 = 統一設定を使用） |
-| `enabled` | boolean | `true` | バックエンド有効/無効（保存されますが現状は強制されません） |
+| `enabled` | boolean | `true` | バックエンド有効/無効（無効化されたバックエンドは実行対象から除外されます） |
 | `system_prompt` | string | `\"\"` | このバックエンドのデフォルトシステムプロンプト |
 | `extra_flags` | array | `[]` | バックエンドへ渡す追加 CLI フラグ |
 

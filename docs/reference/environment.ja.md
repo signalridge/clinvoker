@@ -1,300 +1,117 @@
 # 環境変数
 
-clinvk がサポートする環境変数の完全リファレンスです。
+現在の `clinvk` が実際に読み取る環境変数のリファレンスです。
 
-## 概要
+## 対象範囲
 
-環境変数を使うと、設定ファイルを編集せずに clinvk を手軽に設定できます。特に次の用途で便利です。
+このページには、コード上で有効な変数のみを記載します。
+記載のない変数は動作保証しません。
 
-- CI/CD パイプライン
-- Docker コンテナ
-- 一時的な上書き
-- direnv を使ったプロジェクト単位の設定
+## サポートされる環境変数
 
-## 変数一覧
+### コア実行設定
 
-### コア変数
+| 変数 | 説明 | 例 |
+|---|---|---|
+| `CLINVK_BACKEND` | 既定のバックエンド | `claude`, `codex`, `gemini` |
+| `CLINVK_CLAUDE_MODEL` | Claude の既定モデル | `claude-opus-4-5-20251101` |
+| `CLINVK_CODEX_MODEL` | Codex の既定モデル | `o3`, `o3-mini` |
+| `CLINVK_GEMINI_MODEL` | Gemini の既定モデル | `gemini-2.5-pro` |
 
-| 変数 | 必須 | 説明 | 例 |
-|----------|----------|-------------|---------|
-| `CLINVK_BACKEND` | いいえ | 既定で使用するバックエンド | `claude`, `codex`, `gemini` |
-| `CLINVK_CLAUDE_MODEL` | いいえ | Claude バックエンドの既定モデル | `claude-opus-4-5-20251101` |
-| `CLINVK_CODEX_MODEL` | いいえ | Codex バックエンドの既定モデル | `o3`, `o3-mini` |
-| `CLINVK_GEMINI_MODEL` | いいえ | Gemini バックエンドの既定モデル | `gemini-2.5-pro` |
+### MCP サーバー
 
-### サーバー関連
+| 変数 | 説明 | 例 |
+|---|---|---|
+| `CLINVK_MCP_TRANSPORT` | MCP トランスポート種別 | `stdio`, `http` |
+| `CLINVK_MCP_HOST` | MCP HTTP のバインド先ホスト | `127.0.0.1`, `0.0.0.0` |
+| `CLINVK_MCP_PORT` | MCP HTTP のポート | `8081` |
+| `CLINVK_MCP_HTTP_PATH` | MCP エンドポイントのパス | `/mcp` |
+| `CLINVK_MCP_EXPOSE_HEALTH` | MCP モードで `/health` を公開するか | `true`, `false` |
 
-| 変数 | 必須 | 説明 | 例 |
-|----------|----------|-------------|---------|
-| `CLINVK_API_KEYS` | いいえ | HTTP サーバー認証用の API キー（カンマ区切り） | `key1,key2,key3` |
-| `CLINVK_API_KEYS_GOPASS_PATH` | いいえ | API キー取得のための gopass パス | `myproject/api-keys` |
-| `CLINVK_CONFIG` | いいえ | カスタム設定ファイルのパス | `/etc/clinvk/config.yaml` |
-| `CLINVK_HOME` | いいえ | clinvk のデータディレクトリ（セッション/設定） | `~/.clinvk` |
+### HTTP API 認証
 
-### バックエンドの API キー
+| 変数 | 説明 | 例 |
+|---|---|---|
+| `CLINVK_API_KEYS` | `serve`/`mcp` 用 API キー（カンマ区切り） | `key1,key2,key3` |
+| `CLINVK_API_KEYS_GOPASS_PATH` | API キーを取得する gopass パス | `myproject/clinvk/api-keys` |
 
-次の環境変数は、それぞれのバックエンド CLI にそのまま渡されます。
+### バックエンド提供元の API キー
 
 | 変数 | バックエンド | 説明 |
-|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | Claude | Anthropic API キー |
-| `OPENAI_API_KEY` | Codex | OpenAI API キー |
-| `GOOGLE_API_KEY` | Gemini | Google API キー |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Claude | 提供元 API キー |
+| `OPENAI_API_KEY` | Codex | 提供元 API キー |
+| `GOOGLE_API_KEY` | Gemini | 提供元 API キー |
 
-## 利用例
+## よくある誤解（非サポート）
 
-### 既定バックエンドを設定する
+次の変数は、現行 `clinvk` では正式な実行時設定としてサポートされません。
+
+- `CLINVK_TIMEOUT`
+- `CLINVK_DEBUG`
+- `CLINVK_SERVER_PORT`
+- `CLINVK_HOME`
+- `CLINVK_CONFIG`
+
+代替手段:
+
+- タイムアウト: 設定ファイルの `unified_flags.command_timeout_secs`
+- デバッグ確認: `--dry-run` / `--output-format json` / stderr ログ
+- 設定ファイル切替: `--config /path/to/config.yaml`
+
+## 例
+
+### バックエンドとモデル
 
 ```bash
 export CLINVK_BACKEND=codex
-clinvk "implement feature"  # Uses codex
-```
-
-### バックエンドごとにモデルを設定する
-
-```bash
-export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
 export CLINVK_CODEX_MODEL=o3-mini
-
-clinvk -b claude "complex task"  # Uses claude-sonnet
-clinvk -b codex "quick task"     # Uses o3-mini
+clinvk "review this patch"
 ```
 
-### 一時的に上書きする
-
-1 回のコマンドだけに環境変数を適用します。
+### 環境変数で MCP を起動
 
 ```bash
-CLINVK_BACKEND=gemini clinvk "explain this"
+export CLINVK_MCP_TRANSPORT=http
+export CLINVK_MCP_HOST=0.0.0.0
+export CLINVK_MCP_PORT=8081
+export CLINVK_MCP_HTTP_PATH=/mcp
+export CLINVK_MCP_EXPOSE_HEALTH=true
+
+clinvk mcp
 ```
 
-### HTTP サーバー用の API キー
+### HTTP/MCP の API キー認証
 
 ```bash
-export CLINVK_API_KEYS="prod-key-1,prod-key-2,dev-key-1"
-clinvk serve
-```
-
-クライアントは次のいずれかのヘッダーを含める必要があります。
-
-```bash
-# Option 1: X-Api-Key header
-curl -H "X-Api-Key: prod-key-1" http://localhost:8080/api/v1/prompt \
-  -d '{"backend":"claude","prompt":"hello"}'
-
-# Option 2: Authorization header
-curl -H "Authorization: Bearer prod-key-1" http://localhost:8080/api/v1/prompt \
-  -d '{"backend":"claude","prompt":"hello"}'
+export CLINVK_API_KEYS="prod-key-1,prod-key-2"
+clinvk serve --port 8080
 ```
 
 ## 優先順位
 
-環境変数は設定階層の中で中程度の優先順位です。
+サポート対象のキーについて、優先順位は次の通りです。
 
-1. **CLI フラグ**（最優先）
-2. **環境変数**
-3. **設定ファイル**
-4. **デフォルト値**（最下位）
-
-優先順位の例:
-
-```bash
-export CLINVK_BACKEND=codex
-clinvk -b claude "prompt"  # Uses claude (CLI flag wins)
-```
-
-## シェル設定
-
-### Bash
-
-`~/.bashrc` または `~/.bash_profile` に追加します。
-
-```bash
-# clinvk configuration
-export CLINVK_BACKEND=claude
-export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-export CLINVK_CODEX_MODEL=o3
-```
-
-### Zsh
-
-`~/.zshrc` に追加します。
-
-```zsh
-# clinvk configuration
-export CLINVK_BACKEND=claude
-export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-export CLINVK_CODEX_MODEL=o3
-```
-
-### Fish
-
-`~/.config/fish/config.fish` に追加します。
-
-```fish
-# clinvk configuration
-set -gx CLINVK_BACKEND claude
-set -gx CLINVK_CLAUDE_MODEL claude-opus-4-5-20251101
-set -gx CLINVK_CODEX_MODEL o3
-```
-
-## ディレクトリ単位の設定
-
-[direnv](https://direnv.net/) を使うと、プロジェクト固有の設定ができます。
-
-```bash
-# .envrc in your project root
-export CLINVK_BACKEND=codex
-export CLINVK_CODEX_MODEL=o3
-```
-
-ディレクトリに入ると、direnv が自動的にこれらの変数を読み込みます。
-
-## CI/CD での利用
-
-### GitHub Actions
-
-```yaml
-name: AI Code Review
-on: [pull_request]
-
-jobs:
-  review:
-    runs-on: ubuntu-latest
-    env:
-      CLINVK_BACKEND: codex
-      CLINVK_CODEX_MODEL: o3
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Review code
-        run: clinvk "review this PR for security issues"
-```
-
-### GitLab CI
-
-```yaml
-ai-review:
-  image: alpine/clinvk
-  variables:
-    CLINVK_BACKEND: claude
-    CLINVK_CLAUDE_MODEL: claude-sonnet-4-20250514
-    ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
-  script:
-    - clinvk "review the changes"
-```
-
-### Jenkins
-
-```groovy
-pipeline {
-    agent any
-    environment {
-        CLINVK_BACKEND = 'gemini'
-        CLINVK_GEMINI_MODEL = 'gemini-2.5-pro'
-        GOOGLE_API_KEY = credentials('google-api-key')
-    }
-    stages {
-        stage('AI Analysis') {
-            steps {
-                sh 'clinvk "analyze code quality"'
-            }
-        }
-    }
-}
-```
-
-## Docker での利用
-
-### Dockerfile
-
-```dockerfile
-FROM alpine:latest
-RUN apk add --no-cache clinvk
-
-ENV CLINVK_BACKEND=claude
-ENV CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-
-ENTRYPOINT ["clinvk"]
-```
-
-### docker run
-
-```bash
-docker run -e CLINVK_BACKEND=codex -e OPENAI_API_KEY=$OPENAI_API_KEY clinvk "prompt"
-```
-
-### Docker Compose
-
-```yaml
-version: '3'
-services:
-  ai-task:
-    image: clinvk
-    environment:
-      - CLINVK_BACKEND=claude
-      - CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    command: clinvk "analyze codebase"
-```
-
-## Kubernetes での利用
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clinvk-config
-data:
-  CLINVK_BACKEND: "claude"
-  CLINVK_CLAUDE_MODEL: "claude-opus-4-5-20251101"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: clinvk-secrets
-type: Opaque
-stringData:
-  ANTHROPIC_API_KEY: "your-api-key"
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: clinvk-job
-spec:
-  containers:
-    - name: clinvk
-      image: clinvk:latest
-      envFrom:
-        - configMapRef:
-            name: clinvk-config
-        - secretRef:
-            name: clinvk-secrets
-```
+1. CLI フラグ
+2. 環境変数
+3. 設定ファイル
+4. デフォルト値
 
 ## トラブルシューティング
 
-### 変数が反映されない
-
-1. 変数が export されているか確認する（`export VAR=value` であり、`VAR=value` だけではない）
-2. 変数名のタイプミスがないか確認する
-3. CLI フラグが環境変数を上書きしていないか確認する
-4. 設定ファイルが同じ値を設定していないか確認する
-
-### 環境のデバッグ
-
 ```bash
-# Show all CLINVK variables
-env | grep CLINVK
+# export 済みの CLINVK 変数を確認
+env | grep '^CLINVK_'
 
-# Show specific variable
-echo $CLINVK_BACKEND
+# 提供元 API キーの有無を確認
+echo "${OPENAI_API_KEY:+set}"
 
-# Run with debug output
-CLINVK_DEBUG=1 clinvk "prompt"
+# 実行コマンドを確認
+clinvk --dry-run "check behavior"
 ```
 
-## 関連項目
+## 関連ドキュメント
 
-- [設定リファレンス](configuration.md) - 設定ファイルの項目
-- [`config` コマンド](cli/config.md) - CLI で設定を管理する
+- [設定リファレンス](configuration.md)
+- [CLI config コマンド](cli/config.md)
+- [CLI mcp コマンド](cli/mcp.md)

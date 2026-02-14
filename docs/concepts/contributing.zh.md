@@ -282,6 +282,8 @@ func NewStore(dir string) (*Store, error) {
 | `test/` | 测试添加 | `test/backend-coverage` |
 | `chore/` | 维护 | `chore/update-deps` |
 
+<a id="commit-message-conventions"></a>
+
 ### 提交消息约定
 
 遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
@@ -388,7 +390,7 @@ feat: 添加新功能  →  推送到 main  →  自动创建 Release PR
                                      GoReleaser 构建二进制文件
 ```
 
-1. **编写代码** 使用 [Conventional Commits](#提交消息约定)
+1. **编写代码** 使用 [Conventional Commits](#commit-message-conventions)
 2. **推送到 main** - release-please 自动创建/更新 Release PR
 3. **合并 Release PR** - 创建 git 标签和 GitHub Release
 4. **GoReleaser 触发** - 为所有平台构建二进制文件

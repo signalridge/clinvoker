@@ -11,14 +11,14 @@ description: clinvoker 的常见问题、诊断方法和解决方案。
 
 在深入了解具体问题之前，以下是通用的诊断方法：
 
-### 启用调试模式
+### 收集执行细节
 
 ```bash
-# 详细输出显示详细的执行信息
-clinvk --verbose "your prompt"
+# 不执行，仅查看解析后的后端命令
+clinvk --dry-run "your prompt"
 
-# 调试模式包括后端命令输出
-CLINVK_DEBUG=1 clinvk "your prompt"
+# 使用结构化输出便于排查
+clinvk --output-format json "your prompt"
 ```
 
 ### 检查系统状态
@@ -30,8 +30,8 @@ clinvk version
 # 检查可用后端
 clinvk config show
 
-# 验证配置文件
-clinvk config validate
+# 快速查看最近会话状态
+clinvk sessions list --limit 5
 ```
 
 ### 试运行模式
@@ -353,7 +353,8 @@ clinvk config show
 
 # 检查环境变量覆盖
 echo $CLINVK_BACKEND
-echo $CLINVK_TIMEOUT
+echo $CLINVK_CLAUDE_MODEL
+echo $CLINVK_CODEX_MODEL
 ```
 
 ### 环境变量未应用
@@ -434,19 +435,19 @@ audit2allow -a -M clinvk
 semodule -i clinvk.pp
 ```
 
-## 调试模式使用
+## 诊断工作流
 
-### 启用综合日志
+### 提高日志信号
 
 ```bash
-# 设置调试环境变量
-export CLINVK_DEBUG=1
+# 检查将要执行的命令
+clinvk --dry-run "prompt"
 
-# 使用详细输出运行
-clinvk --verbose "prompt"
+# 使用 JSON 输出检查响应 payload
+clinvk --output-format json "prompt"
 
-# 服务器模式
-CLINVK_DEBUG=1 clinvk serve
+# 显式指定绑定参数启动服务
+clinvk serve --host 127.0.0.1 --port 8080
 ```
 
 ### 日志位置

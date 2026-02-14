@@ -607,7 +607,7 @@ Try different approaches in sequence:
 
 1. Use `--json` output to see exact step results
 2. Add validation steps
-3. Use verbose mode: `clinvk chain --file pipeline.json --verbose`
+3. Isolate the failing step and check command construction: `clinvk --dry-run -b <backend> "<step prompt>"`
 
 ### Working Directory Issues
 

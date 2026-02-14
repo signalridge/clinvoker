@@ -207,20 +207,23 @@ Would execute: claude --model claude-opus-4-5-20251101 "实现功能 X"
 - 记录预期行为
 - 在 CI/CD 中测试而不进行实际 API 调用
 
-### 详细模式 (`--verbose`, `-v`)
+### 详细诊断
 
-启用详细日志记录：
+可通过当前支持的方式排查执行细节：
 
 ```bash
-clinvk --verbose "复杂任务"
+# 不执行，仅查看将要调用的后端命令
+clinvk --dry-run "复杂任务"
+
+# 返回结构化输出，便于调试和脚本处理
+clinvk --output-format json "复杂任务"
 ```
 
-**显示内容：**
+**适用场景：**
 
-- 配置加载详情
-- 后端检测信息
-- 命令构建步骤
-- API 调用和响应（取决于后端）
+- 验证后端/模型解析结果
+- 检查生成的命令参数
+- 获取可机器处理的排查输出
 
 ## 退出代码参考
 
@@ -331,7 +334,6 @@ clinvk resume abc123 "添加测试"
 | `--continue` | `-c` | 继续上一个会话 | `false` |
 | `--dry-run` | | 只显示命令 | `false` |
 | `--ephemeral` | | 无状态模式 | `false` |
-| `--verbose` | `-v` | 启用详细日志 | `false` |
 | `--config` | | 配置文件路径 | `~/.clinvk/config.yaml` |
 
 ## 示例

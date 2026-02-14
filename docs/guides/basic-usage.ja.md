@@ -207,20 +207,23 @@ Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
 - 期待される挙動のドキュメント化
 - CI/CD で実 API を叩かずにテストする
 
-### Verbose モード（`--verbose`, `-v`）
+### 詳細診断
 
-詳細ログを有効化します。
+実行内容を詳しく確認するには、現在サポートされている次の方法を使います。
 
 ```bash
-clinvk --verbose "complex task"
+# 実行せずに、実際のバックエンドコマンドを表示
+clinvk --dry-run "complex task"
+
+# デバッグ向けに構造化された出力を取得
+clinvk --output-format json "complex task"
 ```
 
-**表示される内容:**
+**用途:**
 
-- 設定読み込みの詳細
-- バックエンド検出情報
-- コマンド構築の過程
-- API の呼び出しと応答（バックエンドによります）
+- バックエンド/モデル解決結果の確認
+- 生成されたコマンド引数の確認
+- トラブルシュート用の機械可読出力の取得
 
 ## 終了コードリファレンス
 
@@ -331,7 +334,6 @@ clinvk resume abc123 "add tests"
 | `--continue` | `-c` | 直近セッションを継続 | `false` |
 | `--dry-run` | | コマンドのみ表示 | `false` |
 | `--ephemeral` | | ステートレスモード | `false` |
-| `--verbose` | `-v` | 詳細ログを有効化 | `false` |
 | `--config` | | 設定ファイルのパス | `~/.clinvk/config.yaml` |
 
 ## 例

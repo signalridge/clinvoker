@@ -33,6 +33,7 @@
 
 - **多后端支持** — 在 Claude Code、Codex CLI 和 Gemini CLI 之间无缝切换
 - **OpenAI 兼容 API** — 可直接替代 OpenAI/Anthropic API 端点
+- **MCP 服务器** — 内置 MCP 服务，支持 stdio 和 HTTP/SSE 传输
 - **会话管理** — 跨进程文件锁定，持久化并恢复对话
 - **并行执行** — 跨多个后端并发运行任务
 - **安全性** — 速率限制、请求大小限制、可信代理支持
@@ -50,6 +51,7 @@
 - [💡 使用](#-使用)
   - [基本命令](#基本命令)
   - [会话管理](#会话管理)
+- [🔌 MCP 服务器](#-mcp-服务器)
 - [🌐 HTTP API 服务器](#-http-api-服务器)
   - [API 端点](#api-端点)
 - [⚙️ 配置](#️-配置)
@@ -72,6 +74,9 @@ clinvk "修复 auth.go 中的 bug"
 
 # 启动 HTTP API 服务器
 clinvk serve --port 8080
+
+# 启动 MCP 服务器（stdio）
+clinvk mcp --transport stdio
 ```
 
 ---
@@ -131,6 +136,22 @@ clinvk sessions clean --older-than 30d
 
 ---
 
+## 🔌 MCP 服务器
+
+可通过 stdio 或 HTTP 把 clinvk 功能暴露为 MCP 工具：
+
+```bash
+# 本地 MCP 客户端（stdio）
+clinvk mcp --transport stdio
+
+# 远程 MCP 客户端（HTTP + SSE）
+clinvk mcp --transport http --host 0.0.0.0 --port 8081 --path /mcp
+```
+
+详见：[MCP 服务器集成](https://signalridge.github.io/clinvoker/guides/integrations/mcp-server/)
+
+---
+
 ## 🌐 HTTP API 服务器
 
 启动 OpenAI/Anthropic 兼容的 API 服务器：
@@ -180,6 +201,7 @@ export GOOGLE_API_KEY="..."
 |------|------|
 | [快速开始](https://signalridge.github.io/clinvoker/tutorials/getting-started/) | 安装和入门 |
 | [使用指南](https://signalridge.github.io/clinvoker/guides/) | 详细使用说明 |
+| [MCP 指南](https://signalridge.github.io/clinvoker/guides/integrations/mcp-server/) | MCP 服务器配置与传输模式 |
 | [HTTP API](https://signalridge.github.io/clinvoker/guides/http-server/) | API 服务器文档 |
 | [参考](https://signalridge.github.io/clinvoker/reference/) | CLI 参考和配置 |
 

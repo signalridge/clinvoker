@@ -607,7 +607,7 @@ Step 3: "Based on: Based on: Analysis: 3 issues found
 
 1. `--json` 出力でステップ結果を正確に確認する
 2. バリデーションステップを追加する
-3. verbose モードを使う: `clinvk chain --file pipeline.json --verbose`
+3. 問題のステップを単体で切り出し、コマンド構築を確認する: `clinvk --dry-run -b <backend> "<step prompt>"`
 
 ### 作業ディレクトリの問題
 

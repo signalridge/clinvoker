@@ -33,6 +33,7 @@ English | **[简体中文](README.zh.md)** | **[日本語](README.ja.md)** | [Do
 
 - **Multi-Backend** — Seamlessly switch between Claude Code, Codex CLI, and Gemini CLI
 - **OpenAI-Compatible API** — Drop-in replacement for OpenAI/Anthropic API endpoints
+- **MCP Server** — Built-in Model Context Protocol server with stdio and HTTP/SSE transports
 - **Session Management** — Persist and resume conversations across sessions with cross-process locking
 - **Parallel Execution** — Run tasks concurrently across multiple backends
 - **Security** — Rate limiting, request size limiting, and trusted proxy support
@@ -50,6 +51,7 @@ English | **[简体中文](README.zh.md)** | **[日本語](README.ja.md)** | [Do
 - [💡 Usage](#-usage)
   - [Basic Commands](#basic-commands)
   - [Session Management](#session-management)
+- [🔌 MCP Server](#-mcp-server)
 - [🌐 HTTP API Server](#-http-api-server)
   - [API Endpoints](#api-endpoints)
 - [⚙️ Configuration](#️-configuration)
@@ -72,6 +74,9 @@ clinvk "fix the bug in auth.go"
 
 # Start HTTP API server
 clinvk serve --port 8080
+
+# Start MCP server (stdio)
+clinvk mcp --transport stdio
 ```
 
 ---
@@ -90,7 +95,7 @@ clinvk serve --port 8080
 | Alpine | apk | Download from [Releases](https://github.com/signalridge/clinvoker/releases) |
 | Go | go install | `go install github.com/signalridge/clinvoker/cmd/clinvk@latest` |
 
-See [Installation Guide](https://signalridge.github.io/clinvoker/getting-started/installation/) for detailed instructions.
+See [Getting Started](https://signalridge.github.io/clinvoker/tutorials/getting-started/) for detailed setup steps.
 
 ---
 
@@ -128,6 +133,22 @@ clinvk resume <session-id>
 # Clean up old sessions
 clinvk sessions clean --older-than 30d
 ```
+
+---
+
+## 🔌 MCP Server
+
+Expose clinvk tools to MCP clients via stdio or HTTP transport:
+
+```bash
+# Local MCP clients (stdio)
+clinvk mcp --transport stdio
+
+# HTTP transport with SSE notifications
+clinvk mcp --transport http --host 0.0.0.0 --port 8081 --path /mcp
+```
+
+See [MCP Server Integration](https://signalridge.github.io/clinvoker/guides/integrations/mcp-server/) for tool list, auth, and streaming behavior.
 
 ---
 
@@ -180,6 +201,7 @@ Full documentation: **[signalridge.github.io/clinvoker](https://signalridge.gith
 |---------|-------------|
 | [Getting Started](https://signalridge.github.io/clinvoker/tutorials/getting-started/) | Installation and first steps |
 | [Guides](https://signalridge.github.io/clinvoker/guides/) | Detailed usage instructions |
+| [MCP Guide](https://signalridge.github.io/clinvoker/guides/integrations/mcp-server/) | MCP server setup and transport modes |
 | [HTTP API](https://signalridge.github.io/clinvoker/guides/http-server/) | API server documentation |
 | [Reference](https://signalridge.github.io/clinvoker/reference/) | CLI reference and configuration |
 
