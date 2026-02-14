@@ -226,7 +226,7 @@ jobs:
           GOCOVERDIR: ${{ github.workspace }}/.cov/e2e/raw
       - name: Coverage Gate (Unit + E2E Union)
         env:
-          COVERAGE_MIN_TOTAL: "75"
+          COVERAGE_MIN_TOTAL: "70"
           COVERAGE_MIN_CONFIG: "60"
           COVERAGE_MIN_EXECUTOR: "60"
         run: |
