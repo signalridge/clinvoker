@@ -161,7 +161,7 @@ func (s *Store) persistIndex() error {
 	}
 
 	indexPath := filepath.Join(s.dir, indexFileName)
-	if err := writeFileAtomic(indexPath, data, 0600); err != nil {
+	if err := writeFileAtomic(indexPath, data); err != nil {
 		return fmt.Errorf("failed to write index: %w", err)
 	}
 
@@ -499,8 +499,8 @@ func (s *Store) saveLocked(sess *Session) error {
 	}
 
 	path := s.sessionPath(sess.ID)
-	// Use 0600 to protect potentially sensitive prompt data
-	if err := writeFileAtomic(path, data, 0600); err != nil {
+	// writeFileAtomic uses 0600 to protect potentially sensitive prompt data.
+	if err := writeFileAtomic(path, data); err != nil {
 		return fmt.Errorf("failed to write session file: %w", err)
 	}
 
@@ -1127,7 +1127,7 @@ func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
 }
 
-func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+func writeFileAtomic(path string, data []byte) error {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, ".tmp-*")
 	if err != nil {
@@ -1142,7 +1142,7 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
 		}
 	}()
 
-	if err := tmp.Chmod(perm); err != nil {
+	if err := tmp.Chmod(0600); err != nil {
 		_ = tmp.Close()
 		return err
 	}

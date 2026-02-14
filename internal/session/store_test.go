@@ -736,7 +736,7 @@ func TestWriteFileAtomic_FallbackReplaceWithoutDeletingDestination(t *testing.T)
 		return origRemove(name)
 	}
 
-	if err := writeFileAtomic(path, []byte("new"), 0600); err != nil {
+	if err := writeFileAtomic(path, []byte("new")); err != nil {
 		t.Fatalf("writeFileAtomic failed: %v", err)
 	}
 
@@ -786,7 +786,7 @@ func TestWriteFileAtomic_PreservesDestinationOnDoubleRenameFailure(t *testing.T)
 		return origRemove(name)
 	}
 
-	if err := writeFileAtomic(path, []byte("new"), 0600); err == nil {
+	if err := writeFileAtomic(path, []byte("new")); err == nil {
 		t.Fatal("expected writeFileAtomic to fail")
 	}
 
