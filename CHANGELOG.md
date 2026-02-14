@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/signalridge/clinvoker/compare/v0.3.0...v0.4.0) (2026-02-14)
+
+
+### 🚀 Features
+
+* enforce backend enabled config and add API dry_run support ([#60](https://github.com/signalridge/clinvoker/issues/60)) ([862f09f](https://github.com/signalridge/clinvoker/commit/862f09ff2b4dd699d72211248fe65dd580f2cd39))
+* **mcp:** add MCP server (stdio + HTTP/SSE) ([#66](https://github.com/signalridge/clinvoker/issues/66)) ([fcc3ddf](https://github.com/signalridge/clinvoker/commit/fcc3ddf51428e2b99714b303fa6de15bb7b87670))
+
+
+### 🐛 Bug Fixes
+
+* **nix:** refresh vendor hash and automate lock updates ([#67](https://github.com/signalridge/clinvoker/issues/67)) ([ea7a4ff](https://github.com/signalridge/clinvoker/commit/ea7a4ff9611ac9b189b4effaa2512f444084d96c))
+
+
+### 🔧 Refactoring
+
+* **backend:** remove model mapping, pass through to backend CLIs ([#58](https://github.com/signalridge/clinvoker/issues/58)) ([4603597](https://github.com/signalridge/clinvoker/commit/4603597f539379889610d7fde1966a60ce1215d2))
+
+
+### 📦 Dependencies
+
+* **actions:** bump tj-actions/changed-files from 46 to 47 in the actions group ([#65](https://github.com/signalridge/clinvoker/issues/65)) ([f774b53](https://github.com/signalridge/clinvoker/commit/f774b53a8cf4002f6aa959712a8cb99a707692a2))
+* **go:** bump github.com/go-chi/chi/v5 from 5.2.4 to 5.2.5 in the go-minor group ([#64](https://github.com/signalridge/clinvoker/issues/64)) ([52d1b9a](https://github.com/signalridge/clinvoker/commit/52d1b9af62d181b9edff958bf2295165f5ccc838))
+
 ## [0.3.0](https://github.com/signalridge/clinvoker/compare/v0.2.0...v0.3.0) (2026-02-03)
 
 
