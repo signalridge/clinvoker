@@ -2,10 +2,19 @@ package auth
 
 import (
 	"os"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/signalridge/clinvoker/internal/config"
 )
+
+func assertStringSliceEqual(t *testing.T, got, want []string) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("keys = %v, want %v", got, want)
+	}
+}
 
 func TestParseKeys(t *testing.T) {
 	tests := []struct {
@@ -183,4 +192,145 @@ func TestResetCache(t *testing.T) {
 	if len(keys3) != 1 || keys3[0] != "key2" {
 		t.Errorf("LoadAPIKeys() after ResetCache() = %v, want [key2]", keys3)
 	}
+}
+
+func TestIsValidGopassPath(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want bool
+	}{
+		{name: "simple path", path: "project/api-keys", want: true},
+		{name: "dots hyphens underscores", path: "my.project/api_keys-prod", want: true},
+		{name: "uppercase", path: "TeamA/Service/API_KEYS", want: true},
+		{name: "empty", path: "", want: false},
+		{name: "contains space", path: "project/api keys", want: false},
+		{name: "contains semicolon", path: "project;rm", want: false},
+		{name: "contains dollar", path: "project/$HOME", want: false},
+		{name: "contains newline", path: "project/\nkeys", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isValidGopassPath(tt.path)
+			if got != tt.want {
+				t.Errorf("isValidGopassPath(%q) = %v, want %v", tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetGopassPath_Priority(t *testing.T) {
+	t.Cleanup(config.Reset)
+	config.Reset()
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config.Init() failed: %v", err)
+	}
+
+	// Config fallback
+	config.Get().Server.APIKeysGopassPath = "config/path"
+	t.Setenv(EnvAPIKeysGopassPath, "")
+	if got := getGopassPath(); got != "config/path" {
+		t.Errorf("getGopassPath() = %q, want %q", got, "config/path")
+	}
+
+	// Env takes precedence
+	t.Setenv(EnvAPIKeysGopassPath, "env/path")
+	if got := getGopassPath(); got != "env/path" {
+		t.Errorf("getGopassPath() with env = %q, want %q", got, "env/path")
+	}
+
+	// Empty when both unset
+	t.Setenv(EnvAPIKeysGopassPath, "")
+	config.Get().Server.APIKeysGopassPath = ""
+	if got := getGopassPath(); got != "" {
+		t.Errorf("getGopassPath() = %q, want empty", got)
+	}
+}
+
+func TestLoadFromGopass_EarlyReturnPaths(t *testing.T) {
+	t.Cleanup(config.Reset)
+	config.Reset()
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config.Init() failed: %v", err)
+	}
+
+	t.Run("not configured", func(t *testing.T) {
+		t.Setenv(EnvAPIKeysGopassPath, "")
+		if got := loadFromGopass(); got != nil {
+			t.Errorf("loadFromGopass() = %v, want nil", got)
+		}
+	})
+
+	t.Run("invalid path", func(t *testing.T) {
+		t.Setenv(EnvAPIKeysGopassPath, "invalid path")
+		if got := loadFromGopass(); got != nil {
+			t.Errorf("loadFromGopass() = %v, want nil for invalid path", got)
+		}
+	})
+
+	t.Run("gopass missing", func(t *testing.T) {
+		t.Setenv(EnvAPIKeysGopassPath, "valid/path")
+		t.Setenv("PATH", "")
+		if got := loadFromGopass(); got != nil {
+			t.Errorf("loadFromGopass() = %v, want nil when gopass not available", got)
+		}
+	})
+}
+
+func TestSetReloadInterval_CacheExpiry(t *testing.T) {
+	originalInterval := reloadInterval
+	t.Cleanup(func() {
+		SetReloadInterval(originalInterval)
+		ResetCache()
+	})
+
+	ResetCache()
+	SetReloadInterval(50 * time.Millisecond)
+
+	t.Setenv(EnvAPIKeys, "key1")
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"key1"})
+
+	t.Setenv(EnvAPIKeys, "key2")
+	// Before expiry, should still use cached key1.
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"key1"})
+
+	time.Sleep(80 * time.Millisecond)
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"key2"})
+}
+
+func TestSetReloadInterval_ZeroDisablesAutoReload(t *testing.T) {
+	originalInterval := reloadInterval
+	t.Cleanup(func() {
+		SetReloadInterval(originalInterval)
+		ResetCache()
+	})
+
+	ResetCache()
+	SetReloadInterval(0)
+
+	t.Setenv(EnvAPIKeys, "key1")
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"key1"})
+
+	t.Setenv(EnvAPIKeys, "key2")
+	// Reload disabled, cached key1 should be returned.
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"key1"})
+}
+
+func TestForceReload(t *testing.T) {
+	originalInterval := reloadInterval
+	t.Cleanup(func() {
+		SetReloadInterval(originalInterval)
+		ResetCache()
+	})
+
+	ResetCache()
+	SetReloadInterval(0)
+
+	t.Setenv(EnvAPIKeys, "old-key")
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"old-key"})
+
+	t.Setenv(EnvAPIKeys, "new-key")
+	assertStringSliceEqual(t, ForceReload(), []string{"new-key"})
+	assertStringSliceEqual(t, LoadAPIKeys(), []string{"new-key"})
 }
