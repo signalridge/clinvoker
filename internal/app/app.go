@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -505,8 +506,35 @@ func ExecuteAndCaptureWithJSON(b backend.Backend, cmd *exec.Cmd) (*CaptureResult
 		return &CaptureResult{ExitCode: 1, Error: err.Error()}, err
 	}
 
-	waitErr := cmd.Wait()
+	waitDone := make(chan error, 1)
+	go func() {
+		waitDone <- cmd.Wait()
+	}()
+
+	var waitErr error
+	timedOut := false
+	timeout := GetCommandTimeout()
+	if timeout > 0 {
+		timer := time.NewTimer(timeout)
+		defer timer.Stop()
+
+		select {
+		case waitErr = <-waitDone:
+		case <-timer.C:
+			_ = cmd.Process.Kill()
+			<-waitDone
+			timedOut = true
+		}
+	} else {
+		waitErr = <-waitDone
+	}
+
 	result := &CaptureResult{}
+	if timedOut {
+		result.ExitCode = 124 // Standard timeout exit code
+		result.Error = ErrCommandTimeout.Error()
+		return result, ErrCommandTimeout
+	}
 
 	if waitErr != nil {
 		if exitErr, ok := waitErr.(*exec.ExitError); ok {

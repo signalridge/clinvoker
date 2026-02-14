@@ -699,7 +699,11 @@ func (e *Executor) DeleteSession(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	return e.store.Delete(s.ID)
+	if err := e.store.Delete(s.ID); err != nil {
+		return err
+	}
+	e.updateActiveSessionsMetric()
+	return nil
 }
 
 // BackendInfo represents backend information for API responses.

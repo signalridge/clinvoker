@@ -64,6 +64,9 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 	result := &PromptResult{
 		Backend: req.Backend,
 	}
+	if store != nil && config.Get().Server.MetricsEnabled {
+		defer updateActiveSessionsGauge(store, logger)
+	}
 
 	prep, err := preparePrompt(req, forceStateless)
 	if err != nil {
@@ -164,4 +167,26 @@ func executePrompt(ctx context.Context, req *PromptRequest, store *session.Store
 	}
 
 	return result, nil
+}
+
+func updateActiveSessionsGauge(store *session.Store, logger *slog.Logger) {
+	if store == nil {
+		return
+	}
+
+	sessions, err := store.List()
+	if err != nil {
+		if logger != nil {
+			logger.Warn("failed to list sessions for metrics", "error", err)
+		}
+		return
+	}
+
+	var active float64
+	for _, s := range sessions {
+		if s.Status == session.StatusActive || s.Status == session.StatusPaused {
+			active++
+		}
+	}
+	metrics.SetActiveSessions(active)
 }

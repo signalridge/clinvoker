@@ -1,3 +1,4 @@
+//revive:disable:var-naming
 package metrics
 
 import (
@@ -43,3 +44,5 @@ func TestSessionMetrics(t *testing.T) {
 		t.Fatalf("SessionsCreated did not increment: before=%v after=%v", before, after)
 	}
 }
+
+//revive:enable:var-naming

@@ -189,16 +189,34 @@ func RateLimitWithLimiter(rps, burst int, cleanup time.Duration) (func(http.Hand
 // If trusted_proxies is empty, proxy headers are ignored (RemoteAddr only).
 func getClientIP(r *http.Request) string {
 	// Get the direct connection IP
-	directIP, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		directIP = r.RemoteAddr
-	}
+	directIP, _ := splitRemoteAddr(r.RemoteAddr)
 
 	// Only trust proxy headers if request comes from a trusted proxy
 	if !isTrustedProxy(directIP) {
 		return directIP
 	}
 
+	if ip := extractClientIPFromHeaders(r); ip != "" {
+		return ip
+	}
+
+	// Fall back to direct IP
+	return directIP
+}
+
+// splitRemoteAddr extracts host and port from a remote address string.
+// If no port is present, the original value is returned as host with empty port.
+func splitRemoteAddr(remoteAddr string) (host, port string) {
+	directIP, directPort, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		return remoteAddr, ""
+	}
+	return directIP, directPort
+}
+
+// extractClientIPFromHeaders extracts the first valid client IP from forwarded headers.
+// Preference order: X-Forwarded-For (leftmost) -> X-Real-IP.
+func extractClientIPFromHeaders(r *http.Request) string {
 	// Try X-Forwarded-For first (leftmost is original client)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		// Take the first IP in the chain
@@ -221,8 +239,7 @@ func getClientIP(r *http.Request) string {
 		}
 	}
 
-	// Fall back to direct IP
-	return directIP
+	return ""
 }
 
 // isTrustedProxy checks if the given IP is in the trusted proxies list.

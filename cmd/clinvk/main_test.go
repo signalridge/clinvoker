@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/signalridge/clinvoker/internal/app"
 )
 
 var (
@@ -331,4 +334,57 @@ func buildTestBinary(t *testing.T) string {
 	}
 
 	return testBinary
+}
+
+func TestMain_RunVersionCommand(_ *testing.T) {
+	origArgs := os.Args
+	os.Args = []string{"clinvk", "version"}
+	defer func() { os.Args = origArgs }()
+
+	main()
+}
+
+func TestRun_ReturnsZeroOnSuccess(t *testing.T) {
+	origExecuteApp := executeApp
+	t.Cleanup(func() {
+		executeApp = origExecuteApp
+	})
+
+	executeApp = func() error {
+		return nil
+	}
+
+	if code := run(); code != 0 {
+		t.Fatalf("run() = %d, want 0", code)
+	}
+}
+
+func TestRun_ReturnsTimeoutExitCode(t *testing.T) {
+	origExecuteApp := executeApp
+	t.Cleanup(func() {
+		executeApp = origExecuteApp
+	})
+
+	executeApp = func() error {
+		return app.ErrCommandTimeout
+	}
+
+	if code := run(); code != 6 {
+		t.Fatalf("run() = %d, want 6", code)
+	}
+}
+
+func TestRun_ReturnsGeneralErrorCode(t *testing.T) {
+	origExecuteApp := executeApp
+	t.Cleanup(func() {
+		executeApp = origExecuteApp
+	})
+
+	executeApp = func() error {
+		return errors.New("boom")
+	}
+
+	if code := run(); code != 1 {
+		t.Fatalf("run() = %d, want 1", code)
+	}
 }

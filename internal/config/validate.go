@@ -147,6 +147,14 @@ func validateUnifiedFlags(flags *UnifiedFlagsConfig) []error {
 		})
 	}
 
+	// Validate command_timeout_secs
+	if flags.CommandTimeoutSecs < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   "unified_flags.command_timeout_secs",
+			Message: "must be non-negative",
+		})
+	}
+
 	return errs
 }
 

@@ -35,9 +35,9 @@ func NewRouterWithSkipAuthPaths(logger *slog.Logger, skipPaths ...string) (chi.R
 	appCfg := config.Get()
 
 	// Add middleware in order:
-	// RequestID → RealIP → Recoverer → RequestLogger → RequestSize → RateLimit → APIKeyAuth → Timeout → CORS
+	// RequestID → TrustedRealIP → Recoverer → RequestLogger → RequestSize → RateLimit → APIKeyAuth → Timeout → CORS
 	router.Use(chiMiddleware.RequestID)
-	router.Use(chiMiddleware.RealIP)
+	router.Use(middleware.TrustedRealIP)
 	router.Use(chiMiddleware.Recoverer)
 
 	// Add request logging

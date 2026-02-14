@@ -140,6 +140,8 @@ func runResume(cmd *cobra.Command, args []string) error {
 		Model:        modelName,
 		OutputFormat: internalFormat,
 	}
+	applyUnifiedDefaults(opts, cfg, dryRun)
+	applyBackendDefaults(opts, sess.Backend, cfg)
 
 	if bcfg, ok := cfg.Backends[sess.Backend]; ok {
 		if opts.Model == "" {
