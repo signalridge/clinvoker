@@ -2,7 +2,9 @@ package session
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,6 +23,11 @@ var sessionIDPattern = regexp.MustCompile(`^[a-f0-9]{16,32}$`)
 
 // indexFileName is the name of the persisted index file.
 const indexFileName = "index.json"
+
+var (
+	renameFile = os.Rename
+	removeFile = os.Remove
+)
 
 // SessionMeta holds lightweight metadata for indexing without loading full session.
 type SessionMeta struct {
@@ -113,9 +120,18 @@ func (s *Store) updateIndex(sess *Session) {
 		Model:     sess.Model,
 		WorkDir:   sess.WorkingDir,
 		Title:     sess.Title,
-		Tags:      sess.Tags,
+		Tags:      slices.Clone(sess.Tags),
 		CreatedAt: sess.CreatedAt,
 	}
+}
+
+func cloneSessionMeta(meta *SessionMeta) *SessionMeta {
+	if meta == nil {
+		return nil
+	}
+	cloned := *meta
+	cloned.Tags = slices.Clone(meta.Tags)
+	return &cloned
 }
 
 // removeFromIndex removes a session from the index.
@@ -145,7 +161,7 @@ func (s *Store) persistIndex() error {
 	}
 
 	indexPath := filepath.Join(s.dir, indexFileName)
-	if err := writeFileAtomic(indexPath, data, 0600); err != nil {
+	if err := writeFileAtomic(indexPath, data); err != nil {
 		return fmt.Errorf("failed to write index: %w", err)
 	}
 
@@ -155,6 +171,15 @@ func (s *Store) persistIndex() error {
 	}
 
 	return nil
+}
+
+func (s *Store) persistIndexWithWarning(operation string) {
+	if err := s.persistIndex(); err != nil {
+		slog.Warn("failed to persist session index",
+			"operation", operation,
+			"store_dir", s.dir,
+			"error", err)
+	}
 }
 
 // loadPersistedIndex loads the index from disk if it exists.
@@ -321,7 +346,7 @@ func (s *Store) rebuildIndex() error {
 			Model:     sess.Model,
 			WorkDir:   sess.WorkingDir,
 			Title:     sess.Title,
-			Tags:      sess.Tags,
+			Tags:      slices.Clone(sess.Tags),
 			CreatedAt: sess.CreatedAt,
 		}
 	}
@@ -330,7 +355,7 @@ func (s *Store) rebuildIndex() error {
 	s.dirty = false
 
 	// Persist the newly built index for next startup
-	_ = s.persistIndex()
+	s.persistIndexWithWarning("rebuild_index")
 
 	return nil
 }
@@ -382,7 +407,7 @@ func (s *Store) ValidateIndex() (int, error) {
 
 	// Persist cleaned index if any entries were removed
 	if len(staleIDs) > 0 {
-		_ = s.persistIndex()
+		s.persistIndexWithWarning("validate_index")
 	}
 
 	return len(staleIDs), nil
@@ -432,11 +457,7 @@ func (s *Store) Create(backend, workDir string) (*Session, error) {
 
 	// Persist index synchronously for Create to ensure consistency
 	// (new sessions should be visible immediately after restart)
-	if err := s.persistIndex(); err != nil {
-		// Log but don't fail - session is already saved to disk
-		// Index can be rebuilt on next startup
-		_ = err // Silent ignore, consider adding logging in future
-	}
+	s.persistIndexWithWarning("create")
 
 	return sess, nil
 }
@@ -461,7 +482,7 @@ func (s *Store) Save(sess *Session) error {
 	s.updateIndex(sess)
 
 	// Persist index synchronously since we already hold the file lock
-	_ = s.persistIndex()
+	s.persistIndexWithWarning("save")
 
 	return nil
 }
@@ -478,8 +499,8 @@ func (s *Store) saveLocked(sess *Session) error {
 	}
 
 	path := s.sessionPath(sess.ID)
-	// Use 0600 to protect potentially sensitive prompt data
-	if err := writeFileAtomic(path, data, 0600); err != nil {
+	// writeFileAtomic uses 0600 to protect potentially sensitive prompt data.
+	if err := writeFileAtomic(path, data); err != nil {
 		return fmt.Errorf("failed to write session file: %w", err)
 	}
 
@@ -541,7 +562,7 @@ func (s *Store) Delete(id string) error {
 	s.removeFromIndex(id)
 
 	// Persist index synchronously since we already hold the file lock
-	_ = s.persistIndex()
+	s.persistIndexWithWarning("delete")
 
 	return nil
 }
@@ -607,7 +628,7 @@ func (s *Store) ListMeta() ([]*SessionMeta, error) {
 
 	metas := make([]*SessionMeta, 0, len(s.index))
 	for _, meta := range s.index {
-		metas = append(metas, meta)
+		metas = append(metas, cloneSessionMeta(meta))
 	}
 
 	// Sort by last used, most recent first
@@ -704,7 +725,7 @@ func (s *Store) Clean(maxAge time.Duration) (int, error) {
 
 	// Persist index if anything was deleted
 	if deleted > 0 {
-		_ = s.persistIndex()
+		s.persistIndexWithWarning("clean")
 	}
 
 	return deleted, nil
@@ -983,7 +1004,7 @@ func (s *Store) Fork(sessionID string) (*Session, error) {
 	s.updateIndex(forked)
 
 	// Persist index synchronously
-	_ = s.persistIndex()
+	s.persistIndexWithWarning("fork")
 
 	return forked, nil
 }
@@ -1017,7 +1038,7 @@ func (s *Store) CreateWithOptions(backend, workDir string, opts *SessionOptions)
 	s.updateIndex(sess)
 
 	// Persist index synchronously
-	_ = s.persistIndex()
+	s.persistIndexWithWarning("create_with_options")
 
 	return sess, nil
 }
@@ -1106,7 +1127,7 @@ func (s *Store) sessionPath(id string) string {
 	return filepath.Join(s.dir, id+".json")
 }
 
-func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+func writeFileAtomic(path string, data []byte) error {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, ".tmp-*")
 	if err != nil {
@@ -1121,7 +1142,7 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
 		}
 	}()
 
-	if err := tmp.Chmod(perm); err != nil {
+	if err := tmp.Chmod(0600); err != nil {
 		_ = tmp.Close()
 		return err
 	}
@@ -1140,10 +1161,25 @@ func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
 		return err
 	}
 
-	if err := os.Rename(tmpName, path); err != nil {
-		_ = os.Remove(path)
-		if err2 := os.Rename(tmpName, path); err2 != nil {
-			return err
+	if err := renameFile(tmpName, path); err != nil {
+		backupPath := fmt.Sprintf("%s.bak.%d", path, time.Now().UnixNano())
+		if backupErr := renameFile(path, backupPath); backupErr != nil {
+			if os.IsNotExist(backupErr) {
+				return err
+			}
+			return fmt.Errorf("atomic replace failed: %w", errors.Join(err, backupErr))
+		}
+
+		if err2 := renameFile(tmpName, path); err2 != nil {
+			rollbackErr := renameFile(backupPath, path)
+			if rollbackErr != nil {
+				return fmt.Errorf("atomic replace failed and rollback failed: %w", errors.Join(err, err2, rollbackErr))
+			}
+			return fmt.Errorf("atomic replace failed: %w", errors.Join(err, err2))
+		}
+
+		if cleanupErr := removeFile(backupPath); cleanupErr != nil && !os.IsNotExist(cleanupErr) {
+			slog.Warn("failed to remove backup after atomic replace", "path", backupPath, "error", cleanupErr)
 		}
 	}
 

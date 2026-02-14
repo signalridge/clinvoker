@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -976,6 +977,56 @@ func TestWriter_WriteEvent_Quiet(t *testing.T) {
 			t.Error("non-message events should not be written in quiet mode")
 		}
 	})
+}
+
+func TestWriter_WriteEvent_ReentrantCallbackDoesNotDeadlock(t *testing.T) {
+	var buf bytes.Buffer
+	var writer *Writer
+	var nestedEmitted atomic.Bool
+
+	writer = NewWriter(&buf,
+		WithFormat(FormatText),
+		WithEventCallback(func(*UnifiedEvent) {
+			if !nestedEmitted.CompareAndSwap(false, true) {
+				return
+			}
+			nested := NewUnifiedEvent(EventMessage, "claude", "session-123")
+			if err := nested.SetContent(&MessageContent{Text: "nested"}); err != nil {
+				t.Errorf("failed to set nested event content: %v", err)
+				return
+			}
+			if err := writer.WriteEvent(nested); err != nil {
+				t.Errorf("nested WriteEvent failed: %v", err)
+			}
+		}),
+	)
+
+	outer := NewUnifiedEvent(EventMessage, "claude", "session-123")
+	if err := outer.SetContent(&MessageContent{Text: "outer"}); err != nil {
+		t.Fatalf("failed to set outer event content: %v", err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- writer.WriteEvent(outer)
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("outer WriteEvent failed: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("WriteEvent deadlocked on reentrant callback")
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "outer") {
+		t.Errorf("expected output to contain outer event, got: %q", output)
+	}
+	if !strings.Contains(output, "nested") {
+		t.Errorf("expected output to contain nested event, got: %q", output)
+	}
 }
 
 // ==================== Collector Tests ====================
