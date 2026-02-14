@@ -1,8 +1,10 @@
 package session
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -650,5 +652,152 @@ func TestStore_ExternalModificationDetection(t *testing.T) {
 	}
 	if !foundSess1 || !foundSess2 {
 		t.Fatalf("expected both sessions to be found, foundSess1=%v, foundSess2=%v", foundSess1, foundSess2)
+	}
+}
+
+func TestStore_ListMeta_ReturnsDeepCopies(t *testing.T) {
+	store, cleanup := setupTestStore(t)
+	defer cleanup()
+
+	sess, err := store.Create("claude", "/tmp")
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+	sess.Title = "original-title"
+	sess.Tags = []string{"original-tag"}
+	if err := store.Save(sess); err != nil {
+		t.Fatalf("failed to save session: %v", err)
+	}
+
+	metas, err := store.ListMeta()
+	if err != nil {
+		t.Fatalf("failed to list meta: %v", err)
+	}
+	if len(metas) != 1 {
+		t.Fatalf("expected 1 meta, got %d", len(metas))
+	}
+
+	metas[0].Title = "mutated-title"
+	metas[0].Tags[0] = "mutated-tag"
+	metas[0].Tags = append(metas[0].Tags, "new-tag")
+
+	refetched, err := store.ListMeta()
+	if err != nil {
+		t.Fatalf("failed to list meta again: %v", err)
+	}
+	if len(refetched) != 1 {
+		t.Fatalf("expected 1 meta on second read, got %d", len(refetched))
+	}
+
+	if refetched[0].Title != "original-title" {
+		t.Fatalf("internal title was mutated via ListMeta result: %q", refetched[0].Title)
+	}
+	if len(refetched[0].Tags) != 1 || refetched[0].Tags[0] != "original-tag" {
+		t.Fatalf("internal tags were mutated via ListMeta result: %v", refetched[0].Tags)
+	}
+	if metas[0] == refetched[0] {
+		t.Fatal("ListMeta should not return the same pointer instance")
+	}
+}
+
+func TestWriteFileAtomic_FallbackReplaceWithoutDeletingDestination(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "clinvoker-atomic-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	path := filepath.Join(tmpDir, "session.json")
+	if err := os.WriteFile(path, []byte("old"), 0600); err != nil {
+		t.Fatalf("failed to seed file: %v", err)
+	}
+
+	origRename := renameFile
+	origRemove := removeFile
+	t.Cleanup(func() {
+		renameFile = origRename
+		removeFile = origRemove
+	})
+
+	firstTmpRename := true
+	renameFile = func(oldPath, newPath string) error {
+		if strings.HasPrefix(filepath.Base(oldPath), ".tmp-") && newPath == path && firstTmpRename {
+			firstTmpRename = false
+			return errors.New("simulated rename failure")
+		}
+		return origRename(oldPath, newPath)
+	}
+
+	var destinationRemoved bool
+	removeFile = func(name string) error {
+		if name == path {
+			destinationRemoved = true
+		}
+		return origRemove(name)
+	}
+
+	if err := writeFileAtomic(path, []byte("new"), 0600); err != nil {
+		t.Fatalf("writeFileAtomic failed: %v", err)
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read file after atomic write: %v", err)
+	}
+	if string(got) != "new" {
+		t.Fatalf("expected updated contents, got %q", string(got))
+	}
+	if destinationRemoved {
+		t.Fatal("writeFileAtomic should not remove destination file during fallback")
+	}
+}
+
+func TestWriteFileAtomic_PreservesDestinationOnDoubleRenameFailure(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "clinvoker-atomic-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	path := filepath.Join(tmpDir, "session.json")
+	if err := os.WriteFile(path, []byte("old"), 0600); err != nil {
+		t.Fatalf("failed to seed file: %v", err)
+	}
+
+	origRename := renameFile
+	origRemove := removeFile
+	t.Cleanup(func() {
+		renameFile = origRename
+		removeFile = origRemove
+	})
+
+	renameFile = func(oldPath, newPath string) error {
+		if strings.HasPrefix(filepath.Base(oldPath), ".tmp-") && newPath == path {
+			return errors.New("simulated tmp rename failure")
+		}
+		return origRename(oldPath, newPath)
+	}
+
+	var destinationRemoved bool
+	removeFile = func(name string) error {
+		if name == path {
+			destinationRemoved = true
+		}
+		return origRemove(name)
+	}
+
+	if err := writeFileAtomic(path, []byte("new"), 0600); err == nil {
+		t.Fatal("expected writeFileAtomic to fail")
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("expected destination file to remain readable: %v", err)
+	}
+	if string(got) != "old" {
+		t.Fatalf("expected destination content to be preserved, got %q", string(got))
+	}
+	if destinationRemoved {
+		t.Fatal("writeFileAtomic should not delete destination file on failure")
 	}
 }

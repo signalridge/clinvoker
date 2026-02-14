@@ -49,10 +49,10 @@ type CircuitBreaker struct {
 	halfOpenMaxCalls int           // Maximum concurrent calls allowed in half-open state
 
 	// State
-	state             CircuitState
-	failureCount      int
-	successCount      int
-	halfOpenCallCount int
+	state             CircuitState // Current state of the breaker
+	failureCount      int          // Consecutive failures in closed state
+	successCount      int          // Consecutive successes in half-open state
+	halfOpenCallCount int          // In-flight calls in half-open state
 	lastFailureTime   time.Time
 	lastStateChange   time.Time
 
@@ -88,6 +88,8 @@ type CircuitBreakerConfig struct {
 	HalfOpenMaxCalls int
 
 	// OnStateChange is called when the circuit breaker changes state.
+	// The callback is invoked synchronously after the state transition and
+	// outside the breaker lock. Keep callback work short/non-blocking.
 	OnStateChange func(name string, from, to CircuitState)
 }
 
@@ -133,7 +135,13 @@ func NewCircuitBreaker(cfg CircuitBreakerConfig) *CircuitBreaker {
 // Returns true if the request is allowed, false if it should be rejected.
 func (cb *CircuitBreaker) Allow() bool {
 	cb.mu.Lock()
-	defer cb.mu.Unlock()
+	var notify func()
+	defer func() {
+		cb.mu.Unlock()
+		if notify != nil {
+			notify()
+		}
+	}()
 
 	now := time.Now()
 
@@ -143,8 +151,8 @@ func (cb *CircuitBreaker) Allow() bool {
 
 	case StateOpen:
 		// Check if timeout has elapsed
-		if now.Sub(cb.lastStateChange) > cb.timeout {
-			cb.transitionTo(StateHalfOpen)
+		if now.Sub(cb.lastStateChange) >= cb.timeout {
+			notify = cb.transitionTo(StateHalfOpen)
 			cb.halfOpenCallCount = 1
 			return true
 		}
@@ -168,7 +176,13 @@ func (cb *CircuitBreaker) Allow() bool {
 // RecordSuccess records a successful call.
 func (cb *CircuitBreaker) RecordSuccess() {
 	cb.mu.Lock()
-	defer cb.mu.Unlock()
+	var notify func()
+	defer func() {
+		cb.mu.Unlock()
+		if notify != nil {
+			notify()
+		}
+	}()
 
 	cb.totalSuccesses++
 
@@ -177,21 +191,30 @@ func (cb *CircuitBreaker) RecordSuccess() {
 		cb.failureCount = 0
 
 	case StateHalfOpen:
+		if cb.halfOpenCallCount > 0 {
+			cb.halfOpenCallCount--
+		}
 		cb.successCount++
 		if cb.successCount >= cb.successThreshold {
-			cb.transitionTo(StateClosed)
+			notify = cb.transitionTo(StateClosed)
 		}
 
 	case StateOpen:
 		// Shouldn't happen, but reset if it does
-		cb.transitionTo(StateClosed)
+		notify = cb.transitionTo(StateClosed)
 	}
 }
 
 // RecordFailure records a failed call.
 func (cb *CircuitBreaker) RecordFailure() {
 	cb.mu.Lock()
-	defer cb.mu.Unlock()
+	var notify func()
+	defer func() {
+		cb.mu.Unlock()
+		if notify != nil {
+			notify()
+		}
+	}()
 
 	cb.totalFailures++
 	cb.lastFailureTime = time.Now()
@@ -200,12 +223,15 @@ func (cb *CircuitBreaker) RecordFailure() {
 	case StateClosed:
 		cb.failureCount++
 		if cb.failureCount >= cb.failureThreshold {
-			cb.transitionTo(StateOpen)
+			notify = cb.transitionTo(StateOpen)
 		}
 
 	case StateHalfOpen:
+		if cb.halfOpenCallCount > 0 {
+			cb.halfOpenCallCount--
+		}
 		// Single failure in half-open state trips back to open
-		cb.transitionTo(StateOpen)
+		notify = cb.transitionTo(StateOpen)
 
 	case StateOpen:
 		// Already open, nothing to do
@@ -214,7 +240,7 @@ func (cb *CircuitBreaker) RecordFailure() {
 
 // transitionTo changes the circuit breaker state.
 // Must be called with lock held.
-func (cb *CircuitBreaker) transitionTo(newState CircuitState) {
+func (cb *CircuitBreaker) transitionTo(newState CircuitState) func() {
 	oldState := cb.state
 	cb.state = newState
 	cb.lastStateChange = time.Now()
@@ -223,9 +249,14 @@ func (cb *CircuitBreaker) transitionTo(newState CircuitState) {
 	cb.halfOpenCallCount = 0
 
 	if cb.onStateChange != nil && oldState != newState {
-		// Call callback outside the lock to avoid deadlocks
-		go cb.onStateChange(cb.name, oldState, newState)
+		name := cb.name
+		callback := cb.onStateChange
+		return func() {
+			// Invoke synchronously for natural backpressure and bounded goroutine usage.
+			callback(name, oldState, newState)
+		}
 	}
+	return nil
 }
 
 // State returns the current state of the circuit breaker.
@@ -265,13 +296,12 @@ func (cb *CircuitBreaker) Stats() Stats {
 // Reset resets the circuit breaker to closed state.
 func (cb *CircuitBreaker) Reset() {
 	cb.mu.Lock()
-	defer cb.mu.Unlock()
+	notify := cb.transitionTo(StateClosed)
+	cb.mu.Unlock()
 
-	cb.state = StateClosed
-	cb.failureCount = 0
-	cb.successCount = 0
-	cb.halfOpenCallCount = 0
-	cb.lastStateChange = time.Now()
+	if notify != nil {
+		notify()
+	}
 }
 
 // Execute runs the given function with circuit breaker protection.

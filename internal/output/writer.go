@@ -69,12 +69,13 @@ func NewWriter(w io.Writer, opts ...WriterOption) *Writer {
 
 // WriteEvent writes a single event to the output.
 func (w *Writer) WriteEvent(event *UnifiedEvent) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	if w.onEvent != nil {
+		// Run callbacks outside the writer lock so callbacks can safely emit events.
 		w.onEvent(event)
 	}
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	switch w.format {
 	case FormatJSON:

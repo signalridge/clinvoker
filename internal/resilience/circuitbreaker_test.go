@@ -119,7 +119,9 @@ func TestCircuitBreaker_HalfOpenToClosedOnSuccess(t *testing.T) {
 	}
 
 	// Second success closes the circuit
-	cb.Allow()
+	if !cb.Allow() {
+		t.Fatal("expected second half-open probe to be allowed")
+	}
 	cb.RecordSuccess()
 	if cb.State() != StateClosed {
 		t.Errorf("expected state %v after second success, got %v", StateClosed, cb.State())
@@ -418,4 +420,44 @@ func TestCircuitBreaker_OnStateChange(t *testing.T) {
 		}
 	}
 	mu.Unlock()
+}
+
+func TestCircuitBreaker_OnStateChangeProvidesBackpressure(t *testing.T) {
+	callbackStarted := make(chan struct{})
+	callbackRelease := make(chan struct{})
+
+	cfg := DefaultConfig("test")
+	cfg.FailureThreshold = 1
+	cfg.OnStateChange = func(name string, from, to CircuitState) {
+		close(callbackStarted)
+		<-callbackRelease
+	}
+	cb := NewCircuitBreaker(cfg)
+
+	done := make(chan struct{})
+	go func() {
+		cb.Allow()
+		cb.RecordFailure()
+		close(done)
+	}()
+
+	select {
+	case <-callbackStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected state change callback to start")
+	}
+
+	select {
+	case <-done:
+		t.Fatal("state transition should wait for callback completion")
+	default:
+	}
+
+	close(callbackRelease)
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected state transition to complete after callback returns")
+	}
 }
