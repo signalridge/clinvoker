@@ -87,8 +87,8 @@ func (r *Registry) List() []string {
 
 // Available returns all available (installed) backends.
 func (r *Registry) Available() []Backend {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	var backends []Backend
 	for _, b := range r.backends {
@@ -100,7 +100,7 @@ func (r *Registry) Available() []Backend {
 }
 
 // isAvailableCachedLocked checks availability with caching.
-// Caller must hold at least a read lock on r.mu.
+// Caller must hold a write lock on r.mu because cache entries may be updated.
 func (r *Registry) isAvailableCachedLocked(b Backend) bool {
 	name := b.Name()
 	if cached, ok := r.availabilityCache[name]; ok && time.Since(cached.checkedAt) < r.availabilityCacheTTL {

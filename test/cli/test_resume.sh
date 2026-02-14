@@ -42,7 +42,7 @@ test_resume_latest_session() {
 	fi
 
 	local output
-	output=$(clinvk resume --latest --dry-run 2>&1 || true)
+	output=$(clinvk resume --last --dry-run 2>&1 || true)
 
 	assert_not_empty "$output"
 }
@@ -152,6 +152,7 @@ test_resume_all_backends() {
 
 main() {
 	setup_test_env
+	seed_cli_session_fixtures
 
 	print_header "Testing clinvk resume"
 

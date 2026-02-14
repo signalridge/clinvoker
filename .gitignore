@@ -43,6 +43,12 @@ Thumbs.db
 # Claude
 .claude/
 
+# OpenSpec
+openspec/
+
+# Codex
+.codex/
+
 # MkDocs
 site/
 

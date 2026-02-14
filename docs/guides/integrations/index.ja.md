@@ -45,7 +45,7 @@ clinvk は HTTP API を通じて、さまざまなツールやフレームワー
 | [LangChain/LangGraph](langchain-langgraph.md) | AI フレームワーク連携 | `/openai/v1/*` |
 | [CI/CD](ci-cd/index.md) | 自動コードレビュー、ドキュメント生成 | `/api/v1/*` |
 | [クライアントライブラリ](../../reference/api/index.md) | Python / TypeScript / Go クライアント | すべてのエンドポイント |
-| [MCP Server](mcp-server.md) | Model Context Protocol 連携 | 将来対応 |
+| [MCP Server](mcp-server.md) | Model Context Protocol 連携 | 利用可能 |
 
 ## すぐに試せる連携例
 

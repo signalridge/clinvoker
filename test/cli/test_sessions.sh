@@ -132,6 +132,7 @@ test_sessions_help() {
 
 main() {
 	setup_test_env
+	seed_cli_session_fixtures
 
 	print_header "Testing clinvk sessions"
 

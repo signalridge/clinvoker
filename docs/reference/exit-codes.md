@@ -1,333 +1,100 @@
 # Exit Codes
 
-Complete reference for clinvk exit codes and their meanings.
+Reference for `clinvk` exit codes based on current implementation behavior.
 
 ## Overview
 
-clinvk uses exit codes to indicate the result of command execution. Understanding these codes is essential for scripting and automation.
+`clinvk` uses process exit codes for scripting and automation.
 
-## Exit Code Reference
+## Guaranteed Exit Codes
 
-| Code | Name | Description | When It Occurs |
-|------|------|-------------|----------------|
-| 0 | Success | Command completed successfully | Normal completion |
-| 1 | General Error | CLI/validation error or subcommand failure | Invalid input, execution failure |
-| 2 | Backend Not Available | The requested backend is not installed | Backend binary not found |
-| 3 | Invalid Configuration | Configuration file error or invalid settings | Bad config file |
-| 4 | Session Error | Session operation failed | Resume failed, session not found |
-| 5 | API Error | HTTP API request failed | Server error, network issue |
-| 6 | Timeout | Command execution timed out | Exceeded timeout limit |
-| 7 | Cancelled | User cancelled the operation | Ctrl+C pressed |
-| 8+ | Backend Exit Code | Propagated from backend CLI | Backend-specific error |
+| Code | Name | Description |
+|------|------|-------------|
+| 0 | Success | Command completed successfully |
+| 1 | General Error | Validation/config/runtime error, or aggregated subcommand failure |
+| 6 | Timeout | Command exceeded `unified_flags.command_timeout_secs` and timeout bubbled to top level |
+| 2+ | Backend Exit Code | Propagated backend CLI exit code (for `prompt` / `resume` paths) |
 
-## Detailed Descriptions
-
-### 0 - Success
-
-The command completed successfully without errors.
-
-```bash
-clinvk "hello world"
-echo $?  # Output: 0
-```
-
-### 1 - General Error
-
-A general error occurred during execution. Common causes include:
-
-- Invalid command-line arguments
-- Backend execution failed
-- File not found
-- Permission denied
-
-```bash
-clinvk --invalid-flag "prompt"
-echo $?  # Output: 1
-```
-
-### 2 - Backend Not Available
-
-The requested backend is not installed or not in PATH.
-
-```bash
-clinvk -b nonexistent "prompt"
-echo $?  # Output: 2
-```
-
-### 3 - Invalid Configuration
-
-The configuration file has errors or contains invalid settings.
-
-```bash
-clinvk --config /invalid/config.yaml "prompt"
-echo $?  # Output: 3
-```
-
-### 4 - Session Error
-
-A session-related operation failed.
-
-```bash
-clinvk resume nonexistent-session
-echo $?  # Output: 4
-```
-
-### 5 - API Error
-
-An HTTP API request failed (when using `clinvk serve`).
-
-```bash
-# Example: API endpoint returns error
-curl -X POST http://localhost:8080/api/v1/prompt \
-  -d '{"backend": "invalid"}' 2>/dev/null || echo "API error"
-```
-
-### 6 - Timeout
-
-The command execution exceeded the configured timeout.
-
-```bash
-# Set timeout via config: unified_flags.command_timeout_secs
-clinvk "very long task"
-# If command_timeout_secs is set and exceeded, exits with code 6
-echo $?  # Output: 6
-```
-
-### 7 - Cancelled
-
-The user cancelled the operation (e.g., pressed Ctrl+C).
-
-```bash
-clinvk "long running task"
-# Press Ctrl+C
-echo $?  # Output: 7
-```
-
-### Backend Exit Codes (8+)
-
-When running `clinvk [prompt]` or `clinvk resume`, clinvk executes the backend CLI and propagates the backend's exit code when it is non-zero. These codes are backend-specific.
-
-## Command-Specific Exit Codes
+## Command Behavior
 
 ### prompt / resume
 
-| Code | Description |
-|------|-------------|
+| Code | Meaning |
+|------|---------|
 | 0 | Success |
-| 1 | General error |
-| 2+ | Backend exit code (propagated) |
+| 1 | General error before backend exit propagation |
+| 6 | Timeout (`command_timeout_secs`) |
+| 2+ | Backend CLI exit code is propagated |
 
-### parallel
+### compare / chain / parallel
 
-| Code | Description |
-|------|-------------|
-| 0 | All tasks succeeded |
-| 1 | One or more tasks failed |
-| 2 | Invalid task file |
+| Code | Meaning |
+|------|---------|
+| 0 | All units succeeded |
+| 1 | One or more units failed (including timeout inside a unit) |
 
-### compare
+### sessions / config / serve / other utility commands
 
-| Code | Description |
-|------|-------------|
-| 0 | All backends succeeded |
-| 1 | One or more backends failed |
-| 2 | No backends available |
+| Code | Meaning |
+|------|---------|
+| 0 | Command succeeded |
+| 1 | Command failed |
 
-### chain
+## Timeout Semantics
 
-| Code | Description |
-|------|-------------|
-| 0 | All steps succeeded |
-| 1 | A step failed |
-| 2 | Invalid pipeline file |
+When `unified_flags.command_timeout_secs` is set to a positive value:
 
-### sessions
+- Backend process timeout is detected and treated as a timeout error.
+- Top-level timeout errors are normalized to exit code `6`.
+- In aggregate commands (`compare` / `chain` / `parallel`), per-unit timeout is treated as unit failure and contributes to aggregate exit code `1`.
 
-| Code | Description |
-|------|-------------|
-| 0 | Operation succeeded |
-| 1 | Operation failed (e.g., session not found) |
-| 4 | Session error |
+Example:
 
-### config
+```bash
+# config.yaml
+unified_flags:
+  command_timeout_secs: 5
 
-| Code | Description |
-|------|-------------|
-| 0 | Operation succeeded |
-| 1 | Invalid key or value |
-| 3 | Configuration error |
-
-### serve
-
-| Code | Description |
-|------|-------------|
-| 0 | Clean shutdown (SIGINT/SIGTERM) |
-| 1 | Server startup error |
-| 5 | API error during operation |
+clinvk "long running task"
+echo $?  # 6 if timed out at top-level prompt/resume path
+```
 
 ## Scripting Examples
 
-### Check Success
+### Branch by exit code
 
 ```bash
-if clinvk "implement feature"; then
-  echo "Success!"
-else
-  echo "Failed!"
-fi
-```
-
-### Handle Specific Codes
-
-```bash
-clinvk -b codex "prompt"
+clinvk "task"
 code=$?
 
 case $code in
   0)
-    echo "Success"
+    echo "success"
     ;;
-  1)
-    echo "General error"
-    ;;
-  2)
-    echo "Backend not available - please install codex"
-    ;;
-  4)
-    echo "Session error"
+  6)
+    echo "timeout"
     ;;
   *)
-    echo "Backend error: $code"
+    echo "failed with code $code"
     ;;
 esac
 ```
 
-### Retry on Failure
+### Fail fast in shell
 
 ```bash
-max_attempts=3
-attempt=1
-
-while [ $attempt -le $max_attempts ]; do
-  if clinvk "prompt"; then
-    echo "Success on attempt $attempt"
-    break
-  fi
-
-  if [ $attempt -eq $max_attempts ]; then
-    echo "Failed after $max_attempts attempts"
-    exit 1
-  fi
-
-  echo "Attempt $attempt failed, retrying in 5 seconds..."
-  sleep 5
-  attempt=$((attempt + 1))
-done
-```
-
-### Exit on Error
-
-```bash
-#!/bin/bash
-set -e  # Exit on any error
+set -e
 
 clinvk "step 1"
 clinvk "step 2"
-clinvk "step 3"
-
-echo "All steps completed successfully"
 ```
 
-### Ignore Specific Errors
+## Notes
 
-```bash
-#!/bin/bash
-
-# Continue even if this fails
-clinvk "optional task" || true
-
-# This must succeed
-clinvk "critical task"
-```
-
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-- name: Run AI task
-  run: clinvk "generate tests"
-  continue-on-error: true
-  id: ai-task
-
-- name: Handle failure
-  if: failure() && steps.ai-task.outcome == 'failure'
-  run: |
-    echo "AI task failed with exit code $?"
-    exit 1
-```
-
-### GitLab CI
-
-```yaml
-ai-task:
-  script:
-    - clinvk "generate tests" || EXIT_CODE=$?
-    - |
-      case $EXIT_CODE in
-        0) echo "Success" ;;
-        2) echo "Backend not installed" ; exit 1 ;;
-        *) echo "Error: $EXIT_CODE" ; exit 1 ;;
-      esac
-```
-
-### Make/Just
-
-```makefile
-.PHONY: test lint ai-review
-
-test:
- go test ./...
-
-ai-review:
- clinvk "review the code for issues" || (echo "Review failed" && exit 1)
-
-lint-and-review: lint ai-review
- @echo "All checks passed"
-```
-
-## Exit Code Best Practices
-
-1. **Always check exit codes** in scripts to handle failures gracefully
-2. **Use `set -e`** in bash scripts to exit immediately on errors
-3. **Log the exit code** when debugging issues
-4. **Handle specific codes** differently based on your needs
-5. **Use `|| true`** when a command failure should not stop the script
-
-## Troubleshooting
-
-### Unexpected Exit Codes
-
-| Symptom | Possible Cause | Solution |
-|---------|----------------|----------|
-| Always returns 1 | Backend not configured | Check config and API keys |
-| Returns 2 | Backend not installed | Install the backend CLI |
-| Returns 4 | Session expired or invalid | Check session with `clinvk sessions list` |
-| Returns 6 | Timeout too short | Increase `command_timeout_secs` |
-
-### Debug Exit Codes
-
-```bash
-# Run with verbose output
-clinvk -v "prompt"
-echo "Exit code: $?"
-
-# Check backend directly
-claude "test"
-echo "Backend exit code: $?"
-```
+- Do not assume historic code mappings that are not listed above.
+- If you depend on specific behavior in CI, pin your workflow to the documented contract in this file.
 
 ## See Also
 
-- [Commands Reference](cli/index.md) - Command documentation
-- [Troubleshooting](../concepts/troubleshooting.md) - Common issues and solutions
+- [Commands Reference](cli/index.md)
+- [Configuration Reference](configuration.md)

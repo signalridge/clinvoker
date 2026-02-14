@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -137,11 +136,8 @@ type PromptInput struct {
 
 // HandlePrompt handles prompt execution requests.
 func (h *CustomHandlers) HandlePrompt(ctx context.Context, input *PromptInput) (*huma.StreamResponse, error) {
-	if input.Body.Backend == "" {
-		return nil, huma.Error400BadRequest("backend is required")
-	}
-	if input.Body.Prompt == "" {
-		return nil, huma.Error400BadRequest("prompt is required")
+	if err := ValidatePromptRequest(input.Body); err != nil {
+		return nil, huma.Error400BadRequest(err.Error())
 	}
 
 	cfg := config.Get()
@@ -214,8 +210,8 @@ type ParallelInput struct {
 
 // HandleParallel handles parallel execution requests.
 func (h *CustomHandlers) HandleParallel(ctx context.Context, input *ParallelInput) (*ParallelResponse, error) {
-	if len(input.Body.Tasks) == 0 {
-		return nil, huma.Error400BadRequest("tasks are required")
+	if err := ValidateParallelRequest(input.Body); err != nil {
+		return nil, huma.Error400BadRequest(err.Error())
 	}
 
 	// Convert to service request
@@ -282,16 +278,8 @@ type ChainInput struct {
 
 // HandleChain handles chain execution requests.
 func (h *CustomHandlers) HandleChain(ctx context.Context, input *ChainInput) (*ChainResponse, error) {
-	if len(input.Body.Steps) == 0 {
-		return nil, huma.Error400BadRequest("steps are required")
-	}
-	if input.Body.PassSessionID || input.Body.PersistSessions {
-		return nil, huma.Error400BadRequest("chain is always ephemeral; pass_session_id and persist_sessions are not supported")
-	}
-	for i, step := range input.Body.Steps {
-		if strings.Contains(step.Prompt, "{{session}}") {
-			return nil, huma.Error400BadRequest(fmt.Sprintf("chain step %d uses {{session}} but sessions are not persisted", i+1))
-		}
+	if err := ValidateChainRequest(input.Body); err != nil {
+		return nil, huma.Error400BadRequest(err.Error())
 	}
 
 	// Convert to service request
@@ -357,11 +345,8 @@ type CompareInput struct {
 
 // HandleCompare handles compare execution requests.
 func (h *CustomHandlers) HandleCompare(ctx context.Context, input *CompareInput) (*CompareResponse, error) {
-	if len(input.Body.Backends) == 0 {
-		return nil, huma.Error400BadRequest("backends are required")
-	}
-	if input.Body.Prompt == "" {
-		return nil, huma.Error400BadRequest("prompt is required")
+	if err := ValidateCompareRequest(input.Body); err != nil {
+		return nil, huma.Error400BadRequest(err.Error())
 	}
 
 	serviceReq := &service.CompareRequest{

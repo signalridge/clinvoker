@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -930,6 +931,69 @@ func TestServerConfigDefaults(t *testing.T) {
 				t.Errorf("Server.%s = %v, want %v", tt.name, tt.got, tt.expected)
 			}
 		})
+	}
+}
+
+func TestMCPConfigDefaults(t *testing.T) {
+	Reset()
+	Init("")
+	cfg := Get()
+
+	field := reflect.ValueOf(cfg).Elem().FieldByName("MCP")
+	if !field.IsValid() {
+		t.Fatal("expected Config to include MCP field")
+	}
+
+	tests := []struct {
+		name     string
+		got      any
+		expected any
+	}{
+		{"Transport", field.FieldByName("Transport").String(), "stdio"},
+		{"Host", field.FieldByName("Host").String(), "127.0.0.1"},
+		{"Port", int(field.FieldByName("Port").Int()), 8081},
+		{"HTTPPath", field.FieldByName("HTTPPath").String(), "/mcp"},
+		{"ExposeHealth", field.FieldByName("ExposeHealth").Bool(), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.expected {
+				t.Errorf("MCP.%s = %v, want %v", tt.name, tt.got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMCPConfigEnvOverrides(t *testing.T) {
+	Reset()
+	t.Setenv("CLINVK_MCP_TRANSPORT", "http")
+	t.Setenv("CLINVK_MCP_HOST", "0.0.0.0")
+	t.Setenv("CLINVK_MCP_PORT", "9090")
+	t.Setenv("CLINVK_MCP_HTTP_PATH", "/mcp-alt")
+	t.Setenv("CLINVK_MCP_EXPOSE_HEALTH", "true")
+	Init("")
+	cfg := Get()
+
+	field := reflect.ValueOf(cfg).Elem().FieldByName("MCP")
+	if !field.IsValid() {
+		t.Fatal("expected Config to include MCP field")
+	}
+
+	if got := field.FieldByName("Transport").String(); got != "http" {
+		t.Errorf("MCP.Transport = %q, want %q", got, "http")
+	}
+	if got := field.FieldByName("Host").String(); got != "0.0.0.0" {
+		t.Errorf("MCP.Host = %q, want %q", got, "0.0.0.0")
+	}
+	if got := int(field.FieldByName("Port").Int()); got != 9090 {
+		t.Errorf("MCP.Port = %d, want %d", got, 9090)
+	}
+	if got := field.FieldByName("HTTPPath").String(); got != "/mcp-alt" {
+		t.Errorf("MCP.HTTPPath = %q, want %q", got, "/mcp-alt")
+	}
+	if got := field.FieldByName("ExposeHealth").Bool(); got != true {
+		t.Errorf("MCP.ExposeHealth = %v, want true", got)
 	}
 }
 

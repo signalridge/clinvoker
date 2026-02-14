@@ -45,7 +45,7 @@ clinvk integrates with various tools and frameworks through its HTTP API:
 | [LangChain/LangGraph](langchain-langgraph.md) | AI framework integration | `/openai/v1/*` |
 | [CI/CD](ci-cd/index.md) | Automated code review, documentation | `/api/v1/*` |
 | [Client Libraries](../../reference/api/index.md) | Python, TypeScript, Go clients | All endpoints |
-| [MCP Server](mcp-server.md) | Model Context Protocol integration | Future |
+| [MCP Server](mcp-server.md) | Model Context Protocol integration | Available |
 
 ## Quick Integration Examples
 

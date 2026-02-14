@@ -20,6 +20,7 @@ clinvk [command] [subcommand] [flags]
 | [`parallel`](parallel.md) | Execute tasks in parallel | Run multiple tasks |
 | [`compare`](compare.md) | Compare backend responses | Evaluate different AIs |
 | [`chain`](chain.md) | Execute prompt chain | Multi-step workflows |
+| [`mcp`](mcp.md) | Start MCP server | MCP integrations |
 | [`serve`](serve.md) | Start HTTP API server | Application integration |
 | `version` | Show version information | Check installed version |
 | `help` | Show help | Get command help |

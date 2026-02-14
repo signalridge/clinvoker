@@ -136,19 +136,25 @@ func selectAndResumeSession(ctx *staleSessionContext) *session.Session {
 		// Try to resume the selected session
 		result, err := attemptResumeSession(ctx, selectedSess)
 
-		if err == nil && (result == nil || !isStaleSessionError(result.Error)) {
+		if isResumeSuccess(result, err) {
 			// Success
 			return selectedSess
 		}
 
-		// Failed - mark as expired and continue loop
-		fmt.Printf("Session %s also expired. Marked as expired.\n",
-			shortSessionID(selectedSess.ID))
-		selectedSess.MarkExpired()
-		if saveErr := ctx.store.Save(selectedSess); saveErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to update session: %v\n", saveErr)
+		if isStaleResumeFailure(result, err) {
+			// Failed due to stale backend session - mark as expired and continue loop.
+			fmt.Printf("Session %s also expired. Marked as expired.\n",
+				shortSessionID(selectedSess.ID))
+			selectedSess.MarkExpired()
+			if saveErr := ctx.store.Save(selectedSess); saveErr != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to update session: %v\n", saveErr)
+			}
+			continue
 		}
-		// Continue loop to let user select again
+
+		// Non-stale failure: keep session state unchanged and let user choose again.
+		fmt.Printf("Session %s failed to resume: %s\n",
+			shortSessionID(selectedSess.ID), resumeFailureReason(result, err))
 	}
 }
 
@@ -212,8 +218,13 @@ func promptSessionSelection(maxIdx int) int {
 
 // attemptResumeSession tries to resume a session and returns the result.
 func attemptResumeSession(ctx *staleSessionContext, sess *session.Session) (*ExecutionResult, error) {
+	targetBackend, targetOpts, err := buildResumeTarget(ctx, sess)
+	if err != nil {
+		return nil, err
+	}
+
 	// Build resume command
-	execCmd := ctx.backend.ResumeCommandUnified(sess.BackendSessionID, ctx.prompt, ctx.opts)
+	execCmd := targetBackend.ResumeCommandUnified(sess.BackendSessionID, ctx.prompt, targetOpts)
 
 	// Update session usage
 	sess.MarkUsed()
@@ -224,7 +235,7 @@ func attemptResumeSession(ctx *staleSessionContext, sess *session.Session) (*Exe
 	// Execute
 	userFormat := backend.OutputFormat(ctx.flags.outputFormat)
 	execCfg := &ExecutionConfig{
-		Backend:    ctx.backend,
+		Backend:    targetBackend,
 		Session:    sess,
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
@@ -245,6 +256,73 @@ func attemptResumeSession(ctx *staleSessionContext, sess *session.Session) (*Exe
 	}
 
 	return result, err
+}
+
+func buildResumeTarget(ctx *staleSessionContext, sess *session.Session) (backend.Backend, *backend.UnifiedOptions, error) {
+	if !config.IsBackendEnabled(sess.Backend) {
+		return nil, nil, fmt.Errorf("backend %q is disabled in config", sess.Backend)
+	}
+
+	targetBackend, err := backend.Get(sess.Backend)
+	if err != nil {
+		return nil, nil, fmt.Errorf("backend error: %w", err)
+	}
+
+	if !ctx.flags.dryRun && !targetBackend.IsAvailable() {
+		return nil, nil, fmt.Errorf("backend %q is not available", sess.Backend)
+	}
+
+	userFormat := backend.OutputFormat(ctx.flags.outputFormat)
+	internalFormat := DetermineInternalFormat(userFormat)
+	cfg := config.Get()
+	opts := &backend.UnifiedOptions{
+		WorkDir:      sess.WorkingDir,
+		Model:        modelName,
+		OutputFormat: internalFormat,
+	}
+	applyUnifiedDefaults(opts, cfg, ctx.flags.dryRun)
+	applyBackendDefaults(opts, sess.Backend, cfg)
+
+	if opts.Model == "" {
+		if bcfg, ok := cfg.Backends[sess.Backend]; ok {
+			opts.Model = bcfg.Model
+		}
+	}
+
+	return targetBackend, opts, nil
+}
+
+func isResumeSuccess(result *ExecutionResult, err error) bool {
+	if err != nil {
+		return false
+	}
+	if result == nil {
+		return true
+	}
+	return result.ExitCode == 0 && result.Error == ""
+}
+
+func isStaleResumeFailure(result *ExecutionResult, err error) bool {
+	if result != nil && isStaleSessionError(result.Error) {
+		return true
+	}
+	if err != nil && isStaleSessionError(err.Error()) {
+		return true
+	}
+	return false
+}
+
+func resumeFailureReason(result *ExecutionResult, err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	if result != nil {
+		if result.Error != "" {
+			return result.Error
+		}
+		return fmt.Sprintf("exit code %d", result.ExitCode)
+	}
+	return "unknown error"
 }
 
 // startNewSession creates and executes a new session.

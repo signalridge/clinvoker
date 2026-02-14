@@ -20,6 +20,7 @@ clinvk [コマンド] [サブコマンド] [フラグ]
 | [`parallel`](parallel.md) | 並列実行 | 複数タスクを同時実行 |
 | [`compare`](compare.md) | バックエンド応答を比較 | 複数 AI の評価 |
 | [`chain`](chain.md) | プロンプトチェーンを実行 | 複数ステップのワークフロー |
+| [`mcp`](mcp.md) | MCP サーバーを起動 | MCP 連携 |
 | [`serve`](serve.md) | HTTP API サーバーを起動 | アプリケーション統合 |
 | `version` | バージョン情報を表示 | インストール済み版の確認 |
 | `help` | ヘルプを表示 | コマンドの使い方を確認 |
@@ -146,6 +147,7 @@ clinvk --ephemeral "簡単な質問"
 
 HTTP API を提供するためのコマンドです。
 
+- `mcp` - MCP サーバーを起動
 - `serve` - API サーバーを起動
 
 ## 使用例
@@ -206,6 +208,7 @@ clinvk chain --file pipeline.json
 
 ```bash
 # サーバーを起動
+clinvk mcp --transport stdio
 clinvk serve --port 8080
 ```
 

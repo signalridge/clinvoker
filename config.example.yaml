@@ -137,6 +137,18 @@ server:
   # Prometheus Metrics (optional)
   # Enable the /metrics endpoint for Prometheus scraping.
   metrics_enabled: false
+# MCP server settings (for `clinvk mcp` command).
+mcp:
+  # Transport type: stdio or http.
+  transport: stdio
+  # Host to bind to for HTTP transport.
+  host: "127.0.0.1"
+  # Port to listen on for HTTP transport.
+  port: 8081
+  # MCP HTTP endpoint path.
+  http_path: "/mcp"
+  # Expose /health endpoint in MCP mode.
+  expose_health: false
 # Parallel execution settings (for `clinvk parallel` command).
 parallel:
   # Maximum number of parallel workers.
@@ -153,5 +165,10 @@ parallel:
 # CLINVK_GEMINI_MODEL         - Gemini model
 # CLINVK_API_KEYS             - API keys for server auth (comma-separated)
 # CLINVK_API_KEYS_GOPASS_PATH - Gopass path for API keys
+# CLINVK_MCP_TRANSPORT        - MCP transport (stdio or http)
+# CLINVK_MCP_HOST             - MCP HTTP host
+# CLINVK_MCP_PORT             - MCP HTTP port
+# CLINVK_MCP_HTTP_PATH        - MCP HTTP path
+# CLINVK_MCP_EXPOSE_HEALTH    - MCP expose /health (true/false)
 #
 # Priority: CLI flags > Environment variables > Config file > Defaults

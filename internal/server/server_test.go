@@ -4,13 +4,37 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
+	"github.com/signalridge/clinvoker/internal/auth"
+	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server/handlers"
+	"github.com/signalridge/clinvoker/internal/server/mcp"
+	"github.com/signalridge/clinvoker/internal/server/service"
 )
+
+func TestMain(m *testing.M) {
+	tempDir, err := os.MkdirTemp("", "clinvk-server-tests-")
+	if err != nil {
+		os.Exit(1)
+	}
+	_ = os.Setenv("HOME", tempDir)
+	_ = os.Unsetenv(auth.EnvAPIKeys)
+	_ = os.Unsetenv(auth.EnvAPIKeysGopassPath)
+	auth.ResetCache()
+	config.Reset()
+
+	code := m.Run()
+
+	_ = os.RemoveAll(tempDir)
+	os.Exit(code)
+}
 
 func TestServerCreation(t *testing.T) {
 	cfg := Config{
@@ -35,6 +59,179 @@ func TestServerCreation(t *testing.T) {
 	if srv.Executor() == nil {
 		t.Error("expected executor to be set")
 	}
+}
+
+func TestNewRouter_EnforcesAPIKeyOnMCP(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"ping"}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestNewRouter_MCP_SSE_RequiresAPIKey(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"invalid-backend","prompt":"hello","output_format":"stream-json"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestNewRouter_MCP_SSE_WithAPIKey_Succeeds(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"clinvk_prompt","arguments":{"backend":"invalid-backend","prompt":"hello","output_format":"stream-json"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("X-Api-Key", "test-key")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "text/event-stream" {
+		t.Errorf("content-type = %q, want %q", got, "text/event-stream")
+	}
+}
+
+func TestNewRouter_MCP_NonStream_AcceptSSE_StillJSON(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouter(logger)
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	registry := mcp.NewRegistry()
+	mcp.RegisterAllTools(registry, service.NewExecutor())
+	dispatcher := mcp.NewDispatcher(registry, logger)
+	transport := mcp.NewHTTPTransport(dispatcher, logger)
+	router.Handle("/mcp", transport.Handler())
+
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("X-Api-Key", "test-key")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/json" {
+		t.Errorf("content-type = %q, want %q", got, "application/json")
+	}
+}
+
+func TestNewRouter_MCP_HealthRequiresAPIKey(t *testing.T) {
+	setTempHome(t)
+	t.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+	t.Cleanup(auth.ResetCache)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router, limiter := NewRouterWithSkipAuthPaths(logger, "/docs", "/openapi.json", "/schemas", "/metrics")
+	if limiter != nil {
+		defer limiter.Stop()
+	}
+
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
+	req.Header.Set("X-Api-Key", "test-key")
+	rec = httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
+func setTempHome(t *testing.T) {
+	t.Helper()
+	t.Setenv("HOME", t.TempDir())
+	config.Reset()
 }
 
 func TestHealthEndpoint(t *testing.T) {

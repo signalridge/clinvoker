@@ -22,6 +22,13 @@ SERVER_PORT="${SERVER_PORT:-18080}"
 SERVER_URL="http://${SERVER_HOST}:${SERVER_PORT}"
 export SERVER_HOST SERVER_PORT SERVER_URL
 
+# MCP HTTP test server configuration
+MCP_SERVER_PORT="${MCP_SERVER_PORT:-18083}"
+MCP_SERVER_PATH="${MCP_SERVER_PATH:-/mcp}"
+MCP_SERVER_URL="http://${SERVER_HOST}:${MCP_SERVER_PORT}"
+MCP_ENDPOINT_URL="${MCP_SERVER_URL}${MCP_SERVER_PATH}"
+export MCP_SERVER_PORT MCP_SERVER_PATH MCP_SERVER_URL MCP_ENDPOINT_URL
+
 # Test configuration
 TEST_TIMEOUT="${TEST_TIMEOUT:-60}"
 SIMPLE_PROMPT="${SIMPLE_PROMPT:-echo hello world}"
@@ -225,8 +232,56 @@ server_running() {
 }
 
 # =============================================================================
-# HTTP Request Helpers
+# MCP Server Management
 # =============================================================================
+
+MCP_SERVER_PID=""
+
+# Start MCP HTTP server
+start_mcp_http_server() {
+	if mcp_server_running; then
+		log_info "MCP server already running on ${MCP_ENDPOINT_URL}"
+		return 0
+	fi
+
+	log_info "Starting MCP HTTP server on ${MCP_SERVER_URL}${MCP_SERVER_PATH}..."
+
+	"$CLINVK_BIN" mcp --transport http --host "$SERVER_HOST" --port "$MCP_SERVER_PORT" --path "$MCP_SERVER_PATH" &
+	MCP_SERVER_PID=$!
+
+	local retries=30
+	while ((retries > 0)); do
+		if curl -sf "${MCP_ENDPOINT_URL}" \
+			-H "Content-Type: application/json" \
+			-d '{"jsonrpc":"2.0","id":1,"method":"ping"}' >/dev/null 2>&1; then
+			log_success "MCP HTTP server started (PID: $MCP_SERVER_PID)"
+			return 0
+		fi
+		sleep 0.5
+		((retries--))
+	done
+
+	log_error "MCP HTTP server failed to start"
+	stop_mcp_http_server
+	return 1
+}
+
+# Stop MCP HTTP server
+stop_mcp_http_server() {
+	if [[ -n "$MCP_SERVER_PID" ]]; then
+		log_info "Stopping MCP HTTP server (PID: $MCP_SERVER_PID)..."
+		kill "$MCP_SERVER_PID" 2>/dev/null || true
+		wait "$MCP_SERVER_PID" 2>/dev/null || true
+		MCP_SERVER_PID=""
+	fi
+}
+
+# Check if MCP HTTP server is running
+mcp_server_running() {
+	curl -sf "${MCP_ENDPOINT_URL}" \
+		-H "Content-Type: application/json" \
+		-d '{"jsonrpc":"2.0","id":1,"method":"ping"}' >/dev/null 2>&1
+}
 
 # GET request
 http_get() {
@@ -299,6 +354,8 @@ setup_test_env() {
 	# Create temp directory for test artifacts
 	TEST_TEMP_DIR="$(mktemp -d)"
 	export TEST_TEMP_DIR
+	mkdir -p "${TEST_TEMP_DIR}/home"
+	export HOME="${TEST_TEMP_DIR}/home"
 
 	# Trap for cleanup
 	trap cleanup_test_env EXIT INT TERM
@@ -307,6 +364,7 @@ setup_test_env() {
 # Cleanup test environment
 cleanup_test_env() {
 	stop_server
+	stop_mcp_http_server
 	if [[ -n "${TEST_TEMP_DIR:-}" && -d "$TEST_TEMP_DIR" ]]; then
 		rm -rf "$TEST_TEMP_DIR"
 	fi
@@ -506,6 +564,63 @@ create_temp_json() {
 	echo "$temp_file"
 }
 
+session_store_dir() {
+	echo "${HOME}/.clinvk/sessions"
+}
+
+generate_session_hex_id() {
+	LC_ALL=C od -An -N16 -tx1 /dev/urandom | tr -d ' \n'
+}
+
+create_session_fixture() {
+	local backend="${1:-claude}"
+	local prompt="${2:-fixture prompt}"
+	local id now dir path backend_session_id
+
+	id="$(generate_session_hex_id)"
+	now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+	dir="$(session_store_dir)"
+	path="${dir}/${id}.json"
+	backend_session_id="${backend}-fixture-${id:0:8}"
+
+	mkdir -p "$dir"
+	cat >"$path" <<JSON
+{
+  "id": "${id}",
+  "backend": "${backend}",
+  "created_at": "${now}",
+  "last_used": "${now}",
+  "working_dir": "${PROJECT_ROOT}",
+  "backend_session_id": "${backend_session_id}",
+  "initial_prompt": "${prompt}",
+  "status": "active",
+  "turn_count": 1
+}
+JSON
+
+	echo "$id"
+}
+
+seed_cli_session_fixtures() {
+	local backends=("$@")
+	local backend
+	local created=0
+	local dir
+
+	if ((${#backends[@]} == 0)); then
+		backends=("claude" "codex" "gemini")
+	fi
+
+	for backend in "${backends[@]}"; do
+		create_session_fixture "$backend" "fixture prompt for ${backend}" >/dev/null
+		((created++)) || true
+	done
+
+	dir="$(session_store_dir)"
+	rm -f "${dir}/index.json"
+	log_info "Seeded ${created} session fixture(s)"
+}
+
 # Wait for a condition with timeout
 wait_for() {
 	local condition="$1"
@@ -533,7 +648,21 @@ run_with_timeout() {
 # Extract session ID from output
 extract_session_id() {
 	local output="$1"
-	echo "$output" | sed -nE 's/.*session[_-]?id["[:space:]:]*([A-Za-z0-9-]+).*/\1/p' | head -1
+	local session_id
+
+	session_id="$(echo "$output" | sed -nE 's/.*session[_-]?id["[:space:]:]*([A-Za-z0-9-]+).*/\1/p' | head -1)"
+	if [[ -n "$session_id" ]]; then
+		echo "$session_id"
+		return 0
+	fi
+
+	session_id="$(echo "$output" | awk '/^[[:space:]]*[0-9a-f]{8,32}[[:space:]]/ {print $1; exit}')"
+	if [[ -n "$session_id" ]]; then
+		echo "$session_id"
+		return 0
+	fi
+
+	return 1
 }
 
 # Check if jq is available
