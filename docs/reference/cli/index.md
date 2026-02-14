@@ -147,6 +147,7 @@ Commands for advanced execution patterns:
 
 Commands for running the HTTP API:
 
+- `mcp` - Start the MCP server
 - `serve` - Start the API server
 
 ## Usage Examples

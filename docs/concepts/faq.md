@@ -85,7 +85,7 @@ No. clinvoker works with any combination of backends. Install only the ones you 
 clinvk config show
 ```
 
-Look for `available: true` under each backend section.
+Look for backend names listed under `Available backends`.
 
 ## Usage
 
@@ -213,13 +213,16 @@ This displays the effective configuration after merging all sources.
 
 ### Can I use environment variables for all settings?
 
-Yes, prefix any config key with `CLINVK_`:
+No. Only specific environment variables are supported.
 
 ```bash
 export CLINVK_BACKEND=codex
-export CLINVK_TIMEOUT=120
-export CLINVK_SERVER_PORT=3000
+export CLINVK_CODEX_MODEL=o3
+export CLINVK_MCP_TRANSPORT=http
+export CLINVK_MCP_PORT=8081
 ```
+
+See [Environment Variables](../reference/environment.md) for the full supported list.
 
 ### How do I set backend-specific options?
 
@@ -228,10 +231,12 @@ export CLINVK_SERVER_PORT=3000
 backends:
   claude:
     model: claude-sonnet-4
-    timeout: 120
+    allowed_tools: read,write,edit
   codex:
-    model: gpt-5.2
+    model: o3
     sandbox_mode: full
+    extra_flags:
+      - "--quiet"
 ```
 
 ## Sessions
@@ -248,8 +253,8 @@ clinvk sessions list
 # Filter by backend
 clinvk sessions list --backend claude
 
-# Show detailed info
-clinvk sessions list --verbose
+# Show session details
+clinvk sessions show <session-id>
 ```
 
 ### How do I clean up old sessions?
@@ -258,10 +263,7 @@ clinvk sessions list --verbose
 # Clean sessions older than 30 days
 clinvk sessions clean --older-than 30d
 
-# Clean all sessions
-clinvk sessions clean --all
-
-# Or manually delete
+# Manually delete all sessions
 rm -rf ~/.clinvk/sessions/*
 ```
 
@@ -279,7 +281,7 @@ This runs without creating or loading any sessions.
 
 ```bash
 # Export session to file
-clinvk sessions export <session-id> > session.json
+clinvk sessions show <session-id> --output-format json > session.json
 
 # Or copy the file directly
 cp ~/.clinvk/sessions/<session-id>.json ./backup.json
@@ -296,8 +298,8 @@ clinvk serve
 # Start with custom port
 clinvk serve --port 3000
 
-# Start with API key authentication
-clinvk serve --api-keys "key1,key2"
+# Start with API key authentication (env-based)
+CLINVK_API_KEYS="key1,key2" clinvk serve
 ```
 
 ### Is the server authenticated?
@@ -308,8 +310,8 @@ Authentication is optional. If you configure API keys, all requests must include
 # Configure keys
 export CLINVK_API_KEYS="key1,key2,key3"
 
-# Or in config
-clinvk config set server.api_keys "key1,key2"
+# Or load keys from gopass
+export CLINVK_API_KEYS_GOPASS_PATH="myproject/server/api-keys"
 
 # Use in requests
 curl -H "Authorization: Bearer key1" http://localhost:8080/api/v1/prompt
@@ -323,7 +325,7 @@ Place it behind a reverse proxy (nginx, Apache, Caddy) and enable API keys:
 
 ```bash
 # Bind to all interfaces (use with caution)
-clinvk serve --host 0.0.0.0 --api-keys "your-secret-key"
+CLINVK_API_KEYS="your-secret-key" clinvk serve --host 0.0.0.0
 ```
 
 ### Can I use OpenAI client libraries?

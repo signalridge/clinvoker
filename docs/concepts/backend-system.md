@@ -478,7 +478,7 @@ Update the allowlist in `internal/backend/unified.go:10-27`:
 ```go
 var allowedFlagPatterns = map[string][]string{
     "newbackend": {
-        "--model", "--output", "--verbose",
+        "--model", "--output-format", "--json",
         "--resume", "--sandbox",
     },
     // ...

@@ -220,7 +220,7 @@ default_backend: claude
 | `allowed_tools` | string | `all` | 逗号分隔列表或 `all`（**仅 Claude**） |
 | `approval_mode` | string | `""` | 覆盖统一的 `approval_mode`（空 = 使用统一设置） |
 | `sandbox_mode` | string | `""` | 覆盖统一的 `sandbox_mode`（空 = 使用统一设置） |
-| `enabled` | boolean | `true` | 启用/禁用后端（已存储但当前未强制执行） |
+| `enabled` | boolean | `true` | 启用/禁用后端（被禁用的后端不会参与执行） |
 | `system_prompt` | string | `""` | 此后端的默认系统提示词 |
 | `extra_flags` | array | `[]` | 传递给后端的额外 CLI 参数 |
 

@@ -478,7 +478,7 @@ func init() {
 ```go
 var allowedFlagPatterns = map[string][]string{
     "newbackend": {
-        "--model", "--output", "--verbose",
+        "--model", "--output-format", "--json",
         "--resume", "--sandbox",
     },
     // ...

@@ -317,16 +317,19 @@ func (s *Store) Save(sess *Session) error {
 
 ```yaml
 # 設定ファイル: ~/.clinvk/config.yaml
-backend: claude
-timeout: 60
+default_backend: claude
+backends:
+  codex:
+    model: o3
 
 # 環境変数
-CLINVK_TIMEOUT=120
+CLINVK_BACKEND=codex
+CLINVK_CODEX_MODEL=o3-mini
 
 # CLI
 clinvk --backend codex "prompt"
 
-# 結果: backend=codex（CLI）, timeout=120（env）
+# 結果: backend=codex（CLI）, model=o3-mini（env）
 ```
 
 ## HTTP サーバー設計
@@ -400,11 +403,19 @@ clinvk --backend codex "prompt"
 
 ### MCP サーバー対応
 
-Model Context Protocol (MCP) のサーバー対応を評価中です。次が可能になります。
+`clinvk mcp` により、MCP 対応はすでに実装済みで、`stdio` と `http` の両 transport を利用できます。
 
-- Claude Desktop との直接連携
-- 標準化されたツール呼び出しインターフェース
-- エコシステム互換
+現在の機能:
+
+- prompt / parallel / chain / compare / session 操作を MCP tool として公開
+- ローカル利用とサーバー運用に応じた transport 切り替え
+- HTTP transport での任意の `/health` 公開
+
+今後の MCP 関連改善:
+
+- リモート運用向け認証パターンの拡充
+- MCP エコシステム相互運用テストの拡大
+- tool 公開に対するより細かなポリシー制御
 
 ### 追加バックエンド
 

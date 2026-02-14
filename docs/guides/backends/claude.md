@@ -163,7 +163,7 @@ Common flags:
 | Flag | Description |
 |------|-------------|
 | `--add-dir <path>` | Add additional directory to context |
-| `--verbose` | Enable verbose output |
+| `--print` | Print final response in non-interactive mode |
 
 ## Best Practices
 

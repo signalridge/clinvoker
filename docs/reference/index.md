@@ -35,6 +35,7 @@ This reference section provides detailed documentation for all clinvk features, 
 | [`clinvk parallel`](cli/parallel.md) | Parallel execution | Run multiple tasks |
 | [`clinvk compare`](cli/compare.md) | Compare backends | Evaluate different AIs |
 | [`clinvk chain`](cli/chain.md) | Chain execution | Multi-step workflows |
+| [`clinvk mcp`](cli/mcp.md) | MCP server | MCP integrations and tool serving |
 | [`clinvk serve`](cli/serve.md) | HTTP API server | Application integration |
 
 ## Configuration Priority

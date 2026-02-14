@@ -35,6 +35,7 @@ clinvk 命令、配置和 API 的完整技术参考。
 | [`clinvk parallel`](cli/parallel.md) | 并行执行 | 运行多个任务 |
 | [`clinvk compare`](cli/compare.md) | 对比后端 | 评估不同 AI |
 | [`clinvk chain`](cli/chain.md) | 链式执行 | 多步骤工作流 |
+| [`clinvk mcp`](cli/mcp.md) | MCP 服务器 | MCP 集成与工具服务 |
 | [`clinvk serve`](cli/serve.md) | HTTP API 服务 | 应用程序集成 |
 
 ## 配置优先级

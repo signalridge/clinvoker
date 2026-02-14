@@ -207,20 +207,23 @@ Would execute: claude --model claude-opus-4-5-20251101 "implement feature X"
 - Document expected behavior
 - Test in CI/CD without making actual API calls
 
-### Verbose Mode (`--verbose`, `-v`)
+### Detailed Diagnostics
 
-Enable detailed logging:
+Use currently supported options to inspect execution details:
 
 ```bash
-clinvk --verbose "complex task"
+# Show the exact backend command without executing
+clinvk --dry-run "complex task"
+
+# Return structured output for debugging and scripts
+clinvk --output-format json "complex task"
 ```
 
-**Shows:**
+**Useful for:**
 
-- Configuration loading details
-- Backend detection information
-- Command construction steps
-- API calls and responses (depending on backend)
+- Verifying backend/model resolution
+- Inspecting generated command arguments
+- Capturing machine-readable output for troubleshooting
 
 ## Exit Codes Reference
 
@@ -331,7 +334,6 @@ See [Session Management](sessions.md) for complete details.
 | `--continue` | `-c` | Continue last session | `false` |
 | `--dry-run` | | Show command only | `false` |
 | `--ephemeral` | | Stateless mode | `false` |
-| `--verbose` | `-v` | Enable verbose logging | `false` |
 | `--config` | | Config file path | `~/.clinvk/config.yaml` |
 
 ## Examples

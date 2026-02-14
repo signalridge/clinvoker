@@ -35,6 +35,7 @@ clinvk のコマンド、設定、API に関する完全な技術リファレン
 | [`clinvk parallel`](cli/parallel.md) | 並列実行 | 複数タスクを同時に実行 |
 | [`clinvk compare`](cli/compare.md) | バックエンド比較 | 異なる AI を評価する |
 | [`clinvk chain`](cli/chain.md) | チェーン実行 | 複数ステップのワークフロー |
+| [`clinvk mcp`](cli/mcp.md) | MCP サーバー | MCP 連携とツール提供 |
 | [`clinvk serve`](cli/serve.md) | HTTP API サーバー | アプリケーション統合 |
 
 ## 設定の優先順位

@@ -11,14 +11,14 @@ description: clinvoker でよくある問題、診断方法、解決策。
 
 個別の問題に入る前に、まずは一般的な診断アプローチを紹介します。
 
-### デバッグモードを有効にする
+### 実行詳細を収集する
 
 ```bash
-# verbose は詳細な実行情報を表示します
-clinvk --verbose "your prompt"
+# 実行せずに、解決後のバックエンドコマンドを表示
+clinvk --dry-run "your prompt"
 
-# デバッグモードはバックエンドコマンド出力も含めます
-CLINVK_DEBUG=1 clinvk "your prompt"
+# 調査しやすい構造化出力を取得
+clinvk --output-format json "your prompt"
 ```
 
 ### システム状態を確認する
@@ -30,8 +30,8 @@ clinvk version
 # 利用可能なバックエンド
 clinvk config show
 
-# 設定ファイルの検証
-clinvk config validate
+# 直近セッションのヘルスチェック
+clinvk sessions list --limit 5
 ```
 
 ### ドライラン
@@ -366,7 +366,8 @@ clinvk config show
 
 # 環境変数の上書きを確認
 echo $CLINVK_BACKEND
-echo $CLINVK_TIMEOUT
+echo $CLINVK_CLAUDE_MODEL
+echo $CLINVK_CODEX_MODEL
 ```
 
 ### 環境変数が反映されない
@@ -446,19 +447,19 @@ audit2allow -a -M clinvk
 semodule -i clinvk.pp
 ```
 
-## デバッグモードの使い方
+## 診断ワークフロー
 
-### ログを増やす
+### ログシグナルを増やす
 
 ```bash
-# デバッグ環境変数
-export CLINVK_DEBUG=1
+# 実行されるコマンドを確認
+clinvk --dry-run "prompt"
 
-# verbose
-clinvk --verbose "prompt"
+# レスポンス payload を JSON で確認
+clinvk --output-format json "prompt"
 
-# サーバーモード
-CLINVK_DEBUG=1 clinvk serve
+# バインド設定を明示してサーバー起動
+clinvk serve --host 127.0.0.1 --port 8080
 ```
 
 ### ログの出力先

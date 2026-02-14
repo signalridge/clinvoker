@@ -607,7 +607,7 @@ Chain failed at step 2
 
 1. 使用 `--json` 输出查看确切的步骤结果
 2. 添加验证步骤
-3. 使用详细模式：`clinvk chain --file pipeline.json --verbose`
+3. 将有问题的步骤单独执行，并检查命令构建：`clinvk --dry-run -b <backend> "<step prompt>"`
 
 ### 工作目录问题
 

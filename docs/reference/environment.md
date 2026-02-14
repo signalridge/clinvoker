@@ -1,300 +1,117 @@
 # Environment Variables
 
-Complete reference for all environment variables supported by clinvk.
+Authoritative reference for environment variables currently supported by `clinvk`.
 
-## Overview
+## Scope
 
-Environment variables provide a convenient way to configure clinvk without modifying configuration files. They are especially useful for:
+This page lists variables that are actually read by the current codebase.
+If a variable is not listed here, do not rely on it.
 
-- CI/CD pipelines
-- Docker containers
-- Temporary overrides
-- Per-project settings with direnv
+## Supported Variables
 
-## Variable Reference
+### Core Runtime
 
-### Core Variables
+| Variable | Description | Example |
+|---|---|---|
+| `CLINVK_BACKEND` | Default backend | `claude`, `codex`, `gemini` |
+| `CLINVK_CLAUDE_MODEL` | Default model for Claude backend | `claude-opus-4-5-20251101` |
+| `CLINVK_CODEX_MODEL` | Default model for Codex backend | `o3`, `o3-mini` |
+| `CLINVK_GEMINI_MODEL` | Default model for Gemini backend | `gemini-2.5-pro` |
 
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `CLINVK_BACKEND` | No | Default backend to use | `claude`, `codex`, `gemini` |
-| `CLINVK_CLAUDE_MODEL` | No | Default model for Claude backend | `claude-opus-4-5-20251101` |
-| `CLINVK_CODEX_MODEL` | No | Default model for Codex backend | `o3`, `o3-mini` |
-| `CLINVK_GEMINI_MODEL` | No | Default model for Gemini backend | `gemini-2.5-pro` |
+### MCP Server
 
-### Server Variables
+| Variable | Description | Example |
+|---|---|---|
+| `CLINVK_MCP_TRANSPORT` | MCP transport type | `stdio`, `http` |
+| `CLINVK_MCP_HOST` | Host for MCP HTTP transport | `127.0.0.1`, `0.0.0.0` |
+| `CLINVK_MCP_PORT` | Port for MCP HTTP transport | `8081` |
+| `CLINVK_MCP_HTTP_PATH` | HTTP path for MCP endpoint | `/mcp` |
+| `CLINVK_MCP_EXPOSE_HEALTH` | Expose `/health` in MCP mode | `true`, `false` |
 
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `CLINVK_API_KEYS` | No | API keys for HTTP server authentication (comma-separated) | `key1,key2,key3` |
-| `CLINVK_API_KEYS_GOPASS_PATH` | No | gopass path for retrieving API keys | `myproject/api-keys` |
-| `CLINVK_CONFIG` | No | Path to custom configuration file | `/etc/clinvk/config.yaml` |
-| `CLINVK_HOME` | No | Directory for clinvk data (sessions, config) | `~/.clinvk` |
+### HTTP API Authentication
 
-### Backend API Keys
+| Variable | Description | Example |
+|---|---|---|
+| `CLINVK_API_KEYS` | Comma-separated API keys for `serve`/`mcp` auth | `key1,key2,key3` |
+| `CLINVK_API_KEYS_GOPASS_PATH` | gopass path to load API keys | `myproject/clinvk/api-keys` |
 
-The following variables are passed directly to the respective backend CLIs:
+### Backend Provider Keys
 
 | Variable | Backend | Description |
-|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | Claude | Anthropic API key |
-| `OPENAI_API_KEY` | Codex | OpenAI API key |
-| `GOOGLE_API_KEY` | Gemini | Google API key |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Claude | Provider API key |
+| `OPENAI_API_KEY` | Codex | Provider API key |
+| `GOOGLE_API_KEY` | Gemini | Provider API key |
 
-## Usage Examples
+## Commonly Mistaken Variables
 
-### Set Default Backend
+The following are not supported as first-class runtime config variables in current `clinvk` releases:
+
+- `CLINVK_TIMEOUT`
+- `CLINVK_DEBUG`
+- `CLINVK_SERVER_PORT`
+- `CLINVK_HOME`
+- `CLINVK_CONFIG`
+
+Use these instead:
+
+- command timeout: `unified_flags.command_timeout_secs` in config file
+- debug/inspection: `--dry-run`, `--output-format json`, and regular stderr logs
+- config file path: `--config /path/to/config.yaml`
+
+## Examples
+
+### Backend and Model
 
 ```bash
 export CLINVK_BACKEND=codex
-clinvk "implement feature"  # Uses codex
-```
-
-### Set Model per Backend
-
-```bash
-export CLINVK_CLAUDE_MODEL=claude-sonnet-4-20250514
 export CLINVK_CODEX_MODEL=o3-mini
-
-clinvk -b claude "complex task"  # Uses claude-sonnet
-clinvk -b codex "quick task"     # Uses o3-mini
+clinvk "review this patch"
 ```
 
-### Temporary Override
-
-Set a variable for a single command:
+### MCP via Environment
 
 ```bash
-CLINVK_BACKEND=gemini clinvk "explain this"
+export CLINVK_MCP_TRANSPORT=http
+export CLINVK_MCP_HOST=0.0.0.0
+export CLINVK_MCP_PORT=8081
+export CLINVK_MCP_HTTP_PATH=/mcp
+export CLINVK_MCP_EXPOSE_HEALTH=true
+
+clinvk mcp
 ```
 
-### API Keys for HTTP Server
+### API Key Auth for HTTP/MCP
 
 ```bash
-export CLINVK_API_KEYS="prod-key-1,prod-key-2,dev-key-1"
-clinvk serve
+export CLINVK_API_KEYS="prod-key-1,prod-key-2"
+clinvk serve --port 8080
 ```
 
-Clients must include one of the following headers:
+## Precedence
 
-```bash
-# Option 1: X-Api-Key header
-curl -H "X-Api-Key: prod-key-1" http://localhost:8080/api/v1/prompt \
-  -d '{"backend":"claude","prompt":"hello"}'
+For supported keys, precedence is:
 
-# Option 2: Authorization header
-curl -H "Authorization: Bearer prod-key-1" http://localhost:8080/api/v1/prompt \
-  -d '{"backend":"claude","prompt":"hello"}'
-```
-
-## Priority
-
-Environment variables have medium priority in the configuration hierarchy:
-
-1. **CLI Flags** (highest priority)
-2. **Environment Variables**
-3. **Config File**
-4. **Defaults** (lowest priority)
-
-Example demonstrating priority:
-
-```bash
-export CLINVK_BACKEND=codex
-clinvk -b claude "prompt"  # Uses claude (CLI flag wins)
-```
-
-## Shell Configuration
-
-### Bash
-
-Add to `~/.bashrc` or `~/.bash_profile`:
-
-```bash
-# clinvk configuration
-export CLINVK_BACKEND=claude
-export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-export CLINVK_CODEX_MODEL=o3
-```
-
-### Zsh
-
-Add to `~/.zshrc`:
-
-```zsh
-# clinvk configuration
-export CLINVK_BACKEND=claude
-export CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-export CLINVK_CODEX_MODEL=o3
-```
-
-### Fish
-
-Add to `~/.config/fish/config.fish`:
-
-```fish
-# clinvk configuration
-set -gx CLINVK_BACKEND claude
-set -gx CLINVK_CLAUDE_MODEL claude-opus-4-5-20251101
-set -gx CLINVK_CODEX_MODEL o3
-```
-
-## Per-Directory Configuration
-
-Use [direnv](https://direnv.net/) for project-specific settings:
-
-```bash
-# .envrc in your project root
-export CLINVK_BACKEND=codex
-export CLINVK_CODEX_MODEL=o3
-```
-
-When you enter the directory, direnv automatically loads these variables.
-
-## CI/CD Usage
-
-### GitHub Actions
-
-```yaml
-name: AI Code Review
-on: [pull_request]
-
-jobs:
-  review:
-    runs-on: ubuntu-latest
-    env:
-      CLINVK_BACKEND: codex
-      CLINVK_CODEX_MODEL: o3
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Review code
-        run: clinvk "review this PR for security issues"
-```
-
-### GitLab CI
-
-```yaml
-ai-review:
-  image: alpine/clinvk
-  variables:
-    CLINVK_BACKEND: claude
-    CLINVK_CLAUDE_MODEL: claude-sonnet-4-20250514
-    ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
-  script:
-    - clinvk "review the changes"
-```
-
-### Jenkins
-
-```groovy
-pipeline {
-    agent any
-    environment {
-        CLINVK_BACKEND = 'gemini'
-        CLINVK_GEMINI_MODEL = 'gemini-2.5-pro'
-        GOOGLE_API_KEY = credentials('google-api-key')
-    }
-    stages {
-        stage('AI Analysis') {
-            steps {
-                sh 'clinvk "analyze code quality"'
-            }
-        }
-    }
-}
-```
-
-## Docker Usage
-
-### Dockerfile
-
-```dockerfile
-FROM alpine:latest
-RUN apk add --no-cache clinvk
-
-ENV CLINVK_BACKEND=claude
-ENV CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-
-ENTRYPOINT ["clinvk"]
-```
-
-### Docker Run
-
-```bash
-docker run -e CLINVK_BACKEND=codex -e OPENAI_API_KEY=$OPENAI_API_KEY clinvk "prompt"
-```
-
-### Docker Compose
-
-```yaml
-version: '3'
-services:
-  ai-task:
-    image: clinvk
-    environment:
-      - CLINVK_BACKEND=claude
-      - CLINVK_CLAUDE_MODEL=claude-opus-4-5-20251101
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    command: clinvk "analyze codebase"
-```
-
-## Kubernetes Usage
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clinvk-config
-data:
-  CLINVK_BACKEND: "claude"
-  CLINVK_CLAUDE_MODEL: "claude-opus-4-5-20251101"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: clinvk-secrets
-type: Opaque
-stringData:
-  ANTHROPIC_API_KEY: "your-api-key"
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: clinvk-job
-spec:
-  containers:
-    - name: clinvk
-      image: clinvk:latest
-      envFrom:
-        - configMapRef:
-            name: clinvk-config
-        - secretRef:
-            name: clinvk-secrets
-```
+1. CLI flags
+2. Environment variables
+3. Config file
+4. Defaults
 
 ## Troubleshooting
 
-### Variables Not Taking Effect
-
-1. Verify the variable is exported: `export VAR=value` not just `VAR=value`
-2. Check for typos in variable names
-3. Ensure CLI flags aren't overriding your variables
-4. Check if a config file is setting the same values
-
-### Debug Environment
-
 ```bash
-# Show all CLINVK variables
-env | grep CLINVK
+# Confirm exported variables
+env | grep '^CLINVK_'
 
-# Show specific variable
-echo $CLINVK_BACKEND
+# Verify provider key exists
+echo "${OPENAI_API_KEY:+set}"
 
-# Run with debug output
-CLINVK_DEBUG=1 clinvk "prompt"
+# Inspect effective execution command
+clinvk --dry-run "check behavior"
 ```
 
 ## See Also
 
-- [Configuration Reference](configuration.md) - Configuration file options
-- [config command](cli/config.md) - Manage configuration via CLI
+- [Configuration Reference](configuration.md)
+- [CLI Config Command](cli/config.md)
+- [MCP CLI Reference](cli/mcp.md)
