@@ -44,7 +44,7 @@ Thumbs.db
 .claude/
 
 # OpenSpec
-openspec/
+openspec/changes/
 
 # Codex
 .codex/
