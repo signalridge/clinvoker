@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/signalridge/clinvoker/compare/v0.4.1...v0.5.0) (2026-02-15)
+
+
+### 🚀 Features
+
+* apply v06 changes and strengthen coverage ([#79](https://github.com/signalridge/clinvoker/issues/79)) ([8c3d72e](https://github.com/signalridge/clinvoker/commit/8c3d72ec3e5fa87fa6312ff0a7619dafc97b327a))
+* **cli:** align v05 specs and harden coverage ([#76](https://github.com/signalridge/clinvoker/issues/76)) ([a9d32d0](https://github.com/signalridge/clinvoker/commit/a9d32d080de70c67a778b67bb5cf79bcc1bd7728))
+* **policy:** implement v07 governance engine with full coverage ([#81](https://github.com/signalridge/clinvoker/issues/81)) ([afdb264](https://github.com/signalridge/clinvoker/commit/afdb264c4af423698f9c405a71708cbc7072223b))
+
+
+### 🐛 Bug Fixes
+
+* **ci:** stabilize release-please release-pr title parsing ([c43a590](https://github.com/signalridge/clinvoker/commit/c43a590a15d366a1a559a399223847321f7c082e))
+
 ## [0.4.1](https://github.com/signalridge/clinvoker/compare/v0.4.0...v0.4.1) (2026-02-14)
 
 
