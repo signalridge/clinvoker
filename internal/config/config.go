@@ -104,6 +104,34 @@ type ServerConfig struct {
 	// MetricsEnabled enables the /metrics endpoint for Prometheus scraping.
 	// Default: false
 	MetricsEnabled bool `mapstructure:"metrics_enabled"`
+
+	// Policy controls centralized request governance behavior.
+	Policy PolicyConfig `mapstructure:"policy"`
+}
+
+// PolicyConfig contains request policy engine settings.
+type PolicyConfig struct {
+	// Enabled controls whether policy middleware is active.
+	Enabled bool `mapstructure:"enabled"`
+
+	// Mode controls rollout mode: shadow or enforce.
+	Mode string `mapstructure:"mode"`
+
+	// FailureMode controls behavior when policy evaluation fails.
+	// Supported values: fail-open, fail-closed.
+	FailureMode string `mapstructure:"failure_mode"`
+
+	// RulesFile points to policy rule definitions.
+	RulesFile string `mapstructure:"rules_file"`
+
+	// ExplainEnabled controls explain headers for explicit requests.
+	ExplainEnabled bool `mapstructure:"explain_enabled"`
+
+	// DefaultDecision applies when no rule matches (allow or deny).
+	DefaultDecision string `mapstructure:"default_decision"`
+
+	// QuotaStore controls quota backend type (memory or shared).
+	QuotaStore string `mapstructure:"quota_store"`
 }
 
 // MCPConfig contains MCP server settings.
@@ -318,6 +346,15 @@ func defaultConfig() *Config {
 			RateLimitBurst:       20,
 			RateLimitCleanupSecs: 180,
 			MaxRequestBodyBytes:  10 * 1024 * 1024, // 10MB
+			Policy: PolicyConfig{
+				Enabled:         false,
+				Mode:            "shadow",
+				FailureMode:     "fail-open",
+				RulesFile:       "",
+				ExplainEnabled:  false,
+				DefaultDecision: "allow",
+				QuotaStore:      "memory",
+			},
 		},
 		MCP: MCPConfig{
 			Transport:    "stdio",

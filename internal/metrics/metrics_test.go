@@ -77,4 +77,52 @@ func TestExecutionModeMetrics_LabelNormalization(t *testing.T) {
 	}
 }
 
+func TestPolicyMetrics(t *testing.T) {
+	beforeDecision := testutil.ToFloat64(PolicyDecisions.WithLabelValues("allow", "shadow"))
+	RecordPolicyDecision("allow", "shadow")
+	afterDecision := testutil.ToFloat64(PolicyDecisions.WithLabelValues("allow", "shadow"))
+	if afterDecision != beforeDecision+1 {
+		t.Fatalf("PolicyDecisions did not increment: before=%v after=%v", beforeDecision, afterDecision)
+	}
+
+	RecordPolicyEvalDuration(0.003)
+
+	beforeFallback := testutil.ToFloat64(PolicyFallbacks.WithLabelValues("fail-open", "engine_error"))
+	RecordPolicyFallback("fail-open", "engine_error")
+	afterFallback := testutil.ToFloat64(PolicyFallbacks.WithLabelValues("fail-open", "engine_error"))
+	if afterFallback != beforeFallback+1 {
+		t.Fatalf("PolicyFallbacks did not increment: before=%v after=%v", beforeFallback, afterFallback)
+	}
+
+	beforeQuota := testutil.ToFloat64(PolicyQuotaRejections.WithLabelValues("rate", "rate_exceeded"))
+	RecordPolicyQuotaRejection("rate", "rate_exceeded")
+	afterQuota := testutil.ToFloat64(PolicyQuotaRejections.WithLabelValues("rate", "rate_exceeded"))
+	if afterQuota != beforeQuota+1 {
+		t.Fatalf("PolicyQuotaRejections did not increment: before=%v after=%v", beforeQuota, afterQuota)
+	}
+}
+
+func TestPolicyMetrics_LabelNormalization(t *testing.T) {
+	beforeDecision := testutil.ToFloat64(PolicyDecisions.WithLabelValues("unknown", "unknown"))
+	RecordPolicyDecision("not-real-decision", "not-real-mode")
+	afterDecision := testutil.ToFloat64(PolicyDecisions.WithLabelValues("unknown", "unknown"))
+	if afterDecision != beforeDecision+1 {
+		t.Fatalf("normalized PolicyDecisions did not increment: before=%v after=%v", beforeDecision, afterDecision)
+	}
+
+	beforeFallback := testutil.ToFloat64(PolicyFallbacks.WithLabelValues("unknown", "other"))
+	RecordPolicyFallback("not-real-failure-mode", "untrusted-reason-from-request")
+	afterFallback := testutil.ToFloat64(PolicyFallbacks.WithLabelValues("unknown", "other"))
+	if afterFallback != beforeFallback+1 {
+		t.Fatalf("normalized PolicyFallbacks did not increment: before=%v after=%v", beforeFallback, afterFallback)
+	}
+
+	beforeQuota := testutil.ToFloat64(PolicyQuotaRejections.WithLabelValues("global", "other"))
+	RecordPolicyQuotaRejection("user-input-scope", "another-untrusted-reason")
+	afterQuota := testutil.ToFloat64(PolicyQuotaRejections.WithLabelValues("global", "other"))
+	if afterQuota != beforeQuota+1 {
+		t.Fatalf("normalized PolicyQuotaRejections did not increment: before=%v after=%v", beforeQuota, afterQuota)
+	}
+}
+
 //revive:enable:var-naming

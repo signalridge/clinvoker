@@ -11,6 +11,7 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/auth"
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/requestctx"
 )
 
 func setupTest(t *testing.T) func() {
@@ -395,5 +396,84 @@ func TestAPIKeyAuth_RequestIDPropagation(t *testing.T) {
 	}
 	if headerReqID != resp.RequestID {
 		t.Fatalf("header request id %q != body request id %q", headerReqID, resp.RequestID)
+	}
+}
+
+func TestAPIKeyAuth_InjectsSanitizedIdentityOnSuccess(t *testing.T) {
+	cleanup := setupTest(t)
+	defer cleanup()
+
+	rawKey := "sensitive-key-123"
+	os.Setenv(auth.EnvAPIKeys, rawKey)
+	auth.ResetCache()
+
+	var gotIdentity requestctx.Identity
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotIdentity = requestctx.IdentityFromContext(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := APIKeyAuth()(next)
+
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req.Header.Set("X-Api-Key", rawKey)
+	req.Header.Set("X-Tenant-ID", "tenant-a")
+	req.Header.Set("X-Subject-Tags", "internal,agent")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+	if gotIdentity.Authenticated != true {
+		t.Fatal("Authenticated should be true for valid key")
+	}
+	if gotIdentity.SubjectKeyID == "" {
+		t.Fatal("SubjectKeyID should not be empty on authenticated request")
+	}
+	if gotIdentity.SubjectKeyID != auth.SanitizeKeyID(rawKey) {
+		t.Fatalf("SubjectKeyID = %q, want %q", gotIdentity.SubjectKeyID, auth.SanitizeKeyID(rawKey))
+	}
+	if gotIdentity.SubjectKeyID == rawKey {
+		t.Fatal("SubjectKeyID must not contain raw key")
+	}
+	if gotIdentity.TenantID != "tenant-a" {
+		t.Fatalf("TenantID = %q, want %q", gotIdentity.TenantID, "tenant-a")
+	}
+	if len(gotIdentity.SubjectTags) != 2 || gotIdentity.SubjectTags[0] != "internal" || gotIdentity.SubjectTags[1] != "agent" {
+		t.Fatalf("SubjectTags = %v, want [internal agent]", gotIdentity.SubjectTags)
+	}
+}
+
+func TestAPIKeyAuth_NoConfiguredKeys_DoesNotMarkAuthenticated(t *testing.T) {
+	cleanup := setupTest(t)
+	defer cleanup()
+
+	os.Setenv(auth.EnvAPIKeys, "")
+	auth.ResetCache()
+
+	var gotIdentity requestctx.Identity
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotIdentity = requestctx.IdentityFromContext(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := APIKeyAuth()(next)
+
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req.Header.Set("X-Api-Key", "caller-provided-key")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+	if gotIdentity.Authenticated {
+		t.Fatal("Authenticated should be false when auth is disabled")
+	}
+	if gotIdentity.SubjectKeyID != "" {
+		t.Fatalf("SubjectKeyID = %q, want empty when unauthenticated", gotIdentity.SubjectKeyID)
 	}
 }

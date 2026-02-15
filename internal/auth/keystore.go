@@ -27,6 +27,8 @@ const (
 	// DefaultKeyReloadInterval is the default interval for reloading API keys.
 	// Set to 0 to disable automatic reloading.
 	DefaultKeyReloadInterval = 5 * time.Minute
+
+	keySourceManaged = "managed"
 )
 
 var (
@@ -102,6 +104,18 @@ func getGopassPath() string {
 	}
 
 	return ""
+}
+
+// KeySource returns the currently configured API key source hint.
+// Values: env, gopass, or managed.
+func KeySource() string {
+	if strings.TrimSpace(os.Getenv(EnvAPIKeys)) != "" {
+		return "env"
+	}
+	if strings.TrimSpace(getGopassPath()) != "" {
+		return "gopass"
+	}
+	return keySourceManaged
 }
 
 // loadFromGopass attempts to load API keys from gopass.
