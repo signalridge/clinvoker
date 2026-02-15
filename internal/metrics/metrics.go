@@ -1,4 +1,6 @@
 // Package metrics provides Prometheus metrics for observability.
+//
+//revive:disable:var-naming
 package metrics
 
 import (
@@ -10,7 +12,8 @@ import (
 
 // Metric names use the prefix "clinvk_" for namespacing.
 const (
-	namespace = "clinvk"
+	namespace    = "clinvk"
+	labelUnknown = "unknown"
 )
 
 // HTTP request metrics
@@ -204,7 +207,7 @@ func RecordBackendExecutionDuration(backend string, durationSeconds float64) {
 func normalizeExecutionBackend(backend string) string {
 	backend = strings.TrimSpace(strings.ToLower(backend))
 	if backend == "" {
-		return "unknown"
+		return labelUnknown
 	}
 	return backend
 }
@@ -225,7 +228,7 @@ func normalizePolicyDecision(decision string) string {
 	case "allow", "deny", "quota_reject", "fallback":
 		return decision
 	default:
-		return "unknown"
+		return labelUnknown
 	}
 }
 
@@ -235,7 +238,7 @@ func normalizePolicyMode(mode string) string {
 	case "shadow", "enforce":
 		return mode
 	default:
-		return "unknown"
+		return labelUnknown
 	}
 }
 
@@ -245,7 +248,7 @@ func normalizePolicyFailureMode(mode string) string {
 	case "fail-open", "fail-closed":
 		return mode
 	default:
-		return "unknown"
+		return labelUnknown
 	}
 }
 
@@ -340,3 +343,5 @@ func SetActiveSessions(count float64) {
 func IncrementSessionsCreated() {
 	SessionsCreated.Inc()
 }
+
+//revive:enable:var-naming
