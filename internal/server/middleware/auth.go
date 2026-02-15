@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/signalridge/clinvoker/internal/auth"
+	"github.com/signalridge/clinvoker/internal/requestctx"
 )
 
 // APIKeyAuth returns a middleware that validates API keys.
@@ -23,15 +24,16 @@ func APIKeyAuth() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			keys := auth.LoadAPIKeys()
+			apiKey := extractAPIKey(r)
 
 			// No keys configured = auth disabled (backward compatible)
 			if len(keys) == 0 {
-				next.ServeHTTP(w, r)
+				identity := buildRequestIdentity(r, apiKey, false)
+				next.ServeHTTP(w, r.WithContext(requestctx.WithIdentity(r.Context(), &identity)))
 				return
 			}
 
 			// Extract key from request
-			apiKey := extractAPIKey(r)
 			if apiKey == "" {
 				writeUnauthorized(w, r, "missing API key")
 				return
@@ -43,9 +45,44 @@ func APIKeyAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			identity := buildRequestIdentity(r, apiKey, true)
+			next.ServeHTTP(w, r.WithContext(requestctx.WithIdentity(r.Context(), &identity)))
 		})
 	}
+}
+
+func buildRequestIdentity(r *http.Request, apiKey string, authenticated bool) requestctx.Identity {
+	subjectKeyID := ""
+	if authenticated && strings.TrimSpace(apiKey) != "" {
+		subjectKeyID = auth.SanitizeKeyID(apiKey)
+	}
+	return requestctx.Identity{
+		SubjectKeyID:  subjectKeyID,
+		SubjectSource: auth.KeySource(),
+		TenantID:      strings.TrimSpace(r.Header.Get("X-Tenant-ID")),
+		Authenticated: authenticated,
+		SubjectTags:   parseSubjectTags(r.Header.Get("X-Subject-Tags")),
+	}
+}
+
+func parseSubjectTags(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	parts := strings.Split(raw, ",")
+	tags := make([]string, 0, len(parts))
+	for _, tag := range parts {
+		tag = strings.TrimSpace(tag)
+		if tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	return tags
 }
 
 // extractAPIKey extracts the API key from the request.

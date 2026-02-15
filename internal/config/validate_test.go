@@ -293,6 +293,70 @@ func TestValidateServerConfig(t *testing.T) {
 	})
 }
 
+func TestValidateServerConfigPolicy(t *testing.T) {
+	t.Run("invalid policy enum values", func(t *testing.T) {
+		errs := validateServerConfig(&ServerConfig{
+			Host: "127.0.0.1",
+			Port: 8080,
+			Policy: PolicyConfig{
+				Mode:            "bad-mode",
+				FailureMode:     "bad-failure",
+				DefaultDecision: "bad-default",
+				QuotaStore:      "bad-store",
+			},
+		})
+
+		expected := []string{
+			"server.policy.mode",
+			"server.policy.failure_mode",
+			"server.policy.default_decision",
+			"server.policy.quota_store",
+		}
+		for _, field := range expected {
+			if !hasValidationField(errs, field) {
+				t.Fatalf("expected validation error for %q, errs=%v", field, errs)
+			}
+		}
+	})
+
+	t.Run("enabled policy requires rules file", func(t *testing.T) {
+		errs := validateServerConfig(&ServerConfig{
+			Host: "127.0.0.1",
+			Port: 8080,
+			Policy: PolicyConfig{
+				Enabled:         true,
+				Mode:            "shadow",
+				FailureMode:     "fail-open",
+				DefaultDecision: "allow",
+				QuotaStore:      "memory",
+				RulesFile:       "",
+			},
+		})
+		if !hasValidationField(errs, "server.policy.rules_file") {
+			t.Fatalf("expected server.policy.rules_file validation error, errs=%v", errs)
+		}
+	})
+
+	t.Run("valid policy config", func(t *testing.T) {
+		errs := validateServerConfig(&ServerConfig{
+			Host: "127.0.0.1",
+			Port: 8080,
+			Policy: PolicyConfig{
+				Enabled:         true,
+				Mode:            "enforce",
+				FailureMode:     "fail-closed",
+				DefaultDecision: "deny",
+				QuotaStore:      "shared",
+				RulesFile:       "/tmp/policy.yaml",
+				ExplainEnabled:  true,
+			},
+		})
+		if len(errs) != 0 {
+			t.Fatalf("expected no validation errors, got %v", errs)
+		}
+	})
+}
+
 func TestValidateParallelConfig(t *testing.T) {
 	if errs := validateParallelConfig(&ParallelConfig{MaxWorkers: 1}); len(errs) != 0 {
 		t.Fatalf("expected no validation errors, got %d", len(errs))

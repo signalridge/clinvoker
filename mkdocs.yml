@@ -225,6 +225,7 @@ nav:
       - Chain Execution: guides/chains.md
       - HTTP Server: guides/http-server.md
       - Configuration: guides/configuration.md
+      - Policy Governance: guides/policy-governance.md
       - Backend Comparison: guides/compare.md
       - Backends:
           - guides/backends/index.md

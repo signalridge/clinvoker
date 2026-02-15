@@ -14,6 +14,7 @@ import (
 
 	"github.com/signalridge/clinvoker/internal/auth"
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/policy"
 	"github.com/signalridge/clinvoker/internal/server"
 	"github.com/signalridge/clinvoker/internal/server/handlers"
 	"github.com/signalridge/clinvoker/internal/server/service"
@@ -77,6 +78,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	// Get config defaults
 	appCfg := config.Get()
+	if err := policy.ConfigureFromConfig(appCfg, logger); err != nil {
+		return fmt.Errorf("policy initialization failed: %w", err)
+	}
 
 	// Use CLI flags if provided, otherwise use config
 	host := serveHost

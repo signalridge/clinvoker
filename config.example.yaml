@@ -137,6 +137,25 @@ server:
   # Prometheus Metrics (optional)
   # Enable the /metrics endpoint for Prometheus scraping.
   metrics_enabled: false
+
+  # Policy Engine Governance (v0.7+, optional)
+  policy:
+    # Enable centralized policy checks for allow/deny/quota decisions.
+    enabled: false
+    # Rollout mode: shadow (observe only) or enforce (block on deny/quota).
+    mode: shadow
+    # Runtime fallback mode when policy evaluation fails.
+    # fail-open: allow request and emit fallback telemetry
+    # fail-closed: reject request with a stable fallback contract
+    failure_mode: fail-open
+    # Rule file path (YAML or JSON). Required when enabled=true.
+    rules_file: ""
+    # Expose explain headers when caller sets X-Policy-Explain: true.
+    explain_enabled: false
+    # Default decision when no rule matches: allow or deny.
+    default_decision: allow
+    # Quota storage backend (memory for internal-first rollout).
+    quota_store: memory
 # MCP server settings (for `clinvk mcp` command).
 mcp:
   # Transport type: stdio or http.

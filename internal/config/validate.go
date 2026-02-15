@@ -330,6 +330,64 @@ func validateServerConfig(server *ServerConfig) []error {
 		})
 	}
 
+	policy := server.Policy
+	if policy.Mode != "" {
+		validModes := map[string]bool{
+			"shadow":  true,
+			"enforce": true,
+		}
+		if !validModes[policy.Mode] {
+			errs = append(errs, &ValidationError{
+				Field:   "server.policy.mode",
+				Message: fmt.Sprintf("invalid mode %q (valid: shadow, enforce)", policy.Mode),
+			})
+		}
+	}
+	if policy.FailureMode != "" {
+		validFailureModes := map[string]bool{
+			"fail-open":   true,
+			"fail-closed": true,
+		}
+		if !validFailureModes[policy.FailureMode] {
+			errs = append(errs, &ValidationError{
+				Field:   "server.policy.failure_mode",
+				Message: fmt.Sprintf("invalid failure mode %q (valid: fail-open, fail-closed)", policy.FailureMode),
+			})
+		}
+	}
+	if policy.DefaultDecision != "" {
+		validDefaults := map[string]bool{
+			"allow": true,
+			"deny":  true,
+		}
+		if !validDefaults[policy.DefaultDecision] {
+			errs = append(errs, &ValidationError{
+				Field:   "server.policy.default_decision",
+				Message: fmt.Sprintf("invalid default decision %q (valid: allow, deny)", policy.DefaultDecision),
+			})
+		}
+	}
+	if policy.QuotaStore != "" {
+		validQuotaStores := map[string]bool{
+			"memory": true,
+			"shared": true,
+		}
+		if !validQuotaStores[policy.QuotaStore] {
+			errs = append(errs, &ValidationError{
+				Field:   "server.policy.quota_store",
+				Message: fmt.Sprintf("invalid quota store %q (valid: memory, shared)", policy.QuotaStore),
+			})
+		}
+	}
+	if policy.Enabled {
+		if strings.TrimSpace(policy.RulesFile) == "" {
+			errs = append(errs, &ValidationError{
+				Field:   "server.policy.rules_file",
+				Message: "must be set when policy is enabled",
+			})
+		}
+	}
+
 	return errs
 }
 

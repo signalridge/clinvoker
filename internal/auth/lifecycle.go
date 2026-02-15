@@ -68,7 +68,7 @@ type LifecycleManager struct {
 func NewLifecycleManager(source string) *LifecycleManager {
 	source = strings.TrimSpace(source)
 	if source == "" {
-		source = "managed"
+		source = keySourceManaged
 	}
 	return &LifecycleManager{
 		source: source,
@@ -90,7 +90,7 @@ func detectSourceForLoadedKeys() string {
 	if len(loadFromGopass()) > 0 {
 		return "gopass"
 	}
-	return "managed"
+	return keySourceManaged
 }
 
 // LoadAPIKeyMetadata returns metadata for currently loaded keys without exposing plaintext keys.

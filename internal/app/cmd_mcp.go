@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/signalridge/clinvoker/internal/config"
+	"github.com/signalridge/clinvoker/internal/policy"
 	"github.com/signalridge/clinvoker/internal/server"
 	"github.com/signalridge/clinvoker/internal/server/handlers"
 	"github.com/signalridge/clinvoker/internal/server/mcp"
@@ -125,6 +126,9 @@ func runMCPStdio(logger *slog.Logger) error {
 
 func runMCPHTTP(logger *slog.Logger, exposeHealth bool) error {
 	appCfg := config.Get()
+	if err := policy.ConfigureFromConfig(appCfg, logger); err != nil {
+		return fmt.Errorf("policy initialization failed: %w", err)
+	}
 
 	// Resolve host.
 	host := mcpHost

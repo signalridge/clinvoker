@@ -70,6 +70,9 @@ func NewRouterWithSkipAuthPaths(logger *slog.Logger, skipPaths ...string) (chi.R
 	// Add API key authentication (skips health, docs, and metrics endpoints)
 	router.Use(middleware.SkipAuthPaths(skipPaths...))
 
+	// Add policy middleware after auth so identity metadata is available.
+	router.Use(middleware.Policy(logger))
+
 	// Get timeout from config, with fallback to 5 minutes
 	requestTimeout := time.Duration(appCfg.Server.RequestTimeoutSecs) * time.Second
 	if requestTimeout <= 0 {

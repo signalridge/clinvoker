@@ -118,6 +118,15 @@ server:
   blocked_workdir_prefixes: []
   # Observability
   metrics_enabled: false
+  # Policy governance
+  policy:
+    enabled: false
+    mode: shadow
+    failure_mode: fail-open
+    rules_file: ""
+    explain_enabled: false
+    default_decision: allow
+    quota_store: memory
 
 # Parallel execution settings
 parallel:
@@ -368,6 +377,32 @@ Configure the HTTP API server (used with `clinvk serve`).
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `metrics_enabled` | boolean | `false` | Enable Prometheus `/metrics` endpoint |
+
+### Policy Governance
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `policy.enabled` | boolean | `false` | Enable policy middleware |
+| `policy.mode` | string | `shadow` | Policy rollout mode (`shadow` or `enforce`) |
+| `policy.failure_mode` | string | `fail-open` | Runtime fallback mode (`fail-open` or `fail-closed`) |
+| `policy.rules_file` | string | `""` | Policy rules file path (required when enabled) |
+| `policy.explain_enabled` | boolean | `false` | Enable explain headers when caller sends `X-Policy-Explain: true` |
+| `policy.default_decision` | string | `allow` | No-match behavior (`allow` or `deny`) |
+| `policy.quota_store` | string | `memory` | Quota backend (`memory` or `shared`) |
+
+Example:
+
+```yaml
+server:
+  policy:
+    enabled: true
+    mode: shadow
+    failure_mode: fail-open
+    rules_file: "/etc/clinvk/policy-rules.yaml"
+    explain_enabled: false
+    default_decision: allow
+    quota_store: memory
+```
 
 !!! note "API Keys"
     You can provide API keys via the `CLINVK_API_KEYS` environment variable (comma-separated) or `server.api_keys_gopass_path`. Keys are not stored directly in the config file for security reasons.
