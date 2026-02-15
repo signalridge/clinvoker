@@ -36,3 +36,49 @@ The system MUST provide dry-run mode and guarantee no deletion side effects.
 
 - **WHEN** a real clean is executed after dry-run
 - **THEN** if results differ, the system SHOULD provide an explainable reason (for example, concurrent writes)
+
+### Requirement: [Feature #12] Idempotent tag management
+
+The system MUST support session tag add/remove operations with idempotent behavior.
+
+#### Scenario: Repeated tag mutation
+
+- **WHEN** the same tag is added or removed repeatedly on the same session
+- **THEN** the operation MUST be idempotent (no duplicate writes, no spurious errors)
+
+#### Scenario: Invalid tag input
+
+- **WHEN** a tag violates validation constraints
+- **THEN** the system MUST reject the operation with explicit validation error details
+
+### Requirement: [Feature #12] Tag-based filtering
+
+The system MUST support filtering sessions by tags.
+
+#### Scenario: Filter by tag
+
+- **WHEN** users filter sessions by tag criteria
+- **THEN** the system MUST return only sessions that satisfy the filter
+
+### Requirement: [Feature #12] Keyword search across core fields
+
+The system MUST support keyword search on `id`, `title`, and `initial_prompt`.
+
+#### Scenario: Keyword hit ordering
+
+- **WHEN** keyword search returns multiple results
+- **THEN** results MUST be sorted by `last_used desc` with deterministic tie-break rules
+
+#### Scenario: Keyword miss
+
+- **WHEN** no session matches the keyword
+- **THEN** the system MUST return an empty collection instead of an error
+
+### Requirement: [Feature #12] Batch operation traceability
+
+The system MUST provide traceable output for batch tag/search-related operations.
+
+#### Scenario: Batch result summary
+
+- **WHEN** a batch tag update or bulk retrieval operation completes
+- **THEN** output MUST include affected session count and key identifiers/samples
