@@ -371,15 +371,11 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 		result.Retry = &rt
 	}
 
-	if execErr != nil && captureResult.Error == "" {
-		if errors.Is(execErr, context.Canceled) {
-			result.Error = "canceled (fail-fast)"
-			result.ExitCode = -1
-		} else {
-			result.Error = execErr.Error()
-		}
-	} else if captureResult.Error != "" {
-		result.Error = captureResult.Error
+	if errors.Is(execErr, context.Canceled) && captureResult.Error == "" {
+		result.Error = "canceled (fail-fast)"
+		result.ExitCode = -1
+	} else {
+		result.Error = selectExecutionError(execErr, captureResult.Error)
 	}
 	if result.ExitCode == 0 {
 		result.ExitCode = captureResult.ExitCode

@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os/exec"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/signalridge/clinvoker/internal/backend"
@@ -38,6 +39,8 @@ var defaultRetryableErrorSubstrings = []string{
 	"503",
 	"504",
 }
+
+var jitterFallbackCounter uint64
 
 // RetryTelemetry captures retry execution details for observability output.
 type RetryTelemetry struct {
@@ -132,7 +135,12 @@ func secureSignedUnitFloat64() float64 {
 	const scale = int64(1_000_000)
 	n, err := cryptorand.Int(cryptorand.Reader, big.NewInt(scale*2+1))
 	if err != nil {
-		return 0
+		// Fallback to a deterministic-but-varying value to avoid synchronized retries.
+		seed := atomic.AddUint64(&jitterFallbackCounter, 0x9e3779b97f4a7c15)
+		seed ^= seed >> 12
+		seed ^= seed << 25
+		seed ^= seed >> 27
+		return float64(seed%2_000_001)/1_000_000 - 1.0
 	}
 	return float64(n.Int64()-scale) / float64(scale)
 }
@@ -171,6 +179,25 @@ func timeoutExhaustedResult() *CaptureResult {
 		ExitCode: 124,
 		Error:    ErrCommandTimeout.Error(),
 	}
+}
+
+func selectExecutionError(execErr error, captureErr string) string {
+	captureMsg := strings.TrimSpace(captureErr)
+	if execErr == nil {
+		return captureMsg
+	}
+
+	execMsg := strings.TrimSpace(execErr.Error())
+	if captureMsg == "" {
+		return execMsg
+	}
+	if execMsg == "" || captureMsg == execMsg || strings.Contains(captureMsg, execMsg) {
+		return captureMsg
+	}
+	if strings.Contains(execMsg, captureMsg) {
+		return execMsg
+	}
+	return captureMsg + "; cause: " + execMsg
 }
 
 func executeWithRetryJSON(

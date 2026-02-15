@@ -91,7 +91,7 @@ var sessionsListCmd = &cobra.Command{
 		for _, s := range sessions {
 			status := string(s.Status)
 			if status == "" {
-				status = "unknown"
+				status = retryCategoryUnknown
 			}
 
 			tokens := "-"
@@ -355,7 +355,7 @@ func buildSessionsListJSON(result *session.ListResult, backendFilter, statusFilt
 	for _, sess := range result.Sessions {
 		status := string(sess.Status)
 		if status == "" {
-			status = "unknown"
+			status = retryCategoryUnknown
 		}
 
 		promptPreview := strings.TrimSpace(strings.ReplaceAll(sess.InitialPrompt, "\n", " "))

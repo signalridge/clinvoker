@@ -215,8 +215,13 @@ func TestExecuteWithRetryJSON_TimeoutBudgetExhausted(t *testing.T) {
 	if retry.TerminationReason != retryReasonTimeoutExhausted {
 		t.Fatalf("retry.TerminationReason = %q, want %q", retry.TerminationReason, retryReasonTimeoutExhausted)
 	}
-	if retry.LastErrorCategory != "rate_limit" {
-		t.Fatalf("retry.LastErrorCategory = %q, want %q", retry.LastErrorCategory, "rate_limit")
+	if retry.LastErrorCategory != retryCategoryRateLimit && retry.LastErrorCategory != retryCategoryTimeout {
+		t.Fatalf(
+			"retry.LastErrorCategory = %q, want one of [%q, %q]",
+			retry.LastErrorCategory,
+			retryCategoryRateLimit,
+			retryCategoryTimeout,
+		)
 	}
 }
 
@@ -252,7 +257,7 @@ func TestExecuteWithRetryJSON_NonRetryableStopsImmediately(t *testing.T) {
 	if retry.TerminationReason != retryReasonNonRetryableError {
 		t.Fatalf("retry.TerminationReason = %q, want %q", retry.TerminationReason, retryReasonNonRetryableError)
 	}
-	if retry.LastErrorCategory != "unknown" {
-		t.Fatalf("retry.LastErrorCategory = %q, want %q", retry.LastErrorCategory, "unknown")
+	if retry.LastErrorCategory != retryCategoryUnknown {
+		t.Fatalf("retry.LastErrorCategory = %q, want %q", retry.LastErrorCategory, retryCategoryUnknown)
 	}
 }

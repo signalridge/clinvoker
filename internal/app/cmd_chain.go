@@ -258,11 +258,7 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 		rt := retryTelemetry
 		result.Retry = &rt
 	}
-	if execErr != nil && captureResult.Error == "" {
-		result.Error = execErr.Error()
-	} else if captureResult.Error != "" {
-		result.Error = captureResult.Error
-	}
+	result.Error = selectExecutionError(execErr, captureResult.Error)
 	result.ExitCode = captureResult.ExitCode
 	result.Output = captureResult.Content // Text content for {{previous}} substitution
 	result.EndTime = time.Now()

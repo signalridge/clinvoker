@@ -306,12 +306,7 @@ func runCompareTask(backendName, prompt string, cfg *config.Config) CompareResul
 		rt := retryTelemetry
 		result.Retry = &rt
 	}
-
-	if execErr != nil && captureResult.Error == "" {
-		result.Error = execErr.Error()
-	} else if captureResult.Error != "" {
-		result.Error = captureResult.Error
-	}
+	result.Error = selectExecutionError(execErr, captureResult.Error)
 	result.ExitCode = captureResult.ExitCode
 	result.Output = captureResult.Content
 	result.OutputLen = utf8.RuneCountInString(result.Output)
