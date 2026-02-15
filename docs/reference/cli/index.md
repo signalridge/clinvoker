@@ -17,6 +17,7 @@ clinvk [command] [subcommand] [flags]
 | [`resume`](resume.md) | Resume a previous session | Continue conversations |
 | [`sessions`](sessions.md) | Manage sessions | List, show, delete sessions |
 | [`config`](config.md) | Manage configuration | View or change settings |
+| [`doctor`](doctor.md) | Run diagnostics | Validate environment readiness |
 | [`parallel`](parallel.md) | Execute tasks in parallel | Run multiple tasks |
 | [`compare`](compare.md) | Compare backend responses | Evaluate different AIs |
 | [`chain`](chain.md) | Execute prompt chain | Multi-step workflows |
@@ -35,6 +36,7 @@ These flags work with all commands:
 | `--model` | `-m` | string | | Model to use |
 | `--workdir` | `-w` | string | | Working directory |
 | `--output-format` | `-o` | string | `json` | Output format |
+| `--show-usage` | | bool | `false` | Show token usage in text output |
 | `--config` | | string | | Config file path |
 | `--dry-run` | | bool | `false` | Show command only |
 | `--ephemeral` | | bool | `false` | Stateless mode |
@@ -119,6 +121,14 @@ Run in stateless mode without creating a session:
 clinvk --ephemeral "quick question"
 ```
 
+### --show-usage
+
+Show token usage in text mode:
+
+```bash
+clinvk --output-format text --show-usage "explain this code"
+```
+
 ## Command Categories
 
 ### Core Commands
@@ -134,6 +144,7 @@ Commands for everyday use:
 Commands for managing settings:
 
 - `config` - View and modify configuration
+- `doctor` - Run environment diagnostics
 
 ### Execution Commands
 
@@ -189,6 +200,9 @@ clinvk config show
 
 # Set a value
 clinvk config set default_backend codex
+
+# Validate config
+clinvk config lint --json
 ```
 
 ### Advanced Execution
@@ -219,8 +233,7 @@ All commands return exit codes:
 |------|-------------|
 | 0 | Success |
 | 1 | General error |
-| 2 | Backend not available |
-| 3 | Invalid configuration |
+| 2 | Validation failed (for example, `doctor` / `config lint`) |
 | 4 | Session error |
 
 See [Exit Codes](../exit-codes.md) for complete reference.

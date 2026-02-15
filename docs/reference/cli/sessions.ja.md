@@ -34,6 +34,8 @@ clinvk sessions [command] [flags]
 | `--backend` | `-b` | string | | バックエンドで絞り込み |
 | `--status` | | string | | 状態で絞り込み（`active`, `completed`, `error`, `paused`） |
 | `--limit` | `-n` | int | | 表示する最大件数 |
+| `--offset` | | int | `0` | 結果を返す前にこの件数をスキップ |
+| `--json` | | bool | `false` | machine-readable JSON を出力 |
 
 ### 例
 
@@ -67,6 +69,12 @@ clinvk sessions list --limit 10
 clinvk sessions list --backend claude --status active --limit 5
 ```
 
+ページ付き JSON:
+
+```bash
+clinvk sessions list --backend claude --limit 10 --offset 20 --json
+```
+
 ### 出力例
 
 ```text
@@ -85,13 +93,25 @@ ghi789    gemini    error      1 day ago       -            failed task
 ### 使い方
 
 ```bash
-clinvk sessions show <session-id>
+clinvk sessions show <session-id> [flags]
 ```
+
+### フラグ
+
+| フラグ | 型 | デフォルト | 説明 |
+|------|------|---------|-------------|
+| `--json` | bool | `false` | セッション詳細を machine-readable JSON で出力 |
 
 ### 例
 
 ```bash
 clinvk sessions show abc123
+```
+
+JSON 出力:
+
+```bash
+clinvk sessions show abc123 --json
 ```
 
 ### 出力例
@@ -148,6 +168,7 @@ Session abc123 deleted.
 | フラグ | 型 | デフォルト | 説明 |
 |------|------|---------|-------------|
 | `--older-than` | string | | 指定日数より古いセッションを削除（例: `30` または `30d`） |
+| `--dry-run` | bool | `false` | 削除せずにクリーンアップ候補をプレビュー |
 
 指定しない場合は、設定の `session.retention_days` を使用します。
 
@@ -171,10 +192,25 @@ clinvk sessions clean --older-than 7
 clinvk sessions clean
 ```
 
+削除せずに候補をプレビュー:
+
+```bash
+clinvk sessions clean --older-than 30d --dry-run
+```
+
 ### 出力例
 
 ```text
 Deleted 15 session(s) older than 30 days.
+```
+
+dry-run 出力:
+
+```text
+Dry run: would delete 15 session(s) older than 30 days.
+Sample session IDs: abc123..., def456...
+No sessions were deleted. Re-run without --dry-run to apply.
+Note: candidate sessions may change between dry-run and actual cleanup.
 ```
 
 ---

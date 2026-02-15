@@ -47,10 +47,14 @@ type ExecutionConfig struct {
 	OutputMode OutputMode
 	Stdin      bool          // Whether to connect stdin
 	Timeout    time.Duration // Command timeout (0 = no timeout)
+	ShowUsage  bool          // Whether to show token usage in text output
 }
 
 // ErrCommandTimeout is returned when a command exceeds its timeout.
 var ErrCommandTimeout = errors.New("command execution timed out")
+
+// ErrValidationFailed is returned when a validation-style command detects failures.
+var ErrValidationFailed = errors.New("validation failed")
 
 // ExecuteCommand executes a backend command and returns the result.
 // This is the unified execution function that consolidates the execution logic.
@@ -67,11 +71,11 @@ func ExecuteCommand(cfg *ExecutionConfig, cmd *exec.Cmd) (*ExecutionResult, erro
 	case OutputModeStream:
 		return executeStream(ctx, cfg.Backend, cmd, cfg.Session, cfg.Stdin)
 	case OutputModeJSON:
-		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, true, cfg.Stdin)
+		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, true, cfg.Stdin, cfg.ShowUsage)
 	case OutputModeText:
-		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin)
+		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin, cfg.ShowUsage)
 	default:
-		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin)
+		return executeWithCapture(ctx, cfg.Backend, cmd, cfg.Session, false, cfg.Stdin, cfg.ShowUsage)
 	}
 }
 
@@ -231,7 +235,7 @@ scanLoop:
 }
 
 // executeWithCapture executes a command and captures output.
-func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, sess *session.Session, outputJSON, useStdin bool) (*ExecutionResult, error) {
+func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, sess *session.Session, outputJSON, useStdin, showUsage bool) (*ExecutionResult, error) {
 	startTime := time.Now()
 
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -329,14 +333,14 @@ func executeWithCapture(ctx context.Context, b backend.Backend, cmd *exec.Cmd, s
 			}
 		}
 	} else {
-		outputTextResult(b, result)
+		outputTextResult(b, result, showUsage)
 	}
 
 	return result, nil
 }
 
 // outputTextResult outputs the result as plain text.
-func outputTextResult(b backend.Backend, result *ExecutionResult) {
+func outputTextResult(b backend.Backend, result *ExecutionResult, showUsage bool) {
 	if result.Response != nil && result.Response.Error != "" {
 		fmt.Fprintf(os.Stderr, "Error [%s]: %s\n", b.Name(), result.Response.Error)
 	}
@@ -348,18 +352,22 @@ func outputTextResult(b backend.Backend, result *ExecutionResult) {
 		}
 	}
 
-	cfg := config.Get()
-	if cfg.Output.ShowTokens && result.Response != nil && result.Response.Usage != nil {
-		total := result.Response.Usage.TotalTokens
-		if total == 0 {
-			total = result.Response.Usage.InputTokens + result.Response.Usage.OutputTokens
+	if showUsage {
+		if result.Response == nil || result.Response.Usage == nil {
+			fmt.Println("\nTokens: unknown")
+		} else {
+			total := result.Response.Usage.TotalTokens
+			if total == 0 {
+				total = result.Response.Usage.InputTokens + result.Response.Usage.OutputTokens
+			}
+			fmt.Printf("\nTokens: %d (input: %d, output: %d)\n",
+				total,
+				result.Response.Usage.InputTokens,
+				result.Response.Usage.OutputTokens)
 		}
-		fmt.Printf("\nTokens: %d (input: %d, output: %d)\n",
-			total,
-			result.Response.Usage.InputTokens,
-			result.Response.Usage.OutputTokens)
 	}
 
+	cfg := config.Get()
 	if cfg.Output.ShowTiming {
 		fmt.Printf("Time: %.2fs\n", result.DurationSeconds)
 	}

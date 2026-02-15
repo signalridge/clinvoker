@@ -34,6 +34,8 @@ List all sessions.
 | `--backend` | `-b` | string | | Filter by backend |
 | `--status` | | string | | Filter by status (`active`, `completed`, `error`, `paused`) |
 | `--limit` | `-n` | int | | Max sessions to show |
+| `--offset` | | int | `0` | Skip this many sessions before returning results |
+| `--json` | | bool | `false` | Output machine-readable JSON |
 
 ### Examples
 
@@ -67,6 +69,12 @@ Combined filters:
 clinvk sessions list --backend claude --status active --limit 5
 ```
 
+Paginated JSON:
+
+```bash
+clinvk sessions list --backend claude --limit 10 --offset 20 --json
+```
+
 ### Output
 
 ```text
@@ -74,6 +82,36 @@ ID        BACKEND   STATUS     LAST USED       TOKENS       TITLE/PROMPT
 abc123    claude    active     5 minutes ago   1234         fix the bug in auth.go
 def456    codex     completed  2 hours ago     5678         implement user registration
 ghi789    gemini    error      1 day ago       -            failed task
+```
+
+JSON output:
+
+```json
+{
+  "items": [
+    {
+      "id": "abc123...",
+      "backend": "claude",
+      "status": "active",
+      "last_used": "2026-02-15T01:02:03Z",
+      "model": "claude-opus-4-5-20251101",
+      "tags": ["feature-auth"],
+      "title": "fix auth bug",
+      "prompt_preview": "fix the bug in auth.go"
+    }
+  ],
+  "total": 42,
+  "limit": 10,
+  "offset": 20,
+  "filters": {
+    "backend": "claude",
+    "status": ""
+  },
+  "sort": {
+    "by": "last_used",
+    "order": "desc"
+  }
+}
 ```
 
 ---
@@ -85,13 +123,25 @@ Show details of a specific session.
 ### Usage
 
 ```bash
-clinvk sessions show <session-id>
+clinvk sessions show <session-id> [flags]
 ```
+
+### Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--json` | bool | `false` | Output session details as machine-readable JSON |
 
 ### Example
 
 ```bash
 clinvk sessions show abc123
+```
+
+Show JSON details:
+
+```bash
+clinvk sessions show abc123 --json
 ```
 
 ### Output
@@ -148,6 +198,7 @@ Remove old sessions.
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--older-than` | string | | Delete sessions older than this many days (e.g. `30` or `30d`) |
+| `--dry-run` | bool | `false` | Preview cleanup candidates without deleting data |
 
 If not specified, uses the `session.retention_days` config value.
 
@@ -171,10 +222,25 @@ Use config default:
 clinvk sessions clean
 ```
 
+Preview cleanup without deleting:
+
+```bash
+clinvk sessions clean --older-than 30d --dry-run
+```
+
 ### Output
 
 ```text
 Deleted 15 session(s) older than 30 days.
+```
+
+Dry run output:
+
+```text
+Dry run: would delete 15 session(s) older than 30 days.
+Sample session IDs: abc123..., def456...
+No sessions were deleted. Re-run without --dry-run to apply.
+Note: candidate sessions may change between dry-run and actual cleanup.
 ```
 
 ---

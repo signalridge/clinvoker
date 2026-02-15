@@ -175,6 +175,7 @@ func runResume(cmd *cobra.Command, args []string) error {
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
 		Timeout:    GetCommandTimeout(),
+		ShowUsage:  resolveShowUsageFromConfigAndFlags(cmd, cfg),
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 
@@ -183,6 +184,7 @@ func runResume(cmd *cobra.Command, args []string) error {
 		flags := &normalizedFlags{
 			outputFormat: outputFormat,
 			dryRun:       dryRun,
+			showUsage:    resolveShowUsageFromConfigAndFlags(cmd, cfg),
 		}
 		ctx := &staleSessionContext{
 			store:   store,

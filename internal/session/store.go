@@ -610,6 +610,9 @@ func (s *Store) listLocked() ([]*Session, error) {
 
 	// Sort by last used, most recent first
 	sort.Slice(sessions, func(i, j int) bool {
+		if sessions[i].LastUsed.Equal(sessions[j].LastUsed) {
+			return sessions[i].ID < sessions[j].ID
+		}
 		return sessions[i].LastUsed.After(sessions[j].LastUsed)
 	})
 
@@ -633,6 +636,9 @@ func (s *Store) ListMeta() ([]*SessionMeta, error) {
 
 	// Sort by last used, most recent first
 	sort.Slice(metas, func(i, j int) bool {
+		if metas[i].LastUsed.Equal(metas[j].LastUsed) {
+			return metas[i].ID < metas[j].ID
+		}
 		return metas[i].LastUsed.After(metas[j].LastUsed)
 	})
 
@@ -799,7 +805,12 @@ func (s *Store) ListPaginated(filter *ListFilter) (*ListResult, error) {
 
 	// Sort IDs by last used (from index)
 	sort.Slice(matchingIDs, func(i, j int) bool {
-		return s.index[matchingIDs[i]].LastUsed.After(s.index[matchingIDs[j]].LastUsed)
+		mi := s.index[matchingIDs[i]]
+		mj := s.index[matchingIDs[j]]
+		if mi.LastUsed.Equal(mj.LastUsed) {
+			return matchingIDs[i] < matchingIDs[j]
+		}
+		return mi.LastUsed.After(mj.LastUsed)
 	})
 
 	total := len(matchingIDs)
@@ -937,6 +948,9 @@ func (s *Store) Search(query string) ([]*Session, error) {
 
 	// Sort by last used
 	sort.Slice(sessions, func(i, j int) bool {
+		if sessions[i].LastUsed.Equal(sessions[j].LastUsed) {
+			return sessions[i].ID < sessions[j].ID
+		}
 		return sessions[i].LastUsed.After(sessions[j].LastUsed)
 	})
 

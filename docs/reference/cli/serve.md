@@ -138,6 +138,13 @@ On start:
 
 ```text
 clinvk API server starting on http://127.0.0.1:8080
+Security status:
+  auth:             disabled
+  rate limit:       disabled
+  metrics:          disabled
+  trusted proxies:  disabled
+  bind host:        127.0.0.1
+  cors origins:     http://localhost:*, http://127.0.0.1:*
 
 Available endpoints:
   Custom API:     /api/v1/prompt, /api/v1/parallel, /api/v1/chain, /api/v1/compare
@@ -147,6 +154,16 @@ Available endpoints:
   Health:         /health
 
 Press Ctrl+C to stop
+```
+
+When risky combinations are detected (for example, public bind without auth), `serve` prints explicit warnings with remediation suggestions:
+
+```text
+Security warnings:
+  - public bind address without API key auth
+    suggestion: configure API keys (CLINVK_API_KEYS or server.api_keys_gopass_path) or bind to 127.0.0.1
+  - auth disabled with wildcard CORS
+    suggestion: enable API key auth or set explicit trusted CORS origins instead of *
 ```
 
 ## Exit Codes

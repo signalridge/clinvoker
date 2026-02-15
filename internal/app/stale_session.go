@@ -240,6 +240,7 @@ func attemptResumeSession(ctx *staleSessionContext, sess *session.Session) (*Exe
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
 		Timeout:    GetCommandTimeout(),
+		ShowUsage:  ctx.flags.showUsage,
 	}
 
 	result, err := ExecuteCommand(execCfg, execCmd)
@@ -352,6 +353,7 @@ func startNewSession(ctx *staleSessionContext) error {
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
 		Timeout:    GetCommandTimeout(),
+		ShowUsage:  ctx.flags.showUsage,
 	}
 
 	result, err := ExecuteCommand(execCfg, execCmd)

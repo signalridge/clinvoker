@@ -6,11 +6,13 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/signalridge/clinvoker/internal/auth"
 	"github.com/signalridge/clinvoker/internal/config"
 	"github.com/signalridge/clinvoker/internal/server"
 	"github.com/signalridge/clinvoker/internal/server/handlers"
@@ -128,6 +130,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	// Print startup message
 	fmt.Printf("clinvk API server starting on http://%s:%d\n", host, port)
+	printServeSecuritySummary(appCfg, host)
 	fmt.Println()
 	fmt.Println("Available endpoints:")
 	fmt.Println("  Custom API:     /api/v1/prompt, /api/v1/parallel, /api/v1/chain, /api/v1/compare")
@@ -156,4 +159,103 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	logger.Info("Server stopped")
 	return nil
+}
+
+type serveSecurityState struct {
+	AuthEnabled      bool
+	RateLimitEnabled bool
+	MetricsEnabled   bool
+	TrustedProxies   bool
+	BindHost         string
+	BindPublic       bool
+	CORSWildcard     bool
+	CORSCredentials  bool
+	CORSOrigins      []string
+	HighRiskWarnings []string
+}
+
+func buildServeSecurityState(cfg *config.Config, host string) serveSecurityState {
+	origins := cfg.Server.CORSAllowedOrigins
+	if len(origins) == 0 {
+		origins = []string{"http://localhost:*", "http://127.0.0.1:*"}
+	}
+
+	wildcard := false
+	for _, origin := range origins {
+		if strings.TrimSpace(origin) == "*" {
+			wildcard = true
+			break
+		}
+	}
+
+	keys := auth.LoadAPIKeys()
+	bindPublic := host == "0.0.0.0" || host == "::" || host == "[::]"
+	state := serveSecurityState{
+		AuthEnabled:      len(keys) > 0,
+		RateLimitEnabled: cfg.Server.RateLimitEnabled && cfg.Server.RateLimitRPS > 0,
+		MetricsEnabled:   cfg.Server.MetricsEnabled,
+		TrustedProxies:   len(cfg.Server.TrustedProxies) > 0,
+		BindHost:         host,
+		BindPublic:       bindPublic,
+		CORSWildcard:     wildcard,
+		CORSCredentials:  cfg.Server.CORSAllowCredentials,
+		CORSOrigins:      origins,
+	}
+
+	if state.BindPublic && !state.AuthEnabled {
+		state.HighRiskWarnings = append(state.HighRiskWarnings, "public bind address without API key auth")
+	}
+	if !state.AuthEnabled && state.CORSWildcard {
+		state.HighRiskWarnings = append(state.HighRiskWarnings, "auth disabled with wildcard CORS")
+	}
+	if state.CORSCredentials && state.CORSWildcard {
+		state.HighRiskWarnings = append(state.HighRiskWarnings, "CORS credentials enabled with wildcard origin")
+	}
+
+	return state
+}
+
+func printServeSecuritySummary(cfg *config.Config, host string) {
+	state := buildServeSecurityState(cfg, host)
+
+	fmt.Println("Security status:")
+	fmt.Printf("  auth:             %s\n", enabledText(state.AuthEnabled))
+	fmt.Printf("  rate limit:       %s\n", enabledText(state.RateLimitEnabled))
+	fmt.Printf("  metrics:          %s\n", enabledText(state.MetricsEnabled))
+	fmt.Printf("  trusted proxies:  %s\n", enabledText(state.TrustedProxies))
+	fmt.Printf("  bind host:        %s\n", state.BindHost)
+	fmt.Printf("  cors origins:     %s\n", strings.Join(state.CORSOrigins, ", "))
+
+	if len(state.HighRiskWarnings) > 0 {
+		fmt.Println("Security warnings:")
+		for _, warning := range state.HighRiskWarnings {
+			suggestion := remediationForWarning(warning)
+			if suggestion == "" {
+				fmt.Printf("  - %s\n", warning)
+				continue
+			}
+			fmt.Printf("  - %s\n", warning)
+			fmt.Printf("    suggestion: %s\n", suggestion)
+		}
+	}
+}
+
+func remediationForWarning(warning string) string {
+	switch warning {
+	case "public bind address without API key auth":
+		return "configure API keys (CLINVK_API_KEYS or server.api_keys_gopass_path) or bind to 127.0.0.1"
+	case "auth disabled with wildcard CORS":
+		return "enable API key auth or set explicit trusted CORS origins instead of *"
+	case "CORS credentials enabled with wildcard origin":
+		return "disable cors_allow_credentials or replace * with explicit origins"
+	default:
+		return ""
+	}
+}
+
+func enabledText(enabled bool) string {
+	if enabled {
+		return "enabled"
+	}
+	return "disabled"
 }

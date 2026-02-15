@@ -1,7 +1,10 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,7 +25,12 @@ var (
 	listBackendFilter string
 	listStatusFilter  string
 	listLimit         int
+	listOffset        int
+	listJSON          bool
+	showJSON          bool
 )
+
+const cleanPreviewSampleLimit = 10
 
 var sessionsListCmd = &cobra.Command{
 	Use:   "list",
@@ -33,14 +41,23 @@ var sessionsListCmd = &cobra.Command{
 		filter := &session.ListFilter{
 			Backend: listBackendFilter,
 			Limit:   listLimit,
+			Offset:  listOffset,
 		}
 		if listStatusFilter != "" {
 			filter.Status = session.SessionStatus(listStatusFilter)
 		}
 
-		sessions, err := store.ListWithFilter(filter)
+		result, err := store.ListPaginated(filter)
 		if err != nil {
 			return err
+		}
+		sessions := result.Sessions
+
+		if listJSON {
+			output := buildSessionsListJSON(result, listBackendFilter, listStatusFilter)
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			return enc.Encode(output)
 		}
 
 		if len(sessions) == 0 {
@@ -84,6 +101,8 @@ func init() {
 	sessionsListCmd.Flags().StringVarP(&listBackendFilter, "backend", "b", "", "filter by backend")
 	sessionsListCmd.Flags().StringVar(&listStatusFilter, "status", "", "filter by status (active, completed, error, paused)")
 	sessionsListCmd.Flags().IntVarP(&listLimit, "limit", "n", 0, "limit number of sessions shown")
+	sessionsListCmd.Flags().IntVar(&listOffset, "offset", 0, "number of sessions to skip")
+	sessionsListCmd.Flags().BoolVar(&listJSON, "json", false, "output sessions as JSON")
 }
 
 var sessionsShowCmd = &cobra.Command{
@@ -100,6 +119,12 @@ var sessionsShowCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
+		}
+
+		if showJSON {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			return enc.Encode(sess)
 		}
 
 		fmt.Printf("ID:                %s\n", sess.ID)
@@ -180,6 +205,7 @@ var sessionsDeleteCmd = &cobra.Command{
 }
 
 var cleanOlderThan string
+var cleanDryRun bool
 
 var sessionsCleanCmd = &cobra.Command{
 	Use:   "clean",
@@ -202,6 +228,23 @@ var sessionsCleanCmd = &cobra.Command{
 		}
 
 		store := session.NewStore()
+		if cleanDryRun {
+			count, samples, err := previewCleanByDays(store, days, cleanPreviewSampleLimit)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("Dry run: would delete %d session(s) older than %d days.\n", count, days)
+			if len(samples) > 0 {
+				fmt.Printf("Sample session IDs: %s\n", strings.Join(samples, ", "))
+			}
+			fmt.Println("No sessions were deleted. Re-run without --dry-run to apply.")
+			if count > 0 {
+				fmt.Println("Note: candidate sessions may change between dry-run and actual cleanup.")
+			}
+			return nil
+		}
+
 		deleted, err := store.CleanByDays(days)
 		if err != nil {
 			return err
@@ -214,8 +257,126 @@ var sessionsCleanCmd = &cobra.Command{
 
 func init() {
 	sessionsCleanCmd.Flags().StringVar(&cleanOlderThan, "older-than", "", "delete sessions older than (e.g., 30d)")
+	sessionsCleanCmd.Flags().BoolVar(&cleanDryRun, "dry-run", false, "preview sessions to be deleted without making changes")
+	sessionsShowCmd.Flags().BoolVar(&showJSON, "json", false, "output session details as JSON")
 	sessionsCmd.AddCommand(sessionsListCmd)
 	sessionsCmd.AddCommand(sessionsShowCmd)
 	sessionsCmd.AddCommand(sessionsDeleteCmd)
 	sessionsCmd.AddCommand(sessionsCleanCmd)
+}
+
+type sessionsListJSONOutput struct {
+	Items   []sessionsListJSONItem  `json:"items"`
+	Total   int                     `json:"total"`
+	Limit   int                     `json:"limit"`
+	Offset  int                     `json:"offset"`
+	Filters sessionsListJSONFilters `json:"filters"`
+	Sort    sessionsListJSONSort    `json:"sort"`
+}
+
+type sessionsListJSONItem struct {
+	ID            string   `json:"id"`
+	Backend       string   `json:"backend"`
+	Status        string   `json:"status"`
+	LastUsed      string   `json:"last_used"`
+	Model         string   `json:"model"`
+	Tags          []string `json:"tags"`
+	Title         string   `json:"title"`
+	PromptPreview string   `json:"prompt_preview"`
+}
+
+type sessionsListJSONFilters struct {
+	Backend string `json:"backend"`
+	Status  string `json:"status"`
+}
+
+type sessionsListJSONSort struct {
+	By    string `json:"by"`
+	Order string `json:"order"`
+}
+
+func buildSessionsListJSON(result *session.ListResult, backendFilter, statusFilter string) *sessionsListJSONOutput {
+	items := make([]sessionsListJSONItem, 0, len(result.Sessions))
+	for _, sess := range result.Sessions {
+		status := string(sess.Status)
+		if status == "" {
+			status = "unknown"
+		}
+
+		promptPreview := strings.TrimSpace(strings.ReplaceAll(sess.InitialPrompt, "\n", " "))
+		if len(promptPreview) > maxPromptDisplayLen {
+			promptPreview = promptPreview[:maxPromptDisplayLen-3] + "..."
+		}
+
+		tags := make([]string, len(sess.Tags))
+		copy(tags, sess.Tags)
+
+		items = append(items, sessionsListJSONItem{
+			ID:            sess.ID,
+			Backend:       sess.Backend,
+			Status:        status,
+			LastUsed:      sess.LastUsed.UTC().Format(time.RFC3339),
+			Model:         sess.Model,
+			Tags:          tags,
+			Title:         sess.Title,
+			PromptPreview: promptPreview,
+		})
+	}
+
+	return &sessionsListJSONOutput{
+		Items:  items,
+		Total:  result.Total,
+		Limit:  result.Limit,
+		Offset: result.Offset,
+		Filters: sessionsListJSONFilters{
+			Backend: backendFilter,
+			Status:  statusFilter,
+		},
+		Sort: sessionsListJSONSort{
+			By:    "last_used",
+			Order: "desc",
+		},
+	}
+}
+
+func previewCleanByDays(store *session.Store, days, sampleLimit int) (int, []string, error) {
+	metas, err := store.ListMeta()
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cutoff := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	type candidate struct {
+		id       string
+		lastUsed time.Time
+	}
+	candidates := make([]candidate, 0)
+
+	for _, meta := range metas {
+		if meta.LastUsed.Before(cutoff) {
+			candidates = append(candidates, candidate{id: meta.ID, lastUsed: meta.LastUsed})
+		}
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].lastUsed.Equal(candidates[j].lastUsed) {
+			return candidates[i].id < candidates[j].id
+		}
+		return candidates[i].lastUsed.Before(candidates[j].lastUsed)
+	})
+
+	count := len(candidates)
+	if sampleLimit < 0 {
+		sampleLimit = 0
+	}
+	if sampleLimit > count {
+		sampleLimit = count
+	}
+
+	samples := make([]string, 0, sampleLimit)
+	for i := 0; i < sampleLimit; i++ {
+		samples = append(samples, candidates[i].id)
+	}
+
+	return count, samples, nil
 }

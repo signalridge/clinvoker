@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/signalridge/clinvoker/internal/config"
 )
 
 // TestSubstitutePromptPlaceholders_TableDriven provides comprehensive table-driven tests
@@ -310,6 +312,7 @@ func TestChainStepJSONParsing(t *testing.T) {
 				"approval_mode": "suggest",
 				"sandbox_mode": "strict",
 				"max_turns": 10,
+				"timeout_secs": 30,
 				"name": "Analysis Step"
 			}`,
 			want: ChainStep{
@@ -320,6 +323,7 @@ func TestChainStepJSONParsing(t *testing.T) {
 				ApprovalMode: "suggest",
 				SandboxMode:  "strict",
 				MaxTurns:     10,
+				TimeoutSecs:  30,
 				Name:         "Analysis Step",
 			},
 			wantErr: false,
@@ -368,11 +372,49 @@ func TestChainStepJSONParsing(t *testing.T) {
 			if got.MaxTurns != tt.want.MaxTurns {
 				t.Errorf("MaxTurns = %d, want %d", got.MaxTurns, tt.want.MaxTurns)
 			}
+			if got.TimeoutSecs != tt.want.TimeoutSecs {
+				t.Errorf("TimeoutSecs = %d, want %d", got.TimeoutSecs, tt.want.TimeoutSecs)
+			}
 			if got.Name != tt.want.Name {
 				t.Errorf("Name = %q, want %q", got.Name, tt.want.Name)
 			}
 		})
 	}
+}
+
+func TestResolveChainStepTimeout(t *testing.T) {
+	config.Reset()
+	defer config.Reset()
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+
+	t.Run("step timeout only", func(t *testing.T) {
+		config.Get().UnifiedFlags.CommandTimeoutSecs = 0
+		got := resolveChainStepTimeout(15)
+		want := 15 * time.Second
+		if got != want {
+			t.Fatalf("timeout = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("global timeout only", func(t *testing.T) {
+		config.Get().UnifiedFlags.CommandTimeoutSecs = 20
+		got := resolveChainStepTimeout(0)
+		want := 20 * time.Second
+		if got != want {
+			t.Fatalf("timeout = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("smaller timeout wins", func(t *testing.T) {
+		config.Get().UnifiedFlags.CommandTimeoutSecs = 20
+		got := resolveChainStepTimeout(5)
+		want := 5 * time.Second
+		if got != want {
+			t.Fatalf("timeout = %v, want %v", got, want)
+		}
+	})
 }
 
 func TestChainStepResultJSONSerialization(t *testing.T) {

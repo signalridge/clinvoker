@@ -62,12 +62,13 @@ Prompt: explain this algorithm
 ================================================================================
 COMPARISON SUMMARY
 ================================================================================
-BACKEND      STATUS     DURATION     MODEL
+BACKEND      STATUS     DURATION     OUT_LEN     SCORE    MODEL
 --------------------------------------------------------------------------------
-claude       OK         2.50s        claude-opus-4-5-20251101
-codex        OK         3.20s        o3
-gemini       OK         2.80s        gemini-2.5-pro
+claude       OK         2.50s        812         85.70    claude-opus-4-5-20251101
+gemini       OK         2.80s        740         81.33    gemini-2.5-pro
+codex        OK         3.20s        690         74.59    o3
 --------------------------------------------------------------------------------
+Ranking rule: score desc, duration asc, backend asc
 Total time: 3.20s
 ```
 
@@ -82,10 +83,25 @@ Total time: 3.20s
       "backend": "claude",
       "model": "claude-opus-4-5-20251101",
       "output": "This algorithm implements a binary search...",
+      "output_length": 812,
       "duration_seconds": 2.5,
       "exit_code": 0
     }
   ],
+  "summary": {
+    "score_formula_version": "v1",
+    "dimensions": ["status", "latency_seconds", "output_length"],
+    "ranking": [
+      {
+        "backend": "claude",
+        "status": "OK",
+        "latency_seconds": 2.5,
+        "output_length": 812,
+        "score": 85.7,
+        "rank": 1
+      }
+    ]
+  },
   "total_duration_seconds": 3.2
 }
 ```

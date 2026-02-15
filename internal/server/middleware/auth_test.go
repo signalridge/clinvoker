@@ -1,10 +1,13 @@
 package middleware
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/signalridge/clinvoker/internal/auth"
 	"github.com/signalridge/clinvoker/internal/config"
@@ -157,6 +160,23 @@ func TestAPIKeyAuth_InvalidKey(t *testing.T) {
 	if rr.Code != http.StatusUnauthorized {
 		t.Errorf("Expected status 401, got %d", rr.Code)
 	}
+
+	var resp errorResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to parse unauthorized body: %v", err)
+	}
+	if resp.Code != "unauthorized" {
+		t.Fatalf("code = %q, want %q", resp.Code, "unauthorized")
+	}
+	if resp.Message != "invalid API key" {
+		t.Fatalf("message = %q, want %q", resp.Message, "invalid API key")
+	}
+	if resp.RequestID == "" {
+		t.Fatal("request_id should not be empty")
+	}
+	if rr.Header().Get("X-Request-ID") != resp.RequestID {
+		t.Fatalf("X-Request-ID header should match body request_id")
+	}
 }
 
 func TestAPIKeyAuth_MissingKey(t *testing.T) {
@@ -188,6 +208,23 @@ func TestAPIKeyAuth_MissingKey(t *testing.T) {
 	}
 	if rr.Code != http.StatusUnauthorized {
 		t.Errorf("Expected status 401, got %d", rr.Code)
+	}
+
+	var resp errorResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to parse unauthorized body: %v", err)
+	}
+	if resp.Code != "unauthorized" {
+		t.Fatalf("code = %q, want %q", resp.Code, "unauthorized")
+	}
+	if resp.Message != "missing API key" {
+		t.Fatalf("message = %q, want %q", resp.Message, "missing API key")
+	}
+	if resp.RequestID == "" {
+		t.Fatal("request_id should not be empty")
+	}
+	if rr.Header().Get("X-Request-ID") != resp.RequestID {
+		t.Fatalf("X-Request-ID header should match body request_id")
 	}
 }
 
@@ -317,5 +354,46 @@ func TestSkipAuthPaths(t *testing.T) {
 
 	if rr.Code != http.StatusOK {
 		t.Errorf("Expected status 200 for non-skipped path with key, got %d", rr.Code)
+	}
+}
+
+func TestAPIKeyAuth_RequestIDPropagation(t *testing.T) {
+	cleanup := setupTest(t)
+	defer cleanup()
+
+	os.Setenv(auth.EnvAPIKeys, "test-key")
+	auth.ResetCache()
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	authHandler := APIKeyAuth()(next)
+	handler := chiMiddleware.RequestID(authHandler)
+
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req.Header.Set("X-Api-Key", "wrong-key")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+	}
+
+	var resp errorResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to decode response body: %v", err)
+	}
+	if resp.RequestID == "" {
+		t.Fatal("response request_id should not be empty")
+	}
+
+	headerReqID := rr.Header().Get("X-Request-ID")
+	if headerReqID == "" {
+		t.Fatal("X-Request-ID header should not be empty")
+	}
+	if headerReqID != resp.RequestID {
+		t.Fatalf("header request id %q != body request id %q", headerReqID, resp.RequestID)
 	}
 }

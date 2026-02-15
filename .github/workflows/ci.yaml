@@ -39,6 +39,9 @@ jobs:
             markdown:
               - '**/*.md'
               - '!CHANGELOG.md'
+              - '!.claude/**'
+              - '!.codex/**'
+              - '!openspec/**'
               - '.markdownlint.yaml'
             tests:
               - 'test/**'
@@ -76,6 +79,9 @@ jobs:
           globs: |
             **/*.md
             !CHANGELOG.md
+            !.claude/**
+            !.codex/**
+            !openspec/**
   lint-go:
     name: Lint Go
     runs-on: ubuntu-latest

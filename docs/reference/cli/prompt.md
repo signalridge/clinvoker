@@ -22,6 +22,7 @@ This is the default command - when you run `clinvk` followed by text, it execute
 | `--model` | `-m` | string | | Model override for the selected backend |
 | `--workdir` | `-w` | string | | Working directory passed to the backend |
 | `--output-format` | `-o` | string | `json` | Output format: `text`, `json`, `stream-json` |
+| `--show-usage` | | bool | `false` | Show token usage in text mode (`Tokens: ...` / `Tokens: unknown`) |
 | `--continue` | `-c` | bool | `false` | Continue the most recent resumable session |
 | `--dry-run` | | bool | `false` | Print the backend command without executing |
 | `--ephemeral` | | bool | `false` | Stateless mode: do not persist a session |
@@ -111,6 +112,24 @@ When `--output-format text` is used, only the response text is printed:
 
 ```text
 The code implements a binary search algorithm...
+```
+
+Show usage explicitly in text mode:
+
+```bash
+clinvk --output-format text --show-usage "explain this code"
+```
+
+If usage is available:
+
+```text
+Tokens: 579 (input: 123, output: 456)
+```
+
+If backend usage is unavailable:
+
+```text
+Tokens: unknown
 ```
 
 ### JSON Format

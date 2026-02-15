@@ -70,6 +70,7 @@ type ChainStep struct {
 	ApprovalMode string `json:"approval_mode,omitempty"`
 	SandboxMode  string `json:"sandbox_mode,omitempty"`
 	MaxTurns     int    `json:"max_turns,omitempty"`
+	TimeoutSecs  int    `json:"timeout_secs,omitempty"`
 	Name         string `json:"name,omitempty"`
 }
 
@@ -151,6 +152,9 @@ func parseChainDefinition() (*ChainDefinition, error) {
 	for i, step := range chain.Steps {
 		if strings.Contains(step.Prompt, "{{session}}") {
 			return nil, fmt.Errorf("chain step %d uses {{session}} but sessions are not persisted", i+1)
+		}
+		if step.TimeoutSecs < 0 {
+			return nil, fmt.Errorf("chain step %d has invalid timeout_secs: must be non-negative", i+1)
 		}
 	}
 
@@ -235,7 +239,8 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 	}
 
 	// Execute with JSON output capture for proper content extraction
-	captureResult, execErr := ExecuteAndCaptureWithJSON(b, execCmd)
+	stepTimeout := resolveChainStepTimeout(step.TimeoutSecs)
+	captureResult, execErr := ExecuteAndCaptureWithJSONTimeout(b, execCmd, stepTimeout)
 	if execErr != nil && captureResult.Error == "" {
 		result.Error = execErr.Error()
 	} else if captureResult.Error != "" {
@@ -259,6 +264,25 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 	updateChainContext(ctx, stepWorkDir, result.Output, true)
 
 	return result
+}
+
+func resolveChainStepTimeout(stepTimeoutSecs int) time.Duration {
+	var stepTimeout time.Duration
+	if stepTimeoutSecs > 0 {
+		stepTimeout = time.Duration(stepTimeoutSecs) * time.Second
+	}
+
+	globalTimeout := GetCommandTimeout()
+	if stepTimeout > 0 && globalTimeout > 0 {
+		if stepTimeout < globalTimeout {
+			return stepTimeout
+		}
+		return globalTimeout
+	}
+	if stepTimeout > 0 {
+		return stepTimeout
+	}
+	return globalTimeout
 }
 
 // failStepResult creates a failed step result.

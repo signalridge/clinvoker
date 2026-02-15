@@ -34,6 +34,8 @@ clinvk sessions [command] [flags]
 | `--backend` | `-b` | string | | 按后端过滤 |
 | `--status` | | string | | 按状态过滤（`active` / `completed` / `error` / `paused`） |
 | `--limit` | `-n` | int | | 限制数量 |
+| `--offset` | | int | `0` | 跳过前 N 条会话后返回结果 |
+| `--json` | | bool | `false` | 输出 machine-readable JSON |
 
 ### 示例
 
@@ -67,6 +69,12 @@ clinvk sessions list --limit 10
 clinvk sessions list --backend claude --status active --limit 5
 ```
 
+分页 JSON：
+
+```bash
+clinvk sessions list --backend claude --limit 10 --offset 20 --json
+```
+
 ### 输出
 
 ```text
@@ -85,13 +93,25 @@ ghi789    gemini    error      1 day ago       -            failed task
 ### 用法
 
 ```bash
-clinvk sessions show <session-id>
+clinvk sessions show <session-id> [flags]
 ```
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|---------|-------------|
+| `--json` | bool | `false` | 以 machine-readable JSON 输出会话详情 |
 
 ### 示例
 
 ```bash
 clinvk sessions show abc123
+```
+
+JSON 输出：
+
+```bash
+clinvk sessions show abc123 --json
 ```
 
 ### 输出
@@ -148,6 +168,7 @@ Session abc123 deleted.
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|---------|-------------|
 | `--older-than` | string | | 删除超过指定天数的会话（如 `30` 或 `30d`） |
+| `--dry-run` | bool | `false` | 预览清理候选，不执行删除 |
 
 未指定时使用 `session.retention_days` 配置值。
 
@@ -171,10 +192,25 @@ clinvk sessions clean --older-than 7
 clinvk sessions clean
 ```
 
+仅预览清理候选（不删除）：
+
+```bash
+clinvk sessions clean --older-than 30d --dry-run
+```
+
 ### 输出
 
 ```text
 Deleted 15 session(s) older than 30 days.
+```
+
+dry-run 输出：
+
+```text
+Dry run: would delete 15 session(s) older than 30 days.
+Sample session IDs: abc123..., def456...
+No sessions were deleted. Re-run without --dry-run to apply.
+Note: candidate sessions may change between dry-run and actual cleanup.
 ```
 
 ---

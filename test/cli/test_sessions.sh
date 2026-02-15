@@ -31,6 +31,35 @@ test_sessions_list_json() {
 	fi
 }
 
+test_sessions_list_json_fixed_fields() {
+	local output
+	output=$(clinvk sessions list --json 2>&1 || true)
+
+	assert_not_empty "$output"
+
+	if ! echo "$output" | jq empty >/dev/null 2>&1; then
+		log_error "Sessions list --json output is invalid JSON: $output"
+		return 1
+	fi
+
+	# Keep this contract test strict:
+	# every item must always include fixed string fields, even when empty.
+	if ! echo "$output" | jq -e '.items | length > 0' >/dev/null 2>&1; then
+		log_error "Expected seeded fixtures to produce at least one session item"
+		return 1
+	fi
+
+	if ! echo "$output" | jq -e '.items | all(.[]; has("title") and has("prompt_preview"))' >/dev/null 2>&1; then
+		log_error "Expected every session item to contain title and prompt_preview fields"
+		return 1
+	fi
+
+	if ! echo "$output" | jq -e '.items | all(.[]; (.title | type == "string") and (.prompt_preview | type == "string"))' >/dev/null 2>&1; then
+		log_error "Expected title and prompt_preview fields to be strings"
+		return 1
+	fi
+}
+
 test_sessions_show() {
 	# First, try to get a session ID from the list
 	local sessions_output
@@ -69,10 +98,13 @@ test_sessions_show_json() {
 
 	assert_not_empty "$output"
 
-	# Check if output is valid JSON
-	if ! echo "$output" | jq empty 2>/dev/null; then
-		log_warning "Sessions show output is not valid JSON"
+	if ! echo "$output" | jq empty >/dev/null 2>&1; then
+		log_error "Sessions show --json output is not valid JSON: $output"
+		return 1
 	fi
+
+	assert_json_field "$output" "id"
+	assert_json_field "$output" "backend"
 }
 
 test_sessions_delete() {
@@ -97,6 +129,30 @@ test_sessions_delete() {
 		log_error "Sessions delete command failed unexpectedly"
 		return 1
 	fi
+}
+
+test_sessions_clean_dry_run_no_side_effect() {
+	local before_json
+	before_json=$(clinvk sessions list --json 2>&1 || true)
+	assert_not_empty "$before_json"
+
+	local before_total
+	before_total=$(echo "$before_json" | jq -r '.total')
+
+	local output
+	output=$(clinvk sessions clean --older-than 30d --dry-run 2>&1 || true)
+	assert_not_empty "$output"
+	assert_contains "$output" "Dry run: would delete"
+	assert_contains "$output" "No sessions were deleted."
+
+	local after_json
+	after_json=$(clinvk sessions list --json 2>&1 || true)
+	assert_not_empty "$after_json"
+
+	local after_total
+	after_total=$(echo "$after_json" | jq -r '.total')
+
+	assert_equals "$before_total" "$after_total"
 }
 
 test_sessions_list_backends() {
@@ -138,9 +194,11 @@ main() {
 
 	run_test "Sessions list command" test_sessions_list
 	run_test "Sessions list --json output" test_sessions_list_json
+	run_test "Sessions list --json fixed fields" test_sessions_list_json_fixed_fields
 	run_test "Sessions show <id> command" test_sessions_show
 	run_test "Sessions show --json output" test_sessions_show_json
 	run_test "Sessions delete <id> command" test_sessions_delete
+	run_test "Sessions clean --dry-run no side effect" test_sessions_clean_dry_run_no_side_effect
 	run_test "Sessions list per backend" test_sessions_list_backends
 	run_test "Sessions --help works" test_sessions_help
 
