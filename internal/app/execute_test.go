@@ -246,6 +246,33 @@ func TestExecuteAndCaptureWithJSON_Timeout(t *testing.T) {
 	}
 }
 
+func TestExecuteAndCaptureWithJSONTimeout_ExplicitTimeout(t *testing.T) {
+	config.Reset()
+	t.Cleanup(config.Reset)
+	if err := config.Init(""); err != nil {
+		t.Fatalf("config init failed: %v", err)
+	}
+	// Keep global timeout disabled to verify explicit timeout path.
+	config.Get().UnifiedFlags.CommandTimeoutSecs = 0
+
+	b := &mockBackend{name: "json-timeout-explicit"}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "ping", "-n", "4", "127.0.0.1")
+	} else {
+		cmd = exec.Command("sh", "-c", "sleep 2")
+	}
+
+	result, err := ExecuteAndCaptureWithJSONTimeout(b, cmd, 200*time.Millisecond)
+	if !errors.Is(err, ErrCommandTimeout) {
+		t.Fatalf("expected ErrCommandTimeout, got %v", err)
+	}
+	if result.ExitCode != 124 {
+		t.Fatalf("ExitCode = %d, want 124", result.ExitCode)
+	}
+}
+
 // ==================== PromptResult Tests ====================
 
 func TestPromptResult_JSONSerialization(t *testing.T) {

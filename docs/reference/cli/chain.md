@@ -30,7 +30,8 @@ Execute a series of prompts sequentially, passing output from each step to the n
       "name": "step-name",
       "backend": "claude",
       "prompt": "First prompt",
-      "model": "optional-model"
+      "model": "optional-model",
+      "timeout_secs": 30
     },
     {
       "name": "second-step",
@@ -53,6 +54,7 @@ Execute a series of prompts sequentially, passing output from each step to the n
 | `approval_mode` | string | No | `default`, `auto`, `none`, `always` |
 | `sandbox_mode` | string | No | `default`, `read-only`, `workspace`, `full` |
 | `max_turns` | int | No | Max agentic turns |
+| `timeout_secs` | int | No | Step timeout in seconds (`<=0` means disabled) |
 
 ### Top-Level Fields
 
@@ -61,6 +63,12 @@ Execute a series of prompts sequentially, passing output from each step to the n
 | `steps` | array | | List of steps (required) |
 | `stop_on_failure` | bool | `true` | **CLI always stops on failure** (field is accepted but `false` is ignored) |
 | `pass_working_dir` | bool | `false` | Pass working directory between steps |
+
+Timeout precedence:
+
+- If only `timeout_secs` is set, the step uses `timeout_secs`.
+- If only global `unified_flags.command_timeout_secs` is set, the step uses global timeout.
+- If both are set, the shorter timeout wins.
 
 ### Template Variables
 

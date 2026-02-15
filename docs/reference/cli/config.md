@@ -17,8 +17,8 @@ The `config` command provides subcommands for viewing and modifying clinvk confi
 | Command | Description |
 |---------|-------------|
 | `show` | Display current configuration |
-| `get` | Get a specific configuration value |
 | `set` | Set a configuration value |
+| `lint` | Validate configuration |
 
 ---
 
@@ -74,51 +74,6 @@ server:
 parallel:
   max_workers: 3
   fail_fast: false
-```
-
----
-
-## clinvk config get
-
-Get a specific configuration value.
-
-### Usage
-
-```bash
-clinvk config get <key>
-```
-
-### Key Format
-
-Use dot notation for nested keys:
-
-```bash
-clinvk config get default_backend
-clinvk config get backends.claude.model
-clinvk config get session.retention_days
-```
-
-### Examples
-
-Get default backend:
-
-```bash
-clinvk config get default_backend
-# Output: claude
-```
-
-Get Claude model:
-
-```bash
-clinvk config get backends.claude.model
-# Output: claude-opus-4-5-20251101
-```
-
-Get session retention:
-
-```bash
-clinvk config get session.retention_days
-# Output: 30
 ```
 
 ---
@@ -186,6 +141,58 @@ clinvk config set unified_flags.verbose true
 
 ---
 
+## clinvk config lint
+
+Validate configuration syntax and semantics.
+
+### Usage
+
+```bash
+clinvk config lint [flags]
+```
+
+### Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | | Validate a specific config file path |
+| `--json` | bool | `false` | Output validation report as JSON |
+
+### Examples
+
+Validate current loaded config:
+
+```bash
+clinvk config lint
+```
+
+Validate a specific file:
+
+```bash
+clinvk config lint --config ./config.example.yaml
+```
+
+Machine-readable output for CI:
+
+```bash
+clinvk config lint --json
+```
+
+JSON output example:
+
+```json
+{
+  "schema_version": "v1",
+  "valid": false,
+  "error_count": 1,
+  "errors": [
+    "config validation: default_backend: invalid backend \"unknown\" (valid: claude, codex, gemini)"
+  ]
+}
+```
+
+---
+
 ## Configuration File Location
 
 Default location: `~/.clinvk/config.yaml`
@@ -219,8 +226,8 @@ Configuration values are resolved in this order (highest to lowest):
 | Code | Description |
 |------|-------------|
 | 0 | Success |
-| 1 | Invalid key or value |
-| 3 | Configuration error |
+| 1 | General command error |
+| 2 | Validation failed (`config lint` or `doctor`) |
 
 ## Related Commands
 

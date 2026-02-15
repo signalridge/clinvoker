@@ -30,8 +30,9 @@ var (
 	workDir             string
 	dryRun              bool
 	outputFormat        string // text, json, stream-json
-	continueLastSession bool   // continue last session
-	ephemeralMode       bool   // stateless mode, no session persisted
+	showUsageFlag       bool
+	continueLastSession bool // continue last session
+	ephemeralMode       bool // stateless mode, no session persisted
 )
 
 var rootCmd = &cobra.Command{
@@ -57,6 +58,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&workDir, "workdir", "w", "", "working directory for the AI backend")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "print command without executing")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output-format", "o", "json", "output format: text, json, stream-json")
+	rootCmd.PersistentFlags().BoolVar(&showUsageFlag, "show-usage", false, "show token usage in text output")
 	rootCmd.PersistentFlags().BoolVar(&ephemeralMode, "ephemeral", false, "stateless mode: don't persist session (like standard LLM APIs)")
 	rootCmd.Flags().BoolVarP(&continueLastSession, "continue", "c", false, "continue the last session")
 
@@ -98,12 +100,14 @@ type promptContext struct {
 	dryRun      bool
 	userFormat  backend.OutputFormat
 	ephemeral   bool
+	showUsage   bool
 }
 
 // normalizedFlags holds normalized flag values after applying config defaults.
 type normalizedFlags struct {
 	outputFormat string
 	dryRun       bool
+	showUsage    bool
 }
 
 // normalizeFlags normalizes output format and dry-run flags using config defaults.
@@ -125,10 +129,27 @@ func normalizeFlags(cmd *cobra.Command) *normalizedFlags {
 		effectiveDryRun = true
 	}
 
+	effectiveShowUsage := cfg.Output.ShowTokens
+	if cmd.Flags().Changed("show-usage") {
+		effectiveShowUsage = showUsageFlag
+	}
+
 	return &normalizedFlags{
 		outputFormat: effectiveOutputFormat,
 		dryRun:       effectiveDryRun,
+		showUsage:    effectiveShowUsage,
 	}
+}
+
+func resolveShowUsageFromConfigAndFlags(cmd *cobra.Command, cfg *config.Config) bool {
+	if cfg == nil {
+		cfg = config.Get()
+	}
+
+	if cmd != nil && cmd.Flags().Changed("show-usage") {
+		return showUsageFlag
+	}
+	return cfg.Output.ShowTokens
 }
 
 // preparePromptContext prepares the context for prompt execution.
@@ -196,6 +217,7 @@ func preparePromptContext(cmd *cobra.Command, _ string) (*promptContext, error) 
 		dryRun:      flags.dryRun,
 		userFormat:  userFormat,
 		ephemeral:   ephemeralMode,
+		showUsage:   flags.showUsage,
 	}, nil
 }
 
@@ -258,6 +280,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		OutputMode: DetermineOutputMode(ctx.userFormat),
 		Stdin:      true,
 		Timeout:    GetCommandTimeout(),
+		ShowUsage:  ctx.showUsage,
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 
@@ -388,6 +411,7 @@ func runContinueLastSession(_ *cobra.Command, prompt string, flags *normalizedFl
 		OutputMode: DetermineOutputMode(userFormat),
 		Stdin:      true,
 		Timeout:    GetCommandTimeout(),
+		ShowUsage:  flags.showUsage,
 	}
 	result, err := ExecuteCommand(execCfg, execCmd)
 
@@ -491,6 +515,12 @@ type CaptureResult struct {
 // This properly captures backend session IDs for resume functionality.
 // The cmd should already be built with JSON output format.
 func ExecuteAndCaptureWithJSON(b backend.Backend, cmd *exec.Cmd) (*CaptureResult, error) {
+	return ExecuteAndCaptureWithJSONTimeout(b, cmd, GetCommandTimeout())
+}
+
+// ExecuteAndCaptureWithJSONTimeout executes a command in JSON mode with an explicit timeout.
+// Set timeout to 0 to disable timeout handling.
+func ExecuteAndCaptureWithJSONTimeout(b backend.Backend, cmd *exec.Cmd, timeout time.Duration) (*CaptureResult, error) {
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 
@@ -513,7 +543,6 @@ func ExecuteAndCaptureWithJSON(b backend.Backend, cmd *exec.Cmd) (*CaptureResult
 
 	var waitErr error
 	timedOut := false
-	timeout := GetCommandTimeout()
 	if timeout > 0 {
 		timer := time.NewTimer(timeout)
 		defer timer.Stop()

@@ -388,3 +388,18 @@ func TestRun_ReturnsGeneralErrorCode(t *testing.T) {
 		t.Fatalf("run() = %d, want 1", code)
 	}
 }
+
+func TestRun_ReturnsValidationExitCode(t *testing.T) {
+	origExecuteApp := executeApp
+	t.Cleanup(func() {
+		executeApp = origExecuteApp
+	})
+
+	executeApp = func() error {
+		return app.ErrValidationFailed
+	}
+
+	if code := run(); code != 2 {
+		t.Fatalf("run() = %d, want 2", code)
+	}
+}

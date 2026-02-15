@@ -3,10 +3,13 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 
@@ -50,9 +53,27 @@ type CompareResult struct {
 	ExitCode  int       `json:"exit_code"`
 	Error     string    `json:"error,omitempty"`
 	Output    string    `json:"output,omitempty"`
+	OutputLen int       `json:"output_length"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 	Duration  float64   `json:"duration_seconds"`
+}
+
+// CompareSummaryEntry describes one backend's score and ranking dimensions.
+type CompareSummaryEntry struct {
+	Backend        string  `json:"backend"`
+	Status         string  `json:"status"`
+	LatencySeconds float64 `json:"latency_seconds"`
+	OutputLength   int     `json:"output_length"`
+	Score          float64 `json:"score"`
+	Rank           int     `json:"rank"`
+}
+
+// CompareSummary contains ranking and scoring metadata for compare results.
+type CompareSummary struct {
+	ScoreFormulaVersion string                `json:"score_formula_version"`
+	Dimensions          []string              `json:"dimensions"`
+	Ranking             []CompareSummaryEntry `json:"ranking"`
 }
 
 // CompareResults represents aggregated comparison results.
@@ -60,6 +81,7 @@ type CompareResults struct {
 	Prompt        string          `json:"prompt"`
 	Backends      []string        `json:"backends"`
 	Results       []CompareResult `json:"results"`
+	Summary       CompareSummary  `json:"summary"`
 	TotalDuration float64         `json:"total_duration_seconds"`
 	StartTime     time.Time       `json:"start_time"`
 	EndTime       time.Time       `json:"end_time"`
@@ -155,6 +177,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 
 	results.EndTime = time.Now()
 	results.TotalDuration = results.EndTime.Sub(results.StartTime).Seconds()
+	results.Summary = buildCompareSummary(results.Results)
 
 	// Output results
 	if compareJSON {
@@ -169,20 +192,27 @@ func runCompare(cmd *cobra.Command, args []string) error {
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
 		fmt.Println("COMPARISON SUMMARY")
 		fmt.Println(strings.Repeat("=", tableSeparatorWidth))
-		fmt.Printf("%-12s %-10s %-12s %s\n", "BACKEND", "STATUS", "DURATION", "MODEL")
+		fmt.Printf("%-12s %-10s %-12s %-11s %-8s %s\n", "BACKEND", "STATUS", "DURATION", "OUT_LEN", "SCORE", "MODEL")
 		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
 
+		resultsByBackend := make(map[string]CompareResult, len(results.Results))
 		for _, r := range results.Results {
-			status := statusText(r.ExitCode, r.Error)
+			resultsByBackend[r.Backend] = r
+		}
+
+		for _, entry := range results.Summary.Ranking {
+			r := resultsByBackend[entry.Backend]
 			model := r.Model
 			if model == "" {
 				model = "(default)"
 			}
 
-			fmt.Printf("%-12s %-10s %-12.2fs %s\n",
+			fmt.Printf("%-12s %-10s %-12.2fs %-11d %-8.2f %s\n",
 				r.Backend,
-				status,
+				entry.Status,
 				r.Duration,
+				r.OutputLen,
+				entry.Score,
 				model,
 			)
 			if r.Error != "" {
@@ -191,6 +221,7 @@ func runCompare(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Println(strings.Repeat("-", tableSeparatorWidth))
+		fmt.Println("Ranking rule: score desc, duration asc, backend asc")
 		fmt.Printf("Total time: %.2fs\n", results.TotalDuration)
 	}
 
@@ -265,6 +296,7 @@ func runCompareTask(backendName, prompt string, cfg *config.Config) CompareResul
 	}
 	result.ExitCode = captureResult.ExitCode
 	result.Output = captureResult.Content
+	result.OutputLen = utf8.RuneCountInString(result.Output)
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
 
@@ -274,6 +306,69 @@ func runCompareTask(backendName, prompt string, cfg *config.Config) CompareResul
 	}
 
 	return result
+}
+
+func buildCompareSummary(results []CompareResult) CompareSummary {
+	summary := CompareSummary{
+		ScoreFormulaVersion: "v1",
+		Dimensions:          []string{"status", "latency_seconds", "output_length"},
+		Ranking:             make([]CompareSummaryEntry, 0, len(results)),
+	}
+
+	var maxDuration float64
+	for _, r := range results {
+		if r.ExitCode == 0 && r.Error == "" && r.Duration > maxDuration {
+			maxDuration = r.Duration
+		}
+	}
+
+	for _, r := range results {
+		entry := CompareSummaryEntry{
+			Backend:        r.Backend,
+			Status:         statusText(r.ExitCode, r.Error),
+			LatencySeconds: r.Duration,
+			OutputLength:   r.OutputLen,
+			Score:          compareScore(&r, maxDuration),
+		}
+		summary.Ranking = append(summary.Ranking, entry)
+	}
+
+	sort.Slice(summary.Ranking, func(i, j int) bool {
+		if summary.Ranking[i].Score == summary.Ranking[j].Score {
+			if summary.Ranking[i].LatencySeconds == summary.Ranking[j].LatencySeconds {
+				return summary.Ranking[i].Backend < summary.Ranking[j].Backend
+			}
+			return summary.Ranking[i].LatencySeconds < summary.Ranking[j].LatencySeconds
+		}
+		return summary.Ranking[i].Score > summary.Ranking[j].Score
+	})
+
+	for i := range summary.Ranking {
+		summary.Ranking[i].Rank = i + 1
+	}
+
+	return summary
+}
+
+func compareScore(result *CompareResult, maxDuration float64) float64 {
+	if result.ExitCode != 0 || result.Error != "" {
+		return 0
+	}
+
+	statusScore := 60.0
+
+	latencyScore := 30.0
+	if maxDuration > 0 {
+		latencyScore = 30.0 * (1.0 - (result.Duration / maxDuration))
+		if latencyScore < 0 {
+			latencyScore = 0
+		}
+	}
+
+	outputScore := math.Min(10.0, math.Log1p(float64(result.OutputLen)))
+	total := statusScore + latencyScore + outputScore
+
+	return math.Round(total*100) / 100
 }
 
 func statusText(exitCode int, err string) string {

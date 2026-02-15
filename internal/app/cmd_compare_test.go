@@ -83,6 +83,7 @@ func TestCompareResult_JSONFieldNames(t *testing.T) {
 		"exit_code":        true,
 		"error":            true,
 		"output":           true,
+		"output_length":    true,
 		"start_time":       true,
 		"end_time":         true,
 		"duration_seconds": true,
@@ -118,7 +119,7 @@ func TestCompareResult_OmitEmpty(t *testing.T) {
 				ExitCode: 0,
 			},
 			shouldOmit:    []string{"model"},
-			shouldInclude: []string{"backend", "exit_code"},
+			shouldInclude: []string{"backend", "exit_code", "output_length"},
 		},
 		{
 			name: "empty error is omitted",
@@ -128,7 +129,7 @@ func TestCompareResult_OmitEmpty(t *testing.T) {
 				Error:    "",
 			},
 			shouldOmit:    []string{"error"},
-			shouldInclude: []string{"backend", "exit_code"},
+			shouldInclude: []string{"backend", "exit_code", "output_length"},
 		},
 		{
 			name: "empty output is omitted",
@@ -138,7 +139,7 @@ func TestCompareResult_OmitEmpty(t *testing.T) {
 				Output:   "",
 			},
 			shouldOmit:    []string{"output"},
-			shouldInclude: []string{"backend", "exit_code"},
+			shouldInclude: []string{"backend", "exit_code", "output_length"},
 		},
 		{
 			name: "non-empty fields are included",
@@ -150,7 +151,7 @@ func TestCompareResult_OmitEmpty(t *testing.T) {
 				Output:   "some output",
 			},
 			shouldOmit:    []string{},
-			shouldInclude: []string{"backend", "model", "exit_code", "error", "output"},
+			shouldInclude: []string{"backend", "model", "exit_code", "error", "output", "output_length"},
 		},
 	}
 
@@ -210,6 +211,7 @@ func TestCompareResults_JSONFieldNames(t *testing.T) {
 		"prompt":                 true,
 		"backends":               true,
 		"results":                true,
+		"summary":                true,
 		"total_duration_seconds": true,
 		"start_time":             true,
 		"end_time":               true,
@@ -226,6 +228,50 @@ func TestCompareResults_JSONFieldNames(t *testing.T) {
 		if !expectedFields[field] {
 			t.Errorf("unexpected JSON field %q found", field)
 		}
+	}
+}
+
+func TestBuildCompareSummary_SortsAndRanks(t *testing.T) {
+	input := []CompareResult{
+		{
+			Backend:   "slow-success",
+			ExitCode:  0,
+			Duration:  3.0,
+			OutputLen: 50,
+		},
+		{
+			Backend:   "fast-success",
+			ExitCode:  0,
+			Duration:  1.0,
+			OutputLen: 20,
+		},
+		{
+			Backend:   "failed",
+			ExitCode:  1,
+			Error:     "boom",
+			Duration:  0.5,
+			OutputLen: 100,
+		},
+	}
+
+	summary := buildCompareSummary(input)
+	if summary.ScoreFormulaVersion != "v1" {
+		t.Fatalf("score formula version = %q, want %q", summary.ScoreFormulaVersion, "v1")
+	}
+	if len(summary.Ranking) != 3 {
+		t.Fatalf("ranking length = %d, want 3", len(summary.Ranking))
+	}
+	if summary.Ranking[0].Backend != "fast-success" {
+		t.Fatalf("rank 1 backend = %q, want %q", summary.Ranking[0].Backend, "fast-success")
+	}
+	if summary.Ranking[0].Rank != 1 {
+		t.Fatalf("rank field = %d, want 1", summary.Ranking[0].Rank)
+	}
+	if summary.Ranking[2].Backend != "failed" {
+		t.Fatalf("last ranked backend = %q, want failed", summary.Ranking[2].Backend)
+	}
+	if summary.Ranking[2].Score != 0 {
+		t.Fatalf("failed backend score = %.2f, want 0", summary.Ranking[2].Score)
 	}
 }
 

@@ -101,6 +101,18 @@ func TestSessionsListCmd_Flags(t *testing.T) {
 			shorthand: "n",
 			defValue:  "0",
 		},
+		{
+			name:      "offset flag exists without shorthand",
+			flagName:  "offset",
+			shorthand: "",
+			defValue:  "0",
+		},
+		{
+			name:      "json flag exists",
+			flagName:  "json",
+			shorthand: "",
+			defValue:  "false",
+		},
 	}
 
 	for _, tt := range tests {
@@ -198,6 +210,16 @@ func TestSessionsShowCmd_ArgsValidation(t *testing.T) {
 func TestSessionsShowCmd_HasRunE(t *testing.T) {
 	if sessionsShowCmd.RunE == nil {
 		t.Error("sessionsShowCmd.RunE should not be nil")
+	}
+}
+
+func TestSessionsShowCmd_Flags(t *testing.T) {
+	flag := sessionsShowCmd.Flags().Lookup("json")
+	if flag == nil {
+		t.Fatal("flag \"json\" not found")
+	}
+	if flag.DefValue != "false" {
+		t.Errorf("flag \"json\" default value = %q, want %q", flag.DefValue, "false")
 	}
 }
 
@@ -320,6 +342,11 @@ func TestSessionsCleanCmd_Flags(t *testing.T) {
 			name:     "older-than flag exists",
 			flagName: "older-than",
 			defValue: "",
+		},
+		{
+			name:     "dry-run flag exists",
+			flagName: "dry-run",
+			defValue: "false",
 		},
 	}
 

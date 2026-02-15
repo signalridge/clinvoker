@@ -18,6 +18,7 @@ func resetAppGlobals() {
 	workDir = ""
 	dryRun = false
 	outputFormat = "json"
+	showUsageFlag = false
 	continueLastSession = false
 	ephemeralMode = false
 	mcpTransport = ""
@@ -37,12 +38,21 @@ func resetAppGlobals() {
 	chainFile = ""
 	chainInputFile = ""
 	chainJSONFlag = false
+	listBackendFilter = ""
+	listStatusFilter = ""
+	listLimit = 0
+	listOffset = 0
+	listJSON = false
+	showJSON = false
+	cleanOlderThan = ""
+	cleanDryRun = false
 }
 
 func newFlagTestCmd() *cobra.Command {
 	cmd := &cobra.Command{}
 	cmd.Flags().StringVarP(&outputFormat, "output-format", "o", "json", "output format")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run")
+	cmd.Flags().BoolVar(&showUsageFlag, "show-usage", false, "show usage")
 	return cmd
 }
 
@@ -97,6 +107,25 @@ func TestNormalizeFlags_ExplicitFlagsOverride(t *testing.T) {
 	}
 	if !flags.dryRun {
 		t.Fatal("dryRun should be true when flag set")
+	}
+}
+
+func TestNormalizeFlags_ShowUsageOverride(t *testing.T) {
+	setupTestConfig(t)
+	defer config.Reset()
+	resetAppGlobals()
+
+	cfg := config.Get()
+	cfg.Output.ShowTokens = false
+
+	cmd := newFlagTestCmd()
+	if err := cmd.Flags().Set("show-usage", "true"); err != nil {
+		t.Fatalf("set show-usage: %v", err)
+	}
+
+	flags := normalizeFlags(cmd)
+	if !flags.showUsage {
+		t.Fatal("showUsage should be true when --show-usage is set")
 	}
 }
 

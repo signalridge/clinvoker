@@ -367,10 +367,16 @@ If API keys are configured and missing/invalid:
 
 ```json
 {
-  "error": "unauthorized",
-  "message": "missing API key"
+  "code": "unauthorized",
+  "message": "missing API key",
+  "request_id": "req-123"
 }
 ```
+
+Response headers include:
+
+- `WWW-Authenticate: Bearer`
+- `X-Request-ID: <same-value-as-body.request_id>`
 
 ### Rate Limiting (429)
 

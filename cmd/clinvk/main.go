@@ -21,6 +21,9 @@ func run() int {
 		if errors.Is(err, app.ErrCommandTimeout) {
 			return 6
 		}
+		if errors.Is(err, app.ErrValidationFailed) {
+			return 2
+		}
 		return 1
 	}
 	return 0

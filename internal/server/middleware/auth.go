@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"strings"
 
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
+
 	"github.com/signalridge/clinvoker/internal/auth"
 )
 
@@ -30,13 +33,13 @@ func APIKeyAuth() func(http.Handler) http.Handler {
 			// Extract key from request
 			apiKey := extractAPIKey(r)
 			if apiKey == "" {
-				writeUnauthorized(w, "missing API key")
+				writeUnauthorized(w, r, "missing API key")
 				return
 			}
 
 			// Validate key
 			if !validateKey(apiKey, keys) {
-				writeUnauthorized(w, "invalid API key")
+				writeUnauthorized(w, r, "invalid API key")
 				return
 			}
 
@@ -79,19 +82,28 @@ func validateKey(key string, validKeys []string) bool {
 
 // errorResponse represents an error response structure.
 type errorResponse struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
+	Error     string `json:"error,omitempty"`
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	RequestID string `json:"request_id"`
 }
 
 // writeUnauthorized writes a 401 Unauthorized response.
-func writeUnauthorized(w http.ResponseWriter, message string) {
+func writeUnauthorized(w http.ResponseWriter, r *http.Request, message string) {
+	requestID := chiMiddleware.GetReqID(r.Context())
+	if requestID == "" {
+		requestID = uuid.NewString()
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("WWW-Authenticate", "Bearer")
+	w.Header().Set("X-Request-ID", requestID)
 	w.WriteHeader(http.StatusUnauthorized)
 
 	resp := errorResponse{
-		Error:   "unauthorized",
-		Message: message,
+		Code:      "unauthorized",
+		Message:   message,
+		RequestID: requestID,
 	}
 	_ = json.NewEncoder(w).Encode(resp)
 }

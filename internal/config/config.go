@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -227,6 +228,52 @@ var (
 	watcherID  int64
 )
 
+func defaultConfig() *Config {
+	return &Config{
+		DefaultBackend: "claude",
+		UnifiedFlags: UnifiedFlagsConfig{
+			ApprovalMode: "default",
+			SandboxMode:  "default",
+		},
+		Backends: make(map[string]BackendConfig),
+		Session: SessionConfig{
+			RetentionDays:   30,
+			StoreTokenUsage: true,
+		},
+		Output: OutputConfig{
+			Format:     "json",
+			ShowTokens: false,
+			ShowTiming: false,
+			Color:      true,
+		},
+		Parallel: ParallelConfig{
+			MaxWorkers:      3,
+			FailFast:        false,
+			AggregateOutput: true,
+		},
+		Server: ServerConfig{
+			Host:                 "127.0.0.1",
+			Port:                 8080,
+			RequestTimeoutSecs:   300, // 5 minutes
+			ReadTimeoutSecs:      30,
+			WriteTimeoutSecs:     300, // 5 minutes
+			IdleTimeoutSecs:      120,
+			RateLimitEnabled:     false,
+			RateLimitRPS:         10,
+			RateLimitBurst:       20,
+			RateLimitCleanupSecs: 180,
+			MaxRequestBodyBytes:  10 * 1024 * 1024, // 10MB
+		},
+		MCP: MCPConfig{
+			Transport:    "stdio",
+			Host:         "127.0.0.1",
+			Port:         8081,
+			HTTPPath:     "/mcp",
+			ExposeHealth: false,
+		},
+	}
+}
+
 type configWatcher struct {
 	id int64
 	fn func(*Config)
@@ -237,49 +284,7 @@ func Init(cfgFile string) error {
 	var initErr error
 
 	once.Do(func() {
-		cfg = &Config{
-			DefaultBackend: "claude",
-			UnifiedFlags: UnifiedFlagsConfig{
-				ApprovalMode: "default",
-				SandboxMode:  "default",
-			},
-			Backends: make(map[string]BackendConfig),
-			Session: SessionConfig{
-				RetentionDays:   30,
-				StoreTokenUsage: true,
-			},
-			Output: OutputConfig{
-				Format:     "json",
-				ShowTokens: false,
-				ShowTiming: false,
-				Color:      true,
-			},
-			Parallel: ParallelConfig{
-				MaxWorkers:      3,
-				FailFast:        false,
-				AggregateOutput: true,
-			},
-			Server: ServerConfig{
-				Host:                 "127.0.0.1",
-				Port:                 8080,
-				RequestTimeoutSecs:   300, // 5 minutes
-				ReadTimeoutSecs:      30,
-				WriteTimeoutSecs:     300, // 5 minutes
-				IdleTimeoutSecs:      120,
-				RateLimitEnabled:     false,
-				RateLimitRPS:         10,
-				RateLimitBurst:       20,
-				RateLimitCleanupSecs: 180,
-				MaxRequestBodyBytes:  10 * 1024 * 1024, // 10MB
-			},
-			MCP: MCPConfig{
-				Transport:    "stdio",
-				Host:         "127.0.0.1",
-				Port:         8081,
-				HTTPPath:     "/mcp",
-				ExposeHealth: false,
-			},
-		}
+		cfg = defaultConfig()
 
 		if cfgFile != "" {
 			viper.SetConfigFile(cfgFile)
@@ -400,6 +405,25 @@ func Reload() error {
 	}
 	reloadConfig()
 	return nil
+}
+
+// LoadFromPath loads a config file for validation without mutating global config.
+func LoadFromPath(path string) (*Config, error) {
+	if path == "" {
+		return nil, fmt.Errorf("config path cannot be empty")
+	}
+
+	v := viper.New()
+	v.SetConfigFile(path)
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	loaded := defaultConfig()
+	if err := v.Unmarshal(loaded); err != nil {
+		return nil, err
+	}
+	return loaded, nil
 }
 
 // ConfigDir returns the configuration directory path.
