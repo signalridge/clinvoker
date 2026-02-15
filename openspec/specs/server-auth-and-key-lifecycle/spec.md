@@ -6,27 +6,27 @@ TBD - created by archiving change v05-auth-request-traceability. Update Purpose 
 
 ## Requirements
 
-### Requirement: [Feature #6] 鉴权失败响应携带 `request_id`
+### Requirement: [Feature #6] auth failure response includes `request_id`
 
-系统 MUST 在鉴权失败响应中返回 `request_id`，并保持 header/body 一致。
+The system MUST return `request_id` in auth failure responses, and keep header/body values consistent.
 
 #### Scenario: missing key
 
-- **WHEN** 请求缺少 API key 且服务开启鉴权
-- **THEN** 响应 body MUST 包含 `request_id`
-- **THEN** 响应头请求标识 MUST 与 body 一致
+- **WHEN** the request is missing API key and auth is enabled
+- **THEN** response body MUST include `request_id`
+- **THEN** the request identifier in response header MUST match the body value
 
 #### Scenario: invalid key
 
-- **WHEN** 请求 API key 非法
-- **THEN** 响应 MUST 返回明确错误语义与 `request_id`
+- **WHEN** the request API key is invalid
+- **THEN** the response MUST return clear error semantics and `request_id`
 
-### Requirement: [Feature #6] 错误结构稳定
+### Requirement: [Feature #6] stable error structure
 
-系统 MUST 为鉴权失败提供稳定可解析的结构化错误字段。
+The system MUST provide stable, machine-parseable structured error fields for auth failures.
 
-#### Scenario: 稳定字段
+#### Scenario: stable fields
 
-- **WHEN** 任一鉴权失败发生
-- **THEN** 响应 MUST 包含 `code`、`message`、`request_id`
-- **THEN** 字段变更 MUST 通过版本文档声明
+- **WHEN** any auth failure occurs
+- **THEN** response MUST include `code`, `message`, and `request_id`
+- **THEN** field changes MUST be declared through versioned documentation

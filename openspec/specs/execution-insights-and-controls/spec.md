@@ -6,46 +6,46 @@ TBD - created by archiving change v05-execution-insights-controls. Update Purpos
 
 ## Requirements
 
-### Requirement: [Feature #3] chain 步骤级超时
+### Requirement: [Feature #3] chain step-level timeout
 
-系统 MUST 支持在 chain 步骤中配置 `timeout_secs`。
+The system MUST support `timeout_secs` configuration at the chain step level.
 
-#### Scenario: 超时失败与停链
+#### Scenario: Timeout failure and chain stop
 
-- **WHEN** 步骤执行超过 `timeout_secs`
-- **THEN** 步骤 MUST 标记为超时失败并记录原因
-- **THEN** 当 `stop_on_failure=true` 时 MUST 停止后续步骤
+- **WHEN** a step runs longer than `timeout_secs`
+- **THEN** that step MUST be marked as timed-out failure and record the reason
+- **THEN** when `stop_on_failure=true`, the system MUST stop subsequent steps
 
-#### Scenario: 全局与步骤超时并存
+#### Scenario: Coexisting global and step timeout
 
-- **WHEN** 同时配置全局超时和步骤超时
-- **THEN** 系统 MUST 采用更短超时
+- **WHEN** both global timeout and step timeout are configured
+- **THEN** the system MUST use the shorter effective timeout
 
-### Requirement: [Feature #2] compare 摘要评分
+### Requirement: [Feature #2] compare summary scoring
 
-系统 MUST 提供 compare 摘要评分并公开排序依据。
+The system MUST provide compare summary scoring and publish ranking criteria.
 
-#### Scenario: 文本摘要
+#### Scenario: Text summary
 
-- **WHEN** 执行 compare（非 JSON）
-- **THEN** 输出 MUST 包含 latency、status、output_length、score
-- **THEN** 输出 MUST 说明排序规则
+- **WHEN** compare runs in non-JSON mode
+- **THEN** output MUST include latency, status, output_length, and score
+- **THEN** output MUST describe sorting rules
 
-#### Scenario: JSON 摘要
+#### Scenario: JSON summary
 
-- **WHEN** 执行 compare --json
-- **THEN** 输出 MUST 包含评分输入维度与排名字段
+- **WHEN** compare runs with `--json`
+- **THEN** output MUST include score input dimensions and ranking fields
 
-### Requirement: [Feature #9] prompt usage 可选显示
+### Requirement: [Feature #9] optional prompt usage display
 
-系统 MUST 支持文本模式按需显示 usage/token，且默认保持兼容。
+The system MUST support on-demand usage/token display in text mode while preserving default compatibility.
 
-#### Scenario: 显式显示
+#### Scenario: Explicit display
 
-- **WHEN** 用户开启 usage 显示开关
-- **THEN** 输出 MUST 包含 input/output/total token 信息
+- **WHEN** the user enables the usage display flag
+- **THEN** output MUST include input/output/total token information
 
-#### Scenario: usage 缺失
+#### Scenario: Missing usage
 
-- **WHEN** backend 未返回 usage
-- **THEN** 输出 MUST 标注 unknown，而非误导性零值
+- **WHEN** backend does not return usage
+- **THEN** output MUST show `unknown` instead of misleading zero values
