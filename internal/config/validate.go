@@ -36,6 +36,9 @@ func Validate(cfg *Config) []error {
 		errs = append(errs, validateBackendConfig(name, &bc)...)
 	}
 
+	// Validate retry config
+	errs = append(errs, validateRetryConfig(&cfg.Retry)...)
+
 	// Validate session config
 	errs = append(errs, validateSessionConfig(&cfg.Session)...)
 
@@ -339,6 +342,82 @@ func validateParallelConfig(parallel *ParallelConfig) []error {
 			Field:   "parallel.max_workers",
 			Message: "must be at least 1",
 		})
+	}
+
+	return errs
+}
+
+func validateRetryPolicy(prefix string, p *RetryPolicyConfig) []error {
+	var errs []error
+
+	if p == nil {
+		return errs
+	}
+
+	if p.MaxAttempts < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".max_attempts",
+			Message: "must be non-negative",
+		})
+	}
+	if p.Enabled && p.MaxAttempts == 0 {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".max_attempts",
+			Message: "must be at least 1 when retry is enabled",
+		})
+	}
+
+	if p.BackoffInitialMS < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".backoff_initial_ms",
+			Message: "must be non-negative",
+		})
+	}
+
+	if p.BackoffMaxMS < 0 {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".backoff_max_ms",
+			Message: "must be non-negative",
+		})
+	}
+
+	if p.BackoffInitialMS > 0 && p.BackoffMaxMS > 0 && p.BackoffInitialMS > p.BackoffMaxMS {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".backoff_initial_ms",
+			Message: "must be <= backoff_max_ms",
+		})
+	}
+
+	if p.BackoffMultiplier != 0 && p.BackoffMultiplier < 1.0 {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".backoff_multiplier",
+			Message: "must be >= 1.0",
+		})
+	}
+
+	if p.JitterRatio < 0 || p.JitterRatio > 1 {
+		errs = append(errs, &ValidationError{
+			Field:   prefix + ".jitter_ratio",
+			Message: "must be between 0 and 1",
+		})
+	}
+
+	return errs
+}
+
+func validateRetryConfig(retry *RetryConfig) []error {
+	var errs []error
+
+	if retry == nil {
+		return errs
+	}
+
+	errs = append(errs, validateRetryPolicy("retry.global", &retry.Global)...)
+	for name, p := range retry.ByBackend {
+		errs = append(errs, validateRetryPolicy(fmt.Sprintf("retry.by_backend.%s", name), &p)...)
+	}
+	for name, p := range retry.ByCommand {
+		errs = append(errs, validateRetryPolicy(fmt.Sprintf("retry.by_command.%s", name), &p)...)
 	}
 
 	return errs

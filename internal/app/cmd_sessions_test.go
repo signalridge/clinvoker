@@ -396,6 +396,11 @@ func TestSessionsCmd_HasSubcommands(t *testing.T) {
 			subcommand:  sessionsCleanCmd,
 			wantPresent: true,
 		},
+		{
+			name:        "sessionsTagCmd is added",
+			subcommand:  sessionsTagCmd,
+			wantPresent: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -416,7 +421,7 @@ func TestSessionsCmd_HasSubcommands(t *testing.T) {
 }
 
 func TestSessionsCmd_SubcommandCount(t *testing.T) {
-	expectedCount := 4 // list, show, delete, clean
+	expectedCount := 5 // list, show, delete, clean, tag
 	commands := sessionsCmd.Commands()
 	if len(commands) != expectedCount {
 		t.Errorf("sessionsCmd has %d subcommands, want %d", len(commands), expectedCount)

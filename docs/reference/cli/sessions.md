@@ -20,6 +20,7 @@ The `sessions` command provides subcommands for managing clinvk sessions. Sessio
 | `show` | Show session details |
 | `delete` | Delete a session |
 | `clean` | Remove old sessions |
+| `tag` | Add or remove session tags |
 
 ---
 
@@ -33,6 +34,8 @@ List all sessions.
 |------|-------|------|---------|-------------|
 | `--backend` | `-b` | string | | Filter by backend |
 | `--status` | | string | | Filter by status (`active`, `completed`, `error`, `paused`) |
+| `--tag` | | string | | Filter by tag |
+| `--search` | | string | | Search by `id`, `title`, or `initial_prompt` |
 | `--limit` | `-n` | int | | Max sessions to show |
 | `--offset` | | int | `0` | Skip this many sessions before returning results |
 | `--json` | | bool | `false` | Output machine-readable JSON |
@@ -66,7 +69,13 @@ clinvk sessions list --limit 10
 Combined filters:
 
 ```bash
-clinvk sessions list --backend claude --status active --limit 5
+clinvk sessions list --backend claude --status active --tag urgent --limit 5
+```
+
+Search and filter:
+
+```bash
+clinvk sessions list --search "auth bug" --tag urgent --json
 ```
 
 Paginated JSON:
@@ -105,7 +114,9 @@ JSON output:
   "offset": 20,
   "filters": {
     "backend": "claude",
-    "status": ""
+    "status": "",
+    "tag": "feature-auth",
+    "query": "auth bug"
   },
   "sort": {
     "by": "last_used",
@@ -241,6 +252,60 @@ Dry run: would delete 15 session(s) older than 30 days.
 Sample session IDs: abc123..., def456...
 No sessions were deleted. Re-run without --dry-run to apply.
 Note: candidate sessions may change between dry-run and actual cleanup.
+```
+
+---
+
+## clinvk sessions tag
+
+Add or remove tags for a session.
+
+### Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `tag add <session-id> <tag> [tag...]` | Add one or more tags |
+| `tag rm <session-id> <tag> [tag...]` | Remove one or more tags |
+
+### Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--dry-run` | bool | `false` | Preview tag changes without saving |
+
+### Examples
+
+Add tags:
+
+```bash
+clinvk sessions tag add abc123 urgent feature-auth
+```
+
+Remove tag:
+
+```bash
+clinvk sessions tag rm abc123 urgent
+```
+
+Preview removal:
+
+```bash
+clinvk sessions tag rm abc123 urgent --dry-run
+```
+
+### Output
+
+```text
+Applied 2 tag change(s) on session abc123...
+Current tags: urgent, feature-auth
+```
+
+Dry run output:
+
+```text
+Dry run: would remove 1 tag change(s) on session abc123...
+Requested tags: urgent
+No session data was modified.
 ```
 
 ---

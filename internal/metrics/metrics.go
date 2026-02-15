@@ -2,6 +2,8 @@
 package metrics
 
 import (
+	"strings"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -59,6 +61,66 @@ var (
 	)
 )
 
+// Execution-mode metrics (chain/compare/parallel)
+var (
+	ChainStepExecutions = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "chain_step_executions_total",
+			Help:      "Total number of chain step executions",
+		},
+		[]string{"backend", "status"},
+	)
+
+	ChainStepDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "chain_step_duration_seconds",
+			Help:      "Chain step execution duration in seconds",
+			Buckets:   prometheus.ExponentialBuckets(0.01, 2, 15), // 10ms to ~163s
+		},
+		[]string{"backend", "status"},
+	)
+
+	CompareBackendExecutions = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "compare_backend_executions_total",
+			Help:      "Total number of compare backend executions",
+		},
+		[]string{"backend", "status"},
+	)
+
+	CompareBackendDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "compare_backend_duration_seconds",
+			Help:      "Compare backend execution duration in seconds",
+			Buckets:   prometheus.ExponentialBuckets(0.01, 2, 15), // 10ms to ~163s
+		},
+		[]string{"backend", "status"},
+	)
+
+	ParallelTaskExecutions = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "parallel_task_executions_total",
+			Help:      "Total number of parallel task executions",
+		},
+		[]string{"backend", "status"},
+	)
+
+	ParallelTaskDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "parallel_task_duration_seconds",
+			Help:      "Parallel task execution duration in seconds",
+			Buckets:   prometheus.ExponentialBuckets(0.01, 2, 15), // 10ms to ~163s
+		},
+		[]string{"backend", "status"},
+	)
+)
+
 // Session metrics
 var (
 	// ActiveSessions tracks the number of active sessions.
@@ -98,6 +160,48 @@ func RecordBackendExecution(backend, status string) {
 // RecordBackendExecutionDuration records a backend execution duration.
 func RecordBackendExecutionDuration(backend string, durationSeconds float64) {
 	BackendExecutionDuration.WithLabelValues(backend).Observe(durationSeconds)
+}
+
+func normalizeExecutionBackend(backend string) string {
+	backend = strings.TrimSpace(strings.ToLower(backend))
+	if backend == "" {
+		return "unknown"
+	}
+	return backend
+}
+
+func normalizeExecutionStatus(status string) string {
+	status = strings.TrimSpace(strings.ToLower(status))
+	switch status {
+	case "ok", "failed", "timeout", "canceled":
+		return status
+	default:
+		return "failed"
+	}
+}
+
+// RecordChainStepExecution records chain step metrics with bounded labels.
+func RecordChainStepExecution(backend, status string, durationSeconds float64) {
+	backend = normalizeExecutionBackend(backend)
+	status = normalizeExecutionStatus(status)
+	ChainStepExecutions.WithLabelValues(backend, status).Inc()
+	ChainStepDuration.WithLabelValues(backend, status).Observe(durationSeconds)
+}
+
+// RecordCompareBackendExecution records compare backend metrics with bounded labels.
+func RecordCompareBackendExecution(backend, status string, durationSeconds float64) {
+	backend = normalizeExecutionBackend(backend)
+	status = normalizeExecutionStatus(status)
+	CompareBackendExecutions.WithLabelValues(backend, status).Inc()
+	CompareBackendDuration.WithLabelValues(backend, status).Observe(durationSeconds)
+}
+
+// RecordParallelTaskExecution records parallel task metrics with bounded labels.
+func RecordParallelTaskExecution(backend, status string, durationSeconds float64) {
+	backend = normalizeExecutionBackend(backend)
+	status = normalizeExecutionStatus(status)
+	ParallelTaskExecutions.WithLabelValues(backend, status).Inc()
+	ParallelTaskDuration.WithLabelValues(backend, status).Observe(durationSeconds)
 }
 
 // SetActiveSessions sets the number of active sessions.

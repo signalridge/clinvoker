@@ -64,6 +64,20 @@ backends:
     enabled: true
     extra_flags: []
 
+# Execution retry settings (v0.6+)
+retry:
+  global:
+    enabled: false
+    max_attempts: 1
+    backoff_initial_ms: 250
+    backoff_max_ms: 5000
+    backoff_multiplier: 2.0
+    jitter_ratio: 0.2
+    retryable_errors: ["timeout", "rate limit", "503"]
+    allow_non_idempotent: false
+  by_backend: {}
+  by_command: {}
+
 # Session management settings
 session:
   retention_days: 30
@@ -357,6 +371,53 @@ Configure the HTTP API server (used with `clinvk serve`).
 
 !!! note "API Keys"
     You can provide API keys via the `CLINVK_API_KEYS` environment variable (comma-separated) or `server.api_keys_gopass_path`. Keys are not stored directly in the config file for security reasons.
+
+---
+
+## Retry Settings
+
+Configure command retry behavior using layered policy resolution:
+
+`by_command` > `by_backend` > `global`
+
+### Retry Policy Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `false` | Enable retries for this policy scope |
+| `max_attempts` | integer | `1` | Total attempts including first try |
+| `backoff_initial_ms` | integer | `250` | Initial backoff delay in milliseconds |
+| `backoff_max_ms` | integer | `5000` | Maximum backoff delay in milliseconds |
+| `backoff_multiplier` | number | `2.0` | Exponential backoff multiplier |
+| `jitter_ratio` | number | `0.2` | Jitter ratio in range `[0,1]` |
+| `retryable_errors` | array | built-in defaults | Error substrings treated as retryable |
+| `allow_non_idempotent` | boolean | `false` | Allow retries for non-idempotent command flows |
+
+### Retry Configuration Structure
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `retry.global` | object | `{...}` | Global retry policy |
+| `retry.by_backend` | map | `{}` | Backend-specific policy by backend name |
+| `retry.by_command` | map | `{}` | Command-specific policy by command name (`chain`, `compare`, `parallel`, etc.) |
+
+Example:
+
+```yaml
+retry:
+  global:
+    enabled: false
+    max_attempts: 1
+  by_command:
+    compare:
+      enabled: true
+      max_attempts: 3
+      backoff_initial_ms: 200
+      backoff_max_ms: 2000
+      backoff_multiplier: 2.0
+      jitter_ratio: 0.1
+      retryable_errors: ["rate limit", "timeout", "503"]
+```
 
 ---
 

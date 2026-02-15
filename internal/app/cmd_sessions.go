@@ -24,6 +24,8 @@ var sessionsCmd = &cobra.Command{
 var (
 	listBackendFilter string
 	listStatusFilter  string
+	listTagFilter     string
+	listQueryFilter   string
 	listLimit         int
 	listOffset        int
 	listJSON          bool
@@ -40,6 +42,7 @@ var sessionsListCmd = &cobra.Command{
 
 		filter := &session.ListFilter{
 			Backend: listBackendFilter,
+			Tag:     listTagFilter,
 			Limit:   listLimit,
 			Offset:  listOffset,
 		}
@@ -47,14 +50,32 @@ var sessionsListCmd = &cobra.Command{
 			filter.Status = session.SessionStatus(listStatusFilter)
 		}
 
-		result, err := store.ListPaginated(filter)
-		if err != nil {
-			return err
+		var result *session.ListResult
+		if listQueryFilter != "" {
+			matched, err := store.Search(listQueryFilter)
+			if err != nil {
+				return err
+			}
+			filtered := filterSearchedSessions(matched, filter)
+			total := len(filtered)
+			paged := paginateSessions(filtered, listLimit, listOffset)
+			result = &session.ListResult{
+				Sessions: paged,
+				Total:    total,
+				Limit:    listLimit,
+				Offset:   listOffset,
+			}
+		} else {
+			var err error
+			result, err = store.ListPaginated(filter)
+			if err != nil {
+				return err
+			}
 		}
 		sessions := result.Sessions
 
 		if listJSON {
-			output := buildSessionsListJSON(result, listBackendFilter, listStatusFilter)
+			output := buildSessionsListJSON(result, listBackendFilter, listStatusFilter, listTagFilter, listQueryFilter)
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
 			return enc.Encode(output)
@@ -100,6 +121,8 @@ var sessionsListCmd = &cobra.Command{
 func init() {
 	sessionsListCmd.Flags().StringVarP(&listBackendFilter, "backend", "b", "", "filter by backend")
 	sessionsListCmd.Flags().StringVar(&listStatusFilter, "status", "", "filter by status (active, completed, error, paused)")
+	sessionsListCmd.Flags().StringVar(&listTagFilter, "tag", "", "filter by tag")
+	sessionsListCmd.Flags().StringVar(&listQueryFilter, "search", "", "search sessions by id/title/initial_prompt")
 	sessionsListCmd.Flags().IntVarP(&listLimit, "limit", "n", 0, "limit number of sessions shown")
 	sessionsListCmd.Flags().IntVar(&listOffset, "offset", 0, "number of sessions to skip")
 	sessionsListCmd.Flags().BoolVar(&listJSON, "json", false, "output sessions as JSON")
@@ -204,6 +227,32 @@ var sessionsDeleteCmd = &cobra.Command{
 	},
 }
 
+var tagDryRun bool
+
+var sessionsTagCmd = &cobra.Command{
+	Use:   "tag",
+	Short: "Manage session tags",
+	Long:  "Add or remove tags for a session by ID or ID prefix.",
+}
+
+var sessionsTagAddCmd = &cobra.Command{
+	Use:   "add <session-id> <tag> [tag...]",
+	Short: "Add one or more tags to a session",
+	Args:  cobra.MinimumNArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runSessionTagMutation(true, args[0], args[1:])
+	},
+}
+
+var sessionsTagRemoveCmd = &cobra.Command{
+	Use:   "rm <session-id> <tag> [tag...]",
+	Short: "Remove one or more tags from a session",
+	Args:  cobra.MinimumNArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runSessionTagMutation(false, args[0], args[1:])
+	},
+}
+
 var cleanOlderThan string
 var cleanDryRun bool
 
@@ -259,10 +308,14 @@ func init() {
 	sessionsCleanCmd.Flags().StringVar(&cleanOlderThan, "older-than", "", "delete sessions older than (e.g., 30d)")
 	sessionsCleanCmd.Flags().BoolVar(&cleanDryRun, "dry-run", false, "preview sessions to be deleted without making changes")
 	sessionsShowCmd.Flags().BoolVar(&showJSON, "json", false, "output session details as JSON")
+	sessionsTagCmd.PersistentFlags().BoolVar(&tagDryRun, "dry-run", false, "preview tag changes without saving")
+	sessionsTagCmd.AddCommand(sessionsTagAddCmd)
+	sessionsTagCmd.AddCommand(sessionsTagRemoveCmd)
 	sessionsCmd.AddCommand(sessionsListCmd)
 	sessionsCmd.AddCommand(sessionsShowCmd)
 	sessionsCmd.AddCommand(sessionsDeleteCmd)
 	sessionsCmd.AddCommand(sessionsCleanCmd)
+	sessionsCmd.AddCommand(sessionsTagCmd)
 }
 
 type sessionsListJSONOutput struct {
@@ -288,6 +341,8 @@ type sessionsListJSONItem struct {
 type sessionsListJSONFilters struct {
 	Backend string `json:"backend"`
 	Status  string `json:"status"`
+	Tag     string `json:"tag,omitempty"`
+	Query   string `json:"query,omitempty"`
 }
 
 type sessionsListJSONSort struct {
@@ -295,7 +350,7 @@ type sessionsListJSONSort struct {
 	Order string `json:"order"`
 }
 
-func buildSessionsListJSON(result *session.ListResult, backendFilter, statusFilter string) *sessionsListJSONOutput {
+func buildSessionsListJSON(result *session.ListResult, backendFilter, statusFilter, tagFilter, queryFilter string) *sessionsListJSONOutput {
 	items := make([]sessionsListJSONItem, 0, len(result.Sessions))
 	for _, sess := range result.Sessions {
 		status := string(sess.Status)
@@ -331,12 +386,136 @@ func buildSessionsListJSON(result *session.ListResult, backendFilter, statusFilt
 		Filters: sessionsListJSONFilters{
 			Backend: backendFilter,
 			Status:  statusFilter,
+			Tag:     tagFilter,
+			Query:   queryFilter,
 		},
 		Sort: sessionsListJSONSort{
 			By:    "last_used",
 			Order: "desc",
 		},
 	}
+}
+
+func filterSearchedSessions(sessions []*session.Session, filter *session.ListFilter) []*session.Session {
+	if filter == nil {
+		return sessions
+	}
+
+	filtered := make([]*session.Session, 0, len(sessions))
+	for _, sess := range sessions {
+		if filter.Backend != "" && sess.Backend != filter.Backend {
+			continue
+		}
+		if filter.Status != "" && sess.Status != filter.Status {
+			continue
+		}
+		if filter.Tag != "" && !sess.HasTag(filter.Tag) {
+			continue
+		}
+		filtered = append(filtered, sess)
+	}
+	return filtered
+}
+
+func paginateSessions(sessions []*session.Session, limit, offset int) []*session.Session {
+	if offset > 0 {
+		if offset >= len(sessions) {
+			return []*session.Session{}
+		}
+		sessions = sessions[offset:]
+	}
+	if limit > 0 && len(sessions) > limit {
+		sessions = sessions[:limit]
+	}
+	return sessions
+}
+
+func normalizeSessionTag(tag string) (string, error) {
+	tag = strings.TrimSpace(strings.ToLower(tag))
+	if tag == "" {
+		return "", fmt.Errorf("tag cannot be empty")
+	}
+	if len(tag) > 32 {
+		return "", fmt.Errorf("tag too long (max 32 chars): %s", tag)
+	}
+	for _, r := range tag {
+		valid := (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_'
+		if !valid {
+			return "", fmt.Errorf("invalid tag %q: only [a-z0-9_-] allowed", tag)
+		}
+	}
+	return tag, nil
+}
+
+func runSessionTagMutation(add bool, sessionRef string, rawTags []string) error {
+	store := session.NewStore()
+	sess, err := store.GetByPrefix(sessionRef)
+	if err != nil {
+		sess, err = store.Get(sessionRef)
+		if err != nil {
+			return err
+		}
+	}
+
+	normalizedTags := make([]string, 0, len(rawTags))
+	for _, rawTag := range rawTags {
+		tag, err := normalizeSessionTag(rawTag)
+		if err != nil {
+			return err
+		}
+		normalizedTags = append(normalizedTags, tag)
+	}
+
+	changedCount := 0
+	for _, tag := range normalizedTags {
+		hasTag := sess.HasTag(tag)
+		if add {
+			if hasTag {
+				continue
+			}
+			changedCount++
+			if !tagDryRun {
+				sess.AddTag(tag)
+			}
+			continue
+		}
+
+		if !hasTag {
+			continue
+		}
+		changedCount++
+		if !tagDryRun {
+			sess.RemoveTag(tag)
+		}
+	}
+
+	op := "add"
+	if !add {
+		op = "remove"
+	}
+	if tagDryRun {
+		fmt.Printf("Dry run: would %s %d tag change(s) on session %s.\n", op, changedCount, sess.ID)
+		fmt.Printf("Requested tags: %s\n", strings.Join(normalizedTags, ", "))
+		fmt.Println("No session data was modified.")
+		return nil
+	}
+
+	if changedCount == 0 {
+		fmt.Printf("No tag changes needed for session %s.\n", sess.ID)
+		return nil
+	}
+
+	if err := store.Save(sess); err != nil {
+		return err
+	}
+
+	fmt.Printf("Applied %d tag change(s) on session %s.\n", changedCount, sess.ID)
+	if len(sess.Tags) > 0 {
+		fmt.Printf("Current tags: %s\n", strings.Join(sess.Tags, ", "))
+	} else {
+		fmt.Println("Current tags: (none)")
+	}
+	return nil
 }
 
 func previewCleanByDays(store *session.Store, days, sampleLimit int) (int, []string, error) {

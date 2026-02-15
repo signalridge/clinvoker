@@ -40,12 +40,15 @@ func resetAppGlobals() {
 	chainJSONFlag = false
 	listBackendFilter = ""
 	listStatusFilter = ""
+	listTagFilter = ""
+	listQueryFilter = ""
 	listLimit = 0
 	listOffset = 0
 	listJSON = false
 	showJSON = false
 	cleanOlderThan = ""
 	cleanDryRun = false
+	tagDryRun = false
 }
 
 func newFlagTestCmd() *cobra.Command {

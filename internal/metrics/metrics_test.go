@@ -45,4 +45,36 @@ func TestSessionMetrics(t *testing.T) {
 	}
 }
 
+func TestExecutionModeMetrics(t *testing.T) {
+	beforeChain := testutil.ToFloat64(ChainStepExecutions.WithLabelValues("claude", "ok"))
+	RecordChainStepExecution("claude", "ok", 0.2)
+	afterChain := testutil.ToFloat64(ChainStepExecutions.WithLabelValues("claude", "ok"))
+	if afterChain != beforeChain+1 {
+		t.Fatalf("ChainStepExecutions did not increment: before=%v after=%v", beforeChain, afterChain)
+	}
+
+	beforeCompare := testutil.ToFloat64(CompareBackendExecutions.WithLabelValues("gemini", "failed"))
+	RecordCompareBackendExecution("gemini", "failed", 0.3)
+	afterCompare := testutil.ToFloat64(CompareBackendExecutions.WithLabelValues("gemini", "failed"))
+	if afterCompare != beforeCompare+1 {
+		t.Fatalf("CompareBackendExecutions did not increment: before=%v after=%v", beforeCompare, afterCompare)
+	}
+
+	beforeParallel := testutil.ToFloat64(ParallelTaskExecutions.WithLabelValues("codex", "canceled"))
+	RecordParallelTaskExecution("codex", "canceled", 0.1)
+	afterParallel := testutil.ToFloat64(ParallelTaskExecutions.WithLabelValues("codex", "canceled"))
+	if afterParallel != beforeParallel+1 {
+		t.Fatalf("ParallelTaskExecutions did not increment: before=%v after=%v", beforeParallel, afterParallel)
+	}
+}
+
+func TestExecutionModeMetrics_LabelNormalization(t *testing.T) {
+	before := testutil.ToFloat64(ChainStepExecutions.WithLabelValues("unknown", "failed"))
+	RecordChainStepExecution("", "not-a-real-status", 0.05)
+	after := testutil.ToFloat64(ChainStepExecutions.WithLabelValues("unknown", "failed"))
+	if after != before+1 {
+		t.Fatalf("normalized ChainStepExecutions did not increment expected label set: before=%v after=%v", before, after)
+	}
+}
+
 //revive:enable:var-naming

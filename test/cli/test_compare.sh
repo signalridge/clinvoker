@@ -25,8 +25,10 @@ test_compare_two_backends() {
 	local backend2="${available_backends[1]}"
 
 	local output
-	output=$(clinvk compare --backends "$backend1,$backend2" --dry-run "$SIMPLE_PROMPT" 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk compare --backends "$backend1,$backend2" --dry-run "$SIMPLE_PROMPT" 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 	assert_contains "$output" "$backend1"
 	assert_contains "$output" "$backend2"
@@ -39,8 +41,10 @@ test_compare_all_backends() {
 	fi
 
 	local output
-	output=$(clinvk compare --all-backends --dry-run "$SIMPLE_PROMPT" 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk compare --all-backends --dry-run "$SIMPLE_PROMPT" 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 }
 
@@ -57,8 +61,10 @@ test_compare_sequential_flag() {
 	local backend2="${available_backends[1]}"
 
 	local output
-	output=$(clinvk compare --backends "$backend1,$backend2" --sequential --dry-run "$SIMPLE_PROMPT" 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk compare --backends "$backend1,$backend2" --sequential --dry-run "$SIMPLE_PROMPT" 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 }
 
@@ -75,13 +81,19 @@ test_compare_json_output() {
 	local backend2="${available_backends[1]}"
 
 	local output
-	output=$(clinvk compare --backends "$backend1,$backend2" --json --dry-run "$SIMPLE_PROMPT" 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk compare --backends "$backend1,$backend2" --json --dry-run "$SIMPLE_PROMPT" 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 
-	# Check if output contains JSON structure
 	if ! echo "$output" | jq empty 2>/dev/null; then
-		log_warning "Output is not valid JSON"
+		log_error "Output is not valid JSON: $output"
+		return 1
+	fi
+	if ! echo "$output" | jq -e '.results | length == 2' >/dev/null 2>&1; then
+		log_error "Expected exactly 2 compare results in JSON output: $output"
+		return 1
 	fi
 }
 

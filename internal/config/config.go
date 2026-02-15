@@ -17,6 +17,7 @@ type Config struct {
 	DefaultBackend string                   `mapstructure:"default_backend"`
 	UnifiedFlags   UnifiedFlagsConfig       `mapstructure:"unified_flags"`
 	Backends       map[string]BackendConfig `mapstructure:"backends"`
+	Retry          RetryConfig              `mapstructure:"retry"`
 	Session        SessionConfig            `mapstructure:"session"`
 	Output         OutputConfig             `mapstructure:"output"`
 	Parallel       ParallelConfig           `mapstructure:"parallel"`
@@ -121,6 +122,46 @@ type MCPConfig struct {
 
 	// ExposeHealth controls whether to expose /health in MCP mode.
 	ExposeHealth bool `mapstructure:"expose_health"`
+}
+
+// RetryPolicyConfig describes retry behavior for command execution.
+type RetryPolicyConfig struct {
+	// Enabled controls whether retry logic is active.
+	Enabled bool `mapstructure:"enabled"`
+
+	// MaxAttempts is the total attempts including the initial try.
+	MaxAttempts int `mapstructure:"max_attempts"`
+
+	// BackoffInitialMS is the base backoff delay in milliseconds.
+	BackoffInitialMS int `mapstructure:"backoff_initial_ms"`
+
+	// BackoffMaxMS is the max backoff delay in milliseconds.
+	BackoffMaxMS int `mapstructure:"backoff_max_ms"`
+
+	// BackoffMultiplier controls exponential backoff growth.
+	BackoffMultiplier float64 `mapstructure:"backoff_multiplier"`
+
+	// JitterRatio applies random jitter in range [0, 1].
+	JitterRatio float64 `mapstructure:"jitter_ratio"`
+
+	// RetryableErrors is a list of error substrings considered retryable.
+	RetryableErrors []string `mapstructure:"retryable_errors"`
+
+	// AllowNonIdempotent allows retries for non-idempotent command flows.
+	AllowNonIdempotent bool `mapstructure:"allow_non_idempotent"`
+}
+
+// RetryConfig describes layered retry policies.
+// Precedence at runtime: command > backend > global.
+type RetryConfig struct {
+	// Global applies when no backend/command override is configured.
+	Global RetryPolicyConfig `mapstructure:"global"`
+
+	// ByBackend overrides retry policy by backend name.
+	ByBackend map[string]RetryPolicyConfig `mapstructure:"by_backend"`
+
+	// ByCommand overrides retry policy by command name.
+	ByCommand map[string]RetryPolicyConfig `mapstructure:"by_command"`
 }
 
 // UnifiedFlagsConfig contains unified flag settings that apply across backends.
@@ -236,6 +277,20 @@ func defaultConfig() *Config {
 			SandboxMode:  "default",
 		},
 		Backends: make(map[string]BackendConfig),
+		Retry: RetryConfig{
+			Global: RetryPolicyConfig{
+				Enabled:            false,
+				MaxAttempts:        1,
+				BackoffInitialMS:   250,
+				BackoffMaxMS:       5000,
+				BackoffMultiplier:  2.0,
+				JitterRatio:        0.2,
+				RetryableErrors:    []string{"timeout", "timed out", "rate limit", "temporarily unavailable", "connection reset", "connection refused", "502", "503", "504"},
+				AllowNonIdempotent: false,
+			},
+			ByBackend: make(map[string]RetryPolicyConfig),
+			ByCommand: make(map[string]RetryPolicyConfig),
+		},
 		Session: SessionConfig{
 			RetentionDays:   30,
 			StoreTokenUsage: true,
