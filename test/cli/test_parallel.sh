@@ -17,7 +17,7 @@ create_parallel_tasks_json() {
 	IFS=' ' read -ra available_backends <<<"$(get_available_backends)"
 
 	if [[ ${#available_backends[@]} -eq 0 ]]; then
-		echo "[]"
+		echo "{\"tasks\":[]}"
 		return
 	fi
 
@@ -32,7 +32,7 @@ create_parallel_tasks_json() {
 	done
 	tasks+="]"
 
-	echo "$tasks"
+	echo "{\"tasks\":$tasks}"
 }
 
 test_parallel_json_input() {
@@ -47,8 +47,10 @@ test_parallel_json_input() {
 	input_file=$(create_temp_json "$tasks_json")
 
 	local output
-	output=$(clinvk parallel --input "$input_file" --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk parallel --file "$input_file" --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 }
 
@@ -64,8 +66,10 @@ test_parallel_max_parallel() {
 	input_file=$(create_temp_json "$tasks_json")
 
 	local output
-	output=$(clinvk parallel --input "$input_file" --max-parallel 2 --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk parallel --file "$input_file" --max-parallel 2 --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 }
 
@@ -81,8 +85,10 @@ test_parallel_fail_fast() {
 	input_file=$(create_temp_json "$tasks_json")
 
 	local output
-	output=$(clinvk parallel --input "$input_file" --fail-fast --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk parallel --file "$input_file" --fail-fast --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 }
 
@@ -98,13 +104,19 @@ test_parallel_json_output() {
 	input_file=$(create_temp_json "$tasks_json")
 
 	local output
-	output=$(clinvk parallel --input "$input_file" --json --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk parallel --file "$input_file" --json --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 
-	# Check if output contains JSON structure
 	if ! echo "$output" | jq empty 2>/dev/null; then
-		log_warning "Output is not valid JSON"
+		log_error "Output is not valid JSON: $output"
+		return 1
+	fi
+	if ! echo "$output" | jq -e '.total_tasks > 0 and (.results | length > 0)' >/dev/null 2>&1; then
+		log_error "Expected non-empty parallel JSON results: $output"
+		return 1
 	fi
 }
 
@@ -123,7 +135,9 @@ test_parallel_all_backends() {
 	input_file=$(create_temp_json "$tasks_json")
 
 	local output
-	output=$(clinvk parallel --input "$input_file" --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk parallel --file "$input_file" --dry-run 2>&1) || exit_code=$?
+	assert_exit_code 0 "$exit_code"
 
 	# Verify all backends are mentioned in output
 	for backend in "${available_backends[@]}"; do

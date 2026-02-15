@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -121,6 +122,7 @@ type TaskResult struct {
 	ExitCode  int               `json:"exit_code"`
 	Error     string            `json:"error,omitempty"`
 	Output    string            `json:"output,omitempty"`
+	Retry     *RetryTelemetry   `json:"retry,omitempty"`
 	StartTime time.Time         `json:"start_time"`
 	EndTime   time.Time         `json:"end_time"`
 	Duration  float64           `json:"duration_seconds"`
@@ -258,7 +260,9 @@ func executeParallelTasks(tasks *ParallelTasks, maxP int, failFast bool) *Parall
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				mu.Lock()
-				results.Results[idx] = createCanceledResult(idx, t)
+				canceled := createCanceledResult(idx, t)
+				results.Results[idx] = canceled
+				recordParallelTaskMetrics(pCtx.cfg, t.Backend, canceled.ExitCode, canceled.Error, canceled.Duration)
 				mu.Unlock()
 				return
 			}
@@ -267,7 +271,9 @@ func executeParallelTasks(tasks *ParallelTasks, maxP int, failFast bool) *Parall
 			select {
 			case <-ctx.Done():
 				mu.Lock()
-				results.Results[idx] = createCanceledResult(idx, t)
+				canceled := createCanceledResult(idx, t)
+				results.Results[idx] = canceled
+				recordParallelTaskMetrics(pCtx.cfg, t.Backend, canceled.ExitCode, canceled.Error, canceled.Duration)
 				mu.Unlock()
 				return
 			default:
@@ -334,11 +340,13 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 	// Build unified options
 	opts := buildParallelTaskOptions(t, pCtx.cfg)
 
-	// Build command
-	execCmd := b.BuildCommandUnified(t.Prompt, opts)
-	execCmd = util.CommandWithContext(pCtx.ctx, execCmd)
+	buildCmd := func() *exec.Cmd {
+		execCmd := b.BuildCommandUnified(t.Prompt, opts)
+		return util.CommandWithContext(pCtx.ctx, execCmd)
+	}
 
 	if opts.DryRun {
+		execCmd := buildCmd()
 		if !pCtx.quiet {
 			fmt.Printf("[%d] Would execute: %s %v\n", idx+1, execCmd.Path, execCmd.Args[1:])
 		}
@@ -348,17 +356,26 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 		return result
 	}
 
-	// Execute with JSON output capture for proper error extraction
-	captureResult, execErr := ExecuteAndCaptureWithJSON(b, execCmd)
-	if execErr != nil && captureResult.Error == "" {
-		if errors.Is(execErr, context.Canceled) {
-			result.Error = "canceled (fail-fast)"
-			result.ExitCode = -1
-		} else {
-			result.Error = execErr.Error()
-		}
-	} else if captureResult.Error != "" {
-		result.Error = captureResult.Error
+	captureResult, retryTelemetry, execErr := executeWithRetryJSON(
+		b,
+		buildCmd,
+		pCtx.cfg,
+		t.Backend,
+		"parallel",
+		GetCommandTimeout(),
+		false,
+	)
+
+	if retryTelemetry.Enabled {
+		rt := retryTelemetry
+		result.Retry = &rt
+	}
+
+	if errors.Is(execErr, context.Canceled) && captureResult.Error == "" {
+		result.Error = "canceled (fail-fast)"
+		result.ExitCode = -1
+	} else {
+		result.Error = selectExecutionError(execErr, captureResult.Error)
 	}
 	if result.ExitCode == 0 {
 		result.ExitCode = captureResult.ExitCode
@@ -366,6 +383,7 @@ func executeParallelTask(idx int, t *ParallelTask, pCtx *parallelContext) TaskRe
 	result.Output = captureResult.Content
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
+	recordParallelTaskMetrics(pCtx.cfg, t.Backend, result.ExitCode, result.Error, result.Duration)
 
 	// Print output if not in quiet mode
 	if !pCtx.quiet && captureResult.Content != "" {

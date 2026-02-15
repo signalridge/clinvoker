@@ -182,6 +182,71 @@ test_sessions_help() {
 	assert_contains "$output" "sessions"
 }
 
+test_sessions_tag_add_rm() {
+	local sessions_output
+	sessions_output=$(clinvk sessions list 2>&1 || true)
+	local session_id
+	session_id=$(extract_session_id "$sessions_output" || echo "")
+
+	if [[ -z "$session_id" ]]; then
+		skip_test "Sessions tag add/rm" "No sessions available to mutate"
+		return 0
+	fi
+
+	local add_output
+	add_output=$(clinvk sessions tag add "$session_id" "e2e_tag" 2>&1 || true)
+	assert_not_empty "$add_output"
+	assert_contains "$add_output" "Applied"
+
+	local show_output
+	show_output=$(clinvk sessions show "$session_id" 2>&1 || true)
+	assert_contains "$show_output" "e2e_tag"
+
+	local dryrun_output
+	dryrun_output=$(clinvk sessions tag rm "$session_id" "e2e_tag" --dry-run 2>&1 || true)
+	assert_not_empty "$dryrun_output"
+	assert_contains "$dryrun_output" "Dry run: would remove"
+
+	show_output=$(clinvk sessions show "$session_id" 2>&1 || true)
+	assert_contains "$show_output" "e2e_tag"
+
+	local rm_output
+	rm_output=$(clinvk sessions tag rm "$session_id" "e2e_tag" 2>&1 || true)
+	assert_not_empty "$rm_output"
+	assert_contains "$rm_output" "Applied"
+}
+
+test_sessions_list_search_and_tag_filter() {
+	if ! require_jq; then
+		skip_test "Sessions list --search --tag" "jq is not available"
+		return 0
+	fi
+
+	local sessions_output
+	sessions_output=$(clinvk sessions list 2>&1 || true)
+	local session_id
+	session_id=$(extract_session_id "$sessions_output" || echo "")
+
+	if [[ -z "$session_id" ]]; then
+		skip_test "Sessions list --search --tag" "No sessions available"
+		return 0
+	fi
+
+	clinvk sessions tag add "$session_id" "search_tag" >/dev/null 2>&1 || true
+
+	local output
+	output=$(clinvk sessions list --search "fixture prompt" --tag "search_tag" --json 2>&1 || true)
+	assert_not_empty "$output"
+	if ! echo "$output" | jq empty >/dev/null 2>&1; then
+		log_error "sessions list --search --tag output is not valid JSON: $output"
+		return 1
+	fi
+	if ! echo "$output" | jq -e '.filters.tag == "search_tag" and .filters.query == "fixture prompt"' >/dev/null 2>&1; then
+		log_error "expected filters.tag/query in JSON output: $output"
+		return 1
+	fi
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -199,6 +264,8 @@ main() {
 	run_test "Sessions show --json output" test_sessions_show_json
 	run_test "Sessions delete <id> command" test_sessions_delete
 	run_test "Sessions clean --dry-run no side effect" test_sessions_clean_dry_run_no_side_effect
+	run_test "Sessions tag add/rm flow" test_sessions_tag_add_rm
+	run_test "Sessions list --search --tag JSON filter contract" test_sessions_list_search_and_tag_filter
 	run_test "Sessions list per backend" test_sessions_list_backends
 	run_test "Sessions --help works" test_sessions_help
 

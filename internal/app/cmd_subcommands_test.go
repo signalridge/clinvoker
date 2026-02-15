@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -125,6 +126,41 @@ func TestRunChain_DryRun(t *testing.T) {
 	}
 }
 
+func TestRunChain_DryRun_JSONOutputValid(t *testing.T) {
+	setupTestConfig(t)
+	defer config.Reset()
+	resetAppGlobals()
+
+	mockBackend := mock.NewMockBackend("mock", mock.WithAvailable(true))
+	t.Cleanup(mock.WithMockBackend(t, mockBackend))
+
+	dryRun = true
+	chainJSONFlag = true
+
+	tmpDir := t.TempDir()
+	chainFile = writeTempFile(t, tmpDir, "chain.json", `{"steps":[{"backend":"mock","prompt":"one"},{"backend":"mock","prompt":"two"}]}`)
+
+	output := captureStdout(t, func() {
+		if err := runChain(chainCmd, nil); err != nil {
+			t.Fatalf("runChain failed: %v", err)
+		}
+	})
+
+	var parsed ChainResults
+	if err := json.Unmarshal([]byte(output), &parsed); err != nil {
+		t.Fatalf("runChain JSON output should be valid JSON, err=%v output=%s", err, output)
+	}
+	if parsed.TotalSteps != 2 {
+		t.Fatalf("total_steps = %d, want 2", parsed.TotalSteps)
+	}
+	if len(parsed.Results) != 2 {
+		t.Fatalf("results length = %d, want 2", len(parsed.Results))
+	}
+	if parsed.Results[0].Backend != "mock" || parsed.Results[1].Backend != "mock" {
+		t.Fatalf("unexpected backends in chain results: %+v", parsed.Results)
+	}
+}
+
 func TestRunCompare_DryRun(t *testing.T) {
 	setupTestConfig(t)
 	defer config.Reset()
@@ -139,6 +175,36 @@ func TestRunCompare_DryRun(t *testing.T) {
 
 	if err := runCompare(compareCmd, []string{"hello"}); err != nil {
 		t.Fatalf("runCompare failed: %v", err)
+	}
+}
+
+func TestRunCompare_DryRun_JSONOutputValid(t *testing.T) {
+	setupTestConfig(t)
+	defer config.Reset()
+	resetAppGlobals()
+
+	mockBackend := mock.NewMockBackend("mock", mock.WithAvailable(true))
+	t.Cleanup(mock.WithMockBackend(t, mockBackend))
+
+	dryRun = true
+	compareJSON = true
+	compareBackends = "mock"
+
+	output := captureStdout(t, func() {
+		if err := runCompare(compareCmd, []string{"hello"}); err != nil {
+			t.Fatalf("runCompare failed: %v", err)
+		}
+	})
+
+	var parsed CompareResults
+	if err := json.Unmarshal([]byte(output), &parsed); err != nil {
+		t.Fatalf("runCompare JSON output should be valid JSON, err=%v output=%s", err, output)
+	}
+	if len(parsed.Results) != 1 {
+		t.Fatalf("results length = %d, want 1", len(parsed.Results))
+	}
+	if parsed.Results[0].Backend != "mock" {
+		t.Fatalf("backend = %q, want %q", parsed.Results[0].Backend, "mock")
 	}
 }
 

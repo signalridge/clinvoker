@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"sync"
@@ -48,15 +49,16 @@ func init() {
 
 // CompareResult represents the result from one backend.
 type CompareResult struct {
-	Backend   string    `json:"backend"`
-	Model     string    `json:"model,omitempty"`
-	ExitCode  int       `json:"exit_code"`
-	Error     string    `json:"error,omitempty"`
-	Output    string    `json:"output,omitempty"`
-	OutputLen int       `json:"output_length"`
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
-	Duration  float64   `json:"duration_seconds"`
+	Backend   string          `json:"backend"`
+	Model     string          `json:"model,omitempty"`
+	ExitCode  int             `json:"exit_code"`
+	Error     string          `json:"error,omitempty"`
+	Output    string          `json:"output,omitempty"`
+	OutputLen int             `json:"output_length"`
+	Retry     *RetryTelemetry `json:"retry,omitempty"`
+	StartTime time.Time       `json:"start_time"`
+	EndTime   time.Time       `json:"end_time"`
+	Duration  float64         `json:"duration_seconds"`
 }
 
 // CompareSummaryEntry describes one backend's score and ranking dimensions.
@@ -276,29 +278,41 @@ func runCompareTask(backendName, prompt string, cfg *config.Config) CompareResul
 	util.ApplyUnifiedDefaults(opts, cfg, dryRun)
 	util.ApplyBackendDefaults(opts, backendName, cfg)
 
-	// Build command
-	execCmd := b.BuildCommandUnified(prompt, opts)
-
 	if dryRun {
-		fmt.Printf("[%s] Would execute: %s %v\n", backendName, execCmd.Path, execCmd.Args[1:])
+		execCmd := b.BuildCommandUnified(prompt, opts)
+		if !compareJSON {
+			fmt.Printf("[%s] Would execute: %s %v\n", backendName, execCmd.Path, execCmd.Args[1:])
+		}
 		result.ExitCode = 0
 		result.EndTime = time.Now()
 		result.Duration = result.EndTime.Sub(startTime).Seconds()
 		return result
 	}
 
-	// Execute with JSON output capture for proper error extraction
-	captureResult, execErr := ExecuteAndCaptureWithJSON(b, execCmd)
-	if execErr != nil && captureResult.Error == "" {
-		result.Error = execErr.Error()
-	} else if captureResult.Error != "" {
-		result.Error = captureResult.Error
+	buildCmd := func() *exec.Cmd {
+		return b.BuildCommandUnified(prompt, opts)
 	}
+	captureResult, retryTelemetry, execErr := executeWithRetryJSON(
+		b,
+		buildCmd,
+		cfg,
+		backendName,
+		"compare",
+		GetCommandTimeout(),
+		true,
+	)
+
+	if retryTelemetry.Enabled {
+		rt := retryTelemetry
+		result.Retry = &rt
+	}
+	result.Error = selectExecutionError(execErr, captureResult.Error)
 	result.ExitCode = captureResult.ExitCode
 	result.Output = captureResult.Content
 	result.OutputLen = utf8.RuneCountInString(result.Output)
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
+	recordCompareBackendMetrics(cfg, backendName, result.ExitCode, result.Error, result.Duration)
 
 	// Ensure ephemeral compare runs remain clean on the backend.
 	if opts.Ephemeral {

@@ -50,8 +50,10 @@ test_chain_sequential_execution() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --file "$input_file" --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 
 	# Verify backends are executed in order
@@ -83,8 +85,10 @@ test_chain_with_placeholder() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --file "$input_file" --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 	assert_contains "$output" "$backend1"
 	assert_contains "$output" "$backend2"
@@ -99,14 +103,20 @@ test_chain_stop_on_failure() {
 		return 0
 	fi
 
-	local config_json
-	config_json=$(create_chain_config_json)
+	local backend1="${available_backends[0]}"
+	local backend2="${available_backends[1]}"
+	local config_json="{\"steps\":[
+		{\"backend\":\"$backend1\",\"prompt\":\"$SIMPLE_PROMPT\"},
+		{\"backend\":\"$backend2\",\"prompt\":\"$SIMPLE_PROMPT\"}
+	],\"stop_on_failure\":true}"
 	local input_file
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --file "$input_file" --stop-on-failure --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 }
 
@@ -125,13 +135,19 @@ test_chain_json_output() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --file "$input_file" --json --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk chain --file "$input_file" --json --dry-run 2>&1) || exit_code=$?
 
+	assert_exit_code 0 "$exit_code"
 	assert_not_empty "$output"
 
-	# Check if output contains JSON structure
 	if ! echo "$output" | jq empty 2>/dev/null; then
-		log_warning "Output is not valid JSON"
+		log_error "Output is not valid JSON: $output"
+		return 1
+	fi
+	if ! echo "$output" | jq -e '.total_steps > 0 and (.results | length > 0)' >/dev/null 2>&1; then
+		log_error "Expected non-empty chain JSON results: $output"
+		return 1
 	fi
 }
 
@@ -150,7 +166,9 @@ test_chain_cross_backend() {
 	input_file=$(create_temp_json "$config_json")
 
 	local output
-	output=$(clinvk chain --file "$input_file" --dry-run 2>&1 || true)
+	local exit_code=0
+	output=$(clinvk chain --file "$input_file" --dry-run 2>&1) || exit_code=$?
+	assert_exit_code 0 "$exit_code"
 
 	# Verify all backends are used
 	for backend in "${available_backends[@]}"; do

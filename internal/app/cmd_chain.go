@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -76,16 +77,17 @@ type ChainStep struct {
 
 // ChainStepResult represents the result of a chain step.
 type ChainStepResult struct {
-	Step      int       `json:"step"`
-	Name      string    `json:"name,omitempty"`
-	Backend   string    `json:"backend"`
-	ExitCode  int       `json:"exit_code"`
-	Error     string    `json:"error,omitempty"`
-	Output    string    `json:"output,omitempty"`
-	SessionID string    `json:"session_id,omitempty"`
-	Duration  float64   `json:"duration_seconds"`
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
+	Step      int             `json:"step"`
+	Name      string          `json:"name,omitempty"`
+	Backend   string          `json:"backend"`
+	ExitCode  int             `json:"exit_code"`
+	Error     string          `json:"error,omitempty"`
+	Output    string          `json:"output,omitempty"`
+	SessionID string          `json:"session_id,omitempty"`
+	Retry     *RetryTelemetry `json:"retry,omitempty"`
+	Duration  float64         `json:"duration_seconds"`
+	StartTime time.Time       `json:"start_time"`
+	EndTime   time.Time       `json:"end_time"`
 }
 
 // ChainResults represents the aggregated chain execution results.
@@ -215,6 +217,7 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 	b, err := getBackendOrError(step.Backend)
 	if err != nil {
 		failStepResult(&result, startTime, err.Error())
+		recordChainStepMetrics(ctx.cfg, step.Backend, result.ExitCode, result.Error, result.Duration)
 		return result
 	}
 
@@ -226,11 +229,11 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 	// Build unified options (always ephemeral)
 	opts := buildChainStepOptions(step, stepWorkDir, model, ctx.cfg, true)
 
-	// Build and execute command
-	execCmd := b.BuildCommandUnified(prompt, opts)
-
 	if dryRun {
-		fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
+		execCmd := b.BuildCommandUnified(prompt, opts)
+		if !chainJSONFlag {
+			fmt.Printf("Would execute: %s %v\n", execCmd.Path, execCmd.Args[1:])
+		}
 		result.ExitCode = 0
 		result.EndTime = time.Now()
 		result.Duration = result.EndTime.Sub(startTime).Seconds()
@@ -238,18 +241,29 @@ func executeChainStep(index int, step *ChainStep, chain *ChainDefinition, ctx *c
 		return result
 	}
 
-	// Execute with JSON output capture for proper content extraction
 	stepTimeout := resolveChainStepTimeout(step.TimeoutSecs)
-	captureResult, execErr := ExecuteAndCaptureWithJSONTimeout(b, execCmd, stepTimeout)
-	if execErr != nil && captureResult.Error == "" {
-		result.Error = execErr.Error()
-	} else if captureResult.Error != "" {
-		result.Error = captureResult.Error
+	buildCmd := func() *exec.Cmd {
+		return b.BuildCommandUnified(prompt, opts)
 	}
+	captureResult, retryTelemetry, execErr := executeWithRetryJSON(
+		b,
+		buildCmd,
+		ctx.cfg,
+		step.Backend,
+		"chain",
+		stepTimeout,
+		false,
+	)
+	if retryTelemetry.Enabled {
+		rt := retryTelemetry
+		result.Retry = &rt
+	}
+	result.Error = selectExecutionError(execErr, captureResult.Error)
 	result.ExitCode = captureResult.ExitCode
 	result.Output = captureResult.Content // Text content for {{previous}} substitution
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime).Seconds()
+	recordChainStepMetrics(ctx.cfg, step.Backend, result.ExitCode, result.Error, result.Duration)
 
 	// Print output if not in JSON mode
 	if !chainJSONFlag && captureResult.Content != "" {
