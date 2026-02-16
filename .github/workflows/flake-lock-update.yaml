@@ -24,7 +24,7 @@ jobs:
       - name: Update lock file
         run: nix flake update
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/update-flake-lock
           delete-branch: true
