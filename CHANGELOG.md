@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1](https://github.com/signalridge/clinvoker/compare/v0.5.0...v0.5.1) (2026-02-22)
+
+
+### 🐛 Bug Fixes
+
+* **gitignore:** ignore local AI tooling directories ([#83](https://github.com/signalridge/clinvoker/issues/83)) ([010a77e](https://github.com/signalridge/clinvoker/commit/010a77eccdb3828754f5baa6ec63a2d5669c7868))
+
+
+### 📦 Dependencies
+
+* **actions:** bump peter-evans/create-pull-request from 7 to 8 in the actions group ([#82](https://github.com/signalridge/clinvoker/issues/82)) ([919ce84](https://github.com/signalridge/clinvoker/commit/919ce843372be7305b39d62a5ac3f44ab1f0c6c7))
+
 ## [0.5.0](https://github.com/signalridge/clinvoker/compare/v0.4.1...v0.5.0) (2026-02-15)
 
 
