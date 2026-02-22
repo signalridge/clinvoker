@@ -49,6 +49,10 @@ openspec/changes/
 # Codex
 .codex/
 
+# Local AI tooling state
+.ghq/
+.serena/
+
 # MkDocs
 site/
 
