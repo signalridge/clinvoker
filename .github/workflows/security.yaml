@@ -93,7 +93,7 @@ jobs:
           syft . -o spdx-json > sbom.spdx.json
           syft . -o cyclonedx-json > sbom.cdx.json
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: |
@@ -122,7 +122,7 @@ jobs:
             echo "::warning::Found potentially restrictive licenses"
           fi
       - name: Upload license report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: license-report
           path: licenses.txt

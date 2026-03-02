@@ -89,7 +89,7 @@ jobs:
           EOF
       - name: Run GoReleaser
         id: goreleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
@@ -111,7 +111,7 @@ jobs:
           HASHES=$(sha256sum ./*.tar.gz ./*.zip 2>/dev/null | base64 -w0)
           echo "hashes=${HASHES}" >> "$GITHUB_OUTPUT"
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: dist/*.sbom.spdx.json
